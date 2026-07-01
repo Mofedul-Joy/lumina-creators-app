@@ -30,11 +30,10 @@ export function AuthCard({
 }) {
   return (
     <main className="flex min-h-[100dvh]">
-      {/* Brand panel */}
-      <aside className="relative hidden w-1/2 flex-col justify-between overflow-hidden border-r border-[var(--color-border)] bg-[var(--color-bg-deep)] p-10 lg:flex">
-        <div className="glow-hero pointer-events-none absolute inset-0" />
-        <div className="fx-grid pointer-events-none absolute inset-0 opacity-70" />
-        <div className="fx-noise pointer-events-none absolute inset-0" />
+      {/* Brand panel — transparent so the global green grid runs continuously
+          across both halves; only adds brand glow + ring on top. */}
+      <aside className="relative hidden w-1/2 flex-col justify-between overflow-hidden border-r border-[var(--color-border)] p-10 lg:flex">
+        <div className="glow-hero pointer-events-none absolute inset-0 opacity-90" />
         {/* neon horizon ring */}
         <div
           className="pointer-events-none absolute left-1/2 top-[42%] h-[520px] w-[520px] -translate-x-1/2 rounded-full border border-[var(--color-brand)]/25"
