@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+/* Lumina design tokens (authoritative). Brand = near-black + green-500.
+   Overrides the ui-ux-pro-max auto-palette; principles kept, colors are Lumina's. */
+@theme {
+  --color-bg: #0a0a0a;
+  --color-bg-deep: #000000;
+  --color-surface: #18181b;      /* zinc-900 */
+  --color-surface-2: #212124;
+  --color-border: #27272a;       /* zinc-800 */
+
+  --color-brand: #22c55e;        /* green-500 */
+  --color-brand-hover: #16a34a;  /* green-600 */
+  --color-on-brand: #052e16;
+
+  --color-text: #fafafa;         /* zinc-50 */
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #71717a;
+
+  --color-warning: #fbbf24;
+  --color-danger: #ef4444;
+
+  --radius-card: 12px;
+  --radius-btn: 8px;
+  --radius-pill: 999px;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-serif: var(--font-serif), Georgia, "Times New Roman", serif;
+}
+
+/* Elegant serif italic accent for display headlines (paired with bold sans). */
+.serif {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Soft green radial glow, used behind hero + section anchors. */
+.glow {
+  background:
+    radial-gradient(60% 55% at 15% 0%, rgba(34, 197, 94, 0.16), transparent 60%),
+    radial-gradient(50% 50% at 100% 20%, rgba(34, 197, 94, 0.12), transparent 55%);
+}
+
+.card-grad {
+  background: linear-gradient(180deg, #161616 0%, #0d0d0d 100%);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numerals use mono, per the Lumina design note. */
+.tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

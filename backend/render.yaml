@@ -1,0 +1,15 @@
+# Render blueprint. Cron worker (scraper) gets added at milestone 8, not before.
+services:
+  - type: web
+    name: lumina-creators-api
+    runtime: python
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false

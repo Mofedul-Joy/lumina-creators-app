@@ -1,0 +1,27 @@
+"""Submission schemas. Decimal money, Optional/List for 3.9 Pydantic."""
+from datetime import datetime
+from decimal import Decimal
+from typing import Optional
+
+from pydantic import BaseModel
+
+
+class SubmissionCreateIn(BaseModel):
+    campaign_slug: str
+    post_url: str
+
+
+class SubmissionOut(BaseModel):
+    id: str
+    campaign_id: str
+    post_url: str
+    platform: str
+    views: int
+    likes: int
+    comments: int
+    estimated_amount: Decimal
+    payable_amount: Optional[Decimal] = None
+    scrape_status: str
+    verification_status: str
+    thumbnail_url: Optional[str] = None
+    created_at: datetime

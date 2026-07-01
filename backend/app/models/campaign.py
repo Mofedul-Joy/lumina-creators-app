@@ -1,0 +1,137 @@
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from decimal import Decimal
+from typing import List, Optional
+
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Index,
+    Integer,
+    Numeric,
+    Text,
+    UniqueConstraint,
+    func,
+    text,
+)
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.db.base import Base, TimestampMixin
+from app.models.enums import (
+    CAMPAIGN_MODE,
+    CAMPAIGN_STATUS,
+    PARTICIPATION_STATUS,
+    PLATFORM,
+)
+
+
+class Campaign(TimestampMixin, Base):
+    __tablename__ = "campaigns"
+    __table_args__ = (
+        CheckConstraint("cpm_rate > 0"),
+        CheckConstraint("budget > 0"),
+        CheckConstraint("max_payout_per_creator IS NULL OR max_payout_per_creator > 0"),
+        CheckConstraint("eligible_view_pct BETWEEN 0 AND 100"),
+        CheckConstraint("min_retention_days >= 0"),
+        CheckConstraint("spent_amount >= 0"),
+        CheckConstraint(
+            "(mode = 'create_new' AND brief_script IS NOT NULL AND btrim(brief_script) <> '' "
+            "AND content_drive_url IS NULL) OR "
+            "(mode = 'copy_paste' AND content_drive_url IS NOT NULL "
+            "AND btrim(content_drive_url) <> '')",
+            name="chk_mode_content",
+        ),
+        CheckConstraint(
+            "starts_at IS NULL OR ends_at IS NULL OR starts_at < ends_at",
+            name="chk_dates",
+        ),
+        CheckConstraint(
+            "status = 'draft' OR array_length(platforms, 1) >= 1",
+            name="chk_platforms_when_live",
+        ),
+        Index("idx_campaigns_status", "status"),
+        Index("idx_campaigns_mode", "mode"),
+        Index("idx_campaigns_client", "client_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    created_by: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("admins.id"), nullable=False
+    )
+    client_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("clients.id")
+    )
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    slug: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    mode: Mapped[str] = mapped_column(CAMPAIGN_MODE, nullable=False)
+    status: Mapped[str] = mapped_column(
+        CAMPAIGN_STATUS, nullable=False, server_default=text("'draft'")
+    )
+    cpm_rate: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False)
+    budget: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    max_payout_per_creator: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 2))
+    eligible_view_pct: Mapped[Decimal] = mapped_column(
+        Numeric(5, 2), nullable=False, server_default=text("100")
+    )
+    min_retention_days: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("30")
+    )
+    spent_amount: Mapped[Decimal] = mapped_column(
+        Numeric(14, 2), nullable=False, server_default=text("0")
+    )
+    platforms: Mapped[List[str]] = mapped_column(
+        ARRAY(PLATFORM), nullable=False, server_default=text("'{}'::platform[]")
+    )
+    geo_countries: Mapped[List[str]] = mapped_column(
+        ARRAY(Text), nullable=False, server_default=text("'{}'::text[]")
+    )
+    brief_script: Mapped[Optional[str]] = mapped_column(Text)
+    content_drive_url: Mapped[Optional[str]] = mapped_column(Text)
+    caption_rules: Mapped[Optional[str]] = mapped_column(Text)
+    required_mentions: Mapped[List[str]] = mapped_column(
+        ARRAY(Text), nullable=False, server_default=text("'{}'::text[]")
+    )
+    example_captions: Mapped[List[str]] = mapped_column(
+        ARRAY(Text), nullable=False, server_default=text("'{}'::text[]")
+    )
+    requirements_url: Mapped[Optional[str]] = mapped_column(Text)
+    brand_name: Mapped[Optional[str]] = mapped_column(Text)
+    brand_logo_url: Mapped[Optional[str]] = mapped_column(Text)
+    starts_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    ends_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    archived_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
+
+class CampaignParticipation(Base):
+    __tablename__ = "campaign_participations"
+    __table_args__ = (
+        UniqueConstraint("campaign_id", "creator_id"),
+        UniqueConstraint("id", "campaign_id", "creator_id"),
+        Index("idx_part_campaign", "campaign_id"),
+        Index("idx_part_creator", "creator_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    campaign_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("campaigns.id", ondelete="RESTRICT"), nullable=False
+    )
+    creator_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("creators.id", ondelete="RESTRICT"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(
+        PARTICIPATION_STATUS, nullable=False, server_default=text("'joined'")
+    )
+    joined_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

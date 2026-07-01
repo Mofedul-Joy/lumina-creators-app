@@ -1,0 +1,49 @@
+"""Auth request/response schemas. Email kept as str (no email-validator dep — ponytail)."""
+from typing import Optional  # ponytail: Pydantic evals field types at runtime; 3.9 can't eval `str | None`
+
+from pydantic import BaseModel
+
+
+class LoginIn(BaseModel):
+    email: str
+    password: str
+
+
+class SignupIn(BaseModel):
+    email: str
+    password: str
+
+
+class SetPasswordIn(BaseModel):
+    email: str
+    password: str
+
+
+class RefreshIn(BaseModel):
+    refresh_token: str
+
+
+class TokenOut(BaseModel):
+    status: str = "ok"
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+class CreatorLoginOut(BaseModel):
+    """Password login may report that the account exists but has no password yet."""
+    status: str  # "ok" | "password_not_set"
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    token_type: str = "bearer"
+    email: Optional[str] = None
+
+
+class CheckEmailOut(BaseModel):
+    exists: bool
+    password_set: bool
+
+
+class MeOut(BaseModel):
+    id: str
+    email: str
