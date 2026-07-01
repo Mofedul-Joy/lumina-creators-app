@@ -37,7 +37,7 @@ export default function AdminCampaignsPage() {
   });
 
   return (
-    <div className="min-h-[100dvh] bg-[var(--color-bg)]">
+    <div className="min-h-[100dvh]">
       <AdminNav />
       <main className="mx-auto max-w-6xl px-6 py-10">
         <div className="mb-8 flex items-center justify-between">

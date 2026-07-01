@@ -30,7 +30,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
   const c = q.data;
 
   return (
-    <div className="min-h-[100dvh] bg-[var(--color-bg)]">
+    <div className="min-h-[100dvh]">
       <CreatorNav />
       <main className="mx-auto max-w-3xl px-6 py-10">
         <Link href="/campaigns" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">

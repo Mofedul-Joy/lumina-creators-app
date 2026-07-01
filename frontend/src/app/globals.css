@@ -3,14 +3,15 @@
 /* Lumina design tokens (authoritative). Brand = near-black + green-500.
    Overrides the ui-ux-pro-max auto-palette; principles kept, colors are Lumina's. */
 @theme {
-  --color-bg: #0a0a0a;
-  --color-bg-deep: #000000;
-  --color-surface: #18181b;      /* zinc-900 */
-  --color-surface-2: #212124;
-  --color-border: #27272a;       /* zinc-800 */
+  --color-bg: #070808;
+  --color-bg-deep: #030404;
+  --color-surface: #131417;      /* raised panel */
+  --color-surface-2: #191a1e;
+  --color-border: #26272b;       /* hairline */
 
   --color-brand: #22c55e;        /* green-500 */
   --color-brand-hover: #16a34a;  /* green-600 */
+  --color-brand-soft: #7dffa6;   /* neon mint (clippers accent) */
   --color-on-brand: #052e16;
 
   --color-text: #fafafa;         /* zinc-50 */
@@ -20,13 +21,118 @@
   --color-warning: #fbbf24;
   --color-danger: #ef4444;
 
-  --radius-card: 12px;
-  --radius-btn: 8px;
+  --radius-card: 16px;
+  --radius-btn: 10px;
   --radius-pill: 999px;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --font-serif: var(--font-serif), Georgia, "Times New Roman", serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-bg-deep);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   GLOBAL AMBIENT BACKGROUND
+   Fixed layers painted behind every page. Interior page
+   wrappers use bg-transparent so this shows through.
+   Layer 1 (::before) = deep base + drifting green aurora glows.
+   Layer 2 (::after)  = masked grid + film-grain noise.
+   ============================================================ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 40% at 50% -8%, rgba(34, 197, 94, 0.22), transparent 62%),
+    radial-gradient(45% 45% at 88% 4%, rgba(125, 255, 166, 0.12), transparent 60%),
+    radial-gradient(50% 45% at 8% 12%, rgba(16, 122, 66, 0.14), transparent 62%),
+    radial-gradient(60% 50% at 50% 108%, rgba(34, 197, 94, 0.10), transparent 65%),
+    linear-gradient(180deg, #040505 0%, #070808 40%, #050606 100%);
+  animation: aurora-drift 22s ease-in-out infinite alternate;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.6;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: 64px 64px, 64px 64px, 140px 140px;
+  -webkit-mask-image: radial-gradient(120% 90% at 50% 0%, #000 0%, rgba(0, 0, 0, 0.5) 45%, transparent 80%);
+  mask-image: radial-gradient(120% 90% at 50% 0%, #000 0%, rgba(0, 0, 0, 0.5) 45%, transparent 80%);
+}
+
+@keyframes aurora-drift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(0, 1.5%, 0) scale(1.06); }
+  100% { transform: translate3d(-1.5%, 0, 0) scale(1.03); }
+}
+
+/* ============================================================
+   REUSABLE FX UTILITIES (opt-in, for hero / sections / cards)
+   ============================================================ */
+
+/* Soft green radial glow, used behind hero + section anchors. */
+.glow {
+  background:
+    radial-gradient(55% 50% at 50% 0%, rgba(34, 197, 94, 0.20), transparent 60%),
+    radial-gradient(40% 45% at 100% 10%, rgba(125, 255, 166, 0.12), transparent 55%),
+    radial-gradient(45% 45% at 0% 20%, rgba(16, 122, 66, 0.12), transparent 58%);
+}
+
+/* Strong hero spotlight, layered aurora. */
+.glow-hero {
+  background:
+    radial-gradient(38% 30% at 50% -2%, rgba(125, 255, 166, 0.28), transparent 60%),
+    radial-gradient(60% 55% at 50% 0%, rgba(34, 197, 94, 0.22), transparent 62%),
+    radial-gradient(50% 50% at 12% 8%, rgba(16, 122, 66, 0.16), transparent 60%),
+    radial-gradient(50% 50% at 88% 10%, rgba(34, 197, 94, 0.14), transparent 60%);
+}
+
+/* Masked grid overlay for hero / sections. */
+.fx-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(90% 70% at 50% 0%, #000, transparent 75%);
+  mask-image: radial-gradient(90% 70% at 50% 0%, #000, transparent 75%);
+}
+
+/* Dashed crosshair guides inside feature cards (clippers style). */
+.fx-guides {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(70% 70% at 50% 40%, #000, transparent 80%);
+  mask-image: radial-gradient(70% 70% at 50% 40%, #000, transparent 80%);
+}
+
+/* Film-grain noise, drop over any dark surface. */
+.fx-noise {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  mix-blend-mode: overlay;
 }
 
 /* Elegant serif italic accent for display headlines (paired with bold sans). */
@@ -36,27 +142,67 @@
   font-weight: 400;
 }
 
-/* Soft green radial glow, used behind hero + section anchors. */
-.glow {
-  background:
-    radial-gradient(60% 55% at 15% 0%, rgba(34, 197, 94, 0.16), transparent 60%),
-    radial-gradient(50% 50% at 100% 20%, rgba(34, 197, 94, 0.12), transparent 55%);
-}
-
+/* Panel gradient for stat / feature cards. */
 .card-grad {
-  background: linear-gradient(180deg, #161616 0%, #0d0d0d 100%);
+  background:
+    radial-gradient(120% 80% at 50% -20%, rgba(34, 197, 94, 0.08), transparent 60%),
+    linear-gradient(180deg, #15171a 0%, #0b0c0d 100%);
 }
 
-:root {
-  color-scheme: dark;
+/* Premium card: gradient hairline border + inner top glow. */
+.card-lumina {
+  position: relative;
+  background:
+    radial-gradient(120% 90% at 50% -10%, rgba(34, 197, 94, 0.10), transparent 55%),
+    linear-gradient(180deg, #16181b 0%, #0a0b0c 100%);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+    0 20px 50px -24px rgba(0, 0, 0, 0.9);
+}
+.card-lumina::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg, rgba(125, 255, 166, 0.28), rgba(255, 255, 255, 0.04) 30%, transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
-html,
-body {
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
+/* Green pill eyebrow label (— Label —). */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.32rem 0.9rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  color: var(--color-text-secondary);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
+}
+.eyebrow::before,
+.eyebrow::after {
+  content: "";
+  width: 0.9rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-brand));
+}
+.eyebrow::after {
+  background: linear-gradient(90deg, var(--color-brand), transparent);
+}
+
+/* Neon green text/icon glow. */
+.neon {
+  color: var(--color-brand-soft);
+  filter: drop-shadow(0 0 10px rgba(34, 197, 94, 0.55));
 }
 
 /* Numerals use mono, per the Lumina design note. */
@@ -66,6 +212,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
+  }
   * {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;

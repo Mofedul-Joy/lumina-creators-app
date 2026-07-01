@@ -37,13 +37,13 @@ export default function DashboardPage() {
 
   if (!ready || !token || completionQ.isLoading || !completionQ.data?.completed)
     return (
-      <main className="flex min-h-[100dvh] items-center justify-center bg-[var(--color-bg)] px-4 py-10">
+      <main className="flex min-h-[100dvh] items-center justify-center px-4 py-10">
         <p className="text-sm text-[var(--color-text-secondary)]">Loading…</p>
       </main>
     );
 
   return (
-    <main className="flex min-h-[100dvh] items-center justify-center bg-[var(--color-bg)] px-4 py-10">
+    <main className="flex min-h-[100dvh] items-center justify-center px-4 py-10">
       <section className="w-full max-w-[420px] rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
         <p className="mb-2 text-sm font-medium text-[var(--color-brand)]">Lumina Creators</p>
         <h1 className="text-2xl font-semibold text-[var(--color-text)]">Browse campaigns</h1>

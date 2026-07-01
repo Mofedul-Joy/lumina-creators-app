@@ -88,7 +88,14 @@ function Nav() {
 function Hero() {
   return (
     <section className="relative overflow-hidden bg-[var(--color-bg-deep)]">
-      <div className="glow pointer-events-none absolute inset-0" />
+      <div className="glow-hero pointer-events-none absolute inset-0" />
+      <div className="fx-grid pointer-events-none absolute inset-0" />
+      <div className="fx-noise pointer-events-none absolute inset-0" />
+      {/* neon horizon ring behind the headline */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-[-260px] h-[620px] w-[900px] -translate-x-1/2 rounded-full"
+        style={{ boxShadow: "0 0 200px 40px rgba(34,197,94,0.16)", border: "1px solid rgba(125,255,166,0.14)" }}
+      />
       <div className="relative mx-auto max-w-4xl px-6 pb-20 pt-24 text-center">
         <div className="mb-6 flex justify-center">
           <Pill>
@@ -276,7 +283,8 @@ function Faq() {
 function CtaBand() {
   return (
     <section className="relative overflow-hidden bg-[var(--color-bg)]">
-      <div className="glow pointer-events-none absolute inset-0" />
+      <div className="glow-hero pointer-events-none absolute inset-0" />
+      <div className="fx-grid pointer-events-none absolute inset-0" />
       <div className="relative mx-auto max-w-3xl px-6 py-24 text-center">
         <h2 className="text-4xl font-semibold tracking-tight text-[var(--color-text)] sm:text-5xl">
           Start turning posts into <span className="serif text-[var(--color-brand)]">payouts</span>

@@ -111,7 +111,7 @@ export default function AdminCreatorsPage() {
 
   if (!ready || !token)
     return (
-      <main className="flex min-h-[100dvh] items-center justify-center bg-[var(--color-bg)]">
+      <main className="flex min-h-[100dvh] items-center justify-center">
         <p className="text-sm text-[var(--color-text-secondary)]">Loading…</p>
       </main>
     );
