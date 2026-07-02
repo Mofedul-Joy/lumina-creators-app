@@ -9,3 +9,7 @@ export const fmtMoney = (n: number | string) =>
   });
 
 export const fmtInt = (n: number | string) => Number(n).toLocaleString("en-US");
+
+/** Compact large numbers for KPI tiles: 3_291_556 -> "3.3M". */
+export const fmtCompact = (n: number | string) =>
+  Number(n).toLocaleString("en-US", { notation: "compact", maximumFractionDigits: 1 });

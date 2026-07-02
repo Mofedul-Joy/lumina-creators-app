@@ -1,6 +1,7 @@
 """Admin realm router. All routes here will depend on get_current_admin."""
 from fastapi import APIRouter
 
+from app.routers.admin.analytics import router as analytics_router
 from app.routers.admin.auth import router as auth_router
 from app.routers.admin.campaigns import router as campaigns_router
 from app.routers.admin.clients import router as clients_router
@@ -13,5 +14,6 @@ router.include_router(creators_router)
 router.include_router(campaigns_router)
 router.include_router(clients_router)
 router.include_router(stats_router)
+router.include_router(analytics_router)
 
 # submissions-verify, payouts, audit mount here as built.

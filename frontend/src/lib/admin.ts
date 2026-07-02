@@ -62,6 +62,25 @@ export type AdminStats = {
 
 export const getAdminStats = () => apiFetch<AdminStats>("/api/admin/stats", auth());
 
+export type AdminAnalytics = {
+  kpis: {
+    total_views: number;
+    total_spend: number | string;
+    total_submissions: number;
+    verified_submissions: number;
+    active_campaigns: number;
+    active_creators: number;
+    avg_cpm: number | string;
+    engagement_rate: number | string;
+  };
+  by_platform: { platform: string; views: number; submissions: number }[];
+  daily: { date: string; submissions: number; views: number; spend: number | string }[];
+  top_campaigns: { id: string; name: string; views: number; submissions: number; spend: number | string }[];
+  top_creators: { id: string; display_name: string; views: number; submissions: number }[];
+};
+
+export const getAdminAnalytics = () => apiFetch<AdminAnalytics>("/api/admin/analytics", auth());
+
 export const listAdminCampaigns = (status?: string) =>
   apiFetch<AdminCampaign[]>(`/api/admin/campaigns${status ? `?status=${status}` : ""}`, auth());
 
