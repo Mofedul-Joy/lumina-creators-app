@@ -21,11 +21,12 @@ from app.core.security import _now
 from app.db.session import get_engine
 from app.models import Campaign
 
-# Child-first delete order so FKs never block.
+# Child-first delete order so FKs never block. creator_profiles.avatar_object_id
+# references storage_objects, so profiles must go BEFORE storage_objects.
 CLEAR_ORDER = [
     "scrape_jobs", "submissions", "campaign_participations",
     "payout_items", "payouts", "portfolio_items", "social_accounts",
-    "storage_objects", "creator_profiles", "audit_log", "campaigns",
+    "creator_profiles", "storage_objects", "audit_log", "campaigns",
     "creators", "refresh_tokens",
 ]
 
