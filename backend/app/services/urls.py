@@ -67,6 +67,26 @@ def url_is_platform(platform: str, url: str) -> bool:
     return detect_platform(url) == platform
 
 
+# Path markers that make a platform URL an actual video/post, not a bare domain
+# or profile page. Lightweight on purpose — full API verification isn't worth it.
+_VIDEO_MARKERS = {
+    "tiktok": ("/video/", "/photo/", "/t/", "/v/"),
+    "youtube": ("watch", "/shorts/", "/embed/", "youtu.be/"),
+    "instagram": ("/reel", "/p/", "/tv/"),
+    "twitter": ("/status/",),
+    "facebook": ("/watch", "/videos/", "/reel", "/share/"),
+}
+
+
+def is_video_url(url: str) -> bool:
+    """A real video/post link on a supported platform (rejects bare-domain links)."""
+    plat = detect_platform(url)
+    if plat is None:
+        return False
+    low = url.lower()
+    return any(tok in low for tok in _VIDEO_MARKERS.get(plat, ()))
+
+
 def _demo() -> None:
     # Same post via different aliases / params / slashes -> same hash.
     variants = [
@@ -87,6 +107,13 @@ def _demo() -> None:
     assert url_is_platform("twitter", "https://x.com/nova")
     assert not url_is_platform("tiktok", "https://instagram.com/nova")
     assert not url_is_platform("instagram", "https://evil.com/phish")
+    # video-URL detection: real posts pass, bare domains / profiles fail
+    assert is_video_url("https://www.tiktok.com/@nova/video/123")
+    assert is_video_url("https://youtu.be/abc123")
+    assert is_video_url("https://instagram.com/reel/xyz")
+    assert not is_video_url("https://tiktok.com/")
+    assert not is_video_url("https://www.tiktok.com/@nova")  # profile, not a video
+    assert not is_video_url("https://evil.com/video/1")
     print("urls self-check: PASS")
 
 

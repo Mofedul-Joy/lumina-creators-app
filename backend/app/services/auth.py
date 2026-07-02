@@ -27,21 +27,35 @@ from app.models import Admin, Client, Creator, RefreshToken
 MIN_PASSWORD = 8
 CODE_TTL_MIN = 15
 RESEND_COOLDOWN_SEC = 60
+MAX_CODE_ATTEMPTS = 5
 _MODELS = {"creator": Creator, "admin": Admin, "client": Client}
 
 
 def _issue_email_code(db: Session, creator: Creator) -> str:
-    """Generate + store (hashed) a 6-digit code and email it. Returns the code."""
+    """Generate + store (hashed) a 6-digit code and email it. Returns the code.
+    In production a delivery failure is surfaced (503) so the user isn't left
+    with an un-received code; in dev the code is returned in the response instead."""
     code = f"{secrets.randbelow(1_000_000):06d}"
     creator.email_verification_code_hash = hash_token(code)
     creator.email_verification_expires_at = _now() + timedelta(minutes=CODE_TTL_MIN)
     creator.email_verification_sent_at = _now()
+    creator.email_verification_attempts = 0
     db.commit()
     try:
-        email_svc.send_verification_code(creator.email, code)
-    except Exception:  # noqa: BLE001 — don't fail signup on an SMTP hiccup; code is resendable
-        pass
+        sent = email_svc.send_verification_code(creator.email, code)
+    except Exception:  # noqa: BLE001
+        sent = False
+    if not sent and get_settings().is_production:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "We couldn't send your verification email right now — please try again shortly.",
+        )
     return code
+
+
+def _code_recently_sent(creator: Creator) -> bool:
+    last = creator.email_verification_sent_at
+    return bool(last and (_now() - last).total_seconds() < RESEND_COOLDOWN_SEC)
 
 
 def _dev_code(code: str) -> str | None:
@@ -95,26 +109,35 @@ def verify_email_code(db: Session, email: str, code: str) -> tuple[str, str]:
         raise bad
     if _now() > creator.email_verification_expires_at:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "This code has expired — request a new one")
+    # Brute-force lockout: after too many wrong guesses, kill the code (force a resend).
+    if creator.email_verification_attempts >= MAX_CODE_ATTEMPTS:
+        creator.email_verification_code_hash = None
+        creator.email_verification_expires_at = None
+        db.commit()
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Too many attempts — request a new code")
     if not hmac.compare_digest(hash_token(code.strip()), creator.email_verification_code_hash):
+        creator.email_verification_attempts += 1
+        db.commit()
         raise bad
     creator.email_verified = True
     creator.email_verification_code_hash = None
     creator.email_verification_expires_at = None
+    creator.email_verification_attempts = 0
     db.commit()
     return _issue(db, creator.id, "creator")
 
 
 def resend_email_code(db: Session, email: str) -> dict:
+    # Always return the same generic 200 so this can't be used to probe whether an
+    # email exists or is verified. Cooldown is enforced silently.
     email = _norm(email)
     creator = db.scalar(select(Creator).where(Creator.email == email))
-    if creator is None:
-        return {"status": "ok", "dev_code": None}  # don't reveal whether the email exists
-    if creator.email_verified:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "This email is already verified")
-    last = creator.email_verification_sent_at
-    if last and (_now() - last).total_seconds() < RESEND_COOLDOWN_SEC:
-        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Please wait a minute before requesting another code")
-    code = _issue_email_code(db, creator)
+    if creator is None or creator.email_verified or _code_recently_sent(creator):
+        return {"status": "ok", "dev_code": None}
+    try:
+        code = _issue_email_code(db, creator)
+    except HTTPException:
+        return {"status": "ok", "dev_code": None}
     return {"status": "ok", "dev_code": _dev_code(code)}
 
 
@@ -130,8 +153,13 @@ def creator_login(db: Session, email: str, password: str):
     if creator.status == "suspended":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "This account is suspended")
     if not creator.email_verified:
-        # Re-send a fresh code and route them to verification instead of logging in.
-        _issue_email_code(db, creator)
+        # Route to verification. Only (re)send a code if one wasn't just sent, so
+        # repeated logins can't email-bomb the user or churn a valid code.
+        if not _code_recently_sent(creator):
+            try:
+                _issue_email_code(db, creator)
+            except HTTPException:
+                pass  # verify page has a resend button
         return {"status": "email_not_verified", "email": email}
     access, refresh = _issue(db, creator.id, "creator")
     return {"status": "ok", "access_token": access, "refresh_token": refresh}

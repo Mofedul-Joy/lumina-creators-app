@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Text, func, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Integer, Text, func, text
 from sqlalchemy.dialects.postgresql import CITEXT, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -38,6 +38,7 @@ class Creator(TimestampMixin, Base):
     email_verification_code_hash: Mapped[Optional[str]] = mapped_column(Text)
     email_verification_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     email_verification_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    email_verification_attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
 
 
 class Admin(Base):

@@ -76,14 +76,13 @@ def add_social(db: Session, creator_id: uuid.UUID, data: dict) -> SocialAccount:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Handle is required")
     if data.get("follower_count", 0) < 0:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "follower_count cannot be negative")
-    # Verify the profile URL genuinely points at this platform (anti-phishing),
-    # or build the canonical one from the handle when they leave it blank.
-    profile_url = (data.get("profile_url") or "").strip()
-    if profile_url:
-        if not urls.url_is_platform(platform, profile_url):
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"That URL isn't a {platform} profile link")
-    else:
-        profile_url = urls.social_profile_url(platform, handle)
+    # If they pasted a URL, reject it when it isn't this platform (anti-phishing).
+    # Either way we STORE the canonical URL derived from the handle, so the stored
+    # link can never disagree with the handle.
+    submitted = (data.get("profile_url") or "").strip()
+    if submitted and not urls.url_is_platform(platform, submitted):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"That URL isn't a {platform} profile link")
+    profile_url = urls.social_profile_url(platform, handle)
     exists = db.scalar(select(SocialAccount).where(
         SocialAccount.creator_id == creator_id,
         SocialAccount.platform == platform,
@@ -124,10 +123,10 @@ def add_portfolio(db: Session, creator_id: uuid.UUID, data: dict) -> PortfolioIt
     video_url = (data.get("video_url") or "").strip()
     if not video_url:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "A video link is required")
-    if urls.detect_platform(video_url) is None:
+    if not urls.is_video_url(video_url):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            "Link must be a TikTok, Instagram, YouTube, X, or Facebook video URL",
+            "Link must be a TikTok, Instagram, YouTube, X, or Facebook video/post URL",
         )
     item = PortfolioItem(
         creator_id=creator_id, video_url=urls.canonicalize_url(video_url),
