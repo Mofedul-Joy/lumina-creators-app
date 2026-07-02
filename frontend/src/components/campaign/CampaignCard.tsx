@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Campaign } from "@/lib/campaigns";
+import { fmtMoney } from "@/lib/format";
 
 const MODE_LABEL: Record<Campaign["mode"], string> = {
   create_new: "Create new",
@@ -10,7 +11,7 @@ export function CampaignCard({ c }: { c: Campaign }) {
   return (
     <Link
       href={`/campaigns/${c.slug}`}
-      className="group flex flex-col rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition hover:border-[var(--color-brand)]"
+      className="card-lumina card-interactive group flex flex-col rounded-[var(--radius-card)] p-5"
     >
       <div className="mb-3 flex items-center justify-between">
         <span className="text-xs font-medium text-[var(--color-text-secondary)]">
@@ -21,13 +22,13 @@ export function CampaignCard({ c }: { c: Campaign }) {
         </span>
       </div>
 
-      <h3 className="text-lg font-semibold text-[var(--color-text)] group-hover:text-[var(--color-brand)]">
+      <h3 className="text-lg font-semibold text-[var(--color-text)] transition-colors group-hover:text-[var(--color-brand)]">
         {c.name}
       </h3>
 
       <div className="mt-4 flex items-baseline gap-2">
         <span className="tabular text-2xl font-semibold text-[var(--color-brand)]">
-          ${c.cpm_rate}
+          {fmtMoney(c.cpm_rate)}
         </span>
         <span className="text-sm text-[var(--color-text-muted)]">CPM / 1,000 views</span>
       </div>
@@ -45,7 +46,7 @@ export function CampaignCard({ c }: { c: Campaign }) {
 
       <div className="mt-5 flex items-center justify-between border-t border-[var(--color-border)] pt-4">
         <span className="tabular text-xs text-[var(--color-text-muted)]">
-          Budget ${c.budget.toLocaleString()}
+          Budget {fmtMoney(c.budget)}
         </span>
         <span className="text-sm font-medium text-[var(--color-brand)]">
           {c.joined ? "Joined ✓" : "Enter campaign →"}

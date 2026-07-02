@@ -210,9 +210,9 @@ export default function OnboardingPage() {
   return (
     <main className="mx-auto max-w-2xl px-6 py-10 space-y-6">
       <header>
-        <p className="text-sm font-medium text-[var(--color-brand)]">Lumina Creators</p>
-        <h1 className="text-3xl font-semibold text-[var(--color-text)]">Build your profile</h1>
-        <p className="mt-1 text-[var(--color-text-secondary)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Creator workspace</p>
+        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Build your profile</h1>
+        <p className="mt-2 text-[var(--color-text-secondary)]">
           Complete your profile to browse and enter campaigns.
         </p>
       </header>
