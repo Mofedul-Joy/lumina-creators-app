@@ -1,15 +1,30 @@
-# Render blueprint. Cron worker (scraper) gets added at milestone 8, not before.
+# Render blueprint for the Lumina Creators API.
+# The Postgres DB is created separately (lumina-creators-db). Set the secret
+# env vars (marked sync:false) in the Render dashboard, never in git.
 services:
   - type: web
     name: lumina-creators-api
     runtime: python
     region: oregon
-    buildCommand: pip install -r requirements.txt
+    plan: free
+    buildCommand: pip install -r requirements.txt && alembic upgrade head
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: ENVIRONMENT
+        value: production
       - key: DATABASE_URL
-        sync: false
+        sync: false          # External URL of lumina-creators-db
       - key: JWT_SECRET
-        sync: false
+        generateValue: true  # Render generates a strong random secret
       - key: CORS_ORIGINS
+        sync: false          # Your Vercel URL, e.g. https://lumina-creators.vercel.app
+      - key: API_PUBLIC_URL
+        sync: false          # This service's public URL
+      - key: R2_ENDPOINT
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
         sync: false
