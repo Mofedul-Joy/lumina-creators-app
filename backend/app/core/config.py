@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     api_public_url: str = "http://localhost:8000"
     local_storage_dir: str = ".tmp/storage"
 
+    # When true, browser uploads go THROUGH this API (which streams them to R2)
+    # instead of directly to R2. Avoids needing an R2 bucket CORS policy — the
+    # browser only ever talks to this API, which already allows the app origin.
+    upload_proxy: bool = False
+
     # --- CORS (comma-separated origins) ---
     cors_origins: str = "http://localhost:3000"
 

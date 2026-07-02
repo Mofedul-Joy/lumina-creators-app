@@ -21,6 +21,12 @@ def is_local_mode() -> bool:
     return not s.r2_configured and not s.is_production
 
 
+def is_proxy_mode() -> bool:
+    """Uploads stream through this API to R2 (browser never PUTs to R2 directly)."""
+    s = get_settings()
+    return s.r2_configured and s.upload_proxy
+
+
 def local_path(object_key: str) -> Path:
     root = Path(get_settings().local_storage_dir).resolve()
     p = (root / object_key).resolve()
@@ -53,10 +59,30 @@ def presign_put(object_key: str, content_type: str | None) -> str:
     settings = get_settings()
     if is_local_mode():
         return f"{settings.api_public_url}/uploads/local/{quote(object_key)}"
+    if is_proxy_mode():
+        return f"{settings.api_public_url}/uploads/r2/{quote(object_key)}"
     params = {"Bucket": settings.r2_bucket, "Key": object_key}
     if content_type:
         params["ContentType"] = content_type
     return _client().generate_presigned_url("put_object", Params=params, ExpiresIn=settings.upload_url_ttl_sec)
+
+
+def put_r2_fileobj(object_key: str, fileobj, content_type: str | None) -> None:
+    """Stream a file-like object into R2 (used by the upload proxy). boto3
+    upload_fileobj streams in parts, so large files never fully hit memory."""
+    settings = get_settings()
+    extra = {"ContentType": content_type} if content_type else None
+    _client().upload_fileobj(fileobj, settings.r2_bucket, object_key, ExtraArgs=extra)
+
+
+def get_r2_object(object_key: str):
+    """Return (streaming_body, content_type, content_length) or None if missing."""
+    settings = get_settings()
+    try:
+        obj = _client().get_object(Bucket=settings.r2_bucket, Key=object_key)
+    except Exception:
+        return None
+    return obj["Body"], obj.get("ContentType"), obj.get("ContentLength")
 
 
 def head_object(object_key: str) -> dict | None:
