@@ -78,7 +78,7 @@ def main() -> None:
         page.get_by_label("Password").fill("admin12345")
         try:
             page.get_by_role("button", name="Sign in").click()
-            page.wait_for_url("**/admin/creators", timeout=25000)
+            page.wait_for_url("**/admin/dashboard", timeout=25000)
         except Exception:
             page.screenshot(path=str(SHOTS / "10_admin_login_FAIL.png"))
             raise

@@ -40,7 +40,7 @@ const labelCls = "block text-sm font-medium text-[var(--color-text)]";
 const controlCls =
   "min-h-11 w-full rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-base text-[var(--color-text)] outline-none focus-visible:border-[var(--color-brand)] focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]";
 const cardCls =
-  "rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 space-y-4";
+  "card-grad rounded-[var(--radius-card)] p-5 space-y-4";
 
 type ProfileForm = {
   display_name: string;

@@ -68,7 +68,7 @@ def main() -> None:
         page.get_by_label("Email").fill("admin@lumina.dev")
         page.get_by_label("Password").fill("admin12345")
         page.get_by_role("button", name="Sign in").click()
-        page.wait_for_url("**/admin/creators")
+        page.wait_for_url("**/admin/dashboard")
 
         page.goto(f"{args.base}/admin/campaigns/new")
         page.get_by_label("Campaign name").fill(campaign_name)

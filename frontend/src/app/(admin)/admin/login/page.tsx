@@ -19,7 +19,7 @@ export default function AdminLoginPage() {
     mutationFn: () => adminLogin(email, password),
     onSuccess: (data) => {
       setAdminToken(data.access_token);
-      router.push("/admin/creators");
+      router.push("/admin/dashboard");
     },
     onError: (err) => setError((err as Error).message),
   });

@@ -44,7 +44,7 @@ export default function DashboardPage() {
 
   return (
     <main className="flex min-h-[100dvh] items-center justify-center px-4 py-10">
-      <section className="w-full max-w-[420px] rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+      <section className="w-full max-w-[420px] card-grad rounded-[var(--radius-card)] p-6">
         <p className="mb-2 text-sm font-medium text-[var(--color-brand)]">Lumina Creators</p>
         <h1 className="text-2xl font-semibold text-[var(--color-text)]">Browse campaigns</h1>
         <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">

@@ -41,6 +41,27 @@ export type AdminClient = { id: string; email: string; name: string | null; stat
 
 export const listAdminClients = () => apiFetch<AdminClient[]>("/api/admin/clients", auth());
 
+export type AdminStats = {
+  total_campaigns: number;
+  active_campaigns: number;
+  total_creators: number;
+  completed_creators: number;
+  total_submissions: number;
+  total_views: number;
+  total_clients: number;
+  total_budget: number;
+  recent_campaigns: {
+    id: string;
+    name: string;
+    status: string;
+    mode: "create_new" | "copy_paste";
+    cpm_rate: number;
+    budget: number;
+  }[];
+};
+
+export const getAdminStats = () => apiFetch<AdminStats>("/api/admin/stats", auth());
+
 export const listAdminCampaigns = (status?: string) =>
   apiFetch<AdminCampaign[]>(`/api/admin/campaigns${status ? `?status=${status}` : ""}`, auth());
 

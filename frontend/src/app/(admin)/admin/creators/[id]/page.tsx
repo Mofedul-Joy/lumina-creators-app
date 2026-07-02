@@ -8,7 +8,7 @@ import { getAdminToken } from "@/lib/auth";
 import { getCreatorDetail, isAuthError } from "@/lib/api";
 
 const cardCls =
-  "rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 space-y-4";
+  "card-grad rounded-[var(--radius-card)] p-5 space-y-4";
 
 function Row({ label, value }: { label: string; value: string | null }) {
   return (

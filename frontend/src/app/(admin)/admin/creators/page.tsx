@@ -130,7 +130,7 @@ export default function AdminCreatorsPage() {
       </header>
 
       {/* filters */}
-      <section className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 space-y-4">
+      <section className="card-grad rounded-[var(--radius-card)] p-5 space-y-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1 sm:col-span-2 lg:col-span-2">
             <label className={labelCls}>Search</label>
@@ -276,7 +276,7 @@ export default function AdminCreatorsPage() {
             <Link
               key={c.id}
               href={`/admin/creators/${c.id}`}
-              className="group rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition hover:border-[var(--color-brand)]"
+              className="group card-grad rounded-[var(--radius-card)] p-4 transition hover:border-[var(--color-brand)]"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">

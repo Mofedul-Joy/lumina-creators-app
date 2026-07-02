@@ -98,7 +98,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
             ) : null}
 
             {/* join / submit */}
-            <div className="mt-8 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+            <div className="mt-8 card-grad rounded-[var(--radius-card)] p-6">
               {!c.joined ? (
                 <div className="flex flex-col items-start gap-3">
                   <p className="text-[var(--color-text-secondary)]">Enter this campaign to start submitting your posts.</p>
@@ -146,7 +146,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
+    <div className="card-grad rounded-[var(--radius-btn)] px-3 py-2">
       <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">{label}</p>
       <p className="tabular text-lg font-semibold text-[var(--color-text)]">{value}</p>
     </div>
@@ -157,7 +157,7 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
   return (
     <div className="mt-6">
       <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">{title}</h2>
-      <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5">{children}</div>
+      <div className="card-grad rounded-[var(--radius-card)] p-5">{children}</div>
     </div>
   );
 }
