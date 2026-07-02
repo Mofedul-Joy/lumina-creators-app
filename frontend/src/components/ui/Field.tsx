@@ -5,9 +5,10 @@ import { useId, type InputHTMLAttributes } from "react";
 type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
   label: string;
   error?: string;
+  requiredMark?: boolean;
 };
 
-export function Field({ id, label, error, className = "", ...props }: FieldProps) {
+export function Field({ id, label, error, requiredMark, className = "", ...props }: FieldProps) {
   const fallbackId = useId();
   const inputId = id ?? fallbackId;
   const errorId = `${inputId}-error`;
@@ -19,6 +20,7 @@ export function Field({ id, label, error, className = "", ...props }: FieldProps
         className="block text-sm font-medium text-[var(--color-text)]"
       >
         {label}
+        {requiredMark ? <span className="ml-0.5 text-[var(--color-danger)]">*</span> : null}
       </label>
       <input
         id={inputId}

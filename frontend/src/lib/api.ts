@@ -54,7 +54,6 @@ export type Health = {
 export const GENDERS = [
   "male",
   "female",
-  "non_binary",
   "other",
   "prefer_not_to_say",
 ] as const;
@@ -101,6 +100,7 @@ export type ProfileOut = {
   country: string | null;
   city: string | null;
   avatar_object_id: string | null;
+  avatar_url: string | null;
   completed: boolean;
   missing: string[];
 };
@@ -127,8 +127,7 @@ export type SocialOut = {
 };
 
 export type PortfolioIn = {
-  storage_object_id: string;
-  thumbnail_url?: string;
+  video_url: string;
   brand_name?: string;
   caption?: string;
   platform?: Platform;
@@ -136,7 +135,7 @@ export type PortfolioIn = {
 
 export type PortfolioOut = {
   id: string;
-  storage_object_id: string;
+  video_url: string | null;
   thumbnail_url: string | null;
   brand_name: string | null;
   caption: string | null;

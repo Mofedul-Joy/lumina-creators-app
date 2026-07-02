@@ -47,6 +47,26 @@ def detect_platform(raw: str) -> str | None:
     return _PLATFORM_HOST.get(host)
 
 
+# Canonical profile-URL shape per platform ({h} = handle without a leading @).
+_PROFILE_URL = {
+    "instagram": "https://instagram.com/{h}",
+    "tiktok": "https://www.tiktok.com/@{h}",
+    "youtube": "https://youtube.com/@{h}",
+    "twitter": "https://x.com/{h}",
+    "facebook": "https://facebook.com/{h}",
+}
+
+
+def social_profile_url(platform: str, handle: str) -> str:
+    """Build the canonical profile URL from platform + handle."""
+    return _PROFILE_URL[platform].format(h=handle.lstrip("@").strip())
+
+
+def url_is_platform(platform: str, url: str) -> bool:
+    """True if `url` actually points at `platform` (not a random/phishing link)."""
+    return detect_platform(url) == platform
+
+
 def _demo() -> None:
     # Same post via different aliases / params / slashes -> same hash.
     variants = [
@@ -62,6 +82,11 @@ def _demo() -> None:
     assert detect_platform("https://youtu.be/xyz") == "youtube"
     assert detect_platform("https://x.com/a/status/1") == "twitter"
     assert detect_platform("https://example.com/x") is None
+    # social profile URL construction + platform match
+    assert social_profile_url("tiktok", "@nova") == "https://www.tiktok.com/@nova"
+    assert url_is_platform("twitter", "https://x.com/nova")
+    assert not url_is_platform("tiktok", "https://instagram.com/nova")
+    assert not url_is_platform("instagram", "https://evil.com/phish")
     print("urls self-check: PASS")
 
 

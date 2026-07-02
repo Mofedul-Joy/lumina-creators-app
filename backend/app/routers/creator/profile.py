@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_creator
 from app.db.session import get_db
-from app.models import Creator, CreatorProfile
+from app.integrations import storage
+from app.models import Creator, CreatorProfile, StorageObject
 from app.schemas.profile import (
     CompletionOut,
     PortfolioIn,
@@ -23,12 +24,20 @@ from app.services import profile as svc
 router = APIRouter(prefix="/profile", tags=["creator-profile"])
 
 
-def _profile_out(prof: CreatorProfile, complete: bool, missing: list[str]) -> ProfileOut:
+def _avatar_url(db: Session, prof: CreatorProfile) -> str | None:
+    if not prof.avatar_object_id:
+        return None
+    obj = db.get(StorageObject, prof.avatar_object_id)
+    return storage.object_public_url(obj.object_key) if obj else None
+
+
+def _profile_out(db: Session, prof: CreatorProfile, complete: bool, missing: list[str]) -> ProfileOut:
     return ProfileOut(
         display_name=prof.display_name, bio=prof.bio, date_of_birth=prof.date_of_birth,
         gender=prof.gender, ethnicity=prof.ethnicity, primary_language=prof.primary_language,
         languages=prof.languages or [], country=prof.country, city=prof.city,
         avatar_object_id=str(prof.avatar_object_id) if prof.avatar_object_id else None,
+        avatar_url=_avatar_url(db, prof),
         completed=complete, missing=missing,
     )
 
@@ -37,14 +46,14 @@ def _profile_out(prof: CreatorProfile, complete: bool, missing: list[str]) -> Pr
 def get_profile(current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
     prof = svc.get_or_create_profile(db, current.id)
     complete, missing = svc.recompute_completion(db, current.id)
-    return _profile_out(prof, complete, missing)
+    return _profile_out(db, prof, complete, missing)
 
 
 @router.put("", response_model=ProfileOut)
 def update_profile(body: ProfileIn, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
     prof = svc.update_profile(db, current.id, body.model_dump(exclude_unset=True))
     complete, missing = svc.recompute_completion(db, current.id)
-    return _profile_out(prof, complete, missing)
+    return _profile_out(db, prof, complete, missing)
 
 
 @router.get("/completion", response_model=CompletionOut)
@@ -76,7 +85,7 @@ def delete_social(social_id: uuid.UUID, current: Creator = Depends(get_current_c
 
 # ---- portfolio ----
 def _portfolio_out(p) -> PortfolioOut:
-    return PortfolioOut(id=str(p.id), storage_object_id=str(p.storage_object_id),
+    return PortfolioOut(id=str(p.id), video_url=p.video_url,
                         thumbnail_url=p.thumbnail_url, brand_name=p.brand_name,
                         caption=p.caption, platform=p.platform)
 

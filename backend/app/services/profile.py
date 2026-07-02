@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import _now
 from app.models import CreatorProfile, PortfolioItem, SocialAccount, StorageObject
+from app.services import urls
 
 
 def _require_owned_object(db: Session, creator_id: uuid.UUID, object_id, purpose: str) -> StorageObject:
@@ -67,20 +68,32 @@ def list_socials(db: Session, creator_id: uuid.UUID):
 
 
 def add_social(db: Session, creator_id: uuid.UUID, data: dict) -> SocialAccount:
-    if data["platform"] not in _PLATFORMS:
+    platform = data["platform"]
+    if platform not in _PLATFORMS:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid platform")
+    handle = (data.get("handle") or "").lstrip("@").strip()
+    if not handle:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Handle is required")
     if data.get("follower_count", 0) < 0:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "follower_count cannot be negative")
+    # Verify the profile URL genuinely points at this platform (anti-phishing),
+    # or build the canonical one from the handle when they leave it blank.
+    profile_url = (data.get("profile_url") or "").strip()
+    if profile_url:
+        if not urls.url_is_platform(platform, profile_url):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"That URL isn't a {platform} profile link")
+    else:
+        profile_url = urls.social_profile_url(platform, handle)
     exists = db.scalar(select(SocialAccount).where(
         SocialAccount.creator_id == creator_id,
-        SocialAccount.platform == data["platform"],
-        SocialAccount.handle == data["handle"],
+        SocialAccount.platform == platform,
+        SocialAccount.handle == handle,
     ))
     if exists:
         raise HTTPException(status.HTTP_409_CONFLICT, "This handle is already added")
     social = SocialAccount(
-        creator_id=creator_id, platform=data["platform"], handle=data["handle"],
-        profile_url=data.get("profile_url"), follower_count=data.get("follower_count", 0),
+        creator_id=creator_id, platform=platform, handle=handle,
+        profile_url=profile_url, follower_count=data.get("follower_count", 0),
     )
     db.add(social)
     db.commit()
@@ -106,11 +119,20 @@ def list_portfolio(db: Session, creator_id: uuid.UUID):
 def add_portfolio(db: Session, creator_id: uuid.UUID, data: dict) -> PortfolioItem:
     if data.get("platform") is not None and data["platform"] not in _PLATFORMS:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid platform")
-    obj = _require_owned_object(db, creator_id, data["storage_object_id"], "portfolio_video")
+    # Portfolio is now a LINK to the creator's best video, not an uploaded file —
+    # keeps the DB light and onboarding fast.
+    video_url = (data.get("video_url") or "").strip()
+    if not video_url:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "A video link is required")
+    if urls.detect_platform(video_url) is None:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Link must be a TikTok, Instagram, YouTube, X, or Facebook video URL",
+        )
     item = PortfolioItem(
-        creator_id=creator_id, storage_object_id=obj.id,
+        creator_id=creator_id, video_url=urls.canonicalize_url(video_url),
         thumbnail_url=data.get("thumbnail_url"), brand_name=data.get("brand_name"),
-        caption=data.get("caption"), platform=data.get("platform"),
+        caption=data.get("caption"), platform=data.get("platform") or urls.detect_platform(video_url),
     )
     db.add(item)
     db.commit()

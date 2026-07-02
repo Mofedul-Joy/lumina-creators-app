@@ -55,6 +55,22 @@ def make_object_key(purpose: str, creator_id, filename_hint: str = "") -> str:
     return f"{purpose}/{creator_id}/{uuid.uuid4().hex}{ext}"
 
 
+def object_public_url(object_key: str) -> str:
+    """A GET-able URL for a stored object (for avatars/thumbnails)."""
+    settings = get_settings()
+    if is_local_mode():
+        return f"{settings.api_public_url}/uploads/local/{quote(object_key)}"
+    if is_proxy_mode():
+        return f"{settings.api_public_url}/uploads/r2/{quote(object_key)}"
+    if settings.r2_public_base:
+        return settings.r2_public_base.rstrip("/") + "/" + quote(object_key)
+    # Direct R2 with no public bucket base: presign a short-lived GET.
+    return _client().generate_presigned_url(
+        "get_object", Params={"Bucket": settings.r2_bucket, "Key": object_key},
+        ExpiresIn=settings.upload_url_ttl_sec,
+    )
+
+
 def presign_put(object_key: str, content_type: str | None) -> str:
     settings = get_settings()
     if is_local_mode():

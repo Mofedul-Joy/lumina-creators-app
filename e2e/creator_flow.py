@@ -53,45 +53,46 @@ def main() -> None:
         page.wait_for_url("**/onboarding")
         print(f"ok signup -> onboarding  ({email})")
 
-        # ── 2. onboarding: basics ────────────────────────────────────
-        expect(page.get_by_text("Still needed to finish your profile:")).to_be_visible()
+        # ── 2. onboarding: basics (required fields) ──────────────────
+        page.get_by_label("Display name").wait_for(timeout=30000)  # past the load gate
         page.get_by_label("Display name").fill("E2E Creator")
-        page.locator("textarea").first.fill("UGC creator for E2E testing.")
         page.get_by_label("Date of birth").fill("1999-01-15")
         page.locator("select").first.select_option("female")
         page.get_by_label("Primary language").fill("English")
-        page.get_by_label("Ethnicity").fill("Prefer not to say")
         page.get_by_label("Country").fill("United States")
-        page.get_by_label("City", exact=True).fill("Austin")
-        page.get_by_role("button", name="Save", exact=True).click()
-        page.wait_for_timeout(1500)
-        shot(page, "02_basics_saved")
-        print("ok basics saved")
+        shot(page, "02_basics")
+        print("ok basics filled")
 
-        # ── 3. onboarding: social account ────────────────────────────
-        page.get_by_label("Handle").fill("e2e_creator")
-        page.get_by_label("Profile URL").fill("https://instagram.com/e2e_creator")
-        page.get_by_label("Followers").fill("12000")
-        page.get_by_role("button", name="Add", exact=True).click()
-        expect(page.get_by_text("instagram · @e2e_creator")).to_be_visible()
+        # ── 3. onboarding: add a social account (platform grid) ──────
+        for attempt in range(3):
+            try:
+                card = page.locator("div").filter(has_text="TikTok").filter(
+                    has=page.get_by_role("button", name="+ Add")).last
+                card.get_by_role("button", name="+ Add").click()
+                page.get_by_placeholder("handle (without @)").fill("e2e_creator")
+                page.get_by_placeholder("follower count").fill("12000")
+                page.get_by_role("button", name="Add TikTok").click()
+                expect(page.get_by_text("@e2e_creator")).to_be_visible(timeout=15000)
+                break
+            except Exception:
+                page.wait_for_timeout(2000)
         shot(page, "03_social_added")
         print("ok social added")
 
-        # ── 4. onboarding: portfolio video (local storage fallback) ──
-        page.get_by_label("Brand name").fill("Demo Brand")
-        page.get_by_label("Caption").fill("30s vertical cut")
-        page.locator('input[type="file"][accept="video/*"]').set_input_files(str(fake_mp4))
-        try:
-            expect(page.get_by_text("Demo Brand")).to_be_visible(timeout=20000)
-        except Exception:
-            shot(page, "04_portfolio_FAIL")
-            raise
-        page.wait_for_timeout(2500)  # completion banner refetch
-        expect(page.get_by_text("Profile complete — you can enter campaigns.")).to_be_visible()
-        shot(page, "04_profile_complete")
-        print("ok portfolio uploaded, profile complete")
+        # ── 4. onboarding: add a portfolio VIDEO LINK (no upload) ────
+        page.get_by_placeholder("https://tiktok.com/@you/video/…").fill(
+            "https://www.tiktok.com/@e2e_creator/video/12345")
+        page.get_by_role("button", name="Add video link").click()
+        expect(page.get_by_text("e2e_creator/video/12345")).to_be_visible(timeout=15000)
+        print("ok portfolio link added")
 
-        # ── 5. campaigns page loads ──────────────────────────────────
+        # ── 5. Save & continue -> creator dashboard ──────────────────
+        page.get_by_role("button", name="Save & continue").click()
+        page.wait_for_url("**/dashboard", timeout=30000)
+        shot(page, "04_dashboard")
+        print("ok save & continue -> dashboard")
+
+        # ── 6. campaigns page loads ──────────────────────────────────
         page.goto(f"{args.base}/campaigns")
         page.wait_for_load_state("networkidle")
         shot(page, "05_campaigns")

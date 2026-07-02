@@ -29,6 +29,7 @@ class ProfileOut(BaseModel):
     country: Optional[str] = None
     city: Optional[str] = None
     avatar_object_id: Optional[str] = None
+    avatar_url: Optional[str] = None
     completed: bool = False
     missing: List[str] = []
 
@@ -50,8 +51,7 @@ class SocialOut(BaseModel):
 
 
 class PortfolioIn(BaseModel):
-    storage_object_id: str
-    thumbnail_url: Optional[str] = None
+    video_url: str
     brand_name: Optional[str] = None
     caption: Optional[str] = None
     platform: Optional[str] = None
@@ -59,7 +59,7 @@ class PortfolioIn(BaseModel):
 
 class PortfolioOut(BaseModel):
     id: str
-    storage_object_id: str
+    video_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
     brand_name: Optional[str] = None
     caption: Optional[str] = None

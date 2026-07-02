@@ -128,9 +128,10 @@ class PortfolioItem(Base):
     creator_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("creators.id", ondelete="CASCADE"), nullable=False
     )
-    storage_object_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("storage_objects.id"), nullable=False
+    storage_object_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("storage_objects.id")
     )
+    video_url: Mapped[Optional[str]] = mapped_column(Text)
     thumbnail_url: Mapped[Optional[str]] = mapped_column(Text)
     brand_name: Mapped[Optional[str]] = mapped_column(Text)
     caption: Mapped[Optional[str]] = mapped_column(Text)
