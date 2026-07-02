@@ -73,18 +73,26 @@ def main() -> None:
         page.set_default_timeout(15000)
 
         # ── 1. admin login ───────────────────────────────────────────
-        page.goto(f"{args.base}/admin/login")
+        page.goto(f"{args.base}/admin/login", wait_until="networkidle")
         page.get_by_label("Email").fill("admin@lumina.dev")
         page.get_by_label("Password").fill("admin12345")
-        page.get_by_role("button", name="Sign in").click()
-        page.wait_for_url("**/admin/creators")
+        try:
+            page.get_by_role("button", name="Sign in").click()
+            page.wait_for_url("**/admin/creators", timeout=25000)
+        except Exception:
+            page.screenshot(path=str(SHOTS / "10_admin_login_FAIL.png"))
+            raise
         page.wait_for_load_state("networkidle")
         page.screenshot(path=str(SHOTS / "10_admin_home.png"))
         print("ok admin login")
 
         # ── 2. creators database shows our creators ──────────────────
         page.goto(f"{args.base}/admin/creators")
-        expect(page.get_by_text("Join Tester").first).to_be_visible(timeout=10000)
+        try:
+            expect(page.get_by_text("Join Tester").first).to_be_visible(timeout=25000)
+        except Exception:
+            page.screenshot(path=str(SHOTS / "11_admin_creators_FAIL.png"))
+            raise
         page.screenshot(path=str(SHOTS / "11_admin_creators.png"))
         print("ok creators database lists the new creator")
 

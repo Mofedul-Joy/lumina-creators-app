@@ -9,6 +9,7 @@ import { getAdminToken } from "@/lib/auth";
 import {
   GENDERS,
   PLATFORMS,
+  isAuthError,
   listCreators,
   type CreatorFilters,
   type Gender,
@@ -91,8 +92,8 @@ export default function AdminCreatorsPage() {
   });
 
   useEffect(() => {
-    if (creatorsQ.isError) router.replace("/admin/login");
-  }, [creatorsQ.isError, router]);
+    if (creatorsQ.isError && isAuthError(creatorsQ.error)) router.replace("/admin/login");
+  }, [creatorsQ.isError, creatorsQ.error, router]);
 
   function applyFilters() {
     setOffset(0);

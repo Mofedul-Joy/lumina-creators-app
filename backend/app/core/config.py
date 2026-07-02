@@ -42,6 +42,35 @@ class Settings(BaseSettings):
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
+    @property
+    def is_production(self) -> bool:
+        return self.environment.lower() not in ("development", "dev", "test", "local")
+
+    @property
+    def r2_configured(self) -> bool:
+        return bool(self.r2_endpoint and self.r2_access_key_id and self.r2_secret_access_key)
+
+    _INSECURE_SECRETS = {"", "dev-insecure-change-me", "change-me", "secret"}
+
+    def validate_for_runtime(self) -> None:
+        """Fail fast on misconfiguration that is dangerous in production.
+
+        Called once at app startup. In dev these are warnings-by-omission; in
+        prod they are hard errors so we never boot with a forgeable JWT secret
+        or an accidental ephemeral-disk upload store.
+        """
+        if not self.is_production:
+            return
+        problems: list[str] = []
+        if self.jwt_secret in self._INSECURE_SECRETS or len(self.jwt_secret) < 32:
+            problems.append("JWT_SECRET must be set to a strong random value (>=32 chars) in production")
+        if not self.database_url:
+            problems.append("DATABASE_URL must be set in production")
+        if not self.r2_configured:
+            problems.append("R2 storage must be configured in production (local-disk fallback is dev-only)")
+        if problems:
+            raise RuntimeError("Invalid production configuration:\n  - " + "\n  - ".join(problems))
+
 
 @lru_cache
 def get_settings() -> Settings:

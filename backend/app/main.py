@@ -20,6 +20,7 @@ from app.routers.public.uploads_local import router as uploads_local_router
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    settings.validate_for_runtime()  # hard-fail on unsafe prod config (JWT secret, DB, storage)
     app = FastAPI(title=settings.app_name, version=settings.version)
 
     app.add_middleware(

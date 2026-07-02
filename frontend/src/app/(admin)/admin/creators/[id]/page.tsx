@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { getAdminToken } from "@/lib/auth";
-import { getCreatorDetail } from "@/lib/api";
+import { getCreatorDetail, isAuthError } from "@/lib/api";
 
 const cardCls =
   "rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 space-y-4";
@@ -43,8 +43,8 @@ export default function AdminCreatorDetailPage() {
   });
 
   useEffect(() => {
-    if (detailQ.isError) router.replace("/admin/login");
-  }, [detailQ.isError, router]);
+    if (detailQ.isError && isAuthError(detailQ.error)) router.replace("/admin/login");
+  }, [detailQ.isError, detailQ.error, router]);
 
   if (!ready || !token || detailQ.isLoading)
     return (

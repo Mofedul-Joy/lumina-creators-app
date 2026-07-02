@@ -14,8 +14,11 @@ from app.core.config import get_settings
 
 
 def is_local_mode() -> bool:
+    """Local-disk fallback is DEV-ONLY. In production, missing R2 config is a
+    hard startup failure (see Settings.validate_for_runtime), never a silent
+    fallback to ephemeral disk."""
     s = get_settings()
-    return not (s.r2_endpoint and s.r2_access_key_id and s.r2_secret_access_key)
+    return not s.r2_configured and not s.is_production
 
 
 def local_path(object_key: str) -> Path:

@@ -2,7 +2,7 @@
 
 A closed, service-based **UGC creator platform** for Lumina — the creator-side counterpart to Lumina Clippers. Creators build a profile, browse brand campaigns, submit posts, and get paid per 1,000 views. Lumina staff manage a filterable creator database and build campaigns. Brands get a read-only dashboard of their campaign stats.
 
-> Status: **work in progress.** Backend API and core frontend screens are built; end-to-end run pending a hosted Postgres.
+> Status: **feature-complete locally, verified end-to-end.** All three realms (creator, admin, client) work against a hosted Postgres, covered by 4 Playwright E2E suites. Cloud deployment (Vercel + Render) is the remaining step.
 
 ---
 
@@ -77,6 +77,28 @@ npm install
 cp .env.local.example .env.local   # NEXT_PUBLIC_API_URL=http://localhost:8000
 npm run dev                        # http://localhost:3000
 ```
+
+**Dev accounts + demo data**
+```bash
+cd backend
+.venv/bin/python scripts/seed_dev.py   # admin@lumina.dev / client@lumina.dev (dev passwords printed)
+```
+Creators self-serve via `/signup`. Uploads work locally with no R2 account — when
+R2 env vars are unset the API stores files on local disk (dev-only fallback).
+
+**End-to-end tests** (Playwright, servers must be running)
+```bash
+python e2e/creator_flow.py          # signup → onboarding → profile complete
+python e2e/admin_and_join_flow.py   # admin campaign → creator joins + submits
+python e2e/client_flow.py           # client-linked campaign → brand dashboard
+python e2e/edge_cases.py            # error states & guards
+```
+
+## Deployment (planned)
+
+- **Frontend → Vercel**: root `frontend/`, env `NEXT_PUBLIC_API_URL=<render api url>`.
+- **Backend → Render**: `backend/render.yaml` blueprint; env `DATABASE_URL`, `JWT_SECRET` (long random), `CORS_ORIGINS=<vercel url>`, plus R2 credentials for real uploads.
+- **Database**: Render Postgres (`alembic upgrade head` once against it).
 
 ## Docs
 

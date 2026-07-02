@@ -26,6 +26,14 @@ CLIENT_PASSWORD = "client12345"
 
 
 def main() -> None:
+    # Guard: never reset known-weak dev passwords against a production database.
+    from app.core.config import get_settings
+
+    if get_settings().is_production and "--force-dev-seed" not in sys.argv:
+        raise SystemExit(
+            "Refusing to seed dev accounts: ENVIRONMENT is not development. "
+            "Pass --force-dev-seed to override (do NOT do this on a real database)."
+        )
     db = Session(get_engine())
     try:
         admin = db.execute(select(Admin).where(Admin.email == ADMIN_EMAIL)).scalar_one_or_none()

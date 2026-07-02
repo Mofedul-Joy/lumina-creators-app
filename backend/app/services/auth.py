@@ -5,7 +5,7 @@ import uuid
 
 import jwt
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.core.security import (
@@ -64,6 +64,8 @@ def creator_login(db: Session, email: str, password: str):
         return {"status": "password_not_set", "email": email}
     if not verify_password(password, creator.password_hash):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password")
+    if creator.status == "suspended":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "This account is suspended")
     access, refresh = _issue(db, creator.id, "creator")
     return {"status": "ok", "access_token": access, "refresh_token": refresh}
 
@@ -92,6 +94,8 @@ def _password_login(db: Session, model, aud: str, email: str, password: str) -> 
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password")
     if getattr(obj, "is_active", True) is False:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Account disabled")
+    if getattr(obj, "status", "active") == "suspended":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "This account is suspended")
     return _issue(db, obj.id, aud)
 
 
@@ -113,13 +117,20 @@ def rotate_refresh(db: Session, token: str, aud: str) -> tuple[str, str]:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Wrong token type")
     jti = uuid.UUID(payload["jti"])
     subject_id = uuid.UUID(payload["sub"])
-    row = db.scalar(select(RefreshToken).where(RefreshToken.jti == jti))
-    if row is None or row.revoked_at is not None:
-        # Reuse of an unknown/already-rotated token -> revoke the whole family.
+    from app.core.security import _now  # local import to reuse the tz-aware clock
+
+    # Atomically claim the token: only ONE concurrent refresh can flip
+    # revoked_at from NULL, so a race can't mint two token families.
+    result = db.execute(
+        update(RefreshToken)
+        .where(RefreshToken.jti == jti, RefreshToken.revoked_at.is_(None))
+        .values(revoked_at=_now())
+    )
+    if result.rowcount == 0:
+        # Unknown jti or already-rotated token -> reuse. Revoke the whole family.
+        db.commit()
         _revoke_family(db, subject_id, aud)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Refresh token reuse detected")
-    from app.core.security import _now  # local import to reuse the tz-aware clock
-    row.revoked_at = _now()
     db.commit()
     return _issue(db, subject_id, aud)
 

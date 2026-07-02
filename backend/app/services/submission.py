@@ -5,6 +5,7 @@ import uuid
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models import CampaignParticipation, ScrapeJob, Submission
@@ -43,7 +44,13 @@ def create_submission(db: Session, creator_id: uuid.UUID, campaign_slug: str, po
     db.add(sub)
     db.flush()  # get sub.id before creating its job
     db.add(ScrapeJob(submission_id=sub.id))  # status 'queued', next_run_at now() by default
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Concurrent submit of the same post won the unique (campaign_id, url_hash)
+        # race between the pre-check above and this commit.
+        db.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, "This post was already submitted to this campaign")
     db.refresh(sub)
     return sub
 

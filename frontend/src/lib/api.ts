@@ -1,6 +1,21 @@
 // Typed API client — the contract with the FastAPI backend. Keep in lockstep with Pydantic schemas.
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+/** True when an error means "not authenticated / not authorized" (401/403),
+ * as opposed to a network outage or 5xx. Used to decide whether to log out. */
+export function isAuthError(err: unknown): boolean {
+  return err instanceof ApiError && (err.status === 401 || err.status === 403);
+}
+
 export async function apiFetch<T>(
   path: string,
   opts: { method?: string; token?: string; body?: string } = {},
@@ -22,7 +37,7 @@ export async function apiFetch<T>(
       : typeof detail === "string"
         ? detail
         : `HTTP ${res.status}`;
-    throw new Error(message);
+    throw new ApiError(message, res.status);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;

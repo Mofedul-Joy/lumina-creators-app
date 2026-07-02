@@ -9,7 +9,24 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.security import _now
-from app.models import CreatorProfile, PortfolioItem, SocialAccount
+from app.models import CreatorProfile, PortfolioItem, SocialAccount, StorageObject
+
+
+def _require_owned_object(db: Session, creator_id: uuid.UUID, object_id, purpose: str) -> StorageObject:
+    """Guard against IDOR: a storage object may only be attached by its owner,
+    must be finalized, and must match the expected purpose."""
+    try:
+        oid = object_id if isinstance(object_id, uuid.UUID) else uuid.UUID(str(object_id))
+    except (ValueError, TypeError):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid storage object id")
+    obj = db.get(StorageObject, oid)
+    if obj is None or obj.owner_creator_id != creator_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Upload not found")
+    if obj.purpose != purpose:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Upload has the wrong purpose")
+    if obj.status != "finalized":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Upload is not finalized yet")
+    return obj
 
 _PLATFORMS = {"instagram", "tiktok", "youtube", "twitter", "facebook"}
 _GENDERS = {"male", "female", "non_binary", "other", "prefer_not_to_say"}
@@ -31,6 +48,8 @@ def update_profile(db: Session, creator_id: uuid.UUID, data: dict) -> CreatorPro
     prof = get_or_create_profile(db, creator_id)
     if data.get("gender") is not None and data["gender"] not in _GENDERS:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid gender")
+    if data.get("avatar_object_id") is not None:
+        _require_owned_object(db, creator_id, data["avatar_object_id"], "avatar")
     for field in ("display_name", "bio", "date_of_birth", "gender", "ethnicity",
                   "primary_language", "country", "city", "avatar_object_id"):
         if field in data and data[field] is not None:
@@ -87,8 +106,9 @@ def list_portfolio(db: Session, creator_id: uuid.UUID):
 def add_portfolio(db: Session, creator_id: uuid.UUID, data: dict) -> PortfolioItem:
     if data.get("platform") is not None and data["platform"] not in _PLATFORMS:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid platform")
+    obj = _require_owned_object(db, creator_id, data["storage_object_id"], "portfolio_video")
     item = PortfolioItem(
-        creator_id=creator_id, storage_object_id=uuid.UUID(data["storage_object_id"]),
+        creator_id=creator_id, storage_object_id=obj.id,
         thumbnail_url=data.get("thumbnail_url"), brand_name=data.get("brand_name"),
         caption=data.get("caption"), platform=data.get("platform"),
     )

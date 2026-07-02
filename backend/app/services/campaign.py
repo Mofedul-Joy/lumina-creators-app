@@ -77,6 +77,12 @@ def update_campaign(db: Session, campaign_id: uuid.UUID, data: dict) -> Campaign
     new_brief = data.get("brief_script", c.brief_script)
     new_drive = data.get("content_drive_url", c.content_drive_url)
     _check_mode_content(new_mode, new_brief, new_drive)
+    # Revalidate money invariants before they reach the DB CHECK constraints
+    # (otherwise a bad value would surface as a generic 500).
+    if data.get("cpm_rate") is not None and data["cpm_rate"] <= 0:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "cpm_rate must be positive")
+    if data.get("budget") is not None and data["budget"] <= 0:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "budget must be positive")
     for field, value in data.items():
         if value is not None and field != "client_id":
             setattr(c, field, value)

@@ -52,10 +52,24 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
     stmt = stmt.order_by(Creator.created_at.desc()).limit(min(limit, 200)).offset(offset)
 
     creators = db.scalars(stmt).all()
+    ids = [c.id for c in creators]
+    if not ids:
+        return []
+
+    # Batch profile + socials in 2 queries (not 2*N) — the list is served from a
+    # remote DB, so N+1 here made the admin dashboard multi-second slow.
+    profiles = {
+        p.creator_id: p
+        for p in db.scalars(select(CreatorProfile).where(CreatorProfile.creator_id.in_(ids))).all()
+    }
+    socials_by_creator: dict[uuid.UUID, list[SocialAccount]] = {cid: [] for cid in ids}
+    for s in db.scalars(select(SocialAccount).where(SocialAccount.creator_id.in_(ids))).all():
+        socials_by_creator[s.creator_id].append(s)
+
     out = []
     for c in creators:
-        prof = db.scalar(select(CreatorProfile).where(CreatorProfile.creator_id == c.id))
-        socials = db.scalars(select(SocialAccount).where(SocialAccount.creator_id == c.id)).all()
+        prof = profiles.get(c.id)
+        socials = socials_by_creator.get(c.id, [])
         out.append({
             "id": str(c.id), "email": c.email,
             "display_name": prof.display_name if prof else None,
