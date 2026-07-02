@@ -49,6 +49,11 @@ export default function CreatorLoginPage() {
         setStep("set-password");
         return;
       }
+      if (data.status === "email_not_verified") {
+        // A fresh code was sent — go enter it.
+        router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+        return;
+      }
       finish(data.access_token);
     },
     onError: (err) => setError((err as Error).message),

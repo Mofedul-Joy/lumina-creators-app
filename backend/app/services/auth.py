@@ -1,14 +1,19 @@
 """Auth logic for all three realms. Routers stay thin; this owns the rules."""
 from __future__ import annotations
 
+import hmac
+import secrets
 import uuid
+from datetime import timedelta
 
 import jwt
 from fastapi import HTTPException, status
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.security import (
+    _now,
     create_access_token,
     create_refresh_token,
     decode_token,
@@ -16,10 +21,32 @@ from app.core.security import (
     hash_token,
     verify_password,
 )
+from app.integrations import email as email_svc
 from app.models import Admin, Client, Creator, RefreshToken
 
 MIN_PASSWORD = 8
+CODE_TTL_MIN = 15
+RESEND_COOLDOWN_SEC = 60
 _MODELS = {"creator": Creator, "admin": Admin, "client": Client}
+
+
+def _issue_email_code(db: Session, creator: Creator) -> str:
+    """Generate + store (hashed) a 6-digit code and email it. Returns the code."""
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    creator.email_verification_code_hash = hash_token(code)
+    creator.email_verification_expires_at = _now() + timedelta(minutes=CODE_TTL_MIN)
+    creator.email_verification_sent_at = _now()
+    db.commit()
+    try:
+        email_svc.send_verification_code(creator.email, code)
+    except Exception:  # noqa: BLE001 — don't fail signup on an SMTP hiccup; code is resendable
+        pass
+    return code
+
+
+def _dev_code(code: str) -> str | None:
+    """Expose the code in the API response only outside production (local/E2E)."""
+    return None if get_settings().is_production else code
 
 
 def _norm(email: str) -> str:
@@ -43,16 +70,52 @@ def _require_strong(password: str) -> None:
 
 
 # ---- creator ----
-def creator_signup(db: Session, email: str, password: str) -> tuple[str, str]:
+def creator_signup(db: Session, email: str, password: str) -> dict:
+    """Create the account UNVERIFIED and email a code. No token until verified."""
     email = _norm(email)
     _require_strong(password)
     if db.scalar(select(Creator).where(Creator.email == email)):
         raise HTTPException(status.HTTP_409_CONFLICT, "An account with this email already exists")
-    creator = Creator(email=email, password_hash=hash_password(password), status="active", signup_source="self")
+    creator = Creator(email=email, password_hash=hash_password(password), status="active",
+                      signup_source="self", email_verified=False)
     db.add(creator)
     db.commit()
     db.refresh(creator)
+    code = _issue_email_code(db, creator)
+    return {"status": "verification_sent", "email": email, "dev_code": _dev_code(code)}
+
+
+def verify_email_code(db: Session, email: str, code: str) -> tuple[str, str]:
+    email = _norm(email)
+    creator = db.scalar(select(Creator).where(Creator.email == email))
+    bad = HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid or expired code")
+    if creator is None or creator.email_verified:
+        raise bad
+    if not creator.email_verification_code_hash or creator.email_verification_expires_at is None:
+        raise bad
+    if _now() > creator.email_verification_expires_at:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "This code has expired — request a new one")
+    if not hmac.compare_digest(hash_token(code.strip()), creator.email_verification_code_hash):
+        raise bad
+    creator.email_verified = True
+    creator.email_verification_code_hash = None
+    creator.email_verification_expires_at = None
+    db.commit()
     return _issue(db, creator.id, "creator")
+
+
+def resend_email_code(db: Session, email: str) -> dict:
+    email = _norm(email)
+    creator = db.scalar(select(Creator).where(Creator.email == email))
+    if creator is None:
+        return {"status": "ok", "dev_code": None}  # don't reveal whether the email exists
+    if creator.email_verified:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "This email is already verified")
+    last = creator.email_verification_sent_at
+    if last and (_now() - last).total_seconds() < RESEND_COOLDOWN_SEC:
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Please wait a minute before requesting another code")
+    code = _issue_email_code(db, creator)
+    return {"status": "ok", "dev_code": _dev_code(code)}
 
 
 def creator_login(db: Session, email: str, password: str):
@@ -66,6 +129,10 @@ def creator_login(db: Session, email: str, password: str):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password")
     if creator.status == "suspended":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "This account is suspended")
+    if not creator.email_verified:
+        # Re-send a fresh code and route them to verification instead of logging in.
+        _issue_email_code(db, creator)
+        return {"status": "email_not_verified", "email": email}
     access, refresh = _issue(db, creator.id, "creator")
     return {"status": "ok", "access_token": access, "refresh_token": refresh}
 

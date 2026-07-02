@@ -43,6 +43,16 @@ def main() -> None:
         page.on("console", lambda m: m.type in ("error", "warning") and print(f"[console.{m.type}] {m.text}"))
         page.on("pageerror", lambda e: print(f"[pageerror] {e}"))
 
+        # capture the dev verification code from the signup response
+        dev_code = {}
+        def _grab(resp):
+            if resp.url.endswith("/api/creator/auth/signup"):
+                try:
+                    dev_code["code"] = resp.json().get("dev_code")
+                except Exception:
+                    pass
+        page.on("response", _grab)
+
         # ── 1. signup ────────────────────────────────────────────────
         page.goto(f"{args.base}/signup")
         page.get_by_label("Display name").fill("E2E Creator")
@@ -50,8 +60,14 @@ def main() -> None:
         page.get_by_label("Password").fill(password)
         shot(page, "01_signup_filled")
         page.get_by_role("button", name="Create account").click()
+        page.wait_for_url("**/verify-email**")
+        print(f"ok signup -> verify-email  ({email})")
+
+        # ── 1b. email verification ───────────────────────────────────
+        page.get_by_label("Verification code").fill(str(dev_code.get("code")))
+        page.get_by_role("button", name="Verify & continue").click()
         page.wait_for_url("**/onboarding")
-        print(f"ok signup -> onboarding  ({email})")
+        print("ok verified -> onboarding")
 
         # ── 2. onboarding: basics (required fields) ──────────────────
         page.get_by_label("Display name").wait_for(timeout=30000)  # past the load gate

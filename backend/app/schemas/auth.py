@@ -19,6 +19,26 @@ class SetPasswordIn(BaseModel):
     password: str
 
 
+class SignupOut(BaseModel):
+    status: str = "verification_sent"
+    email: str
+    dev_code: Optional[str] = None  # present only outside production (local/E2E)
+
+
+class VerifyEmailIn(BaseModel):
+    email: str
+    code: str
+
+
+class ResendCodeIn(BaseModel):
+    email: str
+
+
+class ResendOut(BaseModel):
+    status: str = "ok"
+    dev_code: Optional[str] = None
+
+
 class RefreshIn(BaseModel):
     refresh_token: str
 

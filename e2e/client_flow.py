@@ -34,17 +34,16 @@ def api(path: str, body: dict | None = None, token: str | None = None, method: s
 
 def creator_submit_to(slug: str, stamp: int) -> None:
     """Provision a complete creator and submit one post to the campaign (API)."""
-    tok = api("/api/creator/auth/signup", {"email": f"e2e-client+{stamp}@lumina.dev", "password": "E2ePass12345!", "display_name": "Client Flow Creator"})["access_token"]
+    em = f"e2e-client+{stamp}@lumina.dev"
+    su = api("/api/creator/auth/signup", {"email": em, "password": "E2ePass12345!", "display_name": "Client Flow Creator"})
+    tok = api("/api/creator/auth/verify-email", {"email": em, "code": su["dev_code"]})["access_token"]
     api("/api/creator/profile", {
         "display_name": "Client Flow Creator", "bio": "b", "date_of_birth": "1997-07-07",
         "gender": "female", "ethnicity": "n/a", "primary_language": "English",
         "languages": ["English"], "country": "US", "city": "LA",
     }, tok, method="PUT")
     api("/api/creator/profile/socials", {"platform": "tiktok", "handle": f"cf{stamp}", "follower_count": 9000}, tok)
-    pres = api("/api/creator/uploads/presign", {"purpose": "portfolio_video", "content_type": "video/mp4", "filename": "s.mp4", "size_bytes": 64}, tok)
-    urllib.request.urlopen(urllib.request.Request(pres["upload_url"], data=b"\x00" * 64, method="PUT"))
-    fin = api(f"/api/creator/uploads/{pres['object_id']}/finalize", {}, tok)
-    api("/api/creator/profile/portfolio", {"storage_object_id": fin["id"]}, tok)
+    api("/api/creator/profile/portfolio", {"video_url": f"https://www.tiktok.com/@cf{stamp}/video/2"}, tok)
     api(f"/api/creator/campaigns/{slug}/join", {}, tok)
     api("/api/creator/submissions", {"campaign_slug": slug, "post_url": f"https://www.tiktok.com/@cf{stamp}/video/{stamp}"}, tok)
 

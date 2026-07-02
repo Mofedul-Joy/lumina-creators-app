@@ -13,19 +13,33 @@ from app.schemas.auth import (
     LoginIn,
     MeOut,
     RefreshIn,
+    ResendCodeIn,
+    ResendOut,
     SetPasswordIn,
     SignupIn,
+    SignupOut,
     TokenOut,
+    VerifyEmailIn,
 )
 from app.services import auth as svc
 
 router = APIRouter(prefix="/auth", tags=["creator-auth"])
 
 
-@router.post("/signup", response_model=TokenOut)
+@router.post("/signup", response_model=SignupOut)
 def signup(body: SignupIn, db: Session = Depends(get_db)):
-    access, refresh = svc.creator_signup(db, body.email, body.password)
+    return SignupOut(**svc.creator_signup(db, body.email, body.password))
+
+
+@router.post("/verify-email", response_model=TokenOut)
+def verify_email(body: VerifyEmailIn, db: Session = Depends(get_db)):
+    access, refresh = svc.verify_email_code(db, body.email, body.code)
     return TokenOut(access_token=access, refresh_token=refresh)
+
+
+@router.post("/resend-code", response_model=ResendOut)
+def resend_code(body: ResendCodeIn, db: Session = Depends(get_db)):
+    return ResendOut(**svc.resend_email_code(db, body.email))
 
 
 @router.post("/login", response_model=CreatorLoginOut)

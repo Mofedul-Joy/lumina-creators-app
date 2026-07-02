@@ -44,7 +44,8 @@ def main() -> None:
 
     # fixture: an account with a known password, incomplete profile
     email = f"e2e-edge+{stamp}@lumina.dev"
-    api("/api/creator/auth/signup", {"email": email, "password": "EdgePass12345!", "display_name": "Edge"})
+    su = api("/api/creator/auth/signup", {"email": email, "password": "EdgePass12345!", "display_name": "Edge"})
+    api("/api/creator/auth/verify-email", {"email": email, "code": su["dev_code"]})
 
     # fixture: one published campaign to attempt joining
     admin_tok = api("/api/admin/auth/login", {"email": "admin@lumina.dev", "password": "admin12345"})["access_token"]

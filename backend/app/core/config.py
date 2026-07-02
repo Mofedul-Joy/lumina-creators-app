@@ -40,6 +40,17 @@ class Settings(BaseSettings):
     # browser only ever talks to this API, which already allows the app origin.
     upload_proxy: bool = False
 
+    # --- email (SMTP) for verification codes ---
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    email_from: str = ""  # defaults to smtp_user if empty
+
+    @property
+    def smtp_configured(self) -> bool:
+        return bool(self.smtp_host and self.smtp_user and self.smtp_password)
+
     # --- CORS (comma-separated origins) ---
     cors_origins: str = "http://localhost:3000"
 

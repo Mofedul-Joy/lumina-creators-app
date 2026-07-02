@@ -35,6 +35,9 @@ class Creator(TimestampMixin, Base):
     email_verified: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text("false")
     )
+    email_verification_code_hash: Mapped[Optional[str]] = mapped_column(Text)
+    email_verification_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    email_verification_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
 
 class Admin(Base):

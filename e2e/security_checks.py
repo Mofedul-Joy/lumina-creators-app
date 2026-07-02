@@ -36,7 +36,8 @@ def expect(cond, msg):
 
 def new_creator(stamp, tag):
     email = f"sec-{tag}+{stamp}@lumina.dev"
-    _, r = api("/api/creator/auth/signup", {"email": email, "password": "SecPass12345!", "display_name": tag})
+    _, su = api("/api/creator/auth/signup", {"email": email, "password": "SecPass12345!", "display_name": tag})
+    _, r = api("/api/creator/auth/verify-email", {"email": email, "code": su["dev_code"]})
     return email, r["access_token"]
 
 
@@ -55,21 +56,25 @@ def main():
     code, _ = api("/api/admin/creators", token=victim_tok)
     expect(code == 401, "creator token rejected from admin endpoint (401)")
 
-    # 2. IDOR: creator B cannot attach creator A's uploaded object to their portfolio
+    # 2. IDOR: creator B cannot attach creator A's uploaded avatar object
     _, tok_a = new_creator(stamp, "owner")
     _, tok_b = new_creator(stamp, "thief")
-    obj_a = finalized_object(tok_a, stamp, "portfolio_video")
-    code, body = api("/api/creator/profile/portfolio", {"storage_object_id": obj_a}, tok_b)
-    expect(code in (403, 404), f"cross-creator portfolio attach blocked ({code})")
+    obj_avatar_a = finalized_object(tok_a, stamp, "avatar")
+    code, _ = api("/api/creator/profile", {"avatar_object_id": obj_avatar_a}, tok_b, method="PUT")
+    expect(code in (403, 404), f"cross-creator avatar attach blocked ({code})")
 
-    # 3. purpose mismatch: an avatar object cannot be used as a portfolio item
-    obj_avatar = finalized_object(tok_a, stamp, "avatar")
-    code, _ = api("/api/creator/profile/portfolio", {"storage_object_id": obj_avatar}, tok_a)
-    expect(code == 400, f"wrong-purpose object rejected for portfolio ({code})")
+    # 3. purpose mismatch: a portfolio_video object cannot be used as an avatar
+    obj_pv = finalized_object(tok_a, stamp, "portfolio_video")
+    code, _ = api("/api/creator/profile", {"avatar_object_id": obj_pv}, tok_a, method="PUT")
+    expect(code == 400, f"wrong-purpose object rejected for avatar ({code})")
 
-    # 4. owner can attach their own finalized portfolio object
-    code, _ = api("/api/creator/profile/portfolio", {"storage_object_id": obj_a}, tok_a)
-    expect(code == 200, f"owner attaches own finalized object ({code})")
+    # 4. owner can attach their own finalized avatar object
+    code, _ = api("/api/creator/profile", {"avatar_object_id": obj_avatar_a}, tok_a, method="PUT")
+    expect(code == 200, f"owner attaches own finalized avatar ({code})")
+
+    # 4b. portfolio rejects a non-platform / phishing URL
+    code, _ = api("/api/creator/profile/portfolio", {"video_url": "https://evil.com/not-a-video"}, tok_a)
+    expect(code == 400, f"portfolio rejects non-platform URL ({code})")
 
     # 5. path traversal on the local upload route is rejected
     try:
@@ -87,7 +92,7 @@ def main():
     _, tok_c = new_creator(stamp, "submitter")
     api("/api/creator/profile", {"display_name": "S", "date_of_birth": "1995-01-01", "gender": "male", "primary_language": "English", "country": "US"}, tok_c, method="PUT")
     api("/api/creator/profile/socials", {"platform": "tiktok", "handle": f"s{stamp}", "follower_count": 1000}, tok_c)
-    api("/api/creator/profile/portfolio", {"storage_object_id": finalized_object(tok_c, stamp)}, tok_c)
+    api("/api/creator/profile/portfolio", {"video_url": f"https://www.tiktok.com/@s{stamp}/video/9"}, tok_c)
     api(f"/api/creator/campaigns/{camp['slug']}/join", {}, tok_c)
     url = f"https://www.tiktok.com/@s{stamp}/video/{stamp}"
     code1, _ = api("/api/creator/submissions", {"campaign_slug": camp["slug"], "post_url": url}, tok_c)

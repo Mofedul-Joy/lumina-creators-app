@@ -39,18 +39,15 @@ def provision_complete_creator(stamp: int) -> tuple[str, str, str]:
     covered by creator_flow.py). Returns (email, password, token)."""
     email = f"e2e-join+{stamp}@lumina.dev"
     password = "E2ePass12345!"
-    tok = api("/api/creator/auth/signup", {"email": email, "password": password, "display_name": "Join Tester"})["access_token"]
+    su = api("/api/creator/auth/signup", {"email": email, "password": password, "display_name": "Join Tester"})
+    tok = api("/api/creator/auth/verify-email", {"email": email, "code": su["dev_code"]})["access_token"]
     api("/api/creator/profile", {
         "display_name": "Join Tester", "bio": "bio", "date_of_birth": "1998-04-02",
         "gender": "male", "ethnicity": "n/a", "primary_language": "English",
         "languages": ["English"], "country": "US", "city": "NYC",
     }, tok, method="PUT")
     api("/api/creator/profile/socials", {"platform": "tiktok", "handle": f"join{stamp}", "follower_count": 5000}, tok)
-    pres = api("/api/creator/uploads/presign", {"purpose": "portfolio_video", "content_type": "video/mp4", "filename": "s.mp4", "size_bytes": 64}, tok)
-    put = urllib.request.Request(pres["upload_url"], data=b"\x00" * 64, method="PUT")
-    urllib.request.urlopen(put)
-    fin = api(f"/api/creator/uploads/{pres['object_id']}/finalize", {}, tok)
-    api("/api/creator/profile/portfolio", {"storage_object_id": fin["id"], "brand_name": "X"}, tok)
+    api("/api/creator/profile/portfolio", {"video_url": f"https://www.tiktok.com/@join{stamp}/video/1", "brand_name": "X"}, tok)
     completion = api("/api/creator/profile/completion", token=tok)
     assert completion["completed"], f"profile not complete: {completion}"
     return email, password, tok

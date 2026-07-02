@@ -2,11 +2,13 @@ import { apiFetch } from "@/lib/api";
 
 export type CreatorLoginResult =
   | { status: "ok"; access_token: string }
-  | { status: "password_not_set"; email: string };
+  | { status: "password_not_set"; email: string }
+  | { status: "email_not_verified"; email: string };
 
 export type CreatorSetPasswordResult = { status: "ok"; access_token: string };
 export type CreatorCheckEmailResult = { exists: boolean; password_set: boolean };
 export type TokenResult = { access_token: string };
+export type SignupResult = { status: "verification_sent"; email: string; dev_code: string | null };
 
 // Tokens persist in sessionStorage so a page refresh keeps the session while a
 // closed tab still forgets it. Guarded for SSR (no window on the server).
@@ -45,9 +47,23 @@ export const getClientToken = clientStore.get;
 export const clearClientToken = clientStore.clear;
 
 export function creatorSignup(email: string, password: string, displayName?: string) {
-  return apiFetch<TokenResult>("/api/creator/auth/signup", {
+  return apiFetch<SignupResult>("/api/creator/auth/signup", {
     method: "POST",
     body: JSON.stringify({ email, password, display_name: displayName || undefined }),
+  });
+}
+
+export function verifyEmailCode(email: string, code: string) {
+  return apiFetch<TokenResult>("/api/creator/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ email, code }),
+  });
+}
+
+export function resendEmailCode(email: string) {
+  return apiFetch<{ status: string; dev_code: string | null }>("/api/creator/auth/resend-code", {
+    method: "POST",
+    body: JSON.stringify({ email }),
   });
 }
 
