@@ -96,15 +96,25 @@ export default function OnboardingPage() {
     }
   }, [profileQ.data]);
 
-  // Avatar upload → preview from returned avatar_url.
+  // Avatar upload. Show the picked file INSTANTLY via a local object URL so the
+  // circle fills immediately, while the (multi-step) upload runs in the background.
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
   const avatarM = useMutation({
     mutationFn: async (file: File) => {
       const objectId = await uploadFile(bearer, file, "avatar");
       return updateProfile(bearer, { avatar_object_id: objectId });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["profile"] }),
+    onError: () => setLocalPreview(null), // upload failed — drop the optimistic preview
   });
+  function pickAvatar(file: File) {
+    setLocalPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+    avatarM.mutate(file);
+  }
 
   // Social add (per platform).
   const [openPlatform, setOpenPlatform] = useState<Platform | null>(null);
@@ -223,13 +233,18 @@ export default function OnboardingPage() {
         <h2 className="text-lg font-semibold text-[var(--color-text)]">Basics</h2>
 
         <div className="flex items-center gap-4">
-          <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)] text-xs text-[var(--color-text-muted)]">
-            {avatarUrl ? (
+          <div className="relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)] text-xs text-[var(--color-text-muted)]">
+            {localPreview ?? avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt="Your avatar" className="h-full w-full object-cover" />
+              <img src={(localPreview ?? avatarUrl)!} alt="Your avatar" className="h-full w-full object-cover" />
             ) : (
               "No photo"
             )}
+            {avatarM.isPending ? (
+              <span className="absolute inset-0 grid place-items-center bg-black/50">
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              </span>
+            ) : null}
           </div>
           <div className="space-y-2">
             <label className={labelCls}>Profile photo</label>
@@ -240,15 +255,18 @@ export default function OnboardingPage() {
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) avatarM.mutate(file);
+                if (file) pickAvatar(file);
               }}
             />
             <div className="w-40">
               <Button type="button" loading={avatarM.isPending} onClick={() => avatarInputRef.current?.click()}>
-                {avatarUrl ? "Replace photo" : "Upload photo"}
+                {(localPreview ?? avatarUrl) ? "Replace photo" : "Upload photo"}
               </Button>
             </div>
-            {avatarM.isError ? <p className="text-sm text-[var(--color-danger)]">{(avatarM.error as Error).message}</p> : null}
+            {avatarM.isPending ? (
+              <p className="text-xs text-[var(--color-text-muted)]">Uploading your photo…</p>
+            ) : null}
+            {avatarM.isError ? <p className="text-sm text-[var(--color-danger)]">Upload failed — please try again.</p> : null}
           </div>
         </div>
 
