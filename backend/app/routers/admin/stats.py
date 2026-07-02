@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_admin
 from app.db.session import get_db
-from app.models import Admin, Campaign, Client, Creator, Submission
+from app.models import Admin, Campaign, Client, Creator, CreatorProfile, Submission
 
 router = APIRouter(prefix="/stats", tags=["admin-stats"])
 
@@ -43,8 +43,10 @@ def stats(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_d
     total_campaigns = scalar(select(func.count()).select_from(Campaign))
     active_campaigns = scalar(select(func.count()).select_from(Campaign).where(Campaign.status == "active"))
     total_creators = scalar(select(func.count()).select_from(Creator))
+    # "completed" = finished onboarding (profile.completed_at set), not just an
+    # active account — self-signups are active immediately with empty profiles.
     completed_creators = scalar(
-        select(func.count()).select_from(Creator).where(Creator.status == "active")
+        select(func.count()).select_from(CreatorProfile).where(CreatorProfile.completed_at.is_not(None))
     )
     total_submissions = scalar(select(func.count()).select_from(Submission))
     total_views = scalar(select(func.coalesce(func.sum(Submission.views), 0)))

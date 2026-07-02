@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { clearClientToken, getClientToken } from "@/lib/auth";
 import {
@@ -144,6 +144,7 @@ export default function ClientDashboardPage() {
     setReady(true);
   }, []);
 
+  const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["client-campaigns"],
     queryFn: listClientCampaigns,
@@ -193,6 +194,7 @@ export default function ClientDashboardPage() {
             className="cursor-pointer rounded-full px-3.5 py-1.5 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)]"
             onClick={() => {
               clearClientToken();
+              qc.clear();
               router.push("/client/login");
             }}
           >

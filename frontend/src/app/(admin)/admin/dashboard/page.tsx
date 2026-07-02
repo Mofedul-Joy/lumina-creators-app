@@ -58,6 +58,15 @@ export default function AdminDashboardPage() {
     if (q.isError && isAuthError(q.error)) router.replace("/admin/login");
   }, [q.isError, q.error, router]);
 
+  // Don't render dashboard data until we've confirmed a token — prevents a
+  // flash of cached stats after sign-out before the redirect fires.
+  if (!ready || !hasToken)
+    return (
+      <main className="flex min-h-[100dvh] items-center justify-center">
+        <p className="text-sm text-[var(--color-text-secondary)]">Loading…</p>
+      </main>
+    );
+
   const s = q.data;
 
   return (

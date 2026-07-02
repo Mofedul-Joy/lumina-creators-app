@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { clearAdminToken } from "@/lib/auth";
 
 const LINKS = [
@@ -17,6 +18,7 @@ const LINKS = [
 export function AdminNav() {
   const path = usePathname();
   const router = useRouter();
+  const qc = useQueryClient();
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-bg-deep)]/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
@@ -53,6 +55,7 @@ export function AdminNav() {
         <button
           onClick={() => {
             clearAdminToken();
+            qc.clear(); // drop cached admin data so it can't flash after sign-out
             router.push("/admin/login");
           }}
           className="shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)]"
