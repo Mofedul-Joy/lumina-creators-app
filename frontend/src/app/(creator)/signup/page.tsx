@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
-import { creatorSignup } from "@/lib/auth";
+import { creatorSignup, setAuthToken } from "@/lib/auth";
 
 export default function CreatorSignupPage() {
   const router = useRouter();
@@ -19,7 +19,13 @@ export default function CreatorSignupPage() {
 
   const signup = useMutation({
     mutationFn: () => creatorSignup(email, password, displayName),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data.status === "ok") {
+        // Email verification disabled — straight into onboarding.
+        setAuthToken(data.access_token);
+        router.push("/onboarding");
+        return;
+      }
       // Account created unverified — go enter the emailed code.
       router.push(`/verify-email?email=${encodeURIComponent(email)}`);
     },

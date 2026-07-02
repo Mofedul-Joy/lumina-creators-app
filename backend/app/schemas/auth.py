@@ -20,9 +20,12 @@ class SetPasswordIn(BaseModel):
 
 
 class SignupOut(BaseModel):
-    status: str = "verification_sent"
-    email: str
+    status: str = "verification_sent"  # or "ok" when email verification is disabled
+    email: Optional[str] = None
     dev_code: Optional[str] = None  # present only outside production (local/E2E)
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    token_type: str = "bearer"
 
 
 class VerifyEmailIn(BaseModel):

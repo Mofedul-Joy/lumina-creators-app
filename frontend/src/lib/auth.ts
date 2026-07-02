@@ -8,7 +8,9 @@ export type CreatorLoginResult =
 export type CreatorSetPasswordResult = { status: "ok"; access_token: string };
 export type CreatorCheckEmailResult = { exists: boolean; password_set: boolean };
 export type TokenResult = { access_token: string };
-export type SignupResult = { status: "verification_sent"; email: string; dev_code: string | null };
+export type SignupResult =
+  | { status: "verification_sent"; email: string; dev_code: string | null }
+  | { status: "ok"; access_token: string };
 
 // Tokens persist in sessionStorage so a page refresh keeps the session while a
 // closed tab still forgets it. Guarded for SSR (no window on the server).

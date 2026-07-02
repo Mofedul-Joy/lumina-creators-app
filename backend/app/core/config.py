@@ -40,16 +40,25 @@ class Settings(BaseSettings):
     # browser only ever talks to this API, which already allows the app origin.
     upload_proxy: bool = False
 
-    # --- email (SMTP) for verification codes ---
+    # --- email for verification codes ---
+    # Prefer an HTTP provider (Resend) — cloud hosts like Render block outbound SMTP.
+    resend_api_key: str = ""
     smtp_host: str = ""
     smtp_port: int = 587
     smtp_user: str = ""
     smtp_password: str = ""
     email_from: str = ""  # defaults to smtp_user if empty
+    # When email can't be delivered, gate the whole verification step off so signup
+    # still works. Flip on once a working email provider is configured.
+    require_email_verification: bool = True
 
     @property
     def smtp_configured(self) -> bool:
         return bool(self.smtp_host and self.smtp_user and self.smtp_password)
+
+    @property
+    def email_configured(self) -> bool:
+        return bool(self.resend_api_key) or self.smtp_configured
 
     # --- CORS (comma-separated origins) ---
     cors_origins: str = "http://localhost:3000"

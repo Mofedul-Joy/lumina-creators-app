@@ -90,11 +90,16 @@ def creator_signup(db: Session, email: str, password: str) -> dict:
     _require_strong(password)
     if db.scalar(select(Creator).where(Creator.email == email)):
         raise HTTPException(status.HTTP_409_CONFLICT, "An account with this email already exists")
+    verify_on = get_settings().require_email_verification
     creator = Creator(email=email, password_hash=hash_password(password), status="active",
-                      signup_source="self", email_verified=False)
+                      signup_source="self", email_verified=not verify_on)
     db.add(creator)
     db.commit()
     db.refresh(creator)
+    if not verify_on:
+        # Email verification disabled (no email provider configured) — issue a token.
+        access, refresh = _issue(db, creator.id, "creator")
+        return {"status": "ok", "access_token": access, "refresh_token": refresh}
     code = _issue_email_code(db, creator)
     return {"status": "verification_sent", "email": email, "dev_code": _dev_code(code)}
 
@@ -152,7 +157,7 @@ def creator_login(db: Session, email: str, password: str):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password")
     if creator.status == "suspended":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "This account is suspended")
-    if not creator.email_verified:
+    if not creator.email_verified and get_settings().require_email_verification:
         # Route to verification. Only (re)send a code if one wasn't just sent, so
         # repeated logins can't email-bomb the user or churn a valid code.
         if not _code_recently_sent(creator):
