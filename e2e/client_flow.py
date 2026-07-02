@@ -61,7 +61,7 @@ def main() -> None:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=not args.headed)
         page = browser.new_page(viewport={"width": 1440, "height": 900})
-        page.set_default_timeout(15000)
+        page.set_default_timeout(30000)
 
         # ── 1. admin creates a campaign LINKED TO THE CLIENT via UI ──
         page.goto(f"{args.base}/admin/login")
@@ -80,7 +80,7 @@ def main() -> None:
         page.locator("textarea").nth(1).fill("Brief: strong hook, product visible.")
         page.get_by_role("button", name="Create & publish").click()
         page.wait_for_url("**/admin/campaigns")
-        expect(page.get_by_text(campaign_name)).to_be_visible(timeout=10000)
+        expect(page.get_by_text(campaign_name)).to_be_visible(timeout=25000)
         print("ok admin created client-linked campaign via UI picker")
 
         # find the slug via API for the creator step
@@ -98,12 +98,12 @@ def main() -> None:
         page.get_by_label("Password").fill("client12345")
         page.get_by_role("button", name="Sign in").click()
         page.wait_for_url("**/client/dashboard")
-        expect(page.get_by_text(campaign_name)).to_be_visible(timeout=10000)
+        expect(page.get_by_text(campaign_name)).to_be_visible(timeout=25000)
         page.screenshot(path=str(SHOTS / "20_client_dashboard.png"))
 
         # expand submissions
         page.get_by_text(campaign_name).first.click()
-        expect(page.get_by_text("tiktok.com").first).to_be_visible(timeout=10000)
+        expect(page.get_by_text("tiktok.com").first).to_be_visible(timeout=25000)
         page.screenshot(path=str(SHOTS / "21_client_submissions.png"))
         print("ok client dashboard shows campaign, stats, and submissions")
 

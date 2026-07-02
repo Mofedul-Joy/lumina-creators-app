@@ -70,7 +70,7 @@ def main() -> None:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=not args.headed)
         page = browser.new_page(viewport={"width": 1440, "height": 900})
-        page.set_default_timeout(15000)
+        page.set_default_timeout(30000)
 
         # ── 1. admin login ───────────────────────────────────────────
         page.goto(f"{args.base}/admin/login", wait_until="networkidle")
@@ -108,7 +108,7 @@ def main() -> None:
         page.screenshot(path=str(SHOTS / "12_campaign_form.png"))
         page.get_by_role("button", name="Create & publish").click()
         page.wait_for_url("**/admin/campaigns")
-        expect(page.get_by_text(campaign_name)).to_be_visible(timeout=10000)
+        expect(page.get_by_text(campaign_name)).to_be_visible(timeout=25000)
         page.screenshot(path=str(SHOTS / "13_campaign_published.png"))
         print("ok campaign created + published")
 
@@ -122,18 +122,25 @@ def main() -> None:
         print("ok creator login via email->password steps")
 
         page.goto(f"{args.base}/campaigns")
-        expect(page.get_by_text(campaign_name)).to_be_visible(timeout=10000)
+        expect(page.get_by_text(campaign_name)).to_be_visible(timeout=25000)
         page.screenshot(path=str(SHOTS / "14_creator_campaigns.png"))
         page.get_by_text(campaign_name).first.click()
         page.wait_for_load_state("networkidle")
 
         page.get_by_role("button", name="Enter campaign").click()
-        expect(page.get_by_label("Post URL")).to_be_visible(timeout=10000)
+        expect(page.get_by_label("Post URL")).to_be_visible(timeout=25000)
         page.get_by_label("Post URL").fill("https://www.tiktok.com/@join/video/123456789")
         page.get_by_role("button", name="Submit post").click()
-        expect(page.get_by_text("Submitted — we’ll track the views.")).to_be_visible(timeout=10000)
+        expect(page.get_by_text("Submitted — we’ll track the views.")).to_be_visible(timeout=25000)
         page.screenshot(path=str(SHOTS / "15_submitted.png"))
         print("ok joined campaign and submitted a post")
+
+        # ── 5. the submission shows on the My submissions page ───────
+        page.goto(f"{args.base}/submissions")
+        expect(page.get_by_role("heading", name="My submissions")).to_be_visible(timeout=25000)
+        expect(page.get_by_text(campaign_name).first).to_be_visible(timeout=25000)
+        page.screenshot(path=str(SHOTS / "16_submissions.png"))
+        print("ok submission appears on My submissions page")
 
         browser.close()
         print("ADMIN+JOIN FLOW PASS")

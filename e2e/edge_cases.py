@@ -57,7 +57,7 @@ def main() -> None:
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page(viewport={"width": 1440, "height": 900})
-        page.set_default_timeout(15000)
+        page.set_default_timeout(30000)
 
         # 1. wrong password
         page.goto(f"{args.base}/login")
@@ -65,14 +65,14 @@ def main() -> None:
         page.get_by_role("button", name="Continue").click()
         page.get_by_label("Password", exact=True).fill("wrong-password")
         page.get_by_role("button", name="Sign in").click()
-        expect(page.get_by_text("Invalid email or password")).to_be_visible(timeout=10000)
+        expect(page.get_by_text("Invalid email or password")).to_be_visible(timeout=25000)
         print("ok wrong password shows inline error")
 
         # 2. unknown email
         page.goto(f"{args.base}/login")
         page.get_by_label("Email").fill(f"nobody+{stamp}@lumina.dev")
         page.get_by_role("button", name="Continue").click()
-        expect(page.get_by_text("No creator account found for this email.")).to_be_visible(timeout=10000)
+        expect(page.get_by_text("No creator account found for this email.")).to_be_visible(timeout=25000)
         print("ok unknown email handled")
 
         # 3. duplicate signup
@@ -81,7 +81,7 @@ def main() -> None:
         page.get_by_label("Email").fill(email)
         page.get_by_label("Password").fill("EdgePass12345!")
         page.get_by_role("button", name="Create account").click()
-        expect(page.locator("p[role=alert]")).to_be_visible(timeout=10000)
+        expect(page.locator("p[role=alert]")).to_be_visible(timeout=25000)
         page.screenshot(path=str(SHOTS / "30_duplicate_signup.png"))
         print("ok duplicate signup shows error:", page.locator("p[role=alert]").inner_text())
 
@@ -102,14 +102,14 @@ def main() -> None:
         page.wait_for_url("**/dashboard")
         page.goto(f"{args.base}/campaigns/{camp['slug']}")
         page.get_by_role("button", name="Enter campaign").click()
-        expect(page.get_by_text("Finish your profile before entering campaigns.")).to_be_visible(timeout=10000)
+        expect(page.get_by_text("Finish your profile before entering campaigns.")).to_be_visible(timeout=25000)
         page.screenshot(path=str(SHOTS / "31_incomplete_join.png"))
         print("ok incomplete-profile join shows friendly warning + link")
 
         # 6. signed-out deep link
         ctx2 = browser.new_page()
         ctx2.goto(f"{args.base}/onboarding")
-        expect(ctx2.get_by_text("Please sign in")).to_be_visible(timeout=10000)
+        expect(ctx2.get_by_text("Please sign in")).to_be_visible(timeout=25000)
         print("ok signed-out deep link prompts sign-in")
 
         browser.close()

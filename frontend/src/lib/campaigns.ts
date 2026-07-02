@@ -33,13 +33,20 @@ export type Submission = {
   post_url: string;
   platform: string;
   views: number;
+  likes: number;
+  comments: number;
   estimated_amount: number;
+  payable_amount: number | null;
   scrape_status: string;
   verification_status: string;
+  thumbnail_url: string | null;
   created_at: string;
 };
 
 export const browseCampaigns = () => apiFetch<Campaign[]>("/api/creator/campaigns", auth());
+
+export const listSubmissions = () =>
+  apiFetch<Submission[]>("/api/creator/submissions", auth());
 
 export const getCampaign = (slug: string) =>
   apiFetch<Campaign>(`/api/creator/campaigns/${slug}`, auth());
