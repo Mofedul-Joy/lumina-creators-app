@@ -105,9 +105,11 @@ def analytics(admin: Admin = Depends(get_current_admin), db: Session = Depends(g
         )
     ]
 
-    # daily activity for the last WINDOW_DAYS, zero-filled
+    # daily activity for the last WINDOW_DAYS, zero-filled.
+    # Bucket by the UTC calendar date so the SQL grouping matches the Python
+    # zero-fill (which uses UTC via _now()), regardless of the DB session timezone.
     since = _now() - timedelta(days=WINDOW_DAYS - 1)
-    day = cast(Submission.created_at, Date).label("day")
+    day = cast(func.timezone("UTC", Submission.created_at), Date).label("day")
     rows = db.execute(
         select(
             day,
