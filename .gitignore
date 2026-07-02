@@ -37,3 +37,6 @@ Thumbs.db
 
 # ---- Local agent scratch ----
 .impeccable/
+
+# e2e artifacts
+e2e/shots/

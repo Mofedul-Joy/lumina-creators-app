@@ -15,6 +15,7 @@ from app.routers.admin import router as admin_router
 from app.routers.client import router as client_router
 from app.routers.creator import router as creator_router
 from app.routers.public.health import router as health_router
+from app.routers.public.uploads_local import router as uploads_local_router
 
 
 def create_app() -> FastAPI:
@@ -34,8 +35,9 @@ def create_app() -> FastAPI:
     async def _unhandled(request: Request, exc: Exception) -> JSONResponse:  # pragma: no cover
         return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
-    # public (health only)
+    # public (health + local-dev upload target)
     app.include_router(health_router)
+    app.include_router(uploads_local_router)
     # audience realms
     app.include_router(creator_router, prefix="/api/creator")
     app.include_router(admin_router, prefix="/api/admin")

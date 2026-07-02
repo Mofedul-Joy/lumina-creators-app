@@ -3,11 +3,16 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
-import { createCampaign, publishCampaign, type CampaignCreate } from "@/lib/admin";
+import {
+  createCampaign,
+  listAdminClients,
+  publishCampaign,
+  type CampaignCreate,
+} from "@/lib/admin";
 
 const PLATFORMS = ["instagram", "tiktok", "youtube", "twitter", "facebook"];
 
@@ -32,6 +37,8 @@ export default function NewCampaignPage() {
   });
   const [platforms, setPlatforms] = useState<string[]>(["tiktok"]);
   const [publishNow, setPublishNow] = useState(true);
+  const [clientId, setClientId] = useState("");
+  const clientsQ = useQuery({ queryKey: ["admin-clients"], queryFn: listAdminClients });
 
   function togglePlatform(p: string) {
     setPlatforms((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
@@ -48,6 +55,7 @@ export default function NewCampaignPage() {
         brand_name: f.brand_name.trim() || undefined,
         platforms,
         min_retention_days: Number(f.min_retention_days) || 30,
+        client_id: clientId || undefined,
         caption_rules: f.caption_rules.trim() || undefined,
         required_mentions: f.required_mentions
           ? f.required_mentions.split(",").map((s) => s.trim()).filter(Boolean)
@@ -97,6 +105,21 @@ export default function NewCampaignPage() {
 
           <Field label="Campaign name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
           <Field label="Brand name" value={f.brand_name} onChange={(e) => setF({ ...f, brand_name: e.target.value })} />
+
+          <div className="space-y-2">
+            <label className={labelCls}>Client (brand account)</label>
+            <select className={controlCls} value={clientId} onChange={(e) => setClientId(e.target.value)}>
+              <option value="">No client — internal campaign</option>
+              {(clientsQ.data ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name ?? c.email}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Linked clients see this campaign&apos;s performance on their read-only dashboard.
+            </p>
+          </div>
 
           <div className="space-y-2">
             <label className={labelCls}>Description</label>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -25,7 +26,6 @@ export default function CreatorLoginPage() {
 
   function finish(token: string) {
     setAuthToken(token);
-    console.log(token);
     router.push("/dashboard");
   }
 
@@ -106,6 +106,12 @@ export default function CreatorLoginPage() {
           <Button type="submit" loading={checkEmail.isPending}>
             Continue
           </Button>
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            New to Lumina?{" "}
+            <Link href="/signup" className="font-medium text-[var(--color-brand)] hover:underline">
+              Create an account
+            </Link>
+          </p>
         </form>
       ) : (
         <form className="space-y-4" onSubmit={submitPassword}>

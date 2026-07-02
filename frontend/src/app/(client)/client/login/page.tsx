@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
-import { clientLogin, setAuthToken } from "@/lib/auth";
+import { clientLogin, setClientToken } from "@/lib/auth";
 
 export default function ClientLoginPage() {
   const router = useRouter();
@@ -18,9 +18,8 @@ export default function ClientLoginPage() {
   const login = useMutation({
     mutationFn: () => clientLogin(email, password),
     onSuccess: (data) => {
-      setAuthToken(data.access_token);
-      console.log(data.access_token);
-      router.push("/dashboard");
+      setClientToken(data.access_token);
+      router.push("/client/dashboard");
     },
     onError: (err) => setError((err as Error).message),
   });

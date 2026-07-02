@@ -1,10 +1,29 @@
 """Cloudflare R2 (S3-compatible) presigned uploads. boto3 is imported lazily so the
-app boots without it/creds installed locally (only presign calls need them)."""
+app boots without it/creds installed locally (only presign calls need them).
+
+When R2 is NOT configured, uploads fall back to local disk: presigned URLs point
+back at this API (PUT /uploads/local/{key}) and files land in local_storage_dir.
+"""
 from __future__ import annotations
 
 import uuid
+from pathlib import Path
+from urllib.parse import quote
 
 from app.core.config import get_settings
+
+
+def is_local_mode() -> bool:
+    s = get_settings()
+    return not (s.r2_endpoint and s.r2_access_key_id and s.r2_secret_access_key)
+
+
+def local_path(object_key: str) -> Path:
+    root = Path(get_settings().local_storage_dir).resolve()
+    p = (root / object_key).resolve()
+    if not p.is_relative_to(root):  # path traversal guard
+        raise RuntimeError("Invalid object key")
+    return p
 
 
 def _client():
@@ -29,6 +48,8 @@ def make_object_key(purpose: str, creator_id, filename_hint: str = "") -> str:
 
 def presign_put(object_key: str, content_type: str | None) -> str:
     settings = get_settings()
+    if is_local_mode():
+        return f"{settings.api_public_url}/uploads/local/{quote(object_key)}"
     params = {"Bucket": settings.r2_bucket, "Key": object_key}
     if content_type:
         params["ContentType"] = content_type
@@ -38,6 +59,12 @@ def presign_put(object_key: str, content_type: str | None) -> str:
 def head_object(object_key: str) -> dict | None:
     """Confirm the object exists after upload (for finalize). None if missing."""
     settings = get_settings()
+    if is_local_mode():
+        try:
+            p = local_path(object_key)
+        except RuntimeError:
+            return None
+        return {"ContentLength": p.stat().st_size} if p.is_file() else None
     try:
         return _client().head_object(Bucket=settings.r2_bucket, Key=object_key)
     except Exception:

@@ -8,32 +8,47 @@ export type CreatorSetPasswordResult = { status: "ok"; access_token: string };
 export type CreatorCheckEmailResult = { exists: boolean; password_set: boolean };
 export type TokenResult = { access_token: string };
 
-let token: string | null = null;
-let adminToken: string | null = null;
-
-// TODO: replace these in-memory holders with secure httpOnly-cookie storage when the backend refresh flow lands.
-export function setAuthToken(nextToken: string) {
-  token = nextToken;
+// Tokens persist in sessionStorage so a page refresh keeps the session while a
+// closed tab still forgets it. Guarded for SSR (no window on the server).
+// TODO: move to httpOnly-cookie storage when the backend refresh flow lands.
+function tokenStore(key: string) {
+  let mem: string | null = null;
+  return {
+    set(next: string) {
+      mem = next;
+      if (typeof window !== "undefined") sessionStorage.setItem(key, next);
+    },
+    get(): string | null {
+      if (mem) return mem;
+      if (typeof window !== "undefined") mem = sessionStorage.getItem(key);
+      return mem;
+    },
+    clear() {
+      mem = null;
+      if (typeof window !== "undefined") sessionStorage.removeItem(key);
+    },
+  };
 }
 
-export function getAuthToken() {
-  return token;
-}
+const creatorStore = tokenStore("lumina.creator.token");
+const adminStore = tokenStore("lumina.admin.token");
+const clientStore = tokenStore("lumina.client.token");
 
-export function clearAuthToken() {
-  token = null;
-}
+export const setAuthToken = creatorStore.set;
+export const getAuthToken = creatorStore.get;
+export const clearAuthToken = creatorStore.clear;
+export const setAdminToken = adminStore.set;
+export const getAdminToken = adminStore.get;
+export const clearAdminToken = adminStore.clear;
+export const setClientToken = clientStore.set;
+export const getClientToken = clientStore.get;
+export const clearClientToken = clientStore.clear;
 
-export function setAdminToken(nextToken: string) {
-  adminToken = nextToken;
-}
-
-export function getAdminToken() {
-  return adminToken;
-}
-
-export function clearAdminToken() {
-  adminToken = null;
+export function creatorSignup(email: string, password: string, displayName?: string) {
+  return apiFetch<TokenResult>("/api/creator/auth/signup", {
+    method: "POST",
+    body: JSON.stringify({ email, password, display_name: displayName || undefined }),
+  });
 }
 
 export function creatorLogin(email: string, password: string) {

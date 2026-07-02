@@ -57,7 +57,7 @@ function AnnouncementBar() {
       <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-6 py-2 text-center text-xs text-[var(--color-text-secondary)]">
         <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand)]" />
         Already making content? Get paid for it.
-        <Link href="/onboarding" className="font-medium text-[var(--color-brand)] hover:underline">
+        <Link href="/signup" className="font-medium text-[var(--color-brand)] hover:underline">
           Start earning →
         </Link>
       </div>
@@ -78,7 +78,7 @@ function Nav() {
         </div>
         <div className="flex items-center gap-2">
           <GhostButton href="/login">Sign in</GhostButton>
-          <BrandButton href="/onboarding">Start earning</BrandButton>
+          <BrandButton href="/signup">Start earning</BrandButton>
         </div>
       </nav>
     </header>
@@ -111,7 +111,7 @@ function Hero() {
           create original content, or repost approved clips.
         </p>
         <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <BrandButton href="/onboarding">Start earning</BrandButton>
+          <BrandButton href="/signup">Start earning</BrandButton>
           <GhostButton href="/login">Sign in</GhostButton>
         </div>
         <p className="mt-5 text-xs text-[var(--color-text-muted)]">
@@ -293,7 +293,7 @@ function CtaBand() {
           Build your profile in a couple of minutes and enter your first campaign today.
         </p>
         <div className="mt-8 flex justify-center">
-          <BrandButton href="/onboarding">Start earning</BrandButton>
+          <BrandButton href="/signup">Start earning</BrandButton>
         </div>
       </div>
     </section>

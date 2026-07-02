@@ -13,8 +13,16 @@ export async function apiFetch<T>(
     body: opts.body,
   });
   if (!res.ok) {
-    const detail = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(detail.detail ?? `HTTP ${res.status}`);
+    const payload = await res.json().catch(() => ({ detail: res.statusText }));
+    const detail = payload?.detail;
+    // FastAPI validation errors send detail as an array of {loc, msg} objects.
+    const message = Array.isArray(detail)
+      ? detail.map((d: { loc?: (string | number)[]; msg?: string }) =>
+          `${(d.loc ?? []).slice(1).join(".")}: ${d.msg ?? "invalid"}`).join("; ")
+      : typeof detail === "string"
+        ? detail
+        : `HTTP ${res.status}`;
+    throw new Error(message);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;

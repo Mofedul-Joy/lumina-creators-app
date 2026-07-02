@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     upload_url_ttl_sec: int = 3600
     max_upload_bytes: int = 512 * 1024 * 1024  # 512 MB
 
+    # --- local-dev storage fallback (used when R2 is not configured) ---
+    # Files land on local disk and upload URLs point back at this API.
+    api_public_url: str = "http://localhost:8000"
+    local_storage_dir: str = ".tmp/storage"
+
     # --- CORS (comma-separated origins) ---
     cors_origins: str = "http://localhost:3000"
 

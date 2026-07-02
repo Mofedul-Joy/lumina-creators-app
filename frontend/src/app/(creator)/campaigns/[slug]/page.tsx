@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { getAuthToken } from "@/lib/auth";
 import { getCampaign, joinCampaign, submitClip } from "@/lib/campaigns";
+import { fmtMoney } from "@/lib/format";
 
 export default function CampaignDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -59,8 +60,8 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Stat label="CPM" value={`$${c.cpm_rate}`} />
-              <Stat label="Budget" value={`$${c.budget.toLocaleString()}`} />
+              <Stat label="CPM" value={fmtMoney(c.cpm_rate)} />
+              <Stat label="Budget" value={fmtMoney(c.budget)} />
               <Stat label="Min. retention" value={`${c.min_retention_days}d`} />
               <Stat label="Platforms" value={String(c.platforms.length)} />
             </div>
@@ -104,7 +105,18 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
                   <div className="w-44">
                     <Button loading={join.isPending} onClick={() => join.mutate()}>Enter campaign</Button>
                   </div>
-                  {join.isError ? <p className="text-sm text-[var(--color-danger)]">{(join.error as Error).message}</p> : null}
+                  {join.isError ? (
+                    (join.error as Error).message === "profile_incomplete" ? (
+                      <p className="text-sm text-[var(--color-warning)]">
+                        Finish your profile before entering campaigns.{" "}
+                        <Link href="/onboarding" className="text-[var(--color-brand)] underline">
+                          Complete profile
+                        </Link>
+                      </p>
+                    ) : (
+                      <p className="text-sm text-[var(--color-danger)]">{(join.error as Error).message}</p>
+                    )
+                  ) : null}
                 </div>
               ) : (
                 <div className="space-y-4">

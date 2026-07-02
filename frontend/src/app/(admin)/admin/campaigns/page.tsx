@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { getAdminToken } from "@/lib/auth";
+import { fmtMoney } from "@/lib/format";
 import { archiveCampaign, listAdminCampaigns, publishCampaign } from "@/lib/admin";
 
 const STATUS_COLOR: Record<string, string> = {
@@ -85,8 +86,8 @@ export default function AdminCampaignsPage() {
                     <td className="px-4 py-3 text-[var(--color-text-secondary)]">
                       {c.mode === "create_new" ? "Create new" : "Repost"}
                     </td>
-                    <td className="tabular px-4 py-3 text-[var(--color-text)]">${c.cpm_rate}</td>
-                    <td className="tabular px-4 py-3 text-[var(--color-text-secondary)]">${c.budget.toLocaleString()}</td>
+                    <td className="tabular px-4 py-3 text-[var(--color-text)]">{fmtMoney(c.cpm_rate)}</td>
+                    <td className="tabular px-4 py-3 text-[var(--color-text-secondary)]">{fmtMoney(c.budget)}</td>
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: STATUS_COLOR[c.status] }}>
                         <span className="h-1.5 w-1.5 rounded-full" style={{ background: STATUS_COLOR[c.status] }} />

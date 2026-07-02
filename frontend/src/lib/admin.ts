@@ -1,7 +1,7 @@
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth";
+import { getAdminToken } from "@/lib/auth";
 
-const auth = () => ({ token: getAuthToken() ?? undefined });
+const auth = () => ({ token: getAdminToken() ?? undefined });
 
 export type AdminCampaign = {
   id: string;
@@ -26,6 +26,7 @@ export type CampaignCreate = {
   mode: "create_new" | "copy_paste";
   cpm_rate: number;
   budget: number;
+  client_id?: string;
   description?: string;
   platforms?: string[];
   brief_script?: string;
@@ -35,6 +36,10 @@ export type CampaignCreate = {
   brand_name?: string;
   min_retention_days?: number;
 };
+
+export type AdminClient = { id: string; email: string; name: string | null; status: string };
+
+export const listAdminClients = () => apiFetch<AdminClient[]>("/api/admin/clients", auth());
 
 export const listAdminCampaigns = (status?: string) =>
   apiFetch<AdminCampaign[]>(`/api/admin/campaigns${status ? `?status=${status}` : ""}`, auth());
