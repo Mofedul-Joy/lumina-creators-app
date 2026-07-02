@@ -36,7 +36,10 @@ def main() -> None:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=not args.headed)
         page = browser.new_page(viewport={"width": 1440, "height": 900})
-        page.set_default_timeout(15000)
+        # Generous timeout: local testing hits the DB in Oregon, so each mutation
+        # is a multi-second round-trip. In prod (backend co-located with the DB)
+        # these are sub-100ms.
+        page.set_default_timeout(30000)
         page.on("console", lambda m: m.type in ("error", "warning") and print(f"[console.{m.type}] {m.text}"))
         page.on("pageerror", lambda e: print(f"[pageerror] {e}"))
 
