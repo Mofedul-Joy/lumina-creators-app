@@ -74,8 +74,12 @@ def creator_set_password(db: Session, email: str, password: str) -> tuple[str, s
     email = _norm(email)
     _require_strong(password)
     creator = db.scalar(select(Creator).where(Creator.email == email))
-    if creator is None or creator.password_hash is not None:
-        # Only valid for an invited/migrated account that has no password yet.
+    # Only valid for an invited/migrated account that has no password yet.
+    # NOTE (security): this still trusts the email alone. Before the admin-invite
+    # feature ships, gate first-password on a signed/expiring invite token emailed
+    # to the address (so a stranger can't claim an invited account first). Today
+    # no code path creates null-password accounts, so this is not yet reachable.
+    if creator is None or creator.password_hash is not None or creator.signup_source == "self":
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Cannot set password for this account")
     creator.password_hash = hash_password(password)
     db.commit()
