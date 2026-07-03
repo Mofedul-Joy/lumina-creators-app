@@ -77,7 +77,15 @@ export default function AdminCreatorsPage() {
   const rows = q.data ?? [];
   const pageCount = Math.ceil(rows.length / PAGE_SIZE);
   const pageRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const suggestions = search.trim() ? rows.slice(0, 6) : [];
+  // Suggestions: prioritise names that START WITH the query (e.g. "N" → "Nate"),
+  // then fall back to other matches the backend returned.
+  const suggestions = (() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return [];
+    const starts = rows.filter((c) => (c.display_name ?? "").toLowerCase().startsWith(term));
+    const rest = rows.filter((c) => !starts.includes(c));
+    return [...starts, ...rest].slice(0, 6);
+  })();
 
   if (!ready || !token)
     return <main className="flex min-h-[100dvh] items-center justify-center"><p className="text-sm text-[var(--color-text-secondary)]">Loading…</p></main>;
