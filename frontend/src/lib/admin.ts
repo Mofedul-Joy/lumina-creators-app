@@ -10,16 +10,45 @@ export type AdminCampaign = {
   description: string | null;
   mode: "create_new" | "copy_paste";
   status: "draft" | "active" | "paused" | "completed" | "archived";
-  cpm_rate: number;
-  budget: number;
-  spent_amount: number;
+  cpm_rate: number | string;
+  budget: number | string;
+  spent_amount: number | string;
+  max_payout_per_creator: number | string | null;
+  eligible_view_pct: number | string;
   platforms: string[];
+  geo_countries: string[];
   brand_name: string | null;
+  brand_logo_url: string | null;
   brief_script: string | null;
   content_drive_url: string | null;
+  caption_rules: string | null;
+  required_mentions: string[];
+  requirements_url: string | null;
   min_retention_days: number;
+  client_id: string | null;
   published_at: string | null;
 };
+
+export type CampaignUpdate = Partial<{
+  name: string;
+  description: string;
+  cpm_rate: number;
+  budget: number;
+  max_payout_per_creator: number | null;
+  eligible_view_pct: number;
+  min_retention_days: number;
+  platforms: string[];
+  brand_name: string;
+  brand_logo_url: string;
+  brief_script: string;
+  content_drive_url: string;
+  caption_rules: string;
+  requirements_url: string;
+}>;
+
+export const getAdminCampaign = (id: string) => apiFetch<AdminCampaign>(`/api/admin/campaigns/${id}`, auth());
+export const updateCampaign = (id: string, patch: CampaignUpdate) =>
+  apiFetch<AdminCampaign>(`/api/admin/campaigns/${id}`, { method: "PATCH", body: JSON.stringify(patch), ...auth() });
 
 export type CampaignCreate = {
   name: string;
@@ -34,6 +63,7 @@ export type CampaignCreate = {
   caption_rules?: string;
   required_mentions?: string[];
   brand_name?: string;
+  brand_logo_url?: string;
   min_retention_days?: number;
 };
 

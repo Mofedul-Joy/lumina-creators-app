@@ -26,6 +26,7 @@ export default function NewCampaignPage() {
   const [f, setF] = useState({
     name: "",
     brand_name: "",
+    brand_logo_url: "",
     description: "",
     cpm_rate: "",
     budget: "",
@@ -36,6 +37,23 @@ export default function NewCampaignPage() {
     required_mentions: "",
   });
   const [platforms, setPlatforms] = useState<string[]>(["tiktok"]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function validate(): boolean {
+    const e: Record<string, string> = {};
+    if (!f.name.trim()) e.name = "Campaign name is required.";
+    if (!f.cpm_rate.trim() || Number(f.cpm_rate) <= 0) e.cpm_rate = "Enter a CPM rate.";
+    if (!f.budget.trim() || Number(f.budget) <= 0) e.budget = "Enter a budget.";
+    if (platforms.length === 0) e.platforms = "Pick at least one platform.";
+    setErrors(e);
+    const first = ["name", "cpm_rate", "budget", "platforms"].find((k) => e[k]);
+    if (first) {
+      const el = document.getElementById(`cf-${first}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      (el as HTMLInputElement | null)?.focus?.();
+    }
+    return Object.keys(e).length === 0;
+  }
   const [publishNow, setPublishNow] = useState(true);
   const [clientId, setClientId] = useState("");
   const clientsQ = useQuery({ queryKey: ["admin-clients"], queryFn: listAdminClients });
@@ -53,6 +71,7 @@ export default function NewCampaignPage() {
         budget: Number(f.budget),
         description: f.description.trim() || undefined,
         brand_name: f.brand_name.trim() || undefined,
+        brand_logo_url: f.brand_logo_url.trim() || undefined,
         platforms,
         min_retention_days: Number(f.min_retention_days) || 30,
         client_id: clientId || undefined,
@@ -103,8 +122,9 @@ export default function NewCampaignPage() {
             ))}
           </div>
 
-          <Field label="Campaign name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+          <Field id="cf-name" requiredMark error={errors.name} label="Campaign name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
           <Field label="Brand name" value={f.brand_name} onChange={(e) => setF({ ...f, brand_name: e.target.value })} />
+          <Field label="Banner / thumbnail image URL (optional)" value={f.brand_logo_url} onChange={(e) => setF({ ...f, brand_logo_url: e.target.value })} placeholder="https://…/banner.jpg" />
 
           <div className="space-y-2">
             <label className={labelCls}>Client (brand account)</label>
@@ -127,13 +147,13 @@ export default function NewCampaignPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Field label="CPM ($ / 1,000 views)" type="number" value={f.cpm_rate} onChange={(e) => setF({ ...f, cpm_rate: e.target.value })} />
-            <Field label="Budget ($)" type="number" value={f.budget} onChange={(e) => setF({ ...f, budget: e.target.value })} />
+            <Field id="cf-cpm_rate" requiredMark error={errors.cpm_rate} label="CPM ($ / 1,000 views)" type="number" value={f.cpm_rate} onChange={(e) => setF({ ...f, cpm_rate: e.target.value })} />
+            <Field id="cf-budget" requiredMark error={errors.budget} label="Budget ($)" type="number" value={f.budget} onChange={(e) => setF({ ...f, budget: e.target.value })} />
             <Field label="Min. retention (days)" type="number" value={f.min_retention_days} onChange={(e) => setF({ ...f, min_retention_days: e.target.value })} />
           </div>
 
-          <div className="space-y-2">
-            <label className={labelCls}>Platforms</label>
+          <div className="space-y-2" id="cf-platforms">
+            <label className={labelCls}>Platforms<span className="ml-0.5 text-[var(--color-danger)]">*</span></label>
             <div className="flex flex-wrap gap-2">
               {PLATFORMS.map((p) => (
                 <button
@@ -149,6 +169,7 @@ export default function NewCampaignPage() {
                 </button>
               ))}
             </div>
+            {errors.platforms ? <p className="text-sm text-[var(--color-danger)]">{errors.platforms}</p> : null}
           </div>
 
           {mode === "create_new" ? (
@@ -173,7 +194,7 @@ export default function NewCampaignPage() {
 
           {save.isError ? <p className="text-sm text-[var(--color-danger)]">{(save.error as Error).message}</p> : null}
           <div className="w-52">
-            <Button loading={save.isPending} disabled={!f.name || !f.cpm_rate || !f.budget} onClick={() => save.mutate()}>
+            <Button loading={save.isPending} onClick={() => { if (validate()) save.mutate(); }}>
               {publishNow ? "Create & publish" : "Save draft"}
             </Button>
           </div>

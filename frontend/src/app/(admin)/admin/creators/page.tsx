@@ -1,358 +1,220 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/Button";
+import { AdminNav } from "@/components/admin/AdminNav";
+import { Pager } from "@/components/admin/Pager";
 import { getAdminToken } from "@/lib/auth";
-import {
-  GENDERS,
-  PLATFORMS,
-  isAuthError,
-  listCreators,
-  type CreatorFilters,
-  type Gender,
-  type Platform,
-} from "@/lib/api";
+import { GENDERS, PLATFORMS, isAuthError, listCreators, type CreatorFilters, type Gender, type Platform } from "@/lib/api";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 12;
+const control =
+  "min-h-10 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]";
 
-const labelCls = "block text-xs font-medium text-[var(--color-text-secondary)]";
-const controlCls =
-  "min-h-10 w-full rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus-visible:border-[var(--color-brand)] focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]";
+type Prefs = { gender: string; platform: string; ethnicity: string; primary_language: string; country: string; city: string; min_followers: string; completed_only: boolean };
+const EMPTY: Prefs = { gender: "", platform: "", ethnicity: "", primary_language: "", country: "", city: "", min_followers: "", completed_only: false };
 
-type FilterForm = {
-  q: string;
-  gender: string;
-  ethnicity: string;
-  primary_language: string;
-  country: string;
-  city: string;
-  age_min: string;
-  age_max: string;
-  platform: string;
-  min_followers: string;
-  completed_only: boolean;
-};
-
-const EMPTY_FILTERS: FilterForm = {
-  q: "",
-  gender: "",
-  ethnicity: "",
-  primary_language: "",
-  country: "",
-  city: "",
-  age_min: "",
-  age_max: "",
-  platform: "",
-  min_followers: "",
-  completed_only: false,
-};
-
-function toFilters(f: FilterForm, offset: number): CreatorFilters {
-  const out: CreatorFilters = { limit: PAGE_SIZE, offset };
-  if (f.q.trim()) out.q = f.q.trim();
-  if (f.gender) out.gender = f.gender as Gender;
-  if (f.ethnicity.trim()) out.ethnicity = f.ethnicity.trim();
-  if (f.primary_language.trim()) out.primary_language = f.primary_language.trim();
-  if (f.country.trim()) out.country = f.country.trim();
-  if (f.city.trim()) out.city = f.city.trim();
-  if (f.age_min.trim()) out.age_min = Number(f.age_min);
-  if (f.age_max.trim()) out.age_max = Number(f.age_max);
-  if (f.platform) out.platform = f.platform as Platform;
-  if (f.min_followers.trim()) out.min_followers = Number(f.min_followers);
-  if (f.completed_only) out.completed_only = true;
-  return out;
+function useDebounced<T>(value: T, ms = 350): T {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return v;
 }
+
+function LineIcon() { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>; }
+function GridIcon() { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2" /><rect x="13" y="4" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2" /><rect x="4" y="13" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2" /><rect x="13" y="13" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2" /></svg>; }
 
 export default function AdminCreatorsPage() {
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
-  useEffect(() => {
-    setToken(getAdminToken());
-    setReady(true);
-  }, []);
+  useEffect(() => { setToken(getAdminToken()); setReady(true); }, []);
+  useEffect(() => { if (ready && !token) router.replace("/admin/login"); }, [ready, token, router]);
 
-  useEffect(() => {
-    if (ready && !token) router.replace("/admin/login");
-  }, [ready, token, router]);
+  const [search, setSearch] = useState("");
+  const [social, setSocial] = useState("");
+  const [prefs, setPrefs] = useState<Prefs>(EMPTY);
+  const [showPrefs, setShowPrefs] = useState(false);
+  const [view, setView] = useState<"grid" | "line">("grid");
+  const [page, setPage] = useState(1);
+  const [focused, setFocused] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
 
-  // Draft filters (form) vs applied filters (query).
-  const [draft, setDraft] = useState<FilterForm>(EMPTY_FILTERS);
-  const [applied, setApplied] = useState<FilterForm>(EMPTY_FILTERS);
-  const [offset, setOffset] = useState(0);
+  const dSearch = useDebounced(search);
+  const dSocial = useDebounced(social);
+  const dPrefs = useDebounced(prefs);
 
-  const creatorsQ = useQuery({
-    queryKey: ["admin-creators", applied, offset],
-    queryFn: () => listCreators(token ?? "", toFilters(applied, offset)),
+  const filters: CreatorFilters = useMemo(() => {
+    const f: CreatorFilters = { limit: 500 };
+    if (dSearch.trim()) f.q = dSearch.trim();
+    if (dSocial.trim()) f.social = dSocial.trim();
+    if (dPrefs.gender) f.gender = dPrefs.gender as Gender;
+    if (dPrefs.platform) f.platform = dPrefs.platform as Platform;
+    if (dPrefs.ethnicity.trim()) f.ethnicity = dPrefs.ethnicity.trim();
+    if (dPrefs.primary_language.trim()) f.primary_language = dPrefs.primary_language.trim();
+    if (dPrefs.country.trim()) f.country = dPrefs.country.trim();
+    if (dPrefs.city.trim()) f.city = dPrefs.city.trim();
+    if (dPrefs.min_followers.trim()) f.min_followers = Number(dPrefs.min_followers);
+    if (dPrefs.completed_only) f.completed_only = true;
+    return f;
+  }, [dSearch, dSocial, dPrefs]);
+
+  useEffect(() => setPage(1), [filters]);
+
+  const q = useQuery({
+    queryKey: ["admin-creators", filters],
+    queryFn: () => listCreators(token ?? "", filters),
     enabled: ready && !!token,
     retry: false,
   });
+  useEffect(() => { if (q.isError && isAuthError(q.error)) router.replace("/admin/login"); }, [q.isError, q.error, router]);
 
-  useEffect(() => {
-    if (creatorsQ.isError && isAuthError(creatorsQ.error)) router.replace("/admin/login");
-  }, [creatorsQ.isError, creatorsQ.error, router]);
-
-  function applyFilters() {
-    setOffset(0);
-    setApplied(draft);
-  }
-  function resetFilters() {
-    setDraft(EMPTY_FILTERS);
-    setApplied(EMPTY_FILTERS);
-    setOffset(0);
-  }
-
-  const rows = creatorsQ.data ?? [];
-  const page = Math.floor(offset / PAGE_SIZE) + 1;
-  const canPrev = offset > 0;
-  const canNext = rows.length === PAGE_SIZE;
+  const activePrefs = Object.entries(dPrefs).filter(([, v]) => v && v !== "").length;
+  const rows = q.data ?? [];
+  const pageCount = Math.ceil(rows.length / PAGE_SIZE);
+  const pageRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const suggestions = search.trim() ? rows.slice(0, 6) : [];
 
   if (!ready || !token)
-    return (
-      <main className="flex min-h-[100dvh] items-center justify-center">
-        <p className="text-sm text-[var(--color-text-secondary)]">Loading…</p>
-      </main>
-    );
+    return <main className="flex min-h-[100dvh] items-center justify-center"><p className="text-sm text-[var(--color-text-secondary)]">Loading…</p></main>;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10 space-y-6">
-      <header className="flex items-end justify-between">
-        <div>
-          <p className="text-sm font-medium text-[var(--color-brand)]">Lumina Admin</p>
-          <h1 className="text-3xl font-semibold text-[var(--color-text)]">Creator database</h1>
-          <p className="mt-1 text-[var(--color-text-secondary)]">
-            Filter and drill into the full creator roster.
-          </p>
-        </div>
-      </header>
+    <div className="min-h-[100dvh]">
+      <AdminNav />
+      <main className="mx-auto max-w-6xl px-6 py-10">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Operations Terminal</p>
+        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Creator database</h1>
+        <p className="mt-2 text-[var(--color-text-secondary)]">Search the full roster by name, email, or social link.</p>
 
-      {/* filters */}
-      <section className="card-grad rounded-[var(--radius-card)] p-5 space-y-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="space-y-1 sm:col-span-2 lg:col-span-2">
-            <label className={labelCls}>Search</label>
+        {/* search row */}
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div ref={boxRef} className="relative min-w-[260px] flex-1">
             <input
-              className={controlCls}
-              placeholder="Name or email"
-              value={draft.q}
-              onChange={(e) => setDraft({ ...draft, q: e.target.value })}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") applyFilters();
-              }}
+              className={`${control} pr-10`}
+              placeholder="Search by name or email…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setTimeout(() => setFocused(false), 150)}
             />
-          </div>
-          <div className="space-y-1">
-            <label className={labelCls}>Gender</label>
-            <select
-              className={controlCls}
-              value={draft.gender}
-              onChange={(e) => setDraft({ ...draft, gender: e.target.value })}
-            >
-              <option value="">Any</option>
-              {GENDERS.map((g) => (
-                <option key={g} value={g}>
-                  {g.replace(/_/g, " ")}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className={labelCls}>Platform</label>
-            <select
-              className={controlCls}
-              value={draft.platform}
-              onChange={(e) => setDraft({ ...draft, platform: e.target.value })}
-            >
-              <option value="">Any</option>
-              {PLATFORMS.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className={labelCls}>Ethnicity</label>
-            <input
-              className={controlCls}
-              value={draft.ethnicity}
-              onChange={(e) => setDraft({ ...draft, ethnicity: e.target.value })}
-            />
-          </div>
-          <div className="space-y-1">
-            <label className={labelCls}>Language</label>
-            <input
-              className={controlCls}
-              value={draft.primary_language}
-              onChange={(e) => setDraft({ ...draft, primary_language: e.target.value })}
-            />
-          </div>
-          <div className="space-y-1">
-            <label className={labelCls}>Country</label>
-            <input
-              className={controlCls}
-              value={draft.country}
-              onChange={(e) => setDraft({ ...draft, country: e.target.value })}
-            />
-          </div>
-          <div className="space-y-1">
-            <label className={labelCls}>City</label>
-            <input
-              className={controlCls}
-              value={draft.city}
-              onChange={(e) => setDraft({ ...draft, city: e.target.value })}
-            />
-          </div>
-          <div className="space-y-1">
-            <label className={labelCls}>Age min</label>
-            <input
-              className={controlCls}
-              type="number"
-              value={draft.age_min}
-              onChange={(e) => setDraft({ ...draft, age_min: e.target.value })}
-            />
-          </div>
-          <div className="space-y-1">
-            <label className={labelCls}>Age max</label>
-            <input
-              className={controlCls}
-              type="number"
-              value={draft.age_max}
-              onChange={(e) => setDraft({ ...draft, age_max: e.target.value })}
-            />
-          </div>
-          <div className="space-y-1">
-            <label className={labelCls}>Min followers</label>
-            <input
-              className={controlCls}
-              type="number"
-              value={draft.min_followers}
-              onChange={(e) => setDraft({ ...draft, min_followers: e.target.value })}
-            />
-          </div>
-          <label className="flex items-end gap-2 pb-2 text-sm text-[var(--color-text)]">
-            <input
-              type="checkbox"
-              className="h-4 w-4 accent-[var(--color-brand)]"
-              checked={draft.completed_only}
-              onChange={(e) => setDraft({ ...draft, completed_only: e.target.checked })}
-            />
-            Completed only
-          </label>
-        </div>
-        <div className="flex gap-3">
-          <div className="w-32">
-            <Button type="button" onClick={applyFilters}>
-              Apply
-            </Button>
-          </div>
-          <button
-            type="button"
-            onClick={resetFilters}
-            className="min-h-11 cursor-pointer rounded-[var(--radius-btn)] border border-[var(--color-border)] px-4 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)]"
-          >
-            Reset
-          </button>
-        </div>
-      </section>
-
-      {/* results */}
-      {creatorsQ.isLoading ? (
-        <p className="text-sm text-[var(--color-text-secondary)]">Loading creators…</p>
-      ) : creatorsQ.isError ? (
-        <p className="text-sm text-[var(--color-danger)]">
-          {(creatorsQ.error as Error).message}
-        </p>
-      ) : rows.length === 0 ? (
-        <div className="rounded-[var(--radius-card)] border border-dashed border-[var(--color-border)] p-10 text-center text-sm text-[var(--color-text-muted)]">
-          No creators match these filters.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {rows.map((c) => (
-            <Link
-              key={c.id}
-              href={`/admin/creators/${c.id}`}
-              className="group card-grad rounded-[var(--radius-card)] p-4 transition hover:border-[var(--color-brand)]"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate text-base font-semibold text-[var(--color-text)]">
-                    {c.display_name ?? "Unnamed creator"}
-                  </p>
-                  <p className="truncate text-sm text-[var(--color-text-secondary)]">{c.email}</p>
-                </div>
-                <span
-                  className="shrink-0 rounded-[var(--radius-pill)] px-2 py-0.5 text-xs font-medium"
-                  style={{
-                    color: c.completed ? "var(--color-on-brand)" : "var(--color-text-secondary)",
-                    background: c.completed ? "var(--color-brand)" : "var(--color-surface-2)",
-                  }}
-                >
-                  {c.completed ? "Complete" : "Incomplete"}
-                </span>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" /><path d="m20 20-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            </span>
+            {focused && suggestions.length > 0 ? (
+              <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl">
+                {suggestions.map((c) => (
+                  <Link key={c.id} href={`/admin/creators/${c.id}`} className="flex items-center justify-between px-3 py-2 text-sm hover:bg-[var(--color-surface-2)]">
+                    <span className="text-[var(--color-text)]">{c.display_name ?? "Unnamed"}</span>
+                    <span className="text-xs text-[var(--color-text-muted)]">{c.email}</span>
+                  </Link>
+                ))}
               </div>
+            ) : null}
+          </div>
 
-              <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
-                <dt className="text-[var(--color-text-muted)]">Country</dt>
-                <dd className="text-right text-[var(--color-text)]">{c.country ?? "—"}</dd>
-                <dt className="text-[var(--color-text-muted)]">Language</dt>
-                <dd className="text-right text-[var(--color-text)]">{c.primary_language ?? "—"}</dd>
-                <dt className="text-[var(--color-text-muted)]">Gender</dt>
-                <dd className="text-right text-[var(--color-text)]">
-                  {c.gender ? c.gender.replace(/_/g, " ") : "—"}
-                </dd>
-                <dt className="text-[var(--color-text-muted)]">Followers</dt>
-                <dd className="text-right tabular text-[var(--color-text)]">
-                  {c.total_followers.toLocaleString()}
-                </dd>
-              </dl>
+          <button
+            onClick={() => setShowPrefs((s) => !s)}
+            className={`min-h-10 cursor-pointer rounded-xl px-4 text-sm transition ${showPrefs || activePrefs ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]" : "bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"}`}
+          >
+            Preferences{activePrefs ? ` · ${activePrefs}` : ""}
+          </button>
 
-              {c.platforms.length > 0 ? (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {c.platforms.map((p) => (
-                    <span
-                      key={p}
-                      className="rounded-[var(--radius-pill)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-0.5 text-xs text-[var(--color-text-secondary)]"
-                    >
-                      {p}
-                    </span>
+          <div className="flex items-center rounded-full bg-[var(--color-surface)] p-1">
+            {(["grid", "line"] as const).map((m) => (
+              <button key={m} onClick={() => setView(m)} aria-label={`${m} view`}
+                className={`grid h-8 w-8 cursor-pointer place-items-center rounded-full transition ${view === m ? "bg-[var(--color-surface-2)] text-[var(--color-text)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"}`}>
+                {m === "grid" ? <GridIcon /> : <LineIcon />}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* preferences panel */}
+        {showPrefs ? (
+          <div className="card-lumina mt-3 grid grid-cols-2 gap-3 rounded-[var(--radius-card)] p-5 sm:grid-cols-3 lg:grid-cols-4">
+            <label className="block"><span className="mb-1 block text-xs text-[var(--color-text-secondary)]">Gender</span>
+              <select className={control} value={prefs.gender} onChange={(e) => setPrefs({ ...prefs, gender: e.target.value })}>
+                <option value="">Any</option>{GENDERS.map((g) => <option key={g} value={g}>{g.replace(/_/g, " ")}</option>)}
+              </select></label>
+            <label className="block"><span className="mb-1 block text-xs text-[var(--color-text-secondary)]">Platform</span>
+              <select className={control} value={prefs.platform} onChange={(e) => setPrefs({ ...prefs, platform: e.target.value })}>
+                <option value="">Any</option>{PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select></label>
+            <label className="block"><span className="mb-1 block text-xs text-[var(--color-text-secondary)]">Ethnicity</span>
+              <input className={control} value={prefs.ethnicity} onChange={(e) => setPrefs({ ...prefs, ethnicity: e.target.value })} /></label>
+            <label className="block"><span className="mb-1 block text-xs text-[var(--color-text-secondary)]">Language</span>
+              <input className={control} value={prefs.primary_language} onChange={(e) => setPrefs({ ...prefs, primary_language: e.target.value })} /></label>
+            <label className="block"><span className="mb-1 block text-xs text-[var(--color-text-secondary)]">Country</span>
+              <input className={control} value={prefs.country} onChange={(e) => setPrefs({ ...prefs, country: e.target.value })} /></label>
+            <label className="block"><span className="mb-1 block text-xs text-[var(--color-text-secondary)]">City</span>
+              <input className={control} value={prefs.city} onChange={(e) => setPrefs({ ...prefs, city: e.target.value })} /></label>
+            <label className="block"><span className="mb-1 block text-xs text-[var(--color-text-secondary)]">Min followers</span>
+              <input className={control} type="number" value={prefs.min_followers} onChange={(e) => setPrefs({ ...prefs, min_followers: e.target.value })} /></label>
+            <label className="block"><span className="mb-1 block text-xs text-[var(--color-text-secondary)]">Social link</span>
+              <input className={control} placeholder="tiktok.com/@…" value={social} onChange={(e) => setSocial(e.target.value)} /></label>
+            <label className="col-span-2 flex items-center gap-2 text-sm text-[var(--color-text)] sm:col-span-3 lg:col-span-4">
+              <input type="checkbox" className="h-4 w-4 accent-[var(--color-brand)]" checked={prefs.completed_only} onChange={(e) => setPrefs({ ...prefs, completed_only: e.target.checked })} />
+              Completed profiles only
+              {(activePrefs || social) ? <button onClick={() => { setPrefs(EMPTY); setSocial(""); }} className="ml-auto cursor-pointer text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]">Clear filters</button> : null}
+            </label>
+          </div>
+        ) : null}
+
+        {/* results */}
+        <div className="mt-6">
+          {q.isLoading ? (
+            <p className="text-sm text-[var(--color-text-secondary)]">Loading creators…</p>
+          ) : rows.length === 0 ? (
+            <div className="rounded-[var(--radius-card)] border border-dashed border-[var(--color-border)] p-10 text-center text-sm text-[var(--color-text-muted)]">No creators match your search.</div>
+          ) : view === "grid" ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {pageRows.map((c) => (
+                <Link key={c.id} href={`/admin/creators/${c.id}`} className="card-grad rounded-[var(--radius-card)] p-4 transition hover:ring-1 hover:ring-[var(--color-brand)]/40">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-[var(--color-text)]">{c.display_name ?? "Unnamed creator"}</p>
+                      <p className="truncate text-sm text-[var(--color-text-secondary)]">{c.email}</p>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${c.completed ? "bg-emerald-500/15 text-emerald-400" : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]"}`}>{c.completed ? "Complete" : "Incomplete"}</span>
+                  </div>
+                  <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+                    <dt className="text-[var(--color-text-muted)]">Country</dt><dd className="text-right text-[var(--color-text)]">{c.country ?? "—"}</dd>
+                    <dt className="text-[var(--color-text-muted)]">Language</dt><dd className="text-right text-[var(--color-text)]">{c.primary_language ?? "—"}</dd>
+                    <dt className="text-[var(--color-text-muted)]">Followers</dt><dd className="tabular text-right text-[var(--color-text)]">{c.total_followers.toLocaleString()}</dd>
+                  </dl>
+                  {c.platforms.length ? (
+                    <div className="mt-3 flex flex-wrap gap-1.5">{c.platforms.map((p) => <span key={p} className="rounded-full bg-[var(--color-surface-2)] px-2 py-0.5 text-xs text-[var(--color-text-secondary)]">{p}</span>)}</div>
+                  ) : null}
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)]">
+              <table className="w-full min-w-[640px] text-left text-sm">
+                <thead className="bg-[var(--color-surface)] text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
+                  <tr><th className="px-4 py-3 font-medium">Creator</th><th className="px-4 py-3 font-medium">Country</th><th className="px-4 py-3 font-medium">Language</th><th className="px-4 py-3 text-right font-medium">Followers</th><th className="px-4 py-3 font-medium">Status</th></tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-border)]">
+                  {pageRows.map((c) => (
+                    <tr key={c.id} className="transition hover:bg-[var(--color-surface)]/50">
+                      <td className="px-4 py-3"><Link href={`/admin/creators/${c.id}`} className="font-medium text-[var(--color-text)] hover:text-[var(--color-brand)]">{c.display_name ?? "Unnamed"}</Link><p className="text-xs text-[var(--color-text-muted)]">{c.email}</p></td>
+                      <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.country ?? "—"}</td>
+                      <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.primary_language ?? "—"}</td>
+                      <td className="tabular px-4 py-3 text-right text-[var(--color-text)]">{c.total_followers.toLocaleString()}</td>
+                      <td className="px-4 py-3">{c.completed ? <span className="text-xs text-emerald-400">Complete</span> : <span className="text-xs text-[var(--color-text-muted)]">Incomplete</span>}</td>
+                    </tr>
                   ))}
-                </div>
-              ) : null}
-            </Link>
-          ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <Pager page={page} pageCount={pageCount} onPage={setPage} total={rows.length} />
         </div>
-      )}
-
-      {/* pagination */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-[var(--color-text-muted)]">
-          Page <span className="tabular">{page}</span> · showing{" "}
-          <span className="tabular">{rows.length}</span>
-        </p>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            disabled={!canPrev}
-            onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
-            className="min-h-10 cursor-pointer rounded-[var(--radius-btn)] border border-[var(--color-border)] px-4 text-sm text-[var(--color-text)] transition hover:border-[var(--color-brand)] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Prev
-          </button>
-          <button
-            type="button"
-            disabled={!canNext}
-            onClick={() => setOffset(offset + PAGE_SIZE)}
-            className="min-h-10 cursor-pointer rounded-[var(--radius-btn)] border border-[var(--color-border)] px-4 text-sm text-[var(--color-text)] transition hover:border-[var(--color-brand)] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Next
-          </button>
-        </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

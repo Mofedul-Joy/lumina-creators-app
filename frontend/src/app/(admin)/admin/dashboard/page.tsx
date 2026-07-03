@@ -149,8 +149,9 @@ export default function AdminDashboardPage() {
           ) : (
             <ul>
               {s.recent_campaigns.map((c, i) => (
-                <li
+                <Link
                   key={c.id}
+                  href={`/admin/campaigns/${c.id}`}
                   className={`flex items-center justify-between gap-4 px-5 py-4 transition-colors duration-150 hover:bg-[var(--color-surface)]/50 ${
                     i > 0 ? "border-t border-[var(--color-border)]" : ""
                   }`}
@@ -172,7 +173,7 @@ export default function AdminDashboardPage() {
                     </div>
                     <StatusBadge status={c.status} />
                   </div>
-                </li>
+                </Link>
               ))}
             </ul>
           )}

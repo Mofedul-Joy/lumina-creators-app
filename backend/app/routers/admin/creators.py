@@ -28,6 +28,7 @@ def list_creators(
     age_max: Optional[int] = None,
     platform: Optional[str] = None,
     min_followers: Optional[int] = None,
+    social: Optional[str] = None,
     completed_only: bool = False,
     limit: int = 50,
     offset: int = 0,
@@ -37,7 +38,7 @@ def list_creators(
     rows = svc.list_creators(
         db, q=q, gender=gender, ethnicity=ethnicity, primary_language=primary_language,
         country=country, city=city, age_min=age_min, age_max=age_max, platform=platform,
-        min_followers=min_followers, completed_only=completed_only, limit=limit, offset=offset,
+        min_followers=min_followers, social=social, completed_only=completed_only, limit=limit, offset=offset,
     )
     return [CreatorListItem(**r) for r in rows]
 

@@ -124,9 +124,9 @@ export default function AdminPaymentsPage() {
                           <button
                             disabled={payM.isPending}
                             onClick={() => payM.mutate({ id: r.creator_id, m: method[r.creator_id] ?? "paypal" })}
-                            className="cursor-pointer rounded-md bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-50"
+                            className="cursor-pointer rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-[var(--color-on-brand)] hover:bg-emerald-400 disabled:opacity-50"
                           >
-                            Mark paid
+                            {payM.isPending ? "Paying…" : "Pay now"}
                           </button>
                         </div>
                       </td>

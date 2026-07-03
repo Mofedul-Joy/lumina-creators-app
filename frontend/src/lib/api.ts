@@ -261,6 +261,7 @@ export type CreatorFilters = {
   age_max?: number;
   platform?: Platform;
   min_followers?: number;
+  social?: string;
   completed_only?: boolean;
   limit?: number;
   offset?: number;

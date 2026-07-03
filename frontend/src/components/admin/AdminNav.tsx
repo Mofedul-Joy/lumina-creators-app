@@ -23,16 +23,28 @@ export function AdminNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-bg-deep)]/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
-        <Link href="/admin/dashboard" className="flex shrink-0 items-center gap-2">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--color-brand)] text-[var(--color-on-brand)] shadow-[0_0_16px_-2px_rgba(34,197,94,0.6)]">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M8 5v14l11-7L8 5Z" fill="currentColor" />
-            </svg>
-          </span>
-          <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text)]">
-            Lumina <span className="text-[var(--color-text-muted)]">Admin</span>
-          </span>
-        </Link>
+        <div className="group relative shrink-0">
+          <div className="flex items-center gap-1">
+            <Link href="/admin/dashboard" className="flex items-center gap-2">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--color-brand)] text-[var(--color-on-brand)] shadow-[0_0_16px_-2px_rgba(34,197,94,0.6)]">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M8 5v14l11-7L8 5Z" fill="currentColor" />
+                </svg>
+              </span>
+              <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text)]">
+                Lumina <span className="text-[var(--color-text-muted)]">Admin</span>
+              </span>
+            </Link>
+            <button aria-label="Quick actions" className="grid h-6 w-6 place-items-center rounded text-[var(--color-text-muted)] transition group-hover:text-[var(--color-text)]">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden><path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+          </div>
+          {/* hover dropdown of quick subpages */}
+          <div className="invisible absolute left-0 top-full z-50 mt-1 w-48 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100">
+            <Link href="/admin/campaigns/new" className="block px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text)]">New campaign</Link>
+            <Link href="/admin/creators" className="block px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text)]">Browse creators</Link>
+          </div>
+        </div>
 
         <nav className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto no-scrollbar">
           {LINKS.map((l) => {

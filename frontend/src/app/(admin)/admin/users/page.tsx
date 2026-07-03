@@ -8,7 +8,7 @@ import { AdminNav } from "@/components/admin/AdminNav";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getAdminToken } from "@/lib/auth";
 import { getUsers, reactivateClient, suspendClient } from "@/lib/admin";
-import { isAuthError } from "@/lib/api";
+import { isAuthError, listCreators } from "@/lib/api";
 import { fmtInt } from "@/lib/format";
 
 function StatTile({ label, value, hint, href }: { label: string; value: string; hint?: string; href?: string }) {
@@ -36,6 +36,12 @@ export default function AdminUsersPage() {
   }, [ready, hasToken, router]);
 
   const q = useQuery({ queryKey: ["users"], queryFn: getUsers, enabled: ready && hasToken, retry: false });
+  const creatorsQ = useQuery({
+    queryKey: ["users-creators-preview"],
+    queryFn: () => listCreators(getAdminToken() ?? "", { limit: 6 }),
+    enabled: ready && hasToken,
+    retry: false,
+  });
   useEffect(() => {
     if (q.isError && isAuthError(q.error)) router.replace("/admin/login");
   }, [q.isError, q.error, router]);
@@ -148,6 +154,26 @@ export default function AdminUsersPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+            </div>
+
+            {/* creators — managed on the Creators page */}
+            <div className="card-lumina mt-6 overflow-hidden rounded-[var(--radius-card)]">
+              <div className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-4">
+                <h2 className="text-lg font-semibold text-[var(--color-text)]">Creators</h2>
+                <Link href="/admin/creators" className="text-sm font-medium text-[var(--color-brand)] hover:underline">View all {u.creator_count} →</Link>
+              </div>
+              {(creatorsQ.data ?? []).length === 0 ? (
+                <p className="p-8 text-center text-sm text-[var(--color-text-secondary)]">No creators yet.</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {(creatorsQ.data ?? []).map((c) => (
+                    <Link key={c.id} href={`/admin/creators/${c.id}`} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition hover:ring-1 hover:ring-[var(--color-brand)]/40">
+                      <p className="truncate text-sm font-medium text-[var(--color-text)]">{c.display_name ?? "Unnamed"}</p>
+                      <p className="truncate text-xs text-[var(--color-text-muted)]">{c.email}</p>
+                    </Link>
+                  ))}
                 </div>
               )}
             </div>

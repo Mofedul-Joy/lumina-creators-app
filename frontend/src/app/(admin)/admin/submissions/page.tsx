@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { Pager } from "@/components/admin/Pager";
 import { getAdminToken } from "@/lib/auth";
 import { getSubmissionCounts, listSubmissions, rejectSubmission, verifySubmission } from "@/lib/admin";
 import { isAuthError } from "@/lib/api";
@@ -33,6 +34,8 @@ export default function AdminSubmissionsPage() {
   const [filter, setFilter] = useState<string>("pending");
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 15;
 
   useEffect(() => {
     setHasToken(!!getAdminToken());
@@ -76,6 +79,8 @@ export default function AdminSubmissionsPage() {
     );
 
   const rows = listQ.data ?? [];
+  const pageCount = Math.ceil(rows.length / PAGE_SIZE);
+  const pageRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const c = countsQ.data;
 
   return (
@@ -96,7 +101,7 @@ export default function AdminSubmissionsPage() {
             return (
               <button
                 key={f.key}
-                onClick={() => setFilter(f.key)}
+                onClick={() => { setFilter(f.key); setPage(1); }}
                 className={`cursor-pointer rounded-full px-4 py-1.5 text-sm transition ${
                   active
                     ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]"
@@ -129,7 +134,7 @@ export default function AdminSubmissionsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((s) => (
+                  {pageRows.map((s) => (
                     <tr key={s.id} className="border-b border-[var(--color-border)]/40 last:border-0 align-top">
                       <td className="px-5 py-4">
                         <div className="font-medium text-[var(--color-text)]">{s.creator_name ?? "Unnamed"}</div>
@@ -210,6 +215,7 @@ export default function AdminSubmissionsPage() {
             </div>
           )}
         </div>
+        <Pager page={page} pageCount={pageCount} onPage={setPage} total={rows.length} />
       </main>
     </div>
   );

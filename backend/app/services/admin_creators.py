@@ -20,7 +20,7 @@ def _dob_bounds(age_min: int | None, age_max: int | None):
 
 def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_language=None,
                   country=None, city=None, age_min=None, age_max=None, platform=None,
-                  min_followers=None, completed_only=False, limit=50, offset=0):
+                  min_followers=None, social=None, completed_only=False, limit=50, offset=0):
     stmt = select(Creator).outerjoin(CreatorProfile, CreatorProfile.creator_id == Creator.id)
     P = CreatorProfile
     if q:
@@ -49,7 +49,13 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
         if min_followers is not None:
             cond = cond & (SocialAccount.follower_count >= min_followers)
         stmt = stmt.where(exists().where(cond))
-    stmt = stmt.order_by(Creator.created_at.desc()).limit(min(limit, 200)).offset(offset)
+    if social and social.strip():
+        s = f"%{social.strip()}%"
+        stmt = stmt.where(exists().where(
+            (SocialAccount.creator_id == Creator.id)
+            & (SocialAccount.profile_url.ilike(s) | SocialAccount.handle.ilike(s))
+        ))
+    stmt = stmt.order_by(Creator.created_at.desc()).limit(min(limit, 500)).offset(offset)
 
     creators = db.scalars(stmt).all()
     ids = [c.id for c in creators]
