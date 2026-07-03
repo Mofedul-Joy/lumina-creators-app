@@ -14,9 +14,9 @@
   --color-brand-soft: #7dffa6;   /* neon mint (clippers accent) */
   --color-on-brand: #052e16;
 
-  --color-text: #fafafa;         /* zinc-50 */
-  --color-text-secondary: #a1a1aa;
-  --color-text-muted: #71717a;
+  --color-text: #fafafa;         /* zinc-50 — primary */
+  --color-text-secondary: #b8b8c0; /* raised from zinc-400 for legibility */
+  --color-text-muted: #9a9aa4;     /* raised from zinc-500 — labels/headers readable but still subordinate */
 
   --color-warning: #fbbf24;
   --color-danger: #ef4444;

@@ -18,8 +18,11 @@ class Settings(BaseSettings):
 
     # --- auth ---
     jwt_secret: str = "dev-insecure-change-me"
-    jwt_access_ttl_min: int = 15
-    jwt_refresh_ttl_days: int = 7
+    # Access is short-ish but auto-refreshed by the client; refresh is long so a
+    # user who returns to the browser stays signed in. Refresh rotates on every
+    # use, so an active user is effectively logged in indefinitely.
+    jwt_access_ttl_min: int = 60
+    jwt_refresh_ttl_days: int = 60
 
     # --- object storage (Cloudflare R2 / S3-compatible) ---
     r2_endpoint: str = ""

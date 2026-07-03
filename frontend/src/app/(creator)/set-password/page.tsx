@@ -18,7 +18,7 @@ export default function CreatorSetPasswordPage() {
   const setCreatorPassword = useMutation({
     mutationFn: () => creatorSetPassword(email, password),
     onSuccess: (data) => {
-      setAuthToken(data.access_token);
+      setAuthToken(data.access_token, data.refresh_token);
       console.log(data.access_token);
       router.push("/dashboard");
     },

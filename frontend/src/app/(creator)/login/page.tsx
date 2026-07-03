@@ -24,8 +24,8 @@ export default function CreatorLoginPage() {
   const [error, setError] = useState("");
   const [fieldError, setFieldError] = useState("");
 
-  function finish(token: string) {
-    setAuthToken(token);
+  function finish(token: string, refresh?: string) {
+    setAuthToken(token, refresh);
     router.push("/dashboard");
   }
 
@@ -54,14 +54,14 @@ export default function CreatorLoginPage() {
         router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
         return;
       }
-      finish(data.access_token);
+      finish(data.access_token, data.refresh_token);
     },
     onError: (err) => setError((err as Error).message),
   });
 
   const setCreatorPassword = useMutation({
     mutationFn: () => creatorSetPassword(email, password),
-    onSuccess: (data) => finish(data.access_token),
+    onSuccess: (data) => finish(data.access_token, data.refresh_token),
     onError: (err) => setError((err as Error).message),
   });
 

@@ -1,52 +1,31 @@
 import { apiFetch } from "@/lib/api";
 
 export type CreatorLoginResult =
-  | { status: "ok"; access_token: string }
+  | { status: "ok"; access_token: string; refresh_token?: string }
   | { status: "password_not_set"; email: string }
   | { status: "email_not_verified"; email: string };
 
-export type CreatorSetPasswordResult = { status: "ok"; access_token: string };
+export type CreatorSetPasswordResult = { status: "ok"; access_token: string; refresh_token?: string };
 export type CreatorCheckEmailResult = { exists: boolean; password_set: boolean };
-export type TokenResult = { access_token: string };
+export type TokenResult = { access_token: string; refresh_token?: string };
 export type SignupResult =
   | { status: "verification_sent"; email: string; dev_code: string | null }
-  | { status: "ok"; access_token: string };
+  | { status: "ok"; access_token: string; refresh_token?: string };
 
-// Tokens persist in sessionStorage so a page refresh keeps the session while a
-// closed tab still forgets it. Guarded for SSR (no window on the server).
-// TODO: move to httpOnly-cookie storage when the backend refresh flow lands.
-function tokenStore(key: string) {
-  let mem: string | null = null;
-  return {
-    set(next: string) {
-      mem = next;
-      if (typeof window !== "undefined") sessionStorage.setItem(key, next);
-    },
-    get(): string | null {
-      if (mem) return mem;
-      if (typeof window !== "undefined") mem = sessionStorage.getItem(key);
-      return mem;
-    },
-    clear() {
-      mem = null;
-      if (typeof window !== "undefined") sessionStorage.removeItem(key);
-    },
-  };
-}
+// Sessions persist in localStorage (see lib/tokens.ts) so a signed-in user stays
+// signed in across tab-close and browser restart; the access token is silently
+// refreshed by apiFetch, so idle time never forces re-login.
+import { clearSession, getAccess, saveSession } from "@/lib/tokens";
 
-const creatorStore = tokenStore("lumina.creator.token");
-const adminStore = tokenStore("lumina.admin.token");
-const clientStore = tokenStore("lumina.client.token");
-
-export const setAuthToken = creatorStore.set;
-export const getAuthToken = creatorStore.get;
-export const clearAuthToken = creatorStore.clear;
-export const setAdminToken = adminStore.set;
-export const getAdminToken = adminStore.get;
-export const clearAdminToken = adminStore.clear;
-export const setClientToken = clientStore.set;
-export const getClientToken = clientStore.get;
-export const clearClientToken = clientStore.clear;
+export const setAuthToken = (access: string, refresh?: string) => saveSession("creator", access, refresh);
+export const getAuthToken = () => getAccess("creator");
+export const clearAuthToken = () => clearSession("creator");
+export const setAdminToken = (access: string, refresh?: string) => saveSession("admin", access, refresh);
+export const getAdminToken = () => getAccess("admin");
+export const clearAdminToken = () => clearSession("admin");
+export const setClientToken = (access: string, refresh?: string) => saveSession("client", access, refresh);
+export const getClientToken = () => getAccess("client");
+export const clearClientToken = () => clearSession("client");
 
 export function creatorSignup(email: string, password: string, displayName?: string) {
   return apiFetch<SignupResult>("/api/creator/auth/signup", {

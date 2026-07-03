@@ -18,7 +18,7 @@ export default function AdminLoginPage() {
   const login = useMutation({
     mutationFn: () => adminLogin(email, password),
     onSuccess: (data) => {
-      setAdminToken(data.access_token);
+      setAdminToken(data.access_token, data.refresh_token);
       router.push("/admin/dashboard");
     },
     onError: (err) => setError((err as Error).message),

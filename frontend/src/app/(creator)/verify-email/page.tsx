@@ -19,7 +19,7 @@ function VerifyEmailInner() {
   const verify = useMutation({
     mutationFn: () => verifyEmailCode(email, code.trim()),
     onSuccess: (data) => {
-      setAuthToken(data.access_token);
+      setAuthToken(data.access_token, data.refresh_token);
       router.push("/onboarding");
     },
     onError: (err) => setError((err as Error).message),

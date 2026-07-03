@@ -18,7 +18,7 @@ export default function ClientLoginPage() {
   const login = useMutation({
     mutationFn: () => clientLogin(email, password),
     onSuccess: (data) => {
-      setClientToken(data.access_token);
+      setClientToken(data.access_token, data.refresh_token);
       router.push("/client/dashboard");
     },
     onError: (err) => setError((err as Error).message),

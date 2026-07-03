@@ -1,4 +1,6 @@
 // Typed API client — the contract with the FastAPI backend. Keep in lockstep with Pydantic schemas.
+import { clearSession, getRefresh, realmFromPath, saveSession, type Realm } from "@/lib/tokens";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export class ApiError extends Error {
@@ -16,9 +18,41 @@ export function isAuthError(err: unknown): boolean {
   return err instanceof ApiError && (err.status === 401 || err.status === 403);
 }
 
+// One in-flight refresh per realm — concurrent 401s share it so the rotating
+// refresh token isn't spent twice (which would trip reuse-detection and log out).
+const refreshing: Partial<Record<Realm, Promise<string | null>>> = {};
+
+async function refreshRealm(realm: Realm): Promise<string | null> {
+  if (refreshing[realm]) return refreshing[realm]!;
+  const refresh = getRefresh(realm);
+  if (!refresh) return null;
+  const p = (async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/${realm}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refresh }),
+      });
+      if (!res.ok) {
+        clearSession(realm); // refresh token expired/invalid → force re-login
+        return null;
+      }
+      const data = await res.json();
+      saveSession(realm, data.access_token, data.refresh_token);
+      return data.access_token as string;
+    } catch {
+      return null; // network blip — don't wipe the session
+    } finally {
+      delete refreshing[realm];
+    }
+  })();
+  refreshing[realm] = p;
+  return p;
+}
+
 export async function apiFetch<T>(
   path: string,
-  opts: { method?: string; token?: string; body?: string } = {},
+  opts: { method?: string; token?: string; body?: string; _retried?: boolean } = {},
 ): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
@@ -27,6 +61,15 @@ export async function apiFetch<T>(
     headers,
     body: opts.body,
   });
+  // Access token expired → silently refresh once and retry, so idle time never
+  // bounces the user to the login page.
+  if (res.status === 401 && !opts._retried) {
+    const realm = realmFromPath(path);
+    if (realm) {
+      const fresh = await refreshRealm(realm);
+      if (fresh) return apiFetch<T>(path, { ...opts, token: fresh, _retried: true });
+    }
+  }
   if (!res.ok) {
     const payload = await res.json().catch(() => ({ detail: res.statusText }));
     const detail = payload?.detail;

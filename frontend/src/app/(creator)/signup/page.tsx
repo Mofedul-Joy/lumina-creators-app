@@ -22,7 +22,7 @@ export default function CreatorSignupPage() {
     onSuccess: (data) => {
       if (data.status === "ok") {
         // Email verification disabled — straight into onboarding.
-        setAuthToken(data.access_token);
+        setAuthToken(data.access_token, data.refresh_token);
         router.push("/onboarding");
         return;
       }
