@@ -8,10 +8,11 @@ import { clearAdminToken } from "@/lib/auth";
 const LINKS = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/campaigns", label: "Campaigns" },
+  { href: "/admin/submissions", label: "Submissions" },
   { href: "/admin/creators", label: "Creators" },
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/payments", label: "Payment Logs" },
   { href: "/admin/analytics", label: "Analytics" },
+  { href: "/admin/payments", label: "Payments" },
+  { href: "/admin/users", label: "Users" },
   { href: "/admin/settings", label: "Settings" },
 ];
 

@@ -81,6 +81,94 @@ export type AdminAnalytics = {
 
 export const getAdminAnalytics = () => apiFetch<AdminAnalytics>("/api/admin/analytics", auth());
 
+/* ---- submissions review ---- */
+export type AdminSubmission = {
+  id: string;
+  campaign_id: string;
+  campaign_name: string;
+  campaign_mode: "create_new" | "copy_paste";
+  creator_id: string;
+  creator_name: string | null;
+  platform: string;
+  post_url: string;
+  views: number;
+  likes: number;
+  comments: number;
+  estimated_amount: number | string;
+  verification_status: "pending" | "verified" | "rejected";
+  scrape_status: string;
+  verification_note: string | null;
+  proof_url: string | null;
+  created_at: string;
+};
+
+export type SubmissionCounts = { pending: number; verified: number; rejected: number };
+
+export const listSubmissions = (f: { status?: string; campaign_id?: string; platform?: string } = {}) => {
+  const p = new URLSearchParams();
+  Object.entries(f).forEach(([k, v]) => v && p.set(k, String(v)));
+  const qs = p.toString();
+  return apiFetch<AdminSubmission[]>(`/api/admin/submissions${qs ? `?${qs}` : ""}`, auth());
+};
+
+export const getSubmissionCounts = () => apiFetch<SubmissionCounts>("/api/admin/submissions/counts", auth());
+
+export const verifySubmission = (id: string) =>
+  apiFetch<AdminSubmission>(`/api/admin/submissions/${id}/verify`, { method: "POST", ...auth() });
+
+export const rejectSubmission = (id: string, note: string) =>
+  apiFetch<AdminSubmission>(`/api/admin/submissions/${id}/reject`, {
+    method: "POST",
+    body: JSON.stringify({ note }),
+    ...auth(),
+  });
+
+/* ---- payouts ---- */
+export type OwedRow = {
+  creator_id: string;
+  display_name: string | null;
+  submission_count: number;
+  amount_owed: number | string;
+};
+
+export type PayoutRow = {
+  id: string;
+  creator_id: string;
+  creator_name: string | null;
+  amount: number | string;
+  method: string;
+  status: string;
+  paid_at: string | null;
+  created_at: string;
+};
+
+export type PayoutMethod = "paypal" | "solana" | "whop";
+
+export const listOwed = () => apiFetch<OwedRow[]>("/api/admin/payouts/owed", auth());
+export const listPayouts = () => apiFetch<PayoutRow[]>("/api/admin/payouts", auth());
+export const recordPayout = (creator_id: string, method: PayoutMethod) =>
+  apiFetch<PayoutRow>("/api/admin/payouts", { method: "POST", body: JSON.stringify({ creator_id, method }), ...auth() });
+
+/* ---- settings ---- */
+export type PlatformSettings = {
+  environment: string;
+  email_verification_required: boolean;
+  email_provider: string;
+  payout_methods: string[];
+  campaign_modes: string[];
+  storage: string;
+};
+export const getPlatformSettings = () => apiFetch<PlatformSettings>("/api/admin/settings", auth());
+
+/* ---- users ---- */
+export type UserRow = { id: string; email: string; name: string | null; role: string; status: string };
+export type UsersOut = { admins: UserRow[]; clients: UserRow[]; creator_count: number; creator_active: number };
+export const getUsers = () => apiFetch<UsersOut>("/api/admin/users", auth());
+export const suspendClient = (id: string) =>
+  apiFetch<UserRow>(`/api/admin/users/clients/${id}/suspend`, { method: "POST", ...auth() });
+export const reactivateClient = (id: string) =>
+  apiFetch<UserRow>(`/api/admin/users/clients/${id}/reactivate`, { method: "POST", ...auth() });
+
 export const listAdminCampaigns = (status?: string) =>
   apiFetch<AdminCampaign[]>(`/api/admin/campaigns${status ? `?status=${status}` : ""}`, auth());
 
