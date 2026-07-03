@@ -13,7 +13,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import _now
-from app.models import Campaign, CreatorProfile, Submission
+from app.models import Campaign, CreatorProfile, PayoutItem, Submission
+
+
+def _has_active_payout(db: Session, submission_id: uuid.UUID) -> bool:
+    return db.scalar(
+        select(PayoutItem.id).where(
+            PayoutItem.submission_id == submission_id, PayoutItem.voided_at.is_(None)
+        )
+    ) is not None
 
 
 def list_submissions(db: Session, *, campaign_id=None, verification_status=None,
@@ -37,6 +45,11 @@ def _get(db: Session, submission_id: uuid.UUID) -> Submission:
     sub = db.get(Submission, submission_id)
     if sub is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Submission not found")
+    # Verification can't change once the earning has been paid out — that would
+    # strand a paid payout_item against a rejected submission (golden rule 5).
+    if _has_active_payout(db, submission_id):
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            "This submission has already been paid — void the payout first")
     return sub
 
 

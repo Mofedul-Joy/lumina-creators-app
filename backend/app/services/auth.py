@@ -236,6 +236,11 @@ def rotate_refresh(db: Session, token: str, aud: str) -> tuple[str, str]:
         _revoke_family(db, subject_id, aud)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Refresh token reuse detected")
     db.commit()
+    # A disabled/suspended account must not rotate into fresh tokens.
+    from app.core.deps import _is_disabled
+    subject = db.get(_MODELS[aud], subject_id)
+    if subject is None or _is_disabled(subject):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "This account is disabled")
     return _issue(db, subject_id, aud)
 
 

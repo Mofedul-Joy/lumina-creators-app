@@ -67,21 +67,23 @@ def list_payouts(db: Session, limit: int = 50):
 
 def record_payout(db: Session, admin_id: uuid.UUID, creator_id: uuid.UUID, method: str) -> Payout:
     subs = _unpaid_verified(db, creator_id)
-    if not subs:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "No unpaid verified submissions for this creator")
+    # Only settle rows that round to a positive cent — the DB CHECK is amount > 0,
+    # and paying $0.00 items would 500 or strand a zero payout.
     items = [(s.id, Decimal(s.estimated_amount).quantize(_CENTS)) for s in subs]
+    items = [(sid, amt) for sid, amt in items if amt > 0]
+    if not items:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "No payable verified earnings for this creator")
     total = sum((amt for _, amt in items), Decimal(0))
 
     payout = Payout(creator_id=creator_id, amount=total, method=method, status="paid",
                     processed_by=admin_id, paid_at=_now())
     db.add(payout)
-    db.flush()
-    for sub_id, amt in items:
-        db.add(PayoutItem(payout_id=payout.id, submission_id=sub_id, amount=amt))
     try:
-        db.commit()
+        db.flush()  # assign payout.id before linking items
+        for sub_id, amt in items:
+            db.add(PayoutItem(payout_id=payout.id, submission_id=sub_id, amount=amt))
+        db.commit()  # active-unique index fires here if a submission was just claimed
     except IntegrityError:
-        # Another payout already claimed one of these submissions (active-unique).
         db.rollback()
         raise HTTPException(status.HTTP_409_CONFLICT, "These earnings were just paid by someone else — refresh")
     db.refresh(payout)

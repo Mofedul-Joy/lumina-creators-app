@@ -1,4 +1,5 @@
 """Admin payout schemas."""
+import uuid
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
@@ -25,5 +26,5 @@ class PayoutRow(BaseModel):
 
 
 class RecordPayoutIn(BaseModel):
-    creator_id: str
+    creator_id: uuid.UUID  # validated -> 422 on malformed, not a 500
     method: str  # paypal | solana | whop

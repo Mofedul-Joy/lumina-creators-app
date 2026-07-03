@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getAdminToken } from "@/lib/auth";
 import { getAdminStats } from "@/lib/admin";
 import { isAuthError } from "@/lib/api";
@@ -169,15 +170,7 @@ export default function AdminDashboardPage() {
                       <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Budget</p>
                       <p className="tabular text-sm text-[var(--color-text)]">{fmtMoney(c.budget)}</p>
                     </div>
-                    <span
-                      className={`rounded-full border px-2.5 py-0.5 text-xs capitalize ${
-                        c.status === "active"
-                          ? "border-[var(--color-brand)]/40 text-[var(--color-brand)]"
-                          : "border-[var(--color-border)] text-[var(--color-text-muted)]"
-                      }`}
-                    >
-                      {c.status}
-                    </span>
+                    <StatusBadge status={c.status} />
                   </div>
                 </li>
               ))}

@@ -15,6 +15,13 @@ from app.models import Admin, Client, Creator
 _bearer = HTTPBearer(auto_error=True)
 
 
+def _is_disabled(obj) -> bool:
+    """A live token must not outlive a disabled account (admin) or a suspension."""
+    if getattr(obj, "is_active", True) is False:  # admins
+        return True
+    return getattr(obj, "status", "active") == "suspended"  # creators / clients
+
+
 def _make_dep(aud: str, model):
     def dep(
         creds: HTTPAuthorizationCredentials = Depends(_bearer),
@@ -32,6 +39,8 @@ def _make_dep(aud: str, model):
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token subject")
         if obj is None:
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Account not found")
+        if _is_disabled(obj):
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "This account is disabled")
         return obj
 
     return dep
