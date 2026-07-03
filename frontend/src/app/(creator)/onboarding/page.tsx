@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
+import { CreatorNav } from "@/components/creator/CreatorNav";
 import { getAuthToken } from "@/lib/auth";
 import {
   GENDERS,
@@ -213,7 +214,12 @@ export default function OnboardingPage() {
     );
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-10 pb-28 space-y-6">
+    <div className="min-h-[100dvh]">
+      <CreatorNav />
+      <main className="mx-auto max-w-2xl px-6 py-10 pb-28 space-y-6">
+        <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)]">
+          ← Back to workspace
+        </Link>
       <header>
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Creator workspace</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Build your profile</h1>
@@ -466,7 +472,8 @@ export default function OnboardingPage() {
           </div>
         </div>
       </div>
-    </main>
+      </main>
+    </div>
   );
 }
 
