@@ -81,3 +81,24 @@ def counts_by_status(db: Session) -> dict:
         select(Submission.verification_status, func.count()).group_by(Submission.verification_status)
     ).all()
     return {s: c for s, c in rows}
+
+
+def paid_submission_ids(db: Session) -> set:
+    """Submissions covered by an active (un-voided) payout item."""
+    from app.models import PayoutItem
+    return set(db.scalars(
+        select(PayoutItem.submission_id).where(PayoutItem.voided_at.is_(None))
+    ).all())
+
+
+def lifecycle_status(sub: Submission, is_paid: bool) -> str:
+    """Bell's status set, derived from existing fields (no schema change)."""
+    if is_paid:
+        return "paid"
+    if sub.verification_status == "rejected":
+        return "rejected"
+    if sub.verification_status == "verified":
+        return "stats_verified"
+    if sub.proof_object_id is not None:
+        return "proof_uploaded"
+    return "awaiting_stats"

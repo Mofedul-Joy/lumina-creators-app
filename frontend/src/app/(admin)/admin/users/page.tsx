@@ -7,8 +7,8 @@ import { useRouter } from "next/navigation";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getAdminToken } from "@/lib/auth";
-import { getUsers, reactivateClient, suspendClient } from "@/lib/admin";
-import { isAuthError, listCreators } from "@/lib/api";
+import { createUser, getUsers, listAdminCampaigns, reactivateClient, suspendClient } from "@/lib/admin";
+import { isAuthError } from "@/lib/api";
 import { fmtInt } from "@/lib/format";
 
 function StatTile({ label, value, hint, href }: { label: string; value: string; hint?: string; href?: string }) {
@@ -36,12 +36,7 @@ export default function AdminUsersPage() {
   }, [ready, hasToken, router]);
 
   const q = useQuery({ queryKey: ["users"], queryFn: getUsers, enabled: ready && hasToken, retry: false });
-  const creatorsQ = useQuery({
-    queryKey: ["users-creators-preview"],
-    queryFn: () => listCreators(getAdminToken() ?? "", { limit: 6 }),
-    enabled: ready && hasToken,
-    retry: false,
-  });
+  const campaignsQ = useQuery({ queryKey: ["admin-campaigns"], queryFn: () => listAdminCampaigns(), enabled: ready && hasToken, retry: false });
   useEffect(() => {
     if (q.isError && isAuthError(q.error)) router.replace("/admin/login");
   }, [q.isError, q.error, router]);
@@ -49,6 +44,24 @@ export default function AdminUsersPage() {
   const refresh = () => qc.invalidateQueries({ queryKey: ["users"] });
   const suspendM = useMutation({ mutationFn: suspendClient, onSuccess: refresh });
   const reactivateM = useMutation({ mutationFn: reactivateClient, onSuccess: refresh });
+
+  // add-user modal
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: "admin" as "admin" | "client" });
+  const [campaignIds, setCampaignIds] = useState<string[]>([]);
+  const [addErr, setAddErr] = useState("");
+  const createM = useMutation({
+    mutationFn: () => createUser({ name: form.name.trim() || undefined, email: form.email.trim(), password: form.password, role: form.role, campaign_ids: form.role === "client" ? campaignIds : [] }),
+    onSuccess: () => {
+      setShowAdd(false);
+      setForm({ name: "", email: "", password: "", role: "admin" });
+      setCampaignIds([]);
+      setAddErr("");
+      refresh();
+      qc.invalidateQueries({ queryKey: ["admin-clients"] });
+    },
+    onError: (e) => setAddErr((e as Error).message),
+  });
 
   if (!ready || !hasToken)
     return (
@@ -64,11 +77,18 @@ export default function AdminUsersPage() {
     <div className="min-h-[100dvh]">
       <AdminNav />
       <main className="mx-auto max-w-6xl px-6 py-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Operations Terminal</p>
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Users</h1>
-        <p className="mt-2 max-w-xl text-[var(--color-text-secondary)]">
-          Lumina staff, brand accounts, and the creator network.
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Operations Terminal</p>
+            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Users</h1>
+            <p className="mt-2 max-w-xl text-[var(--color-text-secondary)]">
+              Lumina staff and brand accounts. Admins have full read/write; clients are read-only.
+            </p>
+          </div>
+          <button onClick={() => setShowAdd(true)} className="shrink-0 cursor-pointer rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]">
+            + Add user
+          </button>
+        </div>
 
         {!u ? (
           <p className="mt-10 text-sm text-[var(--color-text-secondary)]">Loading…</p>
@@ -159,28 +179,90 @@ export default function AdminUsersPage() {
               )}
             </div>
 
-            {/* creators — managed on the Creators page */}
-            <div id="creators" className="card-lumina mt-6 scroll-mt-24 overflow-hidden rounded-[var(--radius-card)]">
-              <div className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-4">
-                <h2 className="text-lg font-semibold text-[var(--color-text)]">Creators</h2>
-                <Link href="/admin/creators" className="text-sm font-medium text-[var(--color-brand)] hover:underline">View all {u.creator_count} →</Link>
-              </div>
-              {(creatorsQ.data ?? []).length === 0 ? (
-                <p className="p-8 text-center text-sm text-[var(--color-text-secondary)]">No creators yet.</p>
-              ) : (
-                <div className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {(creatorsQ.data ?? []).map((c) => (
-                    <Link key={c.id} href={`/admin/creators/${c.id}`} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition hover:ring-1 hover:ring-[var(--color-brand)]/40">
-                      <p className="truncate text-sm font-medium text-[var(--color-text)]">{c.display_name ?? "Unnamed"}</p>
-                      <p className="truncate text-xs text-[var(--color-text-muted)]">{c.email}</p>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
           </>
         )}
+
+        {/* add-user modal */}
+        {showAdd ? (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowAdd(false)}>
+            <div className="max-h-[88vh] w-full max-w-md overflow-y-auto rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-[var(--color-text)]">Add user</h3>
+                <button onClick={() => setShowAdd(false)} className="cursor-pointer rounded-full p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]" aria-label="Close">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                </button>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                <Labeled label="Name">
+                  <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Full name" className={inputCls} />
+                </Labeled>
+                <Labeled label="Email">
+                  <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputCls} />
+                </Labeled>
+                <Labeled label="Password">
+                  <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="At least 8 characters" className={inputCls} />
+                </Labeled>
+                <Labeled label="Role">
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["admin", "client"] as const).map((r) => (
+                      <button key={r} type="button" onClick={() => setForm({ ...form, role: r })}
+                        className={`rounded-xl border px-3 py-2 text-left text-sm transition ${form.role === r ? "border-[var(--color-brand)] bg-[var(--color-surface-2)]" : "border-[var(--color-border)]"}`}>
+                        <span className="block font-medium text-[var(--color-text)]">{r === "admin" ? "Admin" : "Client"}</span>
+                        <span className="block text-xs text-[var(--color-text-muted)]">{r === "admin" ? "Read/write, all campaigns" : "Read-only, scoped"}</span>
+                      </button>
+                    ))}
+                  </div>
+                </Labeled>
+
+                {form.role === "client" ? (
+                  <Labeled label="Campaign access">
+                    <p className="mb-1.5 text-xs text-[var(--color-text-muted)]">Campaigns this client can view. Admins see all.</p>
+                    <div className="max-h-40 space-y-1 overflow-y-auto rounded-xl border border-[var(--color-border)] p-2">
+                      {(campaignsQ.data ?? []).length === 0 ? (
+                        <p className="p-2 text-xs text-[var(--color-text-muted)]">No campaigns yet.</p>
+                      ) : (
+                        (campaignsQ.data ?? []).map((c) => {
+                          const on = campaignIds.includes(c.id);
+                          return (
+                            <label key={c.id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-[var(--color-surface-2)]">
+                              <input type="checkbox" checked={on} onChange={() => setCampaignIds((ids) => on ? ids.filter((x) => x !== c.id) : [...ids, c.id])} className="h-4 w-4 accent-[var(--color-brand)]" />
+                              <span className="truncate text-[var(--color-text)]">{c.name}</span>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </Labeled>
+                ) : null}
+
+                {addErr ? <p className="text-sm text-[var(--color-danger)]">{addErr}</p> : null}
+                <div className="flex justify-end gap-3 pt-1">
+                  <button onClick={() => setShowAdd(false)} className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Cancel</button>
+                  <button
+                    disabled={createM.isPending || !form.email.trim() || form.password.length < 8}
+                    onClick={() => { setAddErr(""); createM.mutate(); }}
+                    className="cursor-pointer rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] disabled:opacity-50"
+                  >
+                    {createM.isPending ? "Creating…" : "Create user"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </main>
     </div>
+  );
+}
+
+const inputCls = "min-h-10 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]";
+
+function Labeled({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-sm text-[var(--color-text)]">{label}</span>
+      {children}
+    </label>
   );
 }

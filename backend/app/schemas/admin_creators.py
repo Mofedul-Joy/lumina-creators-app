@@ -9,6 +9,7 @@ class CreatorListItem(BaseModel):
     id: str
     email: str
     display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
     gender: Optional[str] = None
     country: Optional[str] = None
     primary_language: Optional[str] = None
@@ -35,6 +36,7 @@ class CreatorDetail(BaseModel):
     id: str
     email: str
     display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
     bio: Optional[str] = None
     date_of_birth: Optional[date] = None
     gender: Optional[str] = None

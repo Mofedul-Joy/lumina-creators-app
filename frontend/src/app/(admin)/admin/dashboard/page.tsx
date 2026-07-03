@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { SubmissionsSection } from "@/components/admin/SubmissionsSection";
 import { getAdminToken } from "@/lib/auth";
 import { getAdminStats } from "@/lib/admin";
 import { isAuthError } from "@/lib/api";
@@ -177,6 +178,11 @@ export default function AdminDashboardPage() {
               ))}
             </ul>
           )}
+        </div>
+
+        {/* submissions — Bell wants them on the dashboard, card view + status filter */}
+        <div className="mt-10">
+          <SubmissionsSection />
         </div>
       </main>
     </div>

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { Avatar } from "@/components/admin/Avatar";
 import { getAdminToken } from "@/lib/auth";
 import { getCreatorDetail, isAuthError } from "@/lib/api";
 
@@ -74,11 +75,14 @@ export default function AdminCreatorDetailPage() {
       </Link>
 
       <header className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold text-[var(--color-text)]">
-            {c.display_name ?? "Unnamed creator"}
-          </h1>
-          <p className="mt-1 text-[var(--color-text-secondary)]">{c.email}</p>
+        <div className="flex items-center gap-4">
+          <Avatar url={c.avatar_url} name={c.display_name} size={64} />
+          <div>
+            <h1 className="text-3xl font-semibold text-[var(--color-text)]">
+              {c.display_name ?? "Unnamed creator"}
+            </h1>
+            <p className="mt-1 text-[var(--color-text-secondary)]">{c.email}</p>
+          </div>
         </div>
         <span
           className="shrink-0 rounded-[var(--radius-pill)] px-3 py-1 text-xs font-medium"

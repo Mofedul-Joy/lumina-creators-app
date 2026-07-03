@@ -211,6 +211,7 @@ export type CreatorListItem = {
   id: string;
   email: string;
   display_name: string | null;
+  avatar_url: string | null;
   gender: Gender | null;
   country: string | null;
   primary_language: string | null;
@@ -237,6 +238,7 @@ export type CreatorDetail = {
   id: string;
   email: string;
   display_name: string | null;
+  avatar_url: string | null;
   bio: string | null;
   date_of_birth: string | null;
   gender: Gender | null;

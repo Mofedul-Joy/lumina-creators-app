@@ -25,13 +25,14 @@ def _proof_url(db: Session, sub: Submission) -> Optional[str]:
     return storage.object_public_url(obj.object_key) if obj else None
 
 
-def _row(db: Session, sub: Submission, name: str, mode: str, display_name) -> AdminSubmissionRow:
+def _row(db: Session, sub: Submission, name: str, mode: str, display_name, is_paid: bool = False) -> AdminSubmissionRow:
     return AdminSubmissionRow(
         id=str(sub.id), campaign_id=str(sub.campaign_id), campaign_name=name, campaign_mode=mode,
         creator_id=str(sub.creator_id), creator_name=display_name, platform=sub.platform,
         post_url=sub.post_url, views=sub.views, likes=sub.likes, comments=sub.comments,
         estimated_amount=sub.estimated_amount, verification_status=sub.verification_status,
-        scrape_status=sub.scrape_status, verification_note=sub.verification_note,
+        scrape_status=sub.scrape_status, status=svc.lifecycle_status(sub, is_paid),
+        verification_note=sub.verification_note,
         proof_url=_proof_url(db, sub), created_at=sub.created_at,
     )
 
@@ -48,7 +49,8 @@ def list_submissions(
 ):
     rows = svc.list_submissions(db, campaign_id=campaign_id, verification_status=status,
                                 platform=platform, limit=limit, offset=offset)
-    return [_row(db, sub, name, mode, dn) for sub, name, mode, dn in rows]
+    paid = svc.paid_submission_ids(db)
+    return [_row(db, sub, name, mode, dn, sub.id in paid) for sub, name, mode, dn in rows]
 
 
 @router.get("/counts", response_model=SubmissionCounts)
@@ -77,4 +79,4 @@ def _reload(db: Session, sub: Submission) -> AdminSubmissionRow:
     prof = db.execute(
         select(CreatorProfile.display_name).where(CreatorProfile.creator_id == sub.creator_id)
     ).scalar()
-    return _row(db, sub, camp.name, camp.mode, prof)
+    return _row(db, sub, camp.name, camp.mode, prof, sub.id in svc.paid_submission_ids(db))

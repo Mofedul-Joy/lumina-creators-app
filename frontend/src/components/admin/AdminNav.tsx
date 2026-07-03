@@ -18,16 +18,6 @@ const NAV: Item[] = [
       { href: "/admin/campaigns/new", label: "New campaign" },
     ],
   },
-  {
-    href: "/admin/submissions",
-    label: "Submissions",
-    subs: [
-      { href: "/admin/submissions?status=", label: "All" },
-      { href: "/admin/submissions?status=pending", label: "Pending" },
-      { href: "/admin/submissions?status=verified", label: "Verified" },
-      { href: "/admin/submissions?status=rejected", label: "Rejected" },
-    ],
-  },
   { href: "/admin/creators", label: "Creators" },
   { href: "/admin/analytics", label: "Analytics" },
   {
@@ -44,7 +34,6 @@ const NAV: Item[] = [
     subs: [
       { href: "/admin/users#staff", label: "Staff" },
       { href: "/admin/users/brands", label: "Brand accounts" },
-      { href: "/admin/creators", label: "Creators" },
     ],
   },
   { href: "/admin/settings", label: "Settings" },

@@ -8,7 +8,22 @@ from fastapi import HTTPException, status
 from sqlalchemy import exists, or_, select
 from sqlalchemy.orm import Session
 
-from app.models import Creator, CreatorProfile, PortfolioItem, SocialAccount
+from app.integrations import storage
+from app.models import Creator, CreatorProfile, PortfolioItem, SocialAccount, StorageObject
+
+
+def _avatar_urls(db: Session, profiles) -> dict:
+    """Map creator_id -> public avatar URL (batched)."""
+    obj_ids = {p.avatar_object_id for p in profiles if getattr(p, "avatar_object_id", None)}
+    if not obj_ids:
+        return {}
+    keys = {o.id: o.object_key for o in db.scalars(select(StorageObject).where(StorageObject.id.in_(obj_ids))).all()}
+    out = {}
+    for p in profiles:
+        oid = getattr(p, "avatar_object_id", None)
+        if oid and oid in keys:
+            out[p.creator_id] = storage.object_public_url(keys[oid])
+    return out
 
 
 def _dob_bounds(age_min: int | None, age_max: int | None):
@@ -71,6 +86,7 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
     socials_by_creator: dict[uuid.UUID, list[SocialAccount]] = {cid: [] for cid in ids}
     for s in db.scalars(select(SocialAccount).where(SocialAccount.creator_id.in_(ids))).all():
         socials_by_creator[s.creator_id].append(s)
+    avatars = _avatar_urls(db, profiles.values())
 
     out = []
     for c in creators:
@@ -79,6 +95,7 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
         out.append({
             "id": str(c.id), "email": c.email,
             "display_name": prof.display_name if prof else None,
+            "avatar_url": avatars.get(c.id),
             "gender": prof.gender if prof else None,
             "country": prof.country if prof else None,
             "primary_language": prof.primary_language if prof else None,
@@ -99,6 +116,7 @@ def get_creator_detail(db: Session, creator_id: uuid.UUID) -> dict:
     return {
         "id": str(c.id), "email": c.email,
         "display_name": prof.display_name if prof else None,
+        "avatar_url": _avatar_urls(db, [prof]).get(c.id) if prof else None,
         "bio": prof.bio if prof else None,
         "date_of_birth": prof.date_of_birth if prof else None,
         "gender": prof.gender if prof else None,

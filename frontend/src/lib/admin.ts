@@ -126,6 +126,7 @@ export type AdminSubmission = {
   comments: number;
   estimated_amount: number | string;
   verification_status: "pending" | "verified" | "rejected";
+  status: "awaiting_stats" | "proof_uploaded" | "stats_verified" | "paid" | "rejected";
   scrape_status: string;
   verification_note: string | null;
   proof_url: string | null;
@@ -210,6 +211,10 @@ export type BrandDetail = {
 export type StaffDetail = { id: string; email: string; role: string; status: string; created_at: string };
 export const getBrandDetail = (id: string) => apiFetch<BrandDetail>(`/api/admin/users/brands/${id}`, auth());
 export const getStaffDetail = (id: string) => apiFetch<StaffDetail>(`/api/admin/users/staff/${id}`, auth());
+
+export type CreateUserIn = { name?: string; email: string; password: string; role: "admin" | "client"; campaign_ids?: string[] };
+export const createUser = (body: CreateUserIn) =>
+  apiFetch<UserRow>("/api/admin/users/create", { method: "POST", body: JSON.stringify(body), ...auth() });
 
 /* ---- admin image upload (campaign banner/thumbnail) ---- */
 export async function adminUploadImage(file: File): Promise<string> {

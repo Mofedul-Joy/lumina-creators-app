@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { Avatar } from "@/components/admin/Avatar";
 import { Pager } from "@/components/admin/Pager";
 import { getAdminToken } from "@/lib/auth";
 import { GENDERS, PLATFORMS, isAuthError, listCreators, type CreatorFilters, type Gender, type Platform } from "@/lib/api";
@@ -183,9 +184,12 @@ export default function AdminCreatorsPage() {
               {pageRows.map((c) => (
                 <Link key={c.id} href={`/admin/creators/${c.id}`} className="card-grad rounded-[var(--radius-card)] p-4 transition hover:ring-1 hover:ring-[var(--color-brand)]/40">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-[var(--color-text)]">{c.display_name ?? "Unnamed creator"}</p>
-                      <p className="truncate text-sm text-[var(--color-text-secondary)]">{c.email}</p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar url={c.avatar_url} name={c.display_name} size={40} />
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-[var(--color-text)]">{c.display_name ?? "Unnamed creator"}</p>
+                        <p className="truncate text-sm text-[var(--color-text-secondary)]">{c.email}</p>
+                      </div>
                     </div>
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${c.completed ? "bg-emerald-500/15 text-emerald-400" : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]"}`}>{c.completed ? "Complete" : "Incomplete"}</span>
                   </div>
