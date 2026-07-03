@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { BannerInput } from "@/components/admin/BannerInput";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import {
   archiveCampaign,
@@ -55,6 +56,7 @@ export default function AdminCampaignDetailPage() {
   const [hasToken, setHasToken] = useState(false);
   const [form, setForm] = useState<FormState | null>(null);
   const [saved, setSaved] = useState(false);
+  const [showReqs, setShowReqs] = useState(false);
 
   useEffect(() => { setHasToken(!!getAdminToken()); setReady(true); }, []);
   useEffect(() => { if (ready && !hasToken) router.replace("/admin/login"); }, [ready, hasToken, router]);
@@ -141,7 +143,7 @@ export default function AdminCampaignDetailPage() {
                   <div className="space-y-4">
                     <TextField label="Campaign name" value={form.name} onChange={(v) => set("name", v)} />
                     <TextField label="Brand name" value={form.brand_name} onChange={(v) => set("brand_name", v)} />
-                    <TextField label="Banner image URL" value={form.brand_logo_url} onChange={(v) => set("brand_logo_url", v)} placeholder="https://…/banner.jpg" />
+                    <BannerInput value={form.brand_logo_url} onChange={(v) => set("brand_logo_url", v)} />
                     <TextField label="Description" value={form.description} onChange={(v) => set("description", v)} textarea />
                   </div>
                 </section>
@@ -213,16 +215,76 @@ export default function AdminCampaignDetailPage() {
                         )) : <span className="text-xs text-[var(--color-text-muted)]">None selected</span>}
                       </div>
                     </div>
-                    <div className="mt-5 rounded-xl bg-[var(--color-brand)]/15 px-4 py-2.5 text-center text-sm font-medium text-[var(--color-brand-soft)]">
+                    <button
+                      type="button"
+                      onClick={() => setShowReqs(true)}
+                      className="mt-5 w-full cursor-pointer rounded-xl bg-[var(--color-brand)]/15 px-4 py-2.5 text-center text-sm font-medium text-[var(--color-brand-soft)] transition hover:bg-[var(--color-brand)]/25"
+                    >
                       View requirements →
-                    </div>
+                    </button>
                   </div>
                 </div>
               </aside>
             </div>
           </>
         )}
+
+        {/* requirements modal — what a creator sees before entering */}
+        {showReqs && form ? (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowReqs(false)}>
+            <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-brand)]">Campaign requirements</p>
+                  <h3 className="mt-1 text-xl font-semibold text-[var(--color-text)]">{form.name || "Campaign"}</h3>
+                </div>
+                <button onClick={() => setShowReqs(false)} className="cursor-pointer rounded-full p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]" aria-label="Close">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                </button>
+              </div>
+
+              <div className="mt-5 grid grid-cols-3 gap-3 text-sm">
+                <div><p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">CPM rate</p><p className="tabular font-semibold text-[var(--color-brand-soft)]">{fmtMoney(form.cpm_rate || 0)}</p></div>
+                <div><p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Max payout</p><p className="tabular font-semibold text-[var(--color-text)]">{form.max_payout_per_creator ? fmtMoney(form.max_payout_per_creator) : "No cap"}</p></div>
+                <div><p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Min retention</p><p className="tabular text-[var(--color-text)]">{form.min_retention_days} days</p></div>
+              </div>
+
+              <div className="mt-5">
+                <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Platforms</p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {form.platforms.length ? form.platforms.map((p) => (
+                    <span key={p} className="rounded-full bg-[var(--color-surface-2)] px-2.5 py-0.5 text-xs text-[var(--color-text-secondary)]">{PLATFORM_LABEL[p] ?? p}</span>
+                  )) : <span className="text-xs text-[var(--color-text-muted)]">Any</span>}
+                </div>
+              </div>
+
+              {c?.mode === "create_new" && form.brief_script ? (
+                <Section title="Brief / script">{form.brief_script}</Section>
+              ) : c?.mode === "copy_paste" && form.content_drive_url ? (
+                <Section title="Approved clips">
+                  <a href={form.content_drive_url} target="_blank" rel="noopener noreferrer" className="text-[var(--color-brand)] hover:underline">{form.content_drive_url}</a>
+                </Section>
+              ) : null}
+              {form.caption_rules ? <Section title="Caption rules">{form.caption_rules}</Section> : null}
+              {form.requirements_url ? (
+                <Section title="Full requirements">
+                  <a href={form.requirements_url} target="_blank" rel="noopener noreferrer" className="text-[var(--color-brand)] hover:underline">{form.requirements_url}</a>
+                </Section>
+              ) : null}
+              {form.description ? <Section title="About">{form.description}</Section> : null}
+            </div>
+          </div>
+        ) : null}
       </main>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-4">
+      <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">{title}</p>
+      <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--color-text-secondary)]">{children}</p>
     </div>
   );
 }

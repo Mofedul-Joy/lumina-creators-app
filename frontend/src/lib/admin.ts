@@ -199,6 +199,30 @@ export const suspendClient = (id: string) =>
 export const reactivateClient = (id: string) =>
   apiFetch<UserRow>(`/api/admin/users/clients/${id}/reactivate`, { method: "POST", ...auth() });
 
+export type BrandDetail = {
+  id: string;
+  email: string;
+  name: string | null;
+  status: string;
+  created_at: string;
+  campaigns: { id: string; name: string; status: string; cpm_rate: number | string; budget: number | string }[];
+};
+export type StaffDetail = { id: string; email: string; role: string; status: string; created_at: string };
+export const getBrandDetail = (id: string) => apiFetch<BrandDetail>(`/api/admin/users/brands/${id}`, auth());
+export const getStaffDetail = (id: string) => apiFetch<StaffDetail>(`/api/admin/users/staff/${id}`, auth());
+
+/* ---- admin image upload (campaign banner/thumbnail) ---- */
+export async function adminUploadImage(file: File): Promise<string> {
+  const pres = await apiFetch<{ object_id: string; upload_url: string; public_url: string }>(
+    "/api/admin/uploads/presign",
+    { method: "POST", body: JSON.stringify({ content_type: file.type, filename: file.name, size_bytes: file.size }), ...auth() },
+  );
+  const put = await fetch(pres.upload_url, { method: "PUT", headers: file.type ? { "Content-Type": file.type } : undefined, body: file });
+  if (!put.ok) throw new Error(`Upload failed (HTTP ${put.status})`);
+  await apiFetch(`/api/admin/uploads/${pres.object_id}/finalize`, { method: "POST", ...auth() });
+  return pres.public_url;
+}
+
 export const listAdminCampaigns = (status?: string) =>
   apiFetch<AdminCampaign[]>(`/api/admin/campaigns${status ? `?status=${status}` : ""}`, auth());
 

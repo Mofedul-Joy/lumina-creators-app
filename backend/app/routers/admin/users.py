@@ -4,6 +4,8 @@ passwords stays a seeded/invite flow — not done from the console."""
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -13,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_admin
 from app.db.session import get_db
-from app.models import Admin, Client, Creator
+from app.models import Admin, Campaign, Client, Creator
 
 router = APIRouter(prefix="/users", tags=["admin-users"])
 
@@ -59,6 +61,55 @@ def _set_client_status(db: Session, client_id: uuid.UUID, new_status: str) -> Us
     db.commit()
     db.refresh(client)
     return UserRow(id=str(client.id), email=client.email, name=client.name, role="client", status=client.status)
+
+
+class BrandCampaign(BaseModel):
+    id: str
+    name: str
+    status: str
+    cpm_rate: Decimal
+    budget: Decimal
+
+
+class BrandDetail(BaseModel):
+    id: str
+    email: str
+    name: Optional[str] = None
+    status: str
+    created_at: datetime
+    campaigns: list[BrandCampaign]
+
+
+class StaffDetail(BaseModel):
+    id: str
+    email: str
+    role: str
+    status: str
+    created_at: datetime
+
+
+@router.get("/brands/{client_id}", response_model=BrandDetail)
+def brand_detail(client_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    c = db.get(Client, client_id)
+    if c is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Brand not found")
+    camps = db.scalars(
+        select(Campaign).where(Campaign.client_id == client_id).order_by(Campaign.created_at.desc())
+    ).all()
+    return BrandDetail(
+        id=str(c.id), email=c.email, name=c.name, status=c.status, created_at=c.created_at,
+        campaigns=[BrandCampaign(id=str(k.id), name=k.name, status=k.status,
+                                 cpm_rate=k.cpm_rate, budget=k.budget) for k in camps],
+    )
+
+
+@router.get("/staff/{admin_id}", response_model=StaffDetail)
+def staff_detail(admin_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    a = db.get(Admin, admin_id)
+    if a is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Staff member not found")
+    return StaffDetail(id=str(a.id), email=a.email, role=a.role,
+                       status="active" if a.is_active else "suspended", created_at=a.created_at)
 
 
 @router.post("/clients/{client_id}/suspend", response_model=UserRow)

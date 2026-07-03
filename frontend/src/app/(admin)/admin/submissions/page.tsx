@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pager } from "@/components/admin/Pager";
@@ -26,12 +26,16 @@ const FILTERS = [
   { key: "rejected", label: "Rejected" },
 ] as const;
 
-export default function AdminSubmissionsPage() {
+function SubmissionsInner() {
   const router = useRouter();
   const qc = useQueryClient();
+  const sp = useSearchParams();
+  const urlStatus = sp.get("status");
   const [ready, setReady] = useState(false);
   const [hasToken, setHasToken] = useState(false);
-  const [filter, setFilter] = useState<string>("pending");
+  const [filter, setFilter] = useState<string>(urlStatus ?? "pending");
+  // let the nav dropdown links (?status=…) drive the filter
+  useEffect(() => { if (urlStatus !== null) setFilter(urlStatus); }, [urlStatus]);
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [page, setPage] = useState(1);
@@ -218,5 +222,13 @@ export default function AdminSubmissionsPage() {
         <Pager page={page} pageCount={pageCount} onPage={setPage} total={rows.length} />
       </main>
     </div>
+  );
+}
+
+export default function AdminSubmissionsPage() {
+  return (
+    <Suspense fallback={<main className="flex min-h-[100dvh] items-center justify-center"><p className="text-sm text-[var(--color-text-secondary)]">Loading…</p></main>}>
+      <SubmissionsInner />
+    </Suspense>
   );
 }

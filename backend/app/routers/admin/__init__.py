@@ -10,6 +10,7 @@ from app.routers.admin.payouts import router as payouts_router
 from app.routers.admin.settings import router as settings_router
 from app.routers.admin.stats import router as stats_router
 from app.routers.admin.submissions import router as submissions_router
+from app.routers.admin.uploads import router as uploads_router
 from app.routers.admin.users import router as users_router
 
 router = APIRouter()
@@ -23,5 +24,6 @@ router.include_router(submissions_router)
 router.include_router(payouts_router)
 router.include_router(settings_router)
 router.include_router(users_router)
+router.include_router(uploads_router)
 
 # submissions-verify, payouts, audit mount here as built.

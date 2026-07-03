@@ -36,6 +36,42 @@ def create_presigned_upload(db: Session, creator_id, purpose: str, content_type,
     return obj, url, key
 
 
+def create_admin_image_upload(db: Session, content_type, filename, size_bytes):
+    """Admin banner/thumbnail upload — not creator-owned (owner_creator_id NULL).
+    ponytail: reuse the 'avatar' purpose (a public image) to avoid a new enum + migration."""
+    settings = get_settings()
+    if size_bytes and size_bytes > settings.max_upload_bytes:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "File exceeds the size limit")
+    key = storage.make_object_key("avatar", uuid.uuid4(), filename or "")
+    try:
+        url = storage.presign_put(key, content_type)
+    except RuntimeError as exc:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc))
+    obj = StorageObject(
+        owner_creator_id=None, purpose="avatar", bucket=settings.r2_bucket,
+        object_key=key, content_type=content_type, size_bytes=size_bytes, status="pending",
+    )
+    db.add(obj)
+    db.commit()
+    db.refresh(obj)
+    return obj, url, key
+
+
+def finalize_admin_image(db: Session, object_id: uuid.UUID) -> StorageObject:
+    obj = db.get(StorageObject, object_id)
+    if obj is None or obj.owner_creator_id is not None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Upload not found")
+    if obj.status == "finalized":
+        return obj
+    if storage.head_object(obj.object_key) is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Uploaded file not found in storage")
+    obj.status = "finalized"
+    obj.finalized_at = _now()
+    db.commit()
+    db.refresh(obj)
+    return obj
+
+
 def finalize_upload(db: Session, creator_id, object_id: uuid.UUID) -> StorageObject:
     obj = db.get(StorageObject, object_id)
     if obj is None or obj.owner_creator_id != creator_id:

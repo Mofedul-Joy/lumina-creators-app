@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { BannerInput } from "@/components/admin/BannerInput";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import {
@@ -124,7 +125,7 @@ export default function NewCampaignPage() {
 
           <Field id="cf-name" requiredMark error={errors.name} label="Campaign name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
           <Field label="Brand name" value={f.brand_name} onChange={(e) => setF({ ...f, brand_name: e.target.value })} />
-          <Field label="Banner / thumbnail image URL (optional)" value={f.brand_logo_url} onChange={(e) => setF({ ...f, brand_logo_url: e.target.value })} placeholder="https://…/banner.jpg" />
+          <BannerInput value={f.brand_logo_url} onChange={(v) => setF({ ...f, brand_logo_url: v })} />
 
           <div className="space-y-2">
             <label className={labelCls}>Client (brand account)</label>

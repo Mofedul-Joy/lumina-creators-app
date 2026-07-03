@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
+import { AdminNav } from "@/components/admin/AdminNav";
 import { getAdminToken } from "@/lib/auth";
 import { getCreatorDetail, isAuthError } from "@/lib/api";
 
@@ -65,7 +66,9 @@ export default function AdminCreatorDetailPage() {
     );
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10 space-y-6">
+    <div className="min-h-[100dvh]">
+      <AdminNav />
+      <main className="mx-auto max-w-3xl px-6 py-10 space-y-6">
       <Link href="/admin/creators" className="text-sm text-[var(--color-brand)] underline">
         ← Back to database
       </Link>
@@ -158,6 +161,7 @@ export default function AdminCreatorDetailPage() {
           </ul>
         )}
       </section>
-    </main>
+      </main>
+    </div>
   );
 }

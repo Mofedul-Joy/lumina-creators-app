@@ -81,7 +81,7 @@ export default function AdminUsersPage() {
             </div>
 
             {/* staff */}
-            <div className="card-lumina mt-6 overflow-hidden rounded-[var(--radius-card)]">
+            <div id="staff" className="card-lumina mt-6 scroll-mt-24 overflow-hidden rounded-[var(--radius-card)]">
               <div className="border-b border-[var(--color-border)] px-6 py-4">
                 <h2 className="text-lg font-semibold text-[var(--color-text)]">Staff (admins)</h2>
               </div>
@@ -97,7 +97,7 @@ export default function AdminUsersPage() {
                   <tbody>
                     {u.admins.map((a) => (
                       <tr key={a.id} className="border-t border-[var(--color-border)]/40">
-                        <td className="px-6 py-4 text-[var(--color-text)]">{a.email}</td>
+                        <td className="px-6 py-4"><Link href={`/admin/users/staff/${a.id}`} className="text-[var(--color-text)] hover:text-[var(--color-brand)]">{a.email}</Link></td>
                         <td className="px-6 py-4 capitalize text-[var(--color-text-secondary)]">{a.role}</td>
                         <td className="px-6 py-4"><StatusBadge status={a.status} /></td>
                       </tr>
@@ -108,9 +108,10 @@ export default function AdminUsersPage() {
             </div>
 
             {/* clients */}
-            <div className="card-lumina mt-6 overflow-hidden rounded-[var(--radius-card)]">
-              <div className="border-b border-[var(--color-border)] px-6 py-4">
+            <div id="brands" className="card-lumina mt-6 scroll-mt-24 overflow-hidden rounded-[var(--radius-card)]">
+              <div className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-4">
                 <h2 className="text-lg font-semibold text-[var(--color-text)]">Brand accounts (clients)</h2>
+                <Link href="/admin/users/brands" className="text-sm font-medium text-[var(--color-brand)] hover:underline">Manage all brands →</Link>
               </div>
               {u.clients.length === 0 ? (
                 <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">No brand accounts yet.</p>
@@ -128,7 +129,7 @@ export default function AdminUsersPage() {
                     <tbody>
                       {u.clients.map((c) => (
                         <tr key={c.id} className="border-t border-[var(--color-border)]/40">
-                          <td className="px-6 py-4 text-[var(--color-text)]">{c.name ?? "—"}</td>
+                          <td className="px-6 py-4"><Link href={`/admin/users/brands/${c.id}`} className="text-[var(--color-text)] hover:text-[var(--color-brand)]">{c.name ?? "—"}</Link></td>
                           <td className="px-6 py-4 text-[var(--color-text-secondary)]">{c.email}</td>
                           <td className="px-6 py-4"><StatusBadge status={c.status} /></td>
                           <td className="px-6 py-4 text-right">
@@ -159,7 +160,7 @@ export default function AdminUsersPage() {
             </div>
 
             {/* creators — managed on the Creators page */}
-            <div className="card-lumina mt-6 overflow-hidden rounded-[var(--radius-card)]">
+            <div id="creators" className="card-lumina mt-6 scroll-mt-24 overflow-hidden rounded-[var(--radius-card)]">
               <div className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-4">
                 <h2 className="text-lg font-semibold text-[var(--color-text)]">Creators</h2>
                 <Link href="/admin/creators" className="text-sm font-medium text-[var(--color-brand)] hover:underline">View all {u.creator_count} →</Link>

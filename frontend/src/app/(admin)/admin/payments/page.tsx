@@ -85,7 +85,7 @@ export default function AdminPaymentsPage() {
         </div>
 
         {/* outstanding balances */}
-        <div className="card-lumina mt-6 overflow-hidden rounded-[var(--radius-card)]">
+        <div id="outstanding" className="card-lumina mt-6 scroll-mt-24 overflow-hidden rounded-[var(--radius-card)]">
           <div className="border-b border-[var(--color-border)] px-6 py-4">
             <h2 className="text-lg font-semibold text-[var(--color-text)]">Outstanding balances</h2>
           </div>
@@ -139,7 +139,7 @@ export default function AdminPaymentsPage() {
         </div>
 
         {/* payout history */}
-        <div className="card-lumina mt-6 overflow-hidden rounded-[var(--radius-card)]">
+        <div id="history" className="card-lumina mt-6 scroll-mt-24 overflow-hidden rounded-[var(--radius-card)]">
           <div className="border-b border-[var(--color-border)] px-6 py-4">
             <h2 className="text-lg font-semibold text-[var(--color-text)]">Payout history</h2>
           </div>
