@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const LINKS = [
+  { href: "/dashboard", label: "Workspace" },
   { href: "/campaigns", label: "Campaigns" },
   { href: "/submissions", label: "My submissions" },
   { href: "/onboarding", label: "Profile" },
@@ -14,7 +15,7 @@ export function CreatorNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-bg)]/85 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-        <Link href="/campaigns" className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex items-center gap-2">
           <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--color-brand)] text-[var(--color-on-brand)]">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path d="M8 5v14l11-7L8 5Z" fill="currentColor" />
