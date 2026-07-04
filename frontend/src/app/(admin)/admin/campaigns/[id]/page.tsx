@@ -16,7 +16,7 @@ import {
   updateCampaign,
 } from "@/lib/admin";
 import { getAdminToken } from "@/lib/auth";
-import { isAuthError } from "@/lib/api";
+import { downloadCsv, isAuthError } from "@/lib/api";
 import { fmtMoney } from "@/lib/format";
 
 const ALL_PLATFORMS = ["instagram", "tiktok", "youtube", "twitter", "facebook"];
@@ -58,6 +58,7 @@ export default function AdminCampaignDetailPage() {
   const [form, setForm] = useState<FormState | null>(null);
   const [saved, setSaved] = useState(false);
   const [showReqs, setShowReqs] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => { setHasToken(!!getAdminToken()); setReady(true); }, []);
   useEffect(() => { if (ready && !hasToken) router.replace("/admin/login"); }, [ready, hasToken, router]);
@@ -122,6 +123,17 @@ export default function AdminCampaignDetailPage() {
                 <StatusBadge status={c.status} />
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    setExporting(true);
+                    try { await downloadCsv(`/api/admin/campaigns/${id}/export`, getAdminToken() ?? ""); }
+                    finally { setExporting(false); }
+                  }}
+                  disabled={exporting}
+                  className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-text)] disabled:opacity-50"
+                >
+                  {exporting ? "Exporting…" : "Export CSV"}
+                </button>
                 {c.status === "draft" ? (
                   <button onClick={() => publishM.mutate()} disabled={publishM.isPending}
                     className="cursor-pointer rounded-full bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-[var(--color-on-brand)] disabled:opacity-50">Publish</button>

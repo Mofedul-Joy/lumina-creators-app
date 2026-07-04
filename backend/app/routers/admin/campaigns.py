@@ -5,13 +5,15 @@ import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_admin
 from app.db.session import get_db
-from app.models import Admin, Campaign
+from app.models import Admin, Campaign, CreatorProfile, Submission
 from app.schemas.campaign import CampaignCreateIn, CampaignOut, CampaignUpdateIn
 from app.services import campaign as svc
+from app.services.csv_export import csv_response
 
 router = APIRouter(prefix="/campaigns", tags=["admin-campaigns"])
 
@@ -64,3 +66,33 @@ def close(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db:
 @router.post("/{campaign_id}/archive", response_model=CampaignOut)
 def archive(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     return campaign_out(svc.archive_campaign(db, campaign_id))
+
+
+@router.get("/{campaign_id}/export")
+def export_submissions_csv(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Every submission in the campaign, no pagination cap — the whole point
+    of a CSV export is to get data the dashboard's paged view can't show."""
+    campaign = svc.get_campaign(db, campaign_id)
+    rows = db.execute(
+        select(Submission, CreatorProfile.display_name)
+        .outerjoin(CreatorProfile, CreatorProfile.creator_id == Submission.creator_id)
+        .where(Submission.campaign_id == campaign_id)
+        .order_by(Submission.created_at.asc())
+    ).all()
+
+    def rows_iter():
+        for sub, display_name in rows:
+            yield [
+                str(sub.id), display_name or "", str(sub.creator_id), sub.platform, sub.post_url,
+                sub.views, sub.likes, sub.comments, str(sub.estimated_amount),
+                str(sub.payable_amount) if sub.payable_amount is not None else "",
+                sub.verification_status, sub.scrape_status, sub.is_suspicious,
+                sub.verification_note or "", sub.created_at.isoformat(),
+            ]
+
+    header = [
+        "Submission ID", "Creator Name", "Creator ID", "Platform", "Post URL",
+        "Views", "Likes", "Comments", "Estimated Amount", "Payable Amount",
+        "Verification Status", "Scrape Status", "Suspicious", "Note", "Created At",
+    ]
+    return csv_response(f"{campaign.slug}_submissions.csv", header, rows_iter())

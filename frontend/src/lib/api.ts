@@ -3,6 +3,24 @@ import { clearSession, getRefresh, realmFromPath, saveSession, type Realm } from
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+// Downloads a CSV export that requires the bearer token — plain <a href> can't
+// attach an Authorization header, so this fetches the blob and triggers a
+// save via a throwaway object URL.
+export async function downloadCsv(path: string, token: string): Promise<void> {
+  const res = await fetch(`${API_URL}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new ApiError(`Export failed (HTTP ${res.status})`, res.status);
+  const blob = await res.blob();
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const match = disposition.match(/filename="?([^"]+)"?/);
+  const filename = match ? match[1] : "export.csv";
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {

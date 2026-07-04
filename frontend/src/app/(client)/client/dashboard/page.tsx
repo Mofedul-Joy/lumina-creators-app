@@ -10,6 +10,7 @@ import {
   listClientSubmissions,
   type ClientCampaign,
 } from "@/lib/client";
+import { downloadCsv } from "@/lib/api";
 
 import { fmtInt, fmtMoney } from "@/lib/format";
 
@@ -24,6 +25,7 @@ function StatTile({ label, value }: { label: string; value: string }) {
 
 function SubmissionsTable({ campaignId }: { campaignId: string }) {
   const [platform, setPlatform] = useState("all");
+  const [exporting, setExporting] = useState(false);
   const q = useQuery({
     queryKey: ["client-subs", campaignId],
     queryFn: () => listClientSubmissions(campaignId),
@@ -41,20 +43,33 @@ function SubmissionsTable({ campaignId }: { campaignId: string }) {
   return (
     <div className="overflow-x-auto px-5 pb-5">
       {/* platform tabs — the Clippers client view pattern */}
-      <div className="mb-3 flex flex-wrap gap-2">
-        {platforms.map((p) => (
-          <button
-            key={p}
-            onClick={() => setPlatform(p)}
-            className={`cursor-pointer rounded-full px-3 py-1 text-xs capitalize transition ${
-              platform === p
-                ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]"
-                : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
-            }`}
-          >
-            {p}
-          </button>
-        ))}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-2">
+          {platforms.map((p) => (
+            <button
+              key={p}
+              onClick={() => setPlatform(p)}
+              className={`cursor-pointer rounded-full px-3 py-1 text-xs capitalize transition ${
+                platform === p
+                  ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]"
+                  : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={async () => {
+            setExporting(true);
+            try { await downloadCsv(`/api/client/campaigns/${campaignId}/export`, getClientToken() ?? ""); }
+            finally { setExporting(false); }
+          }}
+          disabled={exporting}
+          className="cursor-pointer rounded-full px-3 py-1 text-xs text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-text)] disabled:opacity-50"
+        >
+          {exporting ? "Exporting…" : "Export CSV"}
+        </button>
       </div>
       <table className="w-full text-left text-sm">
         <thead>

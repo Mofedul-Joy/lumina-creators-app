@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_current_client
 from app.db.session import get_db
 from app.models import Campaign, Client, Submission
+from app.services.csv_export import csv_response
 
 router = APIRouter(prefix="/campaigns", tags=["client-campaigns"])
 
@@ -116,3 +117,29 @@ def campaign_submissions(
         )
         for s in subs
     ]
+
+
+@router.get("/{campaign_id}/export")
+def export_submissions_csv(
+    campaign_id: uuid.UUID,
+    current: Client = Depends(get_current_client),
+    db: Session = Depends(get_db),
+):
+    """Same PII-free field set as the dashboard's submission table — no
+    creator identity, no internal IDs, no admin-only fields — just streamed
+    without the 200-row cap the dashboard view applies."""
+    campaign = db.get(Campaign, campaign_id)
+    if campaign is None or campaign.client_id != current.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Campaign not found")
+    subs = db.scalars(
+        select(Submission)
+        .where(Submission.campaign_id == campaign_id, Submission.is_suspicious.is_(False))
+        .order_by(Submission.created_at.asc())
+    ).all()
+
+    def rows_iter():
+        for s in subs:
+            yield [s.platform, s.post_url, s.views, s.likes, s.comments, s.created_at.isoformat()]
+
+    header = ["Platform", "Post URL", "Views", "Likes", "Comments", "Submitted At"]
+    return csv_response(f"{campaign.slug}_submissions.csv", header, rows_iter())
