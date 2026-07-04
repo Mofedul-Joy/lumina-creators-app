@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models import CampaignParticipation, ScrapeJob, Submission
+from app.models import CampaignParticipation, ScrapeJob, StorageObject, Submission
 from app.services import campaign as campaign_svc
 from app.services import urls
 
@@ -65,4 +65,28 @@ def get_submission(db: Session, creator_id: uuid.UUID, submission_id: uuid.UUID)
     sub = db.get(Submission, submission_id)
     if sub is None or sub.creator_id != creator_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Submission not found")
+    return sub
+
+
+def attach_proof_video(db: Session, creator_id: uuid.UUID, submission_id: uuid.UUID,
+                       storage_object_id: uuid.UUID) -> Submission:
+    """Link a finalized proof-video upload to a submission (golden rule 4: create_new
+    campaigns need proof-video verification before an admin can verify stats)."""
+    sub = get_submission(db, creator_id, submission_id)
+    if sub.verification_status == "verified":
+        raise HTTPException(status.HTTP_409_CONFLICT, "This submission is already verified")
+
+    obj = db.get(StorageObject, storage_object_id)
+    if obj is None or obj.owner_creator_id != creator_id or obj.purpose != "proof_video":
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Proof video upload not found")
+    if obj.status != "finalized":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Finish uploading the proof video first")
+
+    sub.proof_object_id = obj.id
+    # Replacing proof after a rejection re-opens the submission for another look.
+    if sub.verification_status == "rejected":
+        sub.verification_status = "pending"
+        sub.verification_note = None
+    db.commit()
+    db.refresh(sub)
     return sub

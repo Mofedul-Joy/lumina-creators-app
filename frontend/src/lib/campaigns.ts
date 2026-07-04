@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api";
+import { apiFetch, finalizeUpload, presignUpload, putToPresignedUrl } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
 
 const auth = () => ({ token: getAuthToken() ?? undefined });
@@ -39,6 +39,8 @@ export type Submission = {
   payable_amount: number | null;
   scrape_status: string;
   verification_status: string;
+  verification_note: string | null;
+  has_proof_video: boolean;
   thumbnail_url: string | null;
   created_at: string;
 };
@@ -60,3 +62,22 @@ export const submitClip = (campaign_slug: string, post_url: string) =>
     body: JSON.stringify({ campaign_slug, post_url }),
     ...auth(),
   });
+
+// Uploads a proof-of-post video (presign -> PUT -> finalize) and links it to the
+// submission — the create_new verification gate an admin reviews before payout.
+export async function uploadProofVideo(submissionId: string, file: File): Promise<Submission> {
+  const token = getAuthToken() ?? undefined;
+  const presigned = await presignUpload(token!, {
+    purpose: "proof_video",
+    content_type: file.type || undefined,
+    filename: file.name || undefined,
+    size_bytes: file.size,
+  });
+  await putToPresignedUrl(presigned.upload_url, file);
+  await finalizeUpload(token!, presigned.object_id);
+  return apiFetch<Submission>(`/api/creator/submissions/${submissionId}/proof`, {
+    method: "PATCH",
+    body: JSON.stringify({ storage_object_id: presigned.object_id }),
+    ...auth(),
+  });
+}

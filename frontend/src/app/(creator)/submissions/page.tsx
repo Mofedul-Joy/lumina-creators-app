@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CreatorNav } from "@/components/creator/CreatorNav";
 import { getAuthToken } from "@/lib/auth";
-import { browseCampaigns, listSubmissions } from "@/lib/campaigns";
+import { browseCampaigns, listSubmissions, uploadProofVideo } from "@/lib/campaigns";
 import { fmtInt, fmtMoney } from "@/lib/format";
 
 const STATUS_STYLE: Record<string, string> = {
@@ -27,6 +27,7 @@ function StatusPill({ label }: { label: string }) {
 }
 
 export default function SubmissionsPage() {
+  const qc = useQueryClient();
   const [ready, setReady] = useState(false);
   const [hasToken, setHasToken] = useState(false);
   useEffect(() => {
@@ -39,6 +40,16 @@ export default function SubmissionsPage() {
   const campaignsQ = useQuery({ queryKey: ["campaigns"], queryFn: browseCampaigns, enabled, retry: false });
 
   const nameById = new Map((campaignsQ.data ?? []).map((c) => [c.id, c.name]));
+  const modeById = new Map((campaignsQ.data ?? []).map((c) => [c.id, c.mode]));
+
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const proofM = useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) => uploadProofVideo(id, file),
+    onMutate: ({ id }) => setUploadingId(id),
+    onSettled: () => setUploadingId(null),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["submissions"] }),
+  });
 
   if (ready && !hasToken)
     return (
@@ -114,10 +125,13 @@ export default function SubmissionsPage() {
                       <th className="px-5 py-3 text-right font-medium">Views</th>
                       <th className="px-5 py-3 text-right font-medium">Est. earnings</th>
                       <th className="px-5 py-3 font-medium">Status</th>
+                      <th className="px-5 py-3 font-medium">Proof</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {subs.map((s) => (
+                    {subs.map((s) => {
+                      const needsProof = modeById.get(s.campaign_id) === "create_new";
+                      return (
                       <tr key={s.id} className="border-t border-[var(--color-border)]">
                         <td className="px-5 py-3 text-[var(--color-text)]">
                           {nameById.get(s.campaign_id) ?? "Campaign"}
@@ -136,9 +150,47 @@ export default function SubmissionsPage() {
                         <td className="tabular px-5 py-3 text-right">{fmtMoney(s.estimated_amount)}</td>
                         <td className="px-5 py-3">
                           <StatusPill label={s.verification_status} />
+                          {s.verification_status === "rejected" && s.verification_note ? (
+                            <p className="mt-1 max-w-[220px] text-xs text-[var(--color-text-muted)]">{s.verification_note}</p>
+                          ) : null}
+                        </td>
+                        <td className="px-5 py-3">
+                          {!needsProof ? (
+                            <span className="text-xs text-[var(--color-text-muted)]">Not required</span>
+                          ) : (
+                            <>
+                              <input
+                                ref={(el) => { fileInputs.current[s.id] = el; }}
+                                type="file"
+                                accept="video/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) proofM.mutate({ id: s.id, file });
+                                  e.target.value = "";
+                                }}
+                              />
+                              <button
+                                type="button"
+                                disabled={uploadingId === s.id}
+                                onClick={() => fileInputs.current[s.id]?.click()}
+                                className="rounded-md border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)] disabled:opacity-50"
+                              >
+                                {uploadingId === s.id
+                                  ? "Uploading…"
+                                  : s.has_proof_video
+                                    ? "Replace video"
+                                    : "Upload proof video"}
+                              </button>
+                              {s.has_proof_video && uploadingId !== s.id ? (
+                                <span className="ml-2 text-xs text-[var(--color-brand)]">Uploaded ✓</span>
+                              ) : null}
+                            </>
+                          )}
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

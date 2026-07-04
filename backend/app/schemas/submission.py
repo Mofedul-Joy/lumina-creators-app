@@ -11,6 +11,10 @@ class SubmissionCreateIn(BaseModel):
     post_url: str
 
 
+class ProofVideoAttachIn(BaseModel):
+    storage_object_id: str
+
+
 class SubmissionOut(BaseModel):
     id: str
     campaign_id: str
@@ -23,5 +27,7 @@ class SubmissionOut(BaseModel):
     payable_amount: Optional[Decimal] = None
     scrape_status: str
     verification_status: str
+    verification_note: Optional[str] = None
+    has_proof_video: bool = False
     thumbnail_url: Optional[str] = None
     created_at: datetime
