@@ -65,6 +65,22 @@ def list_payouts(db: Session, limit: int = 50):
     ).all()
 
 
+def log_manual_payment(db: Session, admin_id: uuid.UUID, creator_id: uuid.UUID,
+                       amount: Decimal, method: str, reference: str = "") -> Payout:
+    """Clippers-style receipt: money moved in another app, admin logs it here.
+    No payout_items — it doesn't claim submissions, it's pure bookkeeping."""
+    amount = Decimal(amount).quantize(_CENTS)
+    if amount <= 0:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Amount must be positive")
+    payout = Payout(creator_id=creator_id, amount=amount, method=method, status="paid",
+                    processed_by=admin_id, paid_at=_now(),
+                    external_ref=reference.strip() or None)
+    db.add(payout)
+    db.commit()
+    db.refresh(payout)
+    return payout
+
+
 def record_payout(db: Session, admin_id: uuid.UUID, creator_id: uuid.UUID, method: str) -> Payout:
     subs = _unpaid_verified(db, creator_id)
     # Only settle rows that round to a positive cent — the DB CHECK is amount > 0,

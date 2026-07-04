@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pager } from "@/components/admin/Pager";
 import { getAdminToken } from "@/lib/auth";
 import { fmtMoney } from "@/lib/format";
-import { type AdminCampaign, archiveCampaign, listAdminCampaigns, publishCampaign } from "@/lib/admin";
+import { archiveCampaign, closeCampaign, listAdminCampaigns, publishCampaign } from "@/lib/admin";
 
 const PAGE_SIZE = 8;
 
@@ -24,6 +24,8 @@ export default function AdminCampaignsPage() {
   const [hasToken, setHasToken] = useState(false);
   const [view, setView] = useState<"line" | "grid">("line");
   const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [q, setQ] = useState("");
   useEffect(() => setHasToken(!!getAdminToken()), []);
 
   const { data, isLoading, isError, error } = useQuery({
@@ -36,8 +38,26 @@ export default function AdminCampaignsPage() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-campaigns"] });
   const publish = useMutation({ mutationFn: (id: string) => publishCampaign(id), onSuccess: invalidate });
   const archive = useMutation({ mutationFn: (id: string) => archiveCampaign(id), onSuccess: invalidate });
+  const close = useMutation({ mutationFn: (id: string) => closeCampaign(id), onSuccess: invalidate });
 
-  const all = data ?? [];
+  // Bill's campaign states: Live / Draft / Closed / Archived (paused counts as closed)
+  const everything = data ?? [];
+  const matchesStatus = (s: string) =>
+    statusFilter === "all" ? true
+    : statusFilter === "live" ? s === "active"
+    : statusFilter === "closed" ? s === "completed" || s === "paused"
+    : s === statusFilter;
+  const all = everything.filter((c) =>
+    matchesStatus(c.status) &&
+    (!q.trim() || `${c.name} ${c.brand_name ?? ""}`.toLowerCase().includes(q.trim().toLowerCase())),
+  );
+  const counts = {
+    all: everything.length,
+    live: everything.filter((c) => c.status === "active").length,
+    draft: everything.filter((c) => c.status === "draft").length,
+    closed: everything.filter((c) => c.status === "completed" || c.status === "paused").length,
+    archived: everything.filter((c) => c.status === "archived").length,
+  };
   const pageCount = Math.ceil(all.length / PAGE_SIZE);
   const rows = all.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -72,6 +92,32 @@ export default function AdminCampaignsPage() {
               New campaign
             </Link>
           </div>
+        </div>
+
+        {/* status filters + search — the Clippers campaign states */}
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap gap-2">
+            {([["all", "All"], ["live", "Live"], ["draft", "Draft"], ["closed", "Closed"], ["archived", "Archived"]] as const).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => { setStatusFilter(key); setPage(1); }}
+                className={`cursor-pointer rounded-full px-4 py-1.5 text-sm transition ${
+                  statusFilter === key
+                    ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]"
+                    : "bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+                }`}
+              >
+                {label}
+                <span className="tabular ml-1.5 opacity-70">{counts[key]}</span>
+              </button>
+            ))}
+          </div>
+          <input
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setPage(1); }}
+            placeholder="Search campaigns…"
+            className="min-h-9 min-w-[220px] flex-1 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)] sm:max-w-xs"
+          />
         </div>
 
         {!hasToken ? (
@@ -132,14 +178,23 @@ export default function AdminCampaignsPage() {
                       <td className="tabular px-4 py-3 text-[var(--color-text)]">{fmtMoney(c.cpm_rate)}</td>
                       <td className="tabular px-4 py-3 text-[var(--color-text-secondary)]">{fmtMoney(c.budget)}</td>
                       <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
-                      <td className="px-4 py-3 text-right">
-                        {c.status === "draft" ? (
-                          <button className="cursor-pointer text-sm font-medium text-[var(--color-brand)] hover:underline" onClick={() => publish.mutate(c.id)}>Publish</button>
-                        ) : c.status !== "archived" ? (
-                          <button className="cursor-pointer text-sm text-[var(--color-text-muted)] hover:text-[var(--color-danger)]" onClick={() => archive.mutate(c.id)}>Archive</button>
-                        ) : (
-                          <span className="text-sm text-[var(--color-text-muted)]">—</span>
-                        )}
+                      <td className="px-4 py-3">
+                        {/* Bill's actions: view, edit, close/change state */}
+                        <div className="flex items-center justify-end gap-1.5 text-sm">
+                          <Link href={`/admin/campaigns/${c.id}`} className="rounded-md px-2 py-1 text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-text)]">View</Link>
+                          {c.status !== "archived" ? (
+                            <Link href={`/admin/campaigns/${c.id}`} className="rounded-md px-2 py-1 text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-text)]">Edit</Link>
+                          ) : null}
+                          {c.status === "draft" ? (
+                            <button className="cursor-pointer rounded-md bg-emerald-500/15 px-2 py-1 font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/25 hover:bg-emerald-500/25" onClick={() => publish.mutate(c.id)}>Publish</button>
+                          ) : null}
+                          {c.status === "active" ? (
+                            <button className="cursor-pointer rounded-md px-2 py-1 text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-amber-400 hover:ring-amber-500/25" onClick={() => close.mutate(c.id)}>Close</button>
+                          ) : null}
+                          {c.status !== "archived" ? (
+                            <button className="cursor-pointer rounded-md px-2 py-1 text-[var(--color-text-muted)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-danger)]" onClick={() => archive.mutate(c.id)}>Archive</button>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -150,6 +150,40 @@ def staff_detail(admin_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
                        status="active" if a.is_active else "suspended", created_at=a.created_at)
 
 
+class EditClientIn(BaseModel):
+    name: Optional[str] = None
+    password: Optional[str] = None       # set a new password
+    campaign_ids: Optional[list[str]] = None  # replace which campaigns this client sees
+
+
+@router.patch("/clients/{client_id}", response_model=UserRow)
+def edit_client(client_id: uuid.UUID, body: EditClientIn,
+                admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    c = db.get(Client, client_id)
+    if c is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Client not found")
+    if body.name is not None:
+        c.name = body.name.strip() or None
+    if body.password:
+        if len(body.password) < 8:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Password must be at least 8 characters")
+        c.password_hash = hash_password(body.password)
+    if body.campaign_ids is not None:
+        # unlink campaigns no longer selected, link the chosen ones
+        for camp in db.scalars(select(Campaign).where(Campaign.client_id == client_id)).all():
+            camp.client_id = None
+        for cid in body.campaign_ids:
+            try:
+                camp = db.get(Campaign, uuid.UUID(cid))
+            except ValueError:
+                camp = None
+            if camp:
+                camp.client_id = client_id
+    db.commit()
+    db.refresh(c)
+    return UserRow(id=str(c.id), email=c.email, name=c.name, role="client", status=c.status)
+
+
 @router.post("/clients/{client_id}/suspend", response_model=UserRow)
 def suspend_client(client_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     return _set_client_status(db, client_id, "suspended")

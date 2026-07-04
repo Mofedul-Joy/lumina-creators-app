@@ -19,7 +19,7 @@ const NAV: Item[] = [
     ],
   },
   { href: "/admin/creators", label: "Creators" },
-  { href: "/admin/analytics", label: "Analytics" },
+  // Analytics hidden per Bill (call @15:40) — page kept for later.
   {
     href: "/admin/payments",
     label: "Payments",

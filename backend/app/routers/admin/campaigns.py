@@ -56,6 +56,11 @@ def publish(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), d
     return campaign_out(svc.publish_campaign(db, campaign_id))
 
 
+@router.post("/{campaign_id}/close", response_model=CampaignOut)
+def close(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    return campaign_out(svc.close_campaign(db, campaign_id))
+
+
 @router.post("/{campaign_id}/archive", response_model=CampaignOut)
 def archive(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     return campaign_out(svc.archive_campaign(db, campaign_id))

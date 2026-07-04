@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getAdminToken } from "@/lib/auth";
-import { createUser, getUsers, listAdminCampaigns, reactivateClient, suspendClient } from "@/lib/admin";
+import { createUser, editClient, getUsers, listAdminCampaigns, reactivateClient, suspendClient } from "@/lib/admin";
 import { isAuthError } from "@/lib/api";
 import { fmtInt } from "@/lib/format";
 
@@ -63,6 +63,28 @@ export default function AdminUsersPage() {
     onError: (e) => setAddErr((e as Error).message),
   });
 
+  // edit-client modal (Bill: "add these actions — edit, and an invite link")
+  const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", password: "" });
+  const [editErr, setEditErr] = useState("");
+  const editM = useMutation({
+    mutationFn: () => editClient(editing!.id, {
+      name: editForm.name.trim() || undefined,
+      password: editForm.password || undefined,
+    }),
+    onSuccess: () => { setEditing(null); setEditErr(""); refresh(); },
+    onError: (e) => setEditErr((e as Error).message),
+  });
+
+  // invite link: prefilled login URL for the user's realm
+  const [copied, setCopied] = useState("");
+  function copyInvite(realm: "admin" | "client", email: string) {
+    const link = `${window.location.origin}/${realm === "admin" ? "admin/login" : "client/login"}?email=${encodeURIComponent(email)}`;
+    navigator.clipboard.writeText(link);
+    setCopied(email);
+    setTimeout(() => setCopied(""), 1500);
+  }
+
   if (!ready || !hasToken)
     return (
       <main className="flex min-h-[100dvh] items-center justify-center">
@@ -112,6 +134,7 @@ export default function AdminUsersPage() {
                       <th className="px-6 py-3 font-medium">Email</th>
                       <th className="px-6 py-3 font-medium">Role</th>
                       <th className="px-6 py-3 font-medium">Status</th>
+                      <th className="px-6 py-3 text-right font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -120,6 +143,14 @@ export default function AdminUsersPage() {
                         <td className="px-6 py-4"><Link href={`/admin/users/staff/${a.id}`} className="text-[var(--color-text)] hover:text-[var(--color-brand)]">{a.email}</Link></td>
                         <td className="px-6 py-4 capitalize text-[var(--color-text-secondary)]">{a.role}</td>
                         <td className="px-6 py-4"><StatusBadge status={a.status} /></td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => copyInvite("admin", a.email)}
+                            className="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-brand)]"
+                          >
+                            {copied === a.email ? "Copied ✓" : "Invite link"}
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -152,24 +183,32 @@ export default function AdminUsersPage() {
                           <td className="px-6 py-4"><Link href={`/admin/users/brands/${c.id}`} className="text-[var(--color-text)] hover:text-[var(--color-brand)]">{c.name ?? "—"}</Link></td>
                           <td className="px-6 py-4 text-[var(--color-text-secondary)]">{c.email}</td>
                           <td className="px-6 py-4"><StatusBadge status={c.status} /></td>
-                          <td className="px-6 py-4 text-right">
-                            {c.status === "active" ? (
+                          <td className="px-6 py-4">
+                            <div className="flex items-center justify-end gap-1.5 text-xs">
                               <button
-                                disabled={busy}
-                                onClick={() => suspendM.mutate(c.id)}
-                                className="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-red-400 hover:ring-red-500/25 disabled:opacity-50"
+                                onClick={() => { setEditing({ id: c.id, name: c.name ?? "" }); setEditForm({ name: c.name ?? "", password: "" }); setEditErr(""); }}
+                                className="cursor-pointer rounded-md px-2.5 py-1 font-medium text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-text)]"
                               >
-                                Suspend
+                                Edit
                               </button>
-                            ) : (
                               <button
-                                disabled={busy}
-                                onClick={() => reactivateM.mutate(c.id)}
-                                className="cursor-pointer rounded-md bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-50"
+                                onClick={() => copyInvite("client", c.email)}
+                                className="cursor-pointer rounded-md px-2.5 py-1 font-medium text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-brand)]"
                               >
-                                Reactivate
+                                {copied === c.email ? "Copied ✓" : "Invite link"}
                               </button>
-                            )}
+                              {c.status === "active" ? (
+                                <button disabled={busy} onClick={() => suspendM.mutate(c.id)}
+                                  className="cursor-pointer rounded-md px-2.5 py-1 font-medium text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-red-400 hover:ring-red-500/25 disabled:opacity-50">
+                                  Suspend
+                                </button>
+                              ) : (
+                                <button disabled={busy} onClick={() => reactivateM.mutate(c.id)}
+                                  className="cursor-pointer rounded-md bg-emerald-500/15 px-2.5 py-1 font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-50">
+                                  Reactivate
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -245,6 +284,39 @@ export default function AdminUsersPage() {
                     className="cursor-pointer rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] disabled:opacity-50"
                   >
                     {createM.isPending ? "Creating…" : "Create user"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {/* edit-client modal */}
+        {editing ? (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setEditing(null)}>
+            <div className="w-full max-w-md rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-[var(--color-text)]">Edit user</h3>
+                <button onClick={() => setEditing(null)} className="cursor-pointer rounded-full p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]" aria-label="Close">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                </button>
+              </div>
+              <div className="mt-5 space-y-4">
+                <Labeled label="Brand name">
+                  <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className={inputCls} />
+                </Labeled>
+                <Labeled label="New password (leave blank to keep)">
+                  <input type="password" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} placeholder="At least 8 characters" className={inputCls} />
+                </Labeled>
+                {editErr ? <p className="text-sm text-[var(--color-danger)]">{editErr}</p> : null}
+                <div className="flex justify-end gap-3 pt-1">
+                  <button onClick={() => setEditing(null)} className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Cancel</button>
+                  <button
+                    disabled={editM.isPending || (!!editForm.password && editForm.password.length < 8)}
+                    onClick={() => editM.mutate()}
+                    className="cursor-pointer rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] disabled:opacity-50"
+                  >
+                    {editM.isPending ? "Saving…" : "Save changes"}
                   </button>
                 </div>
               </div>

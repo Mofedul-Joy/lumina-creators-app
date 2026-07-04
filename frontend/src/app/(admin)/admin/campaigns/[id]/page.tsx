@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { BannerInput } from "@/components/admin/BannerInput";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { SubmissionsSection } from "@/components/admin/SubmissionsSection";
 import {
   archiveCampaign,
   type CampaignUpdate,
@@ -228,6 +229,14 @@ export default function AdminCampaignDetailPage() {
             </div>
           </>
         )}
+
+        {/* this campaign's submissions — Bill: "view a campaign… the videos people
+            submitted for this campaign" */}
+        {c ? (
+          <div className="mt-10">
+            <SubmissionsSection campaignId={id} />
+          </div>
+        ) : null}
 
         {/* requirements modal — what a creator sees before entering */}
         {showReqs && form ? (

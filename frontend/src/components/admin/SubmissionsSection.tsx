@@ -20,15 +20,19 @@ const STATUSES = [
 ] as const;
 const PAGE = 6;
 
-export function SubmissionsSection() {
+export function SubmissionsSection({ campaignId }: { campaignId?: string } = {}) {
   const qc = useQueryClient();
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [note, setNote] = useState("");
 
-  // fetch all, filter by the computed lifecycle status client-side
-  const q = useQuery({ queryKey: ["dash-submissions"], queryFn: () => listSubmissions({}), retry: false });
+  // fetch (optionally scoped to one campaign), filter by lifecycle status client-side
+  const q = useQuery({
+    queryKey: ["dash-submissions", campaignId ?? "all"],
+    queryFn: () => listSubmissions(campaignId ? { campaign_id: campaignId } : {}),
+    retry: false,
+  });
   const refresh = () => qc.invalidateQueries({ queryKey: ["dash-submissions"] });
   const verifyM = useMutation({ mutationFn: verifySubmission, onSuccess: refresh });
   const rejectM = useMutation({

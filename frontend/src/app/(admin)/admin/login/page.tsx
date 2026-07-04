@@ -1,16 +1,19 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { adminLogin, setAdminToken } from "@/lib/auth";
 
-export default function AdminLoginPage() {
+function AdminLoginInner() {
   const router = useRouter();
+  const sp = useSearchParams();
   const [email, setEmail] = useState("");
+  // invite links prefill the email (?email=…)
+  useEffect(() => { const e = sp.get("email"); if (e) setEmail(e); }, [sp]);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({ email: "", password: "" });
@@ -65,5 +68,13 @@ export default function AdminLoginPage() {
         </Button>
       </form>
     </AuthCard>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminLoginInner />
+    </Suspense>
   );
 }

@@ -109,6 +109,18 @@ def publish_campaign(db: Session, campaign_id: uuid.UUID) -> Campaign:
     return c
 
 
+def close_campaign(db: Session, campaign_id: uuid.UUID) -> Campaign:
+    """Bill's 'close/change state' action: campaign stops accepting entries but
+    stays visible (unlike archive). completed = closed."""
+    c = get_campaign(db, campaign_id)
+    if c.status == "archived":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Archived campaigns cannot be closed")
+    c.status = "completed"
+    db.commit()
+    db.refresh(c)
+    return c
+
+
 def archive_campaign(db: Session, campaign_id: uuid.UUID) -> Campaign:
     c = get_campaign(db, campaign_id)
     c.status = "archived"

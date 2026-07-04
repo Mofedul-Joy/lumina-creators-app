@@ -169,6 +169,7 @@ export type PayoutRow = {
   amount: number | string;
   method: string;
   status: string;
+  reference: string | null;
   paid_at: string | null;
   created_at: string;
 };
@@ -179,6 +180,12 @@ export const listOwed = () => apiFetch<OwedRow[]>("/api/admin/payouts/owed", aut
 export const listPayouts = () => apiFetch<PayoutRow[]>("/api/admin/payouts", auth());
 export const recordPayout = (creator_id: string, method: PayoutMethod) =>
   apiFetch<PayoutRow>("/api/admin/payouts", { method: "POST", body: JSON.stringify({ creator_id, method }), ...auth() });
+
+export const logManualPayment = (body: { creator_id: string; amount: number; method: PayoutMethod; reference?: string }) =>
+  apiFetch<PayoutRow>("/api/admin/payouts/manual", { method: "POST", body: JSON.stringify(body), ...auth() });
+
+export const editClient = (id: string, body: { name?: string; password?: string; campaign_ids?: string[] }) =>
+  apiFetch<UserRow>(`/api/admin/users/clients/${id}`, { method: "PATCH", body: JSON.stringify(body), ...auth() });
 
 /* ---- settings ---- */
 export type PlatformSettings = {
@@ -239,6 +246,9 @@ export const publishCampaign = (id: string) =>
 
 export const archiveCampaign = (id: string) =>
   apiFetch<AdminCampaign>(`/api/admin/campaigns/${id}/archive`, { method: "POST", ...auth() });
+
+export const closeCampaign = (id: string) =>
+  apiFetch<AdminCampaign>(`/api/admin/campaigns/${id}/close`, { method: "POST", ...auth() });
 
 /* ---- creator database ---- */
 export type CreatorRow = {

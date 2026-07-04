@@ -5,12 +5,11 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AdminNav } from "@/components/admin/AdminNav";
-import { StatusBadge } from "@/components/admin/StatusBadge";
 import { SubmissionsSection } from "@/components/admin/SubmissionsSection";
 import { getAdminToken } from "@/lib/auth";
 import { getAdminStats } from "@/lib/admin";
 import { isAuthError } from "@/lib/api";
-import { fmtInt, fmtMoney } from "@/lib/format";
+import { fmtInt } from "@/lib/format";
 
 function StatCard({
   label,
@@ -102,11 +101,11 @@ export default function AdminDashboardPage() {
           </Link>
         </div>
 
-        {/* 4 stat cards */}
+        {/* stat cards — Bill: "Active campaigns, creators, submissions, that's enough" */}
         {q.isError && !isAuthError(q.error) ? (
           <p className="mt-8 text-sm text-[var(--color-danger)]">{(q.error as Error).message}</p>
         ) : null}
-        <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="mt-8 grid grid-cols-3 gap-4">
           <StatCard
             label="Active campaigns"
             value={s ? fmtInt(s.active_campaigns) : "—"}
@@ -123,64 +122,10 @@ export default function AdminDashboardPage() {
             value={s ? fmtInt(s.total_submissions) : "—"}
             hint={s ? `${fmtInt(s.total_views)} views tracked` : undefined}
           />
-          <StatCard
-            label="Total budget"
-            value={s ? fmtMoney(s.total_budget) : "—"}
-            hint={s ? `${fmtInt(s.total_clients)} brand${s.total_clients === 1 ? "" : "s"}` : undefined}
-          />
         </div>
 
-        {/* recent campaigns */}
-        <div className="mt-8 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--color-text)]">Recent campaigns</h2>
-          <Link href="/admin/campaigns" className="text-sm text-[var(--color-brand)] hover:underline">
-            View all →
-          </Link>
-        </div>
-        <div className="card-lumina mt-3 rounded-[var(--radius-card)]">
-          {q.isLoading ? (
-            <p className="p-6 text-sm text-[var(--color-text-muted)]">Loading…</p>
-          ) : !s?.recent_campaigns.length ? (
-            <div className="p-8 text-center">
-              <p className="text-[var(--color-text)]">No campaigns yet</p>
-              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                Create your first campaign to start tracking performance.
-              </p>
-            </div>
-          ) : (
-            <ul>
-              {s.recent_campaigns.map((c, i) => (
-                <Link
-                  key={c.id}
-                  href={`/admin/campaigns/${c.id}`}
-                  className={`flex items-center justify-between gap-4 px-5 py-4 transition-colors duration-150 hover:bg-[var(--color-surface)]/50 ${
-                    i > 0 ? "border-t border-[var(--color-border)]" : ""
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-[var(--color-text)]">{c.name}</p>
-                    <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
-                      {c.mode === "create_new" ? "Original UGC" : "Approved clips"}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-5 text-right">
-                    <div className="hidden sm:block">
-                      <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">CPM</p>
-                      <p className="tabular text-sm text-[var(--color-text)]">{fmtMoney(c.cpm_rate)}</p>
-                    </div>
-                    <div className="hidden sm:block">
-                      <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Budget</p>
-                      <p className="tabular text-sm text-[var(--color-text)]">{fmtMoney(c.budget)}</p>
-                    </div>
-                    <StatusBadge status={c.status} />
-                  </div>
-                </Link>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* submissions — Bell wants them on the dashboard, card view + status filter */}
+        {/* submissions front-and-center — Bill: "as an admin the first thing I want
+            to see is just go straight into submissions" (campaigns live in the nav) */}
         <div className="mt-10">
           <SubmissionsSection />
         </div>

@@ -23,6 +23,7 @@ function StatTile({ label, value }: { label: string; value: string }) {
 }
 
 function SubmissionsTable({ campaignId }: { campaignId: string }) {
+  const [platform, setPlatform] = useState("all");
   const q = useQuery({
     queryKey: ["client-subs", campaignId],
     queryFn: () => listClientSubmissions(campaignId),
@@ -35,8 +36,26 @@ function SubmissionsTable({ campaignId }: { campaignId: string }) {
     );
   if (!q.data?.length)
     return <p className="px-5 pb-5 text-sm text-[var(--color-text-muted)]">No submissions yet.</p>;
+  const platforms = ["all", ...Array.from(new Set(q.data.map((s) => s.platform)))];
+  const rows = platform === "all" ? q.data : q.data.filter((s) => s.platform === platform);
   return (
     <div className="overflow-x-auto px-5 pb-5">
+      {/* platform tabs — the Clippers client view pattern */}
+      <div className="mb-3 flex flex-wrap gap-2">
+        {platforms.map((p) => (
+          <button
+            key={p}
+            onClick={() => setPlatform(p)}
+            className={`cursor-pointer rounded-full px-3 py-1 text-xs capitalize transition ${
+              platform === p
+                ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]"
+                : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+            }`}
+          >
+            {p}
+          </button>
+        ))}
+      </div>
       <table className="w-full text-left text-sm">
         <thead>
           <tr className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
@@ -48,7 +67,7 @@ function SubmissionsTable({ campaignId }: { campaignId: string }) {
           </tr>
         </thead>
         <tbody>
-          {q.data.map((s) => (
+          {rows.map((s) => (
             <tr key={s.id} className="border-t border-[var(--color-border)]">
               <td className="max-w-[320px] truncate py-2.5 pr-4">
                 <a
