@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.integrations import storage
 from app.models import Creator, CreatorProfile, PortfolioItem, SocialAccount, StorageObject
+from app.services import audit
 
 
 def _avatar_urls(db: Session, profiles) -> dict:
@@ -107,13 +108,16 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
     return out
 
 
-def set_suspicious(db: Session, creator_id: uuid.UUID, flagged: bool) -> Creator:
+def set_suspicious(db: Session, creator_id: uuid.UUID, flagged: bool,
+                   admin_id: uuid.UUID | None = None) -> Creator:
     """Soft fraud flag on the whole account — a warning signal, not a suspend.
     Never returned to creator or client API users (admin-only field)."""
     c = db.get(Creator, creator_id)
     if c is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Creator not found")
     c.is_suspicious = flagged
+    audit.log(db, actor_admin_id=admin_id, entity_type="creator", entity_id=c.id,
+             action="creator.flag_suspicious" if flagged else "creator.unflag_suspicious")
     db.commit()
     db.refresh(c)
     return c

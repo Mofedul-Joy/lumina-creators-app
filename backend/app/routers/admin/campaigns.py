@@ -55,17 +55,17 @@ def update(campaign_id: uuid.UUID, body: CampaignUpdateIn, admin: Admin = Depend
 
 @router.post("/{campaign_id}/publish", response_model=CampaignOut)
 def publish(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return campaign_out(svc.publish_campaign(db, campaign_id))
+    return campaign_out(svc.publish_campaign(db, campaign_id, admin.id))
 
 
 @router.post("/{campaign_id}/close", response_model=CampaignOut)
 def close(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return campaign_out(svc.close_campaign(db, campaign_id))
+    return campaign_out(svc.close_campaign(db, campaign_id, admin.id))
 
 
 @router.post("/{campaign_id}/archive", response_model=CampaignOut)
 def archive(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return campaign_out(svc.archive_campaign(db, campaign_id))
+    return campaign_out(svc.archive_campaign(db, campaign_id, admin.id))
 
 
 @router.get("/{campaign_id}/export")

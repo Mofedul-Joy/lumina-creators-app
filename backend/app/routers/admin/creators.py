@@ -50,11 +50,11 @@ def creator_detail(creator_id: uuid.UUID, admin: Admin = Depends(get_current_adm
 
 @router.post("/{creator_id}/flag-suspicious", response_model=CreatorDetail)
 def flag_suspicious(creator_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    svc.set_suspicious(db, creator_id, True)
+    svc.set_suspicious(db, creator_id, True, admin.id)
     return CreatorDetail(**svc.get_creator_detail(db, creator_id))
 
 
 @router.post("/{creator_id}/unflag-suspicious", response_model=CreatorDetail)
 def unflag_suspicious(creator_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    svc.set_suspicious(db, creator_id, False)
+    svc.set_suspicious(db, creator_id, False, admin.id)
     return CreatorDetail(**svc.get_creator_detail(db, creator_id))

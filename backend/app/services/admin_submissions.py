@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import _now
 from app.models import Campaign, Creator, CreatorProfile, PayoutItem, Submission
+from app.services import audit
 
 
 def _has_active_payout(db: Session, submission_id: uuid.UUID) -> bool:
@@ -73,6 +74,8 @@ def verify_submission(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID
     sub.verified_by = admin_id
     sub.verified_at = _now()
     sub.verification_note = None
+    audit.log(db, actor_admin_id=admin_id, action="submission.verify",
+             entity_type="submission", entity_id=sub.id)
     db.commit()
     db.refresh(sub)
     return sub
@@ -84,17 +87,22 @@ def reject_submission(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID
     sub.verified_by = admin_id
     sub.verified_at = _now()
     sub.verification_note = note.strip() or None
+    audit.log(db, actor_admin_id=admin_id, action="submission.reject",
+             entity_type="submission", entity_id=sub.id, note=sub.verification_note)
     db.commit()
     db.refresh(sub)
     return sub
 
 
-def set_suspicious(db: Session, submission_id: uuid.UUID, flagged: bool) -> Submission:
+def set_suspicious(db: Session, submission_id: uuid.UUID, flagged: bool,
+                   admin_id: uuid.UUID | None = None) -> Submission:
     """Flag this one post, independent of the creator's account-level flag."""
     sub = db.get(Submission, submission_id)
     if sub is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Submission not found")
     sub.is_suspicious = flagged
+    audit.log(db, actor_admin_id=admin_id, entity_type="submission", entity_id=sub.id,
+             action="submission.flag_suspicious" if flagged else "submission.unflag_suspicious")
     db.commit()
     db.refresh(sub)
     return sub

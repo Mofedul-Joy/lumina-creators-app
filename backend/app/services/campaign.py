@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import _now
 from app.models import Campaign, CampaignParticipation, CreatorProfile
+from app.services import audit
 
 _MODES = {"create_new", "copy_paste"}
 
@@ -93,7 +94,7 @@ def update_campaign(db: Session, campaign_id: uuid.UUID, data: dict) -> Campaign
     return c
 
 
-def publish_campaign(db: Session, campaign_id: uuid.UUID) -> Campaign:
+def publish_campaign(db: Session, campaign_id: uuid.UUID, admin_id: uuid.UUID | None = None) -> Campaign:
     c = get_campaign(db, campaign_id)
     if c.status == "archived":
         raise HTTPException(status.HTTP_409_CONFLICT, "Archived campaigns cannot be published")
@@ -104,27 +105,30 @@ def publish_campaign(db: Session, campaign_id: uuid.UUID) -> Campaign:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "starts_at must be before ends_at")
     c.status = "active"
     c.published_at = c.published_at or _now()
+    audit.log(db, actor_admin_id=admin_id, action="campaign.publish", entity_type="campaign", entity_id=c.id)
     db.commit()
     db.refresh(c)
     return c
 
 
-def close_campaign(db: Session, campaign_id: uuid.UUID) -> Campaign:
+def close_campaign(db: Session, campaign_id: uuid.UUID, admin_id: uuid.UUID | None = None) -> Campaign:
     """Bill's 'close/change state' action: campaign stops accepting entries but
     stays visible (unlike archive). completed = closed."""
     c = get_campaign(db, campaign_id)
     if c.status == "archived":
         raise HTTPException(status.HTTP_409_CONFLICT, "Archived campaigns cannot be closed")
     c.status = "completed"
+    audit.log(db, actor_admin_id=admin_id, action="campaign.close", entity_type="campaign", entity_id=c.id)
     db.commit()
     db.refresh(c)
     return c
 
 
-def archive_campaign(db: Session, campaign_id: uuid.UUID) -> Campaign:
+def archive_campaign(db: Session, campaign_id: uuid.UUID, admin_id: uuid.UUID | None = None) -> Campaign:
     c = get_campaign(db, campaign_id)
     c.status = "archived"
     c.archived_at = _now()
+    audit.log(db, actor_admin_id=admin_id, action="campaign.archive", entity_type="campaign", entity_id=c.id)
     db.commit()
     db.refresh(c)
     return c

@@ -82,14 +82,14 @@ def reject(submission_id: uuid.UUID, body: RejectIn, admin: Admin = Depends(get_
 @router.post("/{submission_id}/flag-suspicious", response_model=AdminSubmissionRow)
 def flag_suspicious(submission_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
                     db: Session = Depends(get_db)):
-    sub = svc.set_suspicious(db, submission_id, True)
+    sub = svc.set_suspicious(db, submission_id, True, admin.id)
     return _reload(db, sub)
 
 
 @router.post("/{submission_id}/unflag-suspicious", response_model=AdminSubmissionRow)
 def unflag_suspicious(submission_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
                       db: Session = Depends(get_db)):
-    sub = svc.set_suspicious(db, submission_id, False)
+    sub = svc.set_suspicious(db, submission_id, False, admin.id)
     return _reload(db, sub)
 
 

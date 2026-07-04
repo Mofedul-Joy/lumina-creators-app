@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import _now
 from app.models import CreatorProfile, Payout, PayoutItem, Submission
+from app.services import audit
 
 _CENTS = Decimal("0.01")
 
@@ -76,6 +77,9 @@ def log_manual_payment(db: Session, admin_id: uuid.UUID, creator_id: uuid.UUID,
                     processed_by=admin_id, paid_at=_now(),
                     external_ref=reference.strip() or None)
     db.add(payout)
+    db.flush()
+    audit.log(db, actor_admin_id=admin_id, action="payout.manual", entity_type="payout",
+             entity_id=payout.id, creator_id=str(creator_id), amount=str(amount), method=method)
     db.commit()
     db.refresh(payout)
     return payout
@@ -98,6 +102,9 @@ def record_payout(db: Session, admin_id: uuid.UUID, creator_id: uuid.UUID, metho
         db.flush()  # assign payout.id before linking items
         for sub_id, amt in items:
             db.add(PayoutItem(payout_id=payout.id, submission_id=sub_id, amount=amt))
+        audit.log(db, actor_admin_id=admin_id, action="payout.record", entity_type="payout",
+                 entity_id=payout.id, creator_id=str(creator_id), amount=str(total),
+                 method=method, submission_count=len(items))
         db.commit()  # active-unique index fires here if a submission was just claimed
     except IntegrityError:
         db.rollback()

@@ -17,6 +17,7 @@ from app.core.deps import get_current_admin
 from app.core.security import hash_password
 from app.db.session import get_db
 from app.models import Admin, Campaign, Client, Creator
+from app.services import audit
 
 router = APIRouter(prefix="/users", tags=["admin-users"])
 
@@ -54,11 +55,13 @@ def list_users(admin: Admin = Depends(get_current_admin), db: Session = Depends(
     )
 
 
-def _set_client_status(db: Session, client_id: uuid.UUID, new_status: str) -> UserRow:
+def _set_client_status(db: Session, client_id: uuid.UUID, new_status: str, admin_id: uuid.UUID) -> UserRow:
     client = db.get(Client, client_id)
     if client is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Client not found")
     client.status = new_status
+    audit.log(db, actor_admin_id=admin_id, entity_type="client", entity_id=client.id,
+             action="client.suspend" if new_status == "suspended" else "client.reactivate")
     db.commit()
     db.refresh(client)
     return UserRow(id=str(client.id), email=client.email, name=client.name, role="client", status=client.status)
@@ -186,9 +189,9 @@ def edit_client(client_id: uuid.UUID, body: EditClientIn,
 
 @router.post("/clients/{client_id}/suspend", response_model=UserRow)
 def suspend_client(client_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return _set_client_status(db, client_id, "suspended")
+    return _set_client_status(db, client_id, "suspended", admin.id)
 
 
 @router.post("/clients/{client_id}/reactivate", response_model=UserRow)
 def reactivate_client(client_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return _set_client_status(db, client_id, "active")
+    return _set_client_status(db, client_id, "active", admin.id)
