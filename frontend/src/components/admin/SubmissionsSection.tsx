@@ -4,8 +4,10 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pager } from "@/components/admin/Pager";
-import { listSubmissions, rejectSubmission, verifySubmission } from "@/lib/admin";
+import { EmbedModal } from "@/components/admin/EmbedModal";
+import { listSubmissions, rejectSubmission, verifySubmission, type AdminSubmission } from "@/lib/admin";
 import { fmtInt, fmtMoney } from "@/lib/format";
+import { getEmbedUrl } from "@/lib/embeds";
 
 const PLATFORM_LABEL: Record<string, string> = {
   tiktok: "TikTok", instagram: "Instagram", youtube: "YouTube", twitter: "X", facebook: "Facebook",
@@ -26,6 +28,7 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
   const [page, setPage] = useState(1);
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const [previewing, setPreviewing] = useState<AdminSubmission | null>(null);
 
   // fetch (optionally scoped to one campaign), filter by lifecycle status client-side
   const q = useQuery({
@@ -65,16 +68,36 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {rows.map((s) => (
+            {rows.map((s) => {
+              const embedUrl = getEmbedUrl(s.platform, s.post_url);
+              const canPreview = embedUrl && !s.post_unavailable;
+              return (
               <div key={s.id} className="card-lumina overflow-hidden rounded-[var(--radius-card)]">
-                {/* thumbnail placeholder */}
-                <a href={s.post_url} target="_blank" rel="noopener noreferrer" className="relative grid aspect-video place-items-center bg-gradient-to-br from-[var(--color-brand)]/25 to-[var(--color-bg-deep)]">
-                  <span className="grid h-11 w-11 place-items-center rounded-full bg-black/40 text-white">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7L8 5Z" /></svg>
+                <button
+                  type="button"
+                  onClick={() => (canPreview ? setPreviewing(s) : window.open(s.post_url, "_blank"))}
+                  className="relative block aspect-video w-full cursor-pointer place-items-center bg-gradient-to-br from-[var(--color-brand)]/25 to-[var(--color-bg-deep)] bg-cover bg-center"
+                  style={s.thumbnail_url ? { backgroundImage: `url(${s.thumbnail_url})` } : undefined}
+                >
+                  <span className="absolute inset-0 grid place-items-center">
+                    {s.post_unavailable ? (
+                      <span className="grid h-11 w-11 place-items-center rounded-full bg-black/50 text-white" title="Post unavailable">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l18 18M10.5 5.5A9.77 9.77 0 0 1 12 5c5 0 9 4 10 7a12.9 12.9 0 0 1-1.7 2.9M6.6 6.6C4.4 8.1 2.9 10.5 2 12c1 3 5 7 10 7 1.6 0 3.1-.4 4.4-1.1" /></svg>
+                      </span>
+                    ) : (
+                      <span className="grid h-11 w-11 place-items-center rounded-full bg-black/40 text-white">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7L8 5Z" /></svg>
+                      </span>
+                    )}
                   </span>
                   <span className="absolute left-2 top-2"><StatusBadge status={s.status} /></span>
                   <span className="absolute right-2 top-2 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-medium text-white">{PLATFORM_LABEL[s.platform] ?? s.platform}</span>
-                </a>
+                  {s.post_unavailable ? (
+                    <span className="absolute bottom-2 left-2 rounded-full bg-red-500/80 px-2 py-0.5 text-[10px] font-medium text-white">Post unavailable</span>
+                  ) : s.embed_broken ? (
+                    <span className="absolute bottom-2 left-2 rounded-full bg-amber-500/80 px-2 py-0.5 text-[10px] font-medium text-white">Tap to view on {PLATFORM_LABEL[s.platform] ?? s.platform}</span>
+                  ) : null}
+                </button>
                 <div className="p-3">
                   <p className="truncate text-sm font-medium text-[var(--color-text)]">{s.creator_name ?? "Unnamed"}</p>
                   <p className="truncate text-xs text-[var(--color-text-muted)]">{s.campaign_name}</p>
@@ -102,11 +125,19 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
                   ) : null}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
           <Pager page={page} pageCount={pageCount} onPage={setPage} total={filtered.length} />
         </>
       )}
+      {previewing ? (
+        <EmbedModal
+          embedUrl={getEmbedUrl(previewing.platform, previewing.post_url)!}
+          postUrl={previewing.post_url}
+          onClose={() => setPreviewing(null)}
+        />
+      ) : null}
     </div>
   );
 }

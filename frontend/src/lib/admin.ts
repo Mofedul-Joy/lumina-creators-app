@@ -130,6 +130,9 @@ export type AdminSubmission = {
   scrape_status: string;
   verification_note: string | null;
   proof_url: string | null;
+  embed_broken: boolean;
+  post_unavailable: boolean;
+  thumbnail_url: string | null;
   created_at: string;
 };
 
