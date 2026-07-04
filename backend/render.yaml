@@ -30,3 +30,24 @@ services:
         sync: false
       - key: R2_BUCKET
         sync: false
+      - key: APIFY_API_TOKEN
+        sync: false          # Apify API token used to run the view/like/comment scrapers
+
+  # Consumes scrape_jobs and writes view/like/comment counts back onto
+  # submissions. Same DB as the API; no public URL, no CORS, no web port.
+  - type: worker
+    name: lumina-creators-scrape-worker
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python worker.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        sync: false          # same value as the web service's DATABASE_URL
+      - key: APIFY_API_TOKEN
+        sync: false          # same value as the web service's APIFY_API_TOKEN

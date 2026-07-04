@@ -6,6 +6,7 @@ UNIQUE(campaign_id, url_hash) actually stops duplicate submissions.
 from __future__ import annotations
 
 import hashlib
+import re
 from urllib.parse import urlparse, urlunparse
 
 _PLATFORM_HOST = {
@@ -85,6 +86,36 @@ def is_video_url(url: str) -> bool:
         return False
     low = url.lower()
     return any(tok in low for tok in _VIDEO_MARKERS.get(plat, ()))
+
+
+_YOUTUBE_ID_RE = re.compile(r"(?:v=|/shorts/|/embed/|youtu\.be/)([A-Za-z0-9_-]{11})")
+_TWEET_ID_RE = re.compile(r"/status/(\d+)")
+
+
+def youtube_video_id(url: str) -> str | None:
+    """Stable 11-char video ID. Matching on this (not the URL) avoids collapsing
+    distinct videos onto the same key when query strings get stripped."""
+    m = _YOUTUBE_ID_RE.search(url)
+    return m.group(1) if m else None
+
+
+def tweet_id(url: str) -> str | None:
+    """Numeric tweet/status ID — stable across handle renames and x.com/twitter.com."""
+    m = _TWEET_ID_RE.search(url)
+    return m.group(1) if m else None
+
+
+def match_key(platform: str, url: str) -> str:
+    """The stable key Apify results are matched back to a submission by.
+
+    YouTube/Twitter use a platform-native ID (survives query-string/host
+    rewrites); everything else falls back to the canonical URL.
+    """
+    if platform == "youtube":
+        return youtube_video_id(url) or canonicalize_url(url)
+    if platform == "twitter":
+        return tweet_id(url) or canonicalize_url(url)
+    return canonicalize_url(url)
 
 
 def _demo() -> None:

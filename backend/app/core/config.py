@@ -63,6 +63,18 @@ class Settings(BaseSettings):
     def email_configured(self) -> bool:
         return bool(self.resend_api_key) or self.smtp_configured
 
+    # --- Apify scraping (view/like/comment counts on submitted posts) ---
+    apify_api_token: str = ""
+    apify_poll_interval_sec: int = 5
+    apify_run_timeout_sec: int = 600
+    # How often the worker re-enqueues a fresh scrape for already-scraped, still-live
+    # submissions so view counts keep climbing after the initial scrape.
+    scrape_refresh_interval_hours: int = 24
+
+    @property
+    def apify_configured(self) -> bool:
+        return bool(self.apify_api_token)
+
     # --- CORS (comma-separated origins) ---
     cors_origins: str = "http://localhost:3000"
 

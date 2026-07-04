@@ -37,7 +37,14 @@ def list_submissions(db: Session, *, campaign_id=None, verification_status=None,
         stmt = stmt.where(Submission.verification_status == verification_status)
     if platform:
         stmt = stmt.where(Submission.platform == platform)
-    stmt = stmt.order_by(Submission.created_at.desc()).limit(limit).offset(offset)
+    # Unavailable posts sort to the very back, embed-broken (but confirmed
+    # live) second-to-back, healthy rows newest-first — dead links shouldn't
+    # crowd out the submissions that actually need review.
+    stmt = stmt.order_by(
+        Submission.post_unavailable.asc(),
+        Submission.embed_broken.asc(),
+        Submission.created_at.desc(),
+    ).limit(limit).offset(offset)
     return db.execute(stmt).all()
 
 
