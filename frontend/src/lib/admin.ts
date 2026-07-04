@@ -132,15 +132,17 @@ export type AdminSubmission = {
   proof_url: string | null;
   embed_broken: boolean;
   post_unavailable: boolean;
+  is_suspicious: boolean;
+  creator_is_suspicious: boolean;
   thumbnail_url: string | null;
   created_at: string;
 };
 
 export type SubmissionCounts = { pending: number; verified: number; rejected: number };
 
-export const listSubmissions = (f: { status?: string; campaign_id?: string; platform?: string } = {}) => {
+export const listSubmissions = (f: { status?: string; campaign_id?: string; platform?: string; suspicious?: boolean } = {}) => {
   const p = new URLSearchParams();
-  Object.entries(f).forEach(([k, v]) => v && p.set(k, String(v)));
+  Object.entries(f).forEach(([k, v]) => { if (v !== undefined && v !== "") p.set(k, String(v)); });
   const qs = p.toString();
   return apiFetch<AdminSubmission[]>(`/api/admin/submissions${qs ? `?${qs}` : ""}`, auth());
 };
@@ -149,6 +151,12 @@ export const getSubmissionCounts = () => apiFetch<SubmissionCounts>("/api/admin/
 
 export const verifySubmission = (id: string) =>
   apiFetch<AdminSubmission>(`/api/admin/submissions/${id}/verify`, { method: "POST", ...auth() });
+
+export const flagSubmissionSuspicious = (id: string) =>
+  apiFetch<AdminSubmission>(`/api/admin/submissions/${id}/flag-suspicious`, { method: "POST", ...auth() });
+
+export const unflagSubmissionSuspicious = (id: string) =>
+  apiFetch<AdminSubmission>(`/api/admin/submissions/${id}/unflag-suspicious`, { method: "POST", ...auth() });
 
 export const rejectSubmission = (id: string, note: string) =>
   apiFetch<AdminSubmission>(`/api/admin/submissions/${id}/reject`, {
@@ -264,6 +272,7 @@ export type CreatorRow = {
   total_followers: number;
   platforms: string[];
   completed: boolean;
+  is_suspicious: boolean;
 };
 
 export type CreatorFilters = {

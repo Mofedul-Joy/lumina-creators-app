@@ -5,7 +5,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pager } from "@/components/admin/Pager";
 import { EmbedModal } from "@/components/admin/EmbedModal";
-import { listSubmissions, rejectSubmission, verifySubmission, type AdminSubmission } from "@/lib/admin";
+import {
+  flagSubmissionSuspicious, listSubmissions, rejectSubmission, unflagSubmissionSuspicious,
+  verifySubmission, type AdminSubmission,
+} from "@/lib/admin";
 import { fmtInt, fmtMoney } from "@/lib/format";
 import { getEmbedUrl } from "@/lib/embeds";
 
@@ -29,11 +32,13 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [previewing, setPreviewing] = useState<AdminSubmission | null>(null);
+  const [showFlagged, setShowFlagged] = useState(false);
+  const [confirmingFlag, setConfirmingFlag] = useState<string | null>(null);
 
   // fetch (optionally scoped to one campaign), filter by lifecycle status client-side
   const q = useQuery({
-    queryKey: ["dash-submissions", campaignId ?? "all"],
-    queryFn: () => listSubmissions(campaignId ? { campaign_id: campaignId } : {}),
+    queryKey: ["dash-submissions", campaignId ?? "all", showFlagged],
+    queryFn: () => listSubmissions({ ...(campaignId ? { campaign_id: campaignId } : {}), suspicious: showFlagged || undefined }),
     retry: false,
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["dash-submissions"] });
@@ -42,6 +47,11 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
     mutationFn: ({ id, note }: { id: string; note: string }) => rejectSubmission(id, note),
     onSuccess: () => { setRejecting(null); setNote(""); refresh(); },
   });
+  const flagM = useMutation({
+    mutationFn: flagSubmissionSuspicious,
+    onSuccess: () => { setConfirmingFlag(null); refresh(); },
+  });
+  const unflagM = useMutation({ mutationFn: unflagSubmissionSuspicious, onSuccess: refresh });
 
   const all = q.data ?? [];
   const filtered = useMemo(() => (status ? all.filter((s) => s.status === status) : all), [all, status]);
@@ -52,13 +62,21 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-[var(--color-text)]">Submissions</h2>
-        <select
-          value={status}
-          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="min-h-9 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
-        >
-          {STATUSES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
-        </select>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setShowFlagged((v) => !v); setPage(1); }}
+            className={`min-h-9 cursor-pointer rounded-full px-3 text-sm transition ${showFlagged ? "bg-amber-500/15 text-amber-400 ring-1 ring-inset ring-amber-500/25" : "border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"}`}
+          >
+            {showFlagged ? "Showing flagged" : "Show flagged"}
+          </button>
+          <select
+            value={status}
+            onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+            className="min-h-9 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
+          >
+            {STATUSES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+          </select>
+        </div>
       </div>
 
       {q.isLoading ? (
@@ -99,13 +117,26 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
                   ) : null}
                 </button>
                 <div className="p-3">
-                  <p className="truncate text-sm font-medium text-[var(--color-text)]">{s.creator_name ?? "Unnamed"}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-sm font-medium text-[var(--color-text)]">{s.creator_name ?? "Unnamed"}</p>
+                    {(s.is_suspicious || s.creator_is_suspicious) ? (
+                      <span className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-400">
+                        {s.is_suspicious ? "Suspicious" : "Creator flagged"}
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="truncate text-xs text-[var(--color-text-muted)]">{s.campaign_name}</p>
                   <div className="mt-2 flex items-center justify-between text-sm">
                     <span className="tabular text-[var(--color-text-secondary)]">{fmtInt(s.views)} views</span>
                     <span className="tabular font-medium text-[var(--color-text)]">{fmtMoney(s.estimated_amount)}</span>
                   </div>
-                  {rejecting === s.id ? (
+                  {confirmingFlag === s.id ? (
+                    <div className="mt-2 flex items-center justify-end gap-2">
+                      <span className="text-xs text-[var(--color-text-secondary)]">Flag this submission?</span>
+                      <button onClick={() => setConfirmingFlag(null)} className="cursor-pointer text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]">Cancel</button>
+                      <button disabled={flagM.isPending} onClick={() => flagM.mutate(s.id)} className="cursor-pointer rounded-md bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 disabled:opacity-50">Confirm</button>
+                    </div>
+                  ) : rejecting === s.id ? (
                     <div className="mt-2 space-y-2">
                       <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Reason…" className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-1.5 text-xs text-[var(--color-text)]" />
                       <div className="flex justify-end gap-2">
@@ -121,6 +152,11 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
                       {s.status !== "rejected" ? (
                         <button onClick={() => { setRejecting(s.id); setNote(""); }} className="flex-1 cursor-pointer rounded-md py-1 text-xs font-medium text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-red-400 hover:ring-red-500/25">Reject</button>
                       ) : null}
+                      {s.is_suspicious ? (
+                        <button disabled={unflagM.isPending} onClick={() => unflagM.mutate(s.id)} className="cursor-pointer rounded-md px-2 py-1 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 hover:bg-amber-500/10 disabled:opacity-50">Unflag</button>
+                      ) : (
+                        <button onClick={() => setConfirmingFlag(s.id)} className="cursor-pointer rounded-md px-2 py-1 text-xs font-medium text-[var(--color-text-muted)] ring-1 ring-inset ring-[var(--color-border)] hover:text-amber-400 hover:ring-amber-500/25" title="Flag submission suspicious">⚑</button>
+                      )}
                     </div>
                   ) : null}
                 </div>

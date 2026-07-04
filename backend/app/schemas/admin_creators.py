@@ -16,6 +16,7 @@ class CreatorListItem(BaseModel):
     total_followers: int = 0
     platforms: List[str] = []
     completed: bool = False
+    is_suspicious: bool = False
 
 
 class SocialItem(BaseModel):
@@ -46,5 +47,6 @@ class CreatorDetail(BaseModel):
     country: Optional[str] = None
     city: Optional[str] = None
     completed: bool = False
+    is_suspicious: bool = False
     socials: List[SocialItem] = []
     portfolio: List[PortfolioItemOut] = []

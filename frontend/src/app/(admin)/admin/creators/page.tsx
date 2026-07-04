@@ -191,7 +191,10 @@ export default function AdminCreatorsPage() {
                         <p className="truncate text-sm text-[var(--color-text-secondary)]">{c.email}</p>
                       </div>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${c.completed ? "bg-emerald-500/15 text-emerald-400" : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]"}`}>{c.completed ? "Complete" : "Incomplete"}</span>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${c.completed ? "bg-emerald-500/15 text-emerald-400" : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]"}`}>{c.completed ? "Complete" : "Incomplete"}</span>
+                      {c.is_suspicious ? <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-400">Flagged</span> : null}
+                    </div>
                   </div>
                   <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
                     <dt className="text-[var(--color-text-muted)]">Country</dt><dd className="text-right text-[var(--color-text)]">{c.country ?? "—"}</dd>
@@ -217,7 +220,10 @@ export default function AdminCreatorsPage() {
                       <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.country ?? "—"}</td>
                       <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.primary_language ?? "—"}</td>
                       <td className="tabular px-4 py-3 text-right text-[var(--color-text)]">{c.total_followers.toLocaleString()}</td>
-                      <td className="px-4 py-3">{c.completed ? <span className="text-xs text-emerald-400">Complete</span> : <span className="text-xs text-[var(--color-text-muted)]">Incomplete</span>}</td>
+                      <td className="px-4 py-3">
+                        {c.completed ? <span className="text-xs text-emerald-400">Complete</span> : <span className="text-xs text-[var(--color-text-muted)]">Incomplete</span>}
+                        {c.is_suspicious ? <span className="ml-2 text-xs text-amber-400">Flagged</span> : null}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

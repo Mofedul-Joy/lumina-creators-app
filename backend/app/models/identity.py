@@ -39,6 +39,9 @@ class Creator(TimestampMixin, Base):
     email_verification_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     email_verification_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     email_verification_attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    # Admin-only fraud signal — never returned to creator or client API users.
+    # A soft "watch this account" state, short of a hard status='suspended'.
+    is_suspicious: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
 
 
 class Admin(Base):

@@ -218,6 +218,7 @@ export type CreatorListItem = {
   total_followers: number;
   platforms: Platform[];
   completed: boolean;
+  is_suspicious: boolean;
 };
 
 export type SocialItem = {
@@ -248,6 +249,7 @@ export type CreatorDetail = {
   country: string | null;
   city: string | null;
   completed: boolean;
+  is_suspicious: boolean;
   socials: SocialItem[];
   portfolio: PortfolioItemOut[];
 };
@@ -373,3 +375,9 @@ export const listCreators = (token: string, filters: CreatorFilters = {}) => {
 
 export const getCreatorDetail = (token: string, id: string) =>
   apiFetch<CreatorDetail>(`/api/admin/creators/${id}`, { token });
+
+export const flagCreatorSuspicious = (token: string, id: string) =>
+  apiFetch<CreatorDetail>(`/api/admin/creators/${id}/flag-suspicious`, { method: "POST", token });
+
+export const unflagCreatorSuspicious = (token: string, id: string) =>
+  apiFetch<CreatorDetail>(`/api/admin/creators/${id}/unflag-suspicious`, { method: "POST", token });

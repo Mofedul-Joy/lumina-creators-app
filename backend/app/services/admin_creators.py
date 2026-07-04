@@ -102,8 +102,21 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
             "total_followers": sum(s.follower_count for s in socials),
             "platforms": sorted({s.platform for s in socials}),
             "completed": bool(prof and prof.completed_at),
+            "is_suspicious": c.is_suspicious,
         })
     return out
+
+
+def set_suspicious(db: Session, creator_id: uuid.UUID, flagged: bool) -> Creator:
+    """Soft fraud flag on the whole account — a warning signal, not a suspend.
+    Never returned to creator or client API users (admin-only field)."""
+    c = db.get(Creator, creator_id)
+    if c is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Creator not found")
+    c.is_suspicious = flagged
+    db.commit()
+    db.refresh(c)
+    return c
 
 
 def get_creator_detail(db: Session, creator_id: uuid.UUID) -> dict:
@@ -126,6 +139,7 @@ def get_creator_detail(db: Session, creator_id: uuid.UUID) -> dict:
         "country": prof.country if prof else None,
         "city": prof.city if prof else None,
         "completed": bool(prof and prof.completed_at),
+        "is_suspicious": c.is_suspicious,
         "socials": [
             {"platform": s.platform, "handle": s.handle, "profile_url": s.profile_url, "follower_count": s.follower_count}
             for s in socials

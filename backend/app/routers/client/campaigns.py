@@ -105,7 +105,7 @@ def campaign_submissions(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Campaign not found")
     subs = db.scalars(
         select(Submission)
-        .where(Submission.campaign_id == campaign_id)
+        .where(Submission.campaign_id == campaign_id, Submission.is_suspicious.is_(False))
         .order_by(Submission.created_at.desc())
         .limit(200)
     ).all()

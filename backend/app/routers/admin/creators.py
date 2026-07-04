@@ -46,3 +46,15 @@ def list_creators(
 @router.get("/{creator_id}", response_model=CreatorDetail)
 def creator_detail(creator_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     return CreatorDetail(**svc.get_creator_detail(db, creator_id))
+
+
+@router.post("/{creator_id}/flag-suspicious", response_model=CreatorDetail)
+def flag_suspicious(creator_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    svc.set_suspicious(db, creator_id, True)
+    return CreatorDetail(**svc.get_creator_detail(db, creator_id))
+
+
+@router.post("/{creator_id}/unflag-suspicious", response_model=CreatorDetail)
+def unflag_suspicious(creator_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    svc.set_suspicious(db, creator_id, False)
+    return CreatorDetail(**svc.get_creator_detail(db, creator_id))

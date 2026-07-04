@@ -26,6 +26,8 @@ class AdminSubmissionRow(BaseModel):
     proof_url: Optional[str] = None
     embed_broken: bool = False
     post_unavailable: bool = False
+    is_suspicious: bool = False
+    creator_is_suspicious: bool = False
     thumbnail_url: Optional[str] = None
     created_at: datetime
 
