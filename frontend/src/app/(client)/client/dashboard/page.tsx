@@ -9,7 +9,7 @@ import { listClientCampaigns, listClientSubmissions, type ClientCampaign } from 
 import { downloadCsv } from "@/lib/api";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { SkeletonCardGrid, SkeletonStats } from "@/components/ui/Skeleton";
-import { fmtInt, fmtMoney } from "@/lib/format";
+import { fmtInt } from "@/lib/format";
 
 const ALL_PLATFORMS = ["tiktok", "instagram", "youtube", "twitter", "facebook"] as const;
 
@@ -214,11 +214,12 @@ function DashboardInner() {
               <span className="text-lg font-semibold text-[var(--color-text)]">{selected.name}</span>
               <span className={`rounded-full border px-2.5 py-0.5 text-xs capitalize ${selected.status === "active" ? "border-[var(--color-brand)]/40 text-[var(--color-brand)]" : "border-[var(--color-border)] text-[var(--color-text-muted)]"}`}>{selected.status}</span>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {/* client-facing metrics only — no creator count, no ad spend/budget
+                (mirrors the clippers client dashboard) */}
+            <div className="mt-4 grid grid-cols-3 gap-4">
               <StatTile label="Total views" value={fmtInt(selected.total_views)} accent />
               <StatTile label="Posts" value={fmtInt(selected.submission_count)} />
-              <StatTile label="Creators" value={fmtInt(selected.creator_count)} />
-              <StatTile label="Spent / budget" value={`${fmtMoney(selected.spent_amount)} / ${fmtMoney(selected.budget)}`} />
+              <StatTile label="Interactions" value={fmtInt(selected.total_likes + selected.total_comments)} />
             </div>
             <SubmissionsSection campaign={selected} />
           </>
