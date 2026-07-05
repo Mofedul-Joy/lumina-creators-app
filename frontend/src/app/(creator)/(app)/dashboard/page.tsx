@@ -117,7 +117,7 @@ export default function DashboardPage() {
       ) : null}
 
       <Link
-        href="/onboarding"
+        href="/onboarding?tab=portfolio"
         className="card-interactive mt-4 flex items-center justify-between gap-4 rounded-[var(--radius-card)] border border-[var(--color-brand)]/25 bg-gradient-to-br from-[var(--color-brand)]/12 to-[var(--color-bg-deep)] p-5"
       >
         <div>

@@ -10,7 +10,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pager } from "@/components/admin/Pager";
 import { getAdminToken } from "@/lib/auth";
 import { fmtMoney } from "@/lib/format";
-import { archiveCampaign, closeCampaign, listAdminCampaigns, publishCampaign } from "@/lib/admin";
+import { archiveCampaign, closeCampaign, listAdminCampaigns, publishCampaign, reopenCampaign } from "@/lib/admin";
 
 const PAGE_SIZE = 8;
 
@@ -20,6 +20,7 @@ function PencilIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" f
 function RocketIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 15c-1.5 1.5-2 5-2 5s3.5-.5 5-2m4-4 6-6a4 4 0 0 0-6-6l-6 6 6 6Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
 function CloseIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" /><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>; }
 function ArchiveIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="4" rx="1" stroke="currentColor" strokeWidth="2" /><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>; }
+function ReopenIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
 
 function LineIcon() {
   return <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>;
@@ -49,6 +50,7 @@ export default function AdminCampaignsPage() {
   const publish = useMutation({ mutationFn: (id: string) => publishCampaign(id), onSuccess: invalidate });
   const archive = useMutation({ mutationFn: (id: string) => archiveCampaign(id), onSuccess: invalidate });
   const close = useMutation({ mutationFn: (id: string) => closeCampaign(id), onSuccess: invalidate });
+  const reopen = useMutation({ mutationFn: (id: string) => reopenCampaign(id), onSuccess: invalidate });
 
   // Bill's campaign states: Live / Draft / Closed / Archived (paused counts as closed)
   const everything = data ?? [];
@@ -201,6 +203,9 @@ export default function AdminCampaignsPage() {
                           ) : null}
                           {c.status === "active" ? (
                             <button title="Close" className={`${iconBtn} hover:text-amber-400 hover:ring-amber-500/25`} onClick={() => close.mutate(c.id)}><CloseIcon /></button>
+                          ) : null}
+                          {c.status === "completed" || c.status === "paused" ? (
+                            <button title="Reopen" className={`${iconBtn} text-emerald-400 ring-emerald-500/25 hover:bg-emerald-500/15`} onClick={() => reopen.mutate(c.id)}><ReopenIcon /></button>
                           ) : null}
                           {c.status !== "archived" ? (
                             <button title="Archive" className={`${iconBtn} hover:text-[var(--color-danger)]`} onClick={() => archive.mutate(c.id)}><ArchiveIcon /></button>

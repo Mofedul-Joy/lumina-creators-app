@@ -124,6 +124,19 @@ export function SubmissionDetailModal({ sub, onClose }: { sub: AdminSubmission; 
             <span className="text-[var(--color-text-muted)]">Verification</span>
             <span className="capitalize text-[var(--color-text)]">{sub.verification_status}</span>
           </div>
+          {sub.proof_url ? (
+            <a
+              href={sub.proof_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 flex items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-[var(--color-brand)]/12 py-2 text-sm font-medium text-[var(--color-brand-soft)] transition hover:bg-[var(--color-brand)]/20"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7L8 5Z" /></svg>
+              View verification video
+            </a>
+          ) : (
+            <p className="mt-2 text-xs text-[var(--color-text-muted)]">No verification video uploaded yet.</p>
+          )}
           {sub.verification_note ? (
             <p className="mt-2 text-xs text-[var(--color-text-muted)]">Note: {sub.verification_note}</p>
           ) : null}
@@ -175,7 +188,8 @@ export function SubmissionDetailModal({ sub, onClose }: { sub: AdminSubmission; 
             <div className="flex flex-wrap gap-2">
               {sub.verification_status !== "verified" && !isPaid ? (
                 <button disabled={verifyM.isPending} onClick={() => { setError(""); verifyM.mutate(); }}
-                  className="cursor-pointer rounded-md bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-50">Accept</button>
+                  className="cursor-pointer rounded-md bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-50"
+                  title="Confirm you've watched the proof video and the stats are legit">Verify</button>
               ) : null}
               {!isPaid ? (
                 <button onClick={() => { setPaying(true); setError(""); }}

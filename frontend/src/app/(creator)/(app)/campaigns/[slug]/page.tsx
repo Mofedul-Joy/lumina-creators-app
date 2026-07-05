@@ -7,15 +7,19 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { getAuthToken } from "@/lib/auth";
-import { getCampaign, joinCampaign, submitClip } from "@/lib/campaigns";
-import { fmtMoney } from "@/lib/format";
+import { getCampaign, getSubmission, joinCampaign, submitClip } from "@/lib/campaigns";
+import { fmtInt, fmtMoney } from "@/lib/format";
 
 export default function CampaignDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const qc = useQueryClient();
   const [hasToken, setHasToken] = useState(false);
   useEffect(() => setHasToken(!!getAuthToken()), []);
+  const [mode, setMode] = useState<"single" | "bulk">("single");
   const [postUrl, setPostUrl] = useState("");
+  const [bulkText, setBulkText] = useState("");
+  const [trackId, setTrackId] = useState<string | null>(null);
+  const [bulkMsg, setBulkMsg] = useState("");
 
   const q = useQuery({ queryKey: ["campaign", slug], queryFn: () => getCampaign(slug), enabled: hasToken, retry: false });
 
@@ -25,7 +29,26 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
   });
   const submit = useMutation({
     mutationFn: () => submitClip(slug, postUrl.trim()),
-    onSuccess: () => setPostUrl(""),
+    onSuccess: (data) => { setPostUrl(""); setTrackId(data.id); },
+  });
+  // poll the freshly-submitted post until Apify finishes fetching its stats
+  const track = useQuery({
+    queryKey: ["track-sub", trackId],
+    queryFn: () => getSubmission(trackId!),
+    enabled: !!trackId,
+    refetchInterval: (query) =>
+      query.state.data && query.state.data.scrape_status === "pending" ? 4000 : false,
+  });
+  const bulkSubmit = useMutation({
+    mutationFn: async () => {
+      const urls = bulkText.split("\n").map((u) => u.trim()).filter(Boolean);
+      let ok = 0, failed = 0;
+      for (const u of urls) {
+        try { await submitClip(slug, u); ok += 1; } catch { failed += 1; }
+      }
+      return { ok, failed, total: urls.length };
+    },
+    onSuccess: (r) => { setBulkText(""); setBulkMsg(`Submitted ${r.ok}/${r.total}. Stats are updating in the background.`); },
   });
 
   const c = q.data;
@@ -121,20 +144,72 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-sm font-medium text-[var(--color-brand)]">You’re in this campaign. Submit your post URL.</p>
-                  <Field
-                    label="Post URL"
-                    placeholder="https://tiktok.com/@you/video/…"
-                    value={postUrl}
-                    onChange={(e) => setPostUrl(e.target.value)}
-                  />
-                  <div className="w-44">
-                    <Button loading={submit.isPending} disabled={!postUrl.trim()} onClick={() => submit.mutate()}>
-                      Submit post
-                    </Button>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-[var(--color-brand)]">You’re in this campaign.</p>
+                    <div className="flex items-center gap-1 rounded-full bg-[var(--color-surface)] p-1">
+                      {(["single", "bulk"] as const).map((m) => (
+                        <button
+                          key={m}
+                          onClick={() => setMode(m)}
+                          className={`cursor-pointer rounded-full px-3 py-1 text-xs capitalize transition ${
+                            mode === m ? "bg-[var(--color-surface-2)] text-[var(--color-text)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                          }`}
+                        >
+                          {m === "single" ? "Single" : "Bulk"}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  {submit.isError ? <p className="text-sm text-[var(--color-danger)]">{(submit.error as Error).message}</p> : null}
-                  {submit.isSuccess ? <p className="text-sm text-[var(--color-brand)]">Submitted. We’ll track the views.</p> : null}
+
+                  {mode === "single" ? (
+                    <>
+                      <Field
+                        label="Post URL"
+                        placeholder="https://tiktok.com/@you/video/…"
+                        value={postUrl}
+                        onChange={(e) => setPostUrl(e.target.value)}
+                      />
+                      <div className="w-44">
+                        <Button loading={submit.isPending} disabled={!postUrl.trim()} onClick={() => submit.mutate()}>
+                          Submit post
+                        </Button>
+                      </div>
+                      {submit.isError ? <p className="text-sm text-[var(--color-danger)]">{(submit.error as Error).message}</p> : null}
+
+                      {/* live 'updating stats' tracker for the last submitted post */}
+                      {trackId && track.data ? (
+                        <div className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-3">
+                          {track.data.scrape_status === "pending" ? (
+                            <p className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-brand)]/30 border-t-[var(--color-brand)]" />
+                              Fetching stats from {platformLabel(track.data.platform)}…
+                            </p>
+                          ) : (
+                            <p className="text-sm text-[var(--color-brand)]">
+                              Stats in ✓ — {fmtInt(track.data.views)} views · {fmtMoney(track.data.estimated_amount)} est.
+                            </p>
+                          )}
+                        </div>
+                      ) : null}
+                    </>
+                  ) : (
+                    <>
+                      <label className="block text-sm font-medium text-[var(--color-text)]">Post URLs (one per line)</label>
+                      <textarea
+                        rows={5}
+                        value={bulkText}
+                        onChange={(e) => setBulkText(e.target.value)}
+                        placeholder={"https://tiktok.com/@you/video/1\nhttps://instagram.com/reel/abc"}
+                        className="min-h-11 w-full rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm text-[var(--color-text)] outline-none focus-visible:border-[var(--color-brand)]"
+                      />
+                      <div className="w-44">
+                        <Button loading={bulkSubmit.isPending} disabled={!bulkText.trim()} onClick={() => { setBulkMsg(""); bulkSubmit.mutate(); }}>
+                          Submit all
+                        </Button>
+                      </div>
+                      {bulkMsg ? <p className="text-sm text-[var(--color-brand)]">{bulkMsg}</p> : null}
+                    </>
+                  )}
                 </div>
               )}
             </div>

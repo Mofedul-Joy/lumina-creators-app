@@ -45,6 +45,7 @@ export default function SubmissionsPage() {
   const modeById = new Map((campaignsQ.data ?? []).map((c) => [c.id, c.mode]));
 
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [uploadPct, setUploadPct] = useState(0);
   const [payoutGate, setPayoutGate] = useState(false);
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
   const claimM = useMutation({
@@ -57,9 +58,9 @@ export default function SubmissionsPage() {
     },
   });
   const proofM = useMutation({
-    mutationFn: ({ id, file }: { id: string; file: File }) => uploadProofVideo(id, file),
-    onMutate: ({ id }) => setUploadingId(id),
-    onSettled: () => setUploadingId(null),
+    mutationFn: ({ id, file }: { id: string; file: File }) => uploadProofVideo(id, file, setUploadPct),
+    onMutate: ({ id }) => { setUploadingId(id); setUploadPct(0); },
+    onSettled: () => { setUploadingId(null); setUploadPct(0); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["submissions"] }),
   });
 
@@ -174,22 +175,29 @@ export default function SubmissionsPage() {
                               e.target.value = "";
                             }}
                           />
-                          <button
-                            type="button"
-                            disabled={uploadingId === s.id}
-                            onClick={() => fileInputs.current[s.id]?.click()}
-                            className={`w-full cursor-pointer rounded-md py-1.5 text-xs font-medium transition disabled:opacity-50 ${
-                              s.has_proof_video
-                                ? "text-[var(--color-brand)] ring-1 ring-inset ring-[var(--color-brand)]/30 hover:bg-[var(--color-brand)]/10"
-                                : "bg-amber-500/15 text-amber-400 ring-1 ring-inset ring-amber-500/25 hover:bg-amber-500/25"
-                            }`}
-                          >
-                            {uploadingId === s.id
-                              ? "Uploading..."
-                              : s.has_proof_video
-                                ? "Proof uploaded ✓ · Replace"
-                                : "Upload proof video"}
-                          </button>
+                          {uploadingId === s.id ? (
+                            <div className="space-y-1.5">
+                              <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
+                                <div className="h-full rounded-full bg-[var(--color-brand)] transition-all" style={{ width: `${uploadPct}%` }} />
+                              </div>
+                              <p className="text-center text-[11px] text-[var(--color-text-muted)]">
+                                {uploadPct < 100 ? `Uploading proof video... ${uploadPct}%` : "Finishing..."}
+                              </p>
+                            </div>
+                          ) : s.has_proof_video ? (
+                            <div className="flex items-center justify-between gap-2 rounded-md bg-[var(--color-brand)]/10 px-2.5 py-1.5">
+                              <span className="text-xs font-medium text-[var(--color-brand)]">Proof uploaded ✓ · under review</span>
+                              <button type="button" onClick={() => fileInputs.current[s.id]?.click()} className="cursor-pointer text-[11px] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Replace</button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => fileInputs.current[s.id]?.click()}
+                              className="w-full cursor-pointer rounded-md bg-amber-500/15 py-1.5 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 transition hover:bg-amber-500/25"
+                            >
+                              Upload proof video
+                            </button>
+                          )}
                         </div>
                       ) : null}
 
@@ -229,7 +237,7 @@ export default function SubmissionsPage() {
               </p>
               <div className="mt-5 flex justify-center gap-3">
                 <button onClick={() => setPayoutGate(false)} className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Not now</button>
-                <Link href="/onboarding" className="rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]">
+                <Link href="/onboarding?tab=payment" className="rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]">
                   Set payout method
                 </Link>
               </div>

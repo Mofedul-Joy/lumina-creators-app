@@ -392,15 +392,25 @@ export const finalizeUpload = (token: string, objectId: string) =>
     token,
   });
 
-// Uploads the raw file bytes to the presigned URL (S3/R2 PUT). Not a JSON call,
-// so it bypasses apiFetch.
-export async function putToPresignedUrl(uploadUrl: string, file: File): Promise<void> {
-  const res = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: file.type ? { "Content-Type": file.type } : undefined,
-    body: file,
+// Uploads the raw file bytes to the presigned URL (S3/R2 PUT). Uses XHR (not
+// fetch) so callers can render a progress bar via onProgress (0-100). Not a
+// JSON call, so it bypasses apiFetch.
+export function putToPresignedUrl(
+  uploadUrl: string,
+  file: File,
+  onProgress?: (pct: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", uploadUrl);
+    if (file.type) xhr.setRequestHeader("Content-Type", file.type);
+    xhr.upload.onprogress = (e) => {
+      if (onProgress && e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload failed (HTTP ${xhr.status})`)));
+    xhr.onerror = () => reject(new Error("Upload failed"));
+    xhr.send(file);
   });
-  if (!res.ok) throw new Error(`Upload failed (HTTP ${res.status})`);
 }
 
 // Runs the full presign → PUT → finalize lifecycle and returns the finalized object id.
@@ -408,6 +418,7 @@ export async function uploadFile(
   token: string,
   file: File,
   purpose: UploadPurpose,
+  onProgress?: (pct: number) => void,
 ): Promise<string> {
   const presigned = await presignUpload(token, {
     purpose,
@@ -415,7 +426,7 @@ export async function uploadFile(
     filename: file.name || undefined,
     size_bytes: file.size,
   });
-  await putToPresignedUrl(presigned.upload_url, file);
+  await putToPresignedUrl(presigned.upload_url, file, onProgress);
   const finalized = await finalizeUpload(token, presigned.object_id);
   return finalized.id;
 }

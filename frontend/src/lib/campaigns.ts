@@ -52,6 +52,9 @@ export const browseCampaigns = () => apiFetch<Campaign[]>("/api/creator/campaign
 export const listSubmissions = () =>
   apiFetch<Submission[]>("/api/creator/submissions", auth());
 
+export const getSubmission = (id: string) =>
+  apiFetch<Submission>(`/api/creator/submissions/${id}`, auth());
+
 export const claimSubmission = (id: string) =>
   apiFetch<Submission>(`/api/creator/submissions/${id}/claim`, { method: "POST", ...auth() });
 
@@ -70,7 +73,11 @@ export const submitClip = (campaign_slug: string, post_url: string) =>
 
 // Uploads a proof-of-post video (presign -> PUT -> finalize) and links it to the
 // submission — the create_new verification gate an admin reviews before payout.
-export async function uploadProofVideo(submissionId: string, file: File): Promise<Submission> {
+export async function uploadProofVideo(
+  submissionId: string,
+  file: File,
+  onProgress?: (pct: number) => void,
+): Promise<Submission> {
   const token = getAuthToken() ?? undefined;
   const presigned = await presignUpload(token!, {
     purpose: "proof_video",
@@ -78,7 +85,7 @@ export async function uploadProofVideo(submissionId: string, file: File): Promis
     filename: file.name || undefined,
     size_bytes: file.size,
   });
-  await putToPresignedUrl(presigned.upload_url, file);
+  await putToPresignedUrl(presigned.upload_url, file, onProgress);
   await finalizeUpload(token!, presigned.object_id);
   return apiFetch<Submission>(`/api/creator/submissions/${submissionId}/proof`, {
     method: "PATCH",

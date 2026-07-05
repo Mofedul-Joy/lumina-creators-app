@@ -124,6 +124,19 @@ def close_campaign(db: Session, campaign_id: uuid.UUID, admin_id: uuid.UUID | No
     return c
 
 
+def reopen_campaign(db: Session, campaign_id: uuid.UUID, admin_id: uuid.UUID | None = None) -> Campaign:
+    """Reopen a closed (completed/paused) campaign so it accepts entries again."""
+    c = get_campaign(db, campaign_id)
+    if c.status not in ("completed", "paused"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Only closed campaigns can be reopened")
+    c.status = "active"
+    c.published_at = c.published_at or _now()
+    audit.log(db, actor_admin_id=admin_id, action="campaign.reopen", entity_type="campaign", entity_id=c.id)
+    db.commit()
+    db.refresh(c)
+    return c
+
+
 def archive_campaign(db: Session, campaign_id: uuid.UUID, admin_id: uuid.UUID | None = None) -> Campaign:
     c = get_campaign(db, campaign_id)
     c.status = "archived"

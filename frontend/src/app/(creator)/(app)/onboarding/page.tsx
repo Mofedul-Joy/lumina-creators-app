@@ -62,7 +62,14 @@ export default function ProfilePage() {
   const [token, setToken] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [tab, setTab] = useState<Tab>("personal");
-  useEffect(() => { setToken(getAuthToken()); setReady(true); }, []);
+  useEffect(() => {
+    setToken(getAuthToken());
+    setReady(true);
+    // deep-link: /onboarding?tab=payment (from the payout gate) or ?tab=portfolio
+    // (from the dashboard card) opens straight to that tab.
+    const wanted = new URLSearchParams(window.location.search).get("tab");
+    if (wanted && TABS.some((t) => t.key === wanted)) setTab(wanted as Tab);
+  }, []);
   const enabled = ready && !!token;
   const bearer = token ?? "";
 

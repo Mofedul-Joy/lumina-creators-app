@@ -275,6 +275,9 @@ export const archiveCampaign = (id: string) =>
 export const closeCampaign = (id: string) =>
   apiFetch<AdminCampaign>(`/api/admin/campaigns/${id}/close`, { method: "POST", ...auth() });
 
+export const reopenCampaign = (id: string) =>
+  apiFetch<AdminCampaign>(`/api/admin/campaigns/${id}/reopen`, { method: "POST", ...auth() });
+
 export const impersonateClient = (campaignId: string) =>
   apiFetch<{ access_token: string }>(`/api/admin/campaigns/${campaignId}/impersonate-client`, { method: "POST", ...auth() });
 
