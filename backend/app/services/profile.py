@@ -31,8 +31,11 @@ def _require_owned_object(db: Session, creator_id: uuid.UUID, object_id, purpose
 
 _PLATFORMS = {"instagram", "tiktok", "youtube", "twitter", "facebook"}
 _GENDERS = {"male", "female", "non_binary", "other", "prefer_not_to_say"}
-# Fields (beyond >=1 social and >=1 portfolio item) required for a complete profile.
-_REQUIRED_FIELDS = ("display_name", "date_of_birth", "gender", "primary_language", "country")
+# Nothing is mandatory — demographics (DOB/gender/country/ethnicity/language)
+# and socials/portfolio are dashboard incentives, not a signup gate. Kept as a
+# tuple (not deleted outright) since recompute_completion() still reports
+# `completed`/`missing` for the UI to show encouragement copy against.
+_REQUIRED_FIELDS: tuple[str, ...] = ()
 
 
 def get_or_create_profile(db: Session, creator_id: uuid.UUID) -> CreatorProfile:
@@ -150,6 +153,9 @@ def delete_portfolio(db: Session, creator_id: uuid.UUID, item_id: uuid.UUID) -> 
 
 
 # ---- completion (server-owned) ----
+# Not a gate — nothing here blocks joining a campaign or reaching the
+# dashboard. `missing` is reported purely so the frontend can render
+# encouragement cards ("add a social to get matched to more campaigns").
 def recompute_completion(db: Session, creator_id: uuid.UUID) -> tuple[bool, list[str]]:
     prof = get_or_create_profile(db, creator_id)
     missing: list[str] = [f for f in _REQUIRED_FIELDS if getattr(prof, f) in (None, "")]
@@ -160,7 +166,6 @@ def recompute_completion(db: Session, creator_id: uuid.UUID) -> tuple[bool, list
     if not n_social:
         missing.append("social_account")
     if not n_portfolio:
-        # ponytail: counts any portfolio row; gate on storage_objects.status='finalized' once M3 uploads land
         missing.append("portfolio_item")
     complete = not missing
     prof.completed_at = _now() if complete else None

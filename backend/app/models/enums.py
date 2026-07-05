@@ -15,6 +15,7 @@ SIGNUP_SOURCE = Enum(
     "self",
     "admin_invite",
     "migrated",
+    "public_submit",
     name="signup_source",
     native_enum=True,
     create_type=False,

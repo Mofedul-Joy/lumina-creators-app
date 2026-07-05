@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import _now
-from app.models import Campaign, CampaignParticipation, CreatorProfile
+from app.models import Campaign, CampaignParticipation
 from app.services import audit
 
 _MODES = {"create_new", "copy_paste"}
@@ -158,9 +158,9 @@ def creator_has_joined(db: Session, campaign_id: uuid.UUID, creator_id: uuid.UUI
 
 
 def join_campaign(db: Session, creator_id: uuid.UUID, slug: str) -> CampaignParticipation:
-    prof = db.scalar(select(CreatorProfile).where(CreatorProfile.creator_id == creator_id))
-    if prof is None or prof.completed_at is None:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "profile_incomplete")
+    # Profile completion is an incentive (dashboard cards), not a join gate —
+    # a stranger who just submitted an email+URL from the public flow has no
+    # profile at all yet, and that's fine.
     campaign = get_active_campaign(db, slug)
     existing = db.scalar(
         select(CampaignParticipation).where(
