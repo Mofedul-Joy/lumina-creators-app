@@ -69,7 +69,9 @@ body::before {
     /* side orbs — the blurred green shapes luminaclippers floats left & right */
     radial-gradient(40% 48% at 2% 30%, rgba(45, 212, 130, 0.18), transparent 64%),
     radial-gradient(42% 50% at 98% 26%, rgba(34, 197, 94, 0.17), transparent 64%),
-    radial-gradient(50% 44% at 50% 106%, rgba(16, 122, 66, 0.14), transparent 68%),
+    /* bottom glow strengthened so cards deep in a long scrolled page don't
+       sit against a noticeably flatter/dimmer patch than cards near the top */
+    radial-gradient(56% 50% at 50% 106%, rgba(22, 150, 82, 0.20), transparent 72%),
     linear-gradient(180deg, #030404 0%, #050606 45%, #030404 100%);
   animation: aurora-drift 24s ease-in-out infinite alternate;
 }
@@ -93,9 +95,12 @@ body::after {
     56px 56px,
     56px 56px,
     200px 200px;
-  /* dissolve the grid toward the edges/bottom so it never dominates */
-  -webkit-mask-image: radial-gradient(150% 125% at 50% 0%, #000 28%, rgba(0, 0, 0, 0.32) 72%, transparent 100%);
-  mask-image: radial-gradient(150% 125% at 50% 0%, #000 28%, rgba(0, 0, 0, 0.32) 72%, transparent 100%);
+  /* dissolve the grid toward the edges/bottom so it never dominates — stops
+     pushed further out (and the floor raised) than the original so texture/
+     contrast stays closer to even across the full viewport height, instead
+     of nearly vanishing by the time a long page's lower third is on screen */
+  -webkit-mask-image: radial-gradient(150% 135% at 50% 0%, #000 40%, rgba(0, 0, 0, 0.5) 85%, transparent 120%);
+  mask-image: radial-gradient(150% 135% at 50% 0%, #000 40%, rgba(0, 0, 0, 0.5) 85%, transparent 120%);
 }
 
 @keyframes aurora-drift {
