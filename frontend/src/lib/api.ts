@@ -111,6 +111,42 @@ export type Health = {
   environment: string;
 };
 
+// ── Public campaign entry (no auth) — the campaign-first funnel: browse,
+// pick one, submit an email + post URL. Auth (check-email/login/set-password)
+// happens one step later via the existing creator auth endpoints. ───────────
+export type PublicCampaign = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  mode: "create_new" | "copy_paste";
+  cpm_rate: number;
+  budget: number;
+  platforms: string[];
+  min_retention_days: number;
+  brief_script: string | null;
+  content_drive_url: string | null;
+  caption_rules: string | null;
+  required_mentions: string[];
+  example_captions: string[];
+  requirements_url: string | null;
+  brand_name: string | null;
+  brand_logo_url: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  joined: boolean;
+};
+
+export const publicApi = {
+  campaigns: () => apiFetch<PublicCampaign[]>("/api/public/campaigns"),
+  campaign: (slug: string) => apiFetch<PublicCampaign>(`/api/public/campaigns/${slug}`),
+  submit: (slug: string, body: { email: string; post_url: string }) =>
+    apiFetch<{ status: string }>(`/api/public/campaigns/${slug}/submit`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+};
+
 // ── Enums (mirror backend Postgres enums) ─────────────────────────────────────
 export const GENDERS = [
   "male",
