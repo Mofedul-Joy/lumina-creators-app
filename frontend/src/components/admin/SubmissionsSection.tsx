@@ -6,8 +6,8 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pager } from "@/components/admin/Pager";
 import { EmbedModal } from "@/components/admin/EmbedModal";
 import {
-  flagSubmissionSuspicious, listSubmissions, rejectSubmission, unflagSubmissionSuspicious,
-  verifySubmission, type AdminSubmission,
+  flagSubmissionSuspicious, listAdminCampaigns, listSubmissions, rejectSubmission,
+  unflagSubmissionSuspicious, verifySubmission, type AdminSubmission,
 } from "@/lib/admin";
 import { fmtInt, fmtMoney } from "@/lib/format";
 import { getEmbedUrl } from "@/lib/embeds";
@@ -15,6 +15,7 @@ import { getEmbedUrl } from "@/lib/embeds";
 const PLATFORM_LABEL: Record<string, string> = {
   tiktok: "TikTok", instagram: "Instagram", youtube: "YouTube", twitter: "X", facebook: "Facebook",
 };
+const PLATFORMS = ["tiktok", "instagram", "youtube", "twitter", "facebook"] as const;
 const STATUSES = [
   { key: "", label: "All statuses" },
   { key: "awaiting_stats", label: "Awaiting stats" },
@@ -34,11 +35,26 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
   const [previewing, setPreviewing] = useState<AdminSubmission | null>(null);
   const [showFlagged, setShowFlagged] = useState(false);
   const [confirmingFlag, setConfirmingFlag] = useState<string | null>(null);
+  const [campaignFilter, setCampaignFilter] = useState("");
+  const [platformFilter, setPlatformFilter] = useState("");
 
-  // fetch (optionally scoped to one campaign), filter by lifecycle status client-side
+  // Campaign picker only matters when this section is unscoped (pooling every
+  // campaign's submissions, e.g. on the dashboard) — a campaign-scoped render
+  // already knows which campaign it is.
+  const campaignsQ = useQuery({
+    queryKey: ["admin-campaigns-picker"],
+    queryFn: () => listAdminCampaigns(),
+    enabled: !campaignId,
+  });
+
+  const effectiveCampaignId = campaignId ?? (campaignFilter || undefined);
   const q = useQuery({
-    queryKey: ["dash-submissions", campaignId ?? "all", showFlagged],
-    queryFn: () => listSubmissions({ ...(campaignId ? { campaign_id: campaignId } : {}), suspicious: showFlagged || undefined }),
+    queryKey: ["dash-submissions", effectiveCampaignId ?? "all", platformFilter, showFlagged],
+    queryFn: () => listSubmissions({
+      campaign_id: effectiveCampaignId,
+      platform: platformFilter || undefined,
+      suspicious: showFlagged || undefined,
+    }),
     retry: false,
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["dash-submissions"] });
@@ -62,7 +78,25 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-[var(--color-text)]">Submissions</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {!campaignId ? (
+            <select
+              value={campaignFilter}
+              onChange={(e) => { setCampaignFilter(e.target.value); setPage(1); }}
+              className="min-h-9 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
+            >
+              <option value="">All campaigns</option>
+              {(campaignsQ.data ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          ) : null}
+          <select
+            value={platformFilter}
+            onChange={(e) => { setPlatformFilter(e.target.value); setPage(1); }}
+            className="min-h-9 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm capitalize text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
+          >
+            <option value="">All platforms</option>
+            {PLATFORMS.map((p) => <option key={p} value={p} className="capitalize">{PLATFORM_LABEL[p]}</option>)}
+          </select>
           <button
             onClick={() => { setShowFlagged((v) => !v); setPage(1); }}
             className={`min-h-9 cursor-pointer rounded-full px-3 text-sm transition ${showFlagged ? "bg-amber-500/15 text-amber-400 ring-1 ring-inset ring-amber-500/25" : "border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"}`}
