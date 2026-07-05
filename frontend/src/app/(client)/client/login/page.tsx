@@ -40,7 +40,7 @@ function ClientLoginInner() {
   }
 
   return (
-    <AuthCard title="Client sign in" subtitle="Access your read-only dashboard.">
+    <AuthCard title="Client sign in" subtitle="Access your read-only dashboard." hideMarketing eyebrow="Lumina for Brands">
       {error ? (
         <p role="alert" className="mb-4 text-sm text-[var(--color-danger)]">
           {error}

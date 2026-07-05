@@ -15,7 +15,7 @@ function Wordmark() {
 
 const POINTS = [
   "Get paid per 1,000 views",
-  "Verified views only — no bots",
+  "Verified views only, no bots",
   "Cash out via PayPal, Solana, or Whop",
 ];
 
@@ -23,11 +23,30 @@ export function AuthCard({
   title,
   subtitle,
   children,
+  hideMarketing = false,
+  eyebrow = "Lumina Creators",
 }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
+  // Admin + client sign-in have no business showing the creator "get paid to
+  // post" pitch — they opt out and get a plain centered form instead.
+  hideMarketing?: boolean;
+  eyebrow?: string;
 }) {
+  if (hideMarketing) {
+    return (
+      <main className="flex min-h-[100dvh] items-center justify-center px-6 py-10">
+        <div className="w-full max-w-[400px]">
+          <div className="mb-10"><Wordmark /></div>
+          <p className="mb-2 text-sm font-medium text-[var(--color-brand)]">{eyebrow}</p>
+          <h1 className="text-2xl font-semibold text-[var(--color-text)]">{title}</h1>
+          {subtitle ? <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">{subtitle}</p> : null}
+          <div className="mt-7">{children}</div>
+        </div>
+      </main>
+    );
+  }
   return (
     <main className="flex min-h-[100dvh]">
       {/* Brand panel — transparent so the global green grid runs continuously

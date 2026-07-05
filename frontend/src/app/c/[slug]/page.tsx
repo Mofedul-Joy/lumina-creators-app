@@ -6,6 +6,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { ApiError, publicApi } from "@/lib/api";
 import { fmtMoney } from "@/lib/format";
+import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 const MODE_LABEL = { create_new: "Create new content", copy_paste: "Repost approved clips" } as const;
 
@@ -22,11 +24,21 @@ export default function CampaignEntryPage() {
   const submitM = useMutation({
     mutationFn: () => publicApi.submit(slug, { email: email.trim(), post_url: postUrl.trim() }),
     onSuccess: () => router.push(`/c/${slug}/success?email=${encodeURIComponent(email.trim())}`),
-    onError: (e) => setError(e instanceof ApiError ? e.message : "Something went wrong — try again."),
+    onError: (e) => setError(e instanceof ApiError ? e.message : "Something went wrong. Try again."),
   });
 
   if (q.isLoading)
-    return <main className="flex min-h-[100dvh] items-center justify-center"><p className="text-sm text-[var(--color-text-secondary)]">Loading…</p></main>;
+    return (
+      <main className="mx-auto grid max-w-5xl gap-6 px-6 py-10 lg:grid-cols-[1fr_380px]">
+        <div>
+          <Skeleton className="h-48 w-full" />
+          <Skeleton className="mt-4 h-4 w-24" />
+          <Skeleton className="mt-2 h-8 w-2/3" />
+          <Skeleton className="mt-4 h-24 w-full" />
+        </div>
+        <Skeleton className="h-72 w-full" />
+      </main>
+    );
 
   const c = q.data;
   if (!c)
@@ -57,11 +69,26 @@ export default function CampaignEntryPage() {
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-[var(--color-text)]">{c.name}</h1>
           {c.description ? <p className="mt-3 text-[var(--color-text-secondary)]">{c.description}</p> : null}
 
-          <div className="mt-5 flex flex-wrap gap-1.5">
+          <div className="mt-5 flex flex-wrap items-center gap-2">
             {c.platforms.map((p) => (
-              <span key={p} className="rounded-md bg-[var(--color-surface-2)] px-2.5 py-1 text-xs capitalize text-[var(--color-text-secondary)]">{p}</span>
+              <span key={p} className="inline-flex items-center gap-1.5 rounded-md bg-[var(--color-surface-2)] px-2.5 py-1 text-xs text-[var(--color-text-secondary)]">
+                <PlatformIcon name={p} className="h-3.5 w-3.5" />
+                {platformLabel(p)}
+              </span>
             ))}
           </div>
+
+          {c.requirements_url ? (
+            <a
+              href={c.requirements_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-brand)]/15 px-5 text-sm font-medium text-[var(--color-brand-soft)] transition hover:bg-[var(--color-brand)]/25"
+            >
+              View requirements
+              <span aria-hidden>&rarr;</span>
+            </a>
+          ) : null}
 
           {c.mode === "create_new" && c.brief_script ? (
             <div className="card-lumina mt-6 rounded-[var(--radius-card)] p-5">
@@ -98,7 +125,7 @@ export default function CampaignEntryPage() {
 
             <h2 className="mt-5 text-lg font-semibold text-[var(--color-text)]">Submit your post</h2>
             <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-              Enter your email and a link to your post — we&apos;ll email you next steps.
+              Enter your email and a link to your post, and we&apos;ll email you next steps.
             </p>
             <form
               className="mt-4 space-y-3"

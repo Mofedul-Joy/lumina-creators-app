@@ -34,8 +34,9 @@ export function CreatorSidebar() {
 
   return (
     <>
-      {/* desktop sidebar */}
-      <aside className="sticky top-0 hidden h-[100dvh] w-60 shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-bg-deep)]/60 px-4 py-6 lg:flex">
+      {/* desktop sidebar — deliberately subtle: no hard divider, soft
+          brand-tinted active pill, muted idle items */}
+      <aside className="sticky top-0 hidden h-[100dvh] w-60 shrink-0 flex-col bg-[var(--color-bg-deep)]/40 px-4 py-6 lg:flex">
         <Link href="/dashboard" className="flex items-center gap-2 px-2">
           <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--color-brand)] text-[var(--color-on-brand)]">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -45,15 +46,15 @@ export function CreatorSidebar() {
           <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text)]">Lumina Creators</span>
         </Link>
 
-        <nav className="mt-8 flex flex-1 flex-col gap-1">
+        <nav className="mt-8 flex flex-1 flex-col gap-0.5">
           {LINKS.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
                 isActive(href)
-                  ? "bg-[var(--color-surface)] text-[var(--color-text)]"
-                  : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]/60 hover:text-[var(--color-text)]"
+                  ? "bg-[var(--color-brand)]/10 font-medium text-[var(--color-brand-soft)]"
+                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
               }`}
             >
               <Icon />
@@ -64,7 +65,7 @@ export function CreatorSidebar() {
 
         <div className="relative">
           {menuOpen ? (
-            <div className="absolute bottom-full left-0 mb-2 w-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl">
+            <div className="absolute bottom-full left-0 mb-2 w-full overflow-hidden rounded-xl bg-[var(--color-surface)] shadow-xl ring-1 ring-white/[0.06]">
               <button
                 onClick={() => { clearAuthToken(); router.push("/"); }}
                 className="block w-full cursor-pointer px-4 py-2.5 text-left text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text)]"
@@ -75,7 +76,7 @@ export function CreatorSidebar() {
           ) : null}
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]/60 hover:text-[var(--color-text)]"
+            className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
           >
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--color-surface-2)] text-xs font-semibold text-[var(--color-text)]">
               <ProfileIcon />

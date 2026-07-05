@@ -121,7 +121,7 @@ export default function AdminUsersPage() {
             <div className="mt-8 grid grid-cols-3 gap-4">
               <StatTile label="Staff" value={fmtInt(u.admins.length)} hint="Admin accounts" />
               <StatTile label="Brands" value={fmtInt(u.clients.length)} hint="Client accounts" />
-              <StatTile label="Creators" value={fmtInt(u.creator_count)} hint={`${u.creator_active} active — view all →`} href="/admin/creators" />
+              <StatTile label="Creators" value={fmtInt(u.creator_count)} hint={`${u.creator_active} active · view all →`} href="/admin/creators" />
             </div>
 
             {/* staff */}
@@ -182,7 +182,7 @@ export default function AdminUsersPage() {
                     <tbody>
                       {u.clients.map((c) => (
                         <tr key={c.id} className="border-t border-[var(--color-border)]/40">
-                          <td className="px-6 py-4"><Link href={`/admin/users/brands/${c.id}`} className="text-[var(--color-text)] hover:text-[var(--color-brand)]">{c.name ?? "—"}</Link></td>
+                          <td className="px-6 py-4"><Link href={`/admin/users/brands/${c.id}`} className="text-[var(--color-text)] hover:text-[var(--color-brand)]">{c.name ?? "-"}</Link></td>
                           <td className="px-6 py-4 text-[var(--color-text-secondary)]">{c.email}</td>
                           <td className="px-6 py-4"><StatusBadge status={c.status} /></td>
                           <td className="px-6 py-4">

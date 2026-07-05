@@ -17,7 +17,7 @@ function Row({ label, value }: { label: string; value: string | null }) {
   return (
     <div className="flex justify-between gap-4 border-b border-[var(--color-border)] py-2 last:border-b-0">
       <dt className="text-sm text-[var(--color-text-muted)]">{label}</dt>
-      <dd className="text-right text-sm text-[var(--color-text)]">{value ?? "—"}</dd>
+      <dd className="text-right text-sm text-[var(--color-text)]">{value ?? "-"}</dd>
     </div>
   );
 }

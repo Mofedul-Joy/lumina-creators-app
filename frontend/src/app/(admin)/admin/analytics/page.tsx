@@ -42,7 +42,7 @@ function DailyChart({ daily }: { daily: { date: string; views: number }[] }) {
             key={d.date}
             className="flex-1 rounded-t-sm bg-[var(--color-brand)]/60 transition-colors hover:bg-[var(--color-brand)]"
             style={{ height: `${Math.max(2, (d.views / max) * 100)}%` }}
-            title={`${fmtDay(d.date)} — ${fmtInt(d.views)} views`}
+            title={`${fmtDay(d.date)}: ${fmtInt(d.views)} views`}
           />
         ))}
       </div>
@@ -115,7 +115,7 @@ export default function AdminAnalyticsPage() {
             {/* activity chart */}
             <div className="card-lumina mt-6 rounded-[var(--radius-card)] p-6">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-[var(--color-text)]">Views — last 30 days</h2>
+                <h2 className="text-lg font-semibold text-[var(--color-text)]">Views over the last 30 days</h2>
                 <span className="text-xs text-[var(--color-text-muted)]">by submission date</span>
               </div>
               <DailyChart daily={a.daily} />

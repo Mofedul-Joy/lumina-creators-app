@@ -144,7 +144,7 @@ export default function AdminCampaignsPage() {
                   </div>
                   <div className="p-4">
                     <p className="font-medium text-[var(--color-text)]">{c.name}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">{c.brand_name ?? "—"} · {c.mode === "create_new" ? "Original UGC" : "Approved clips"}</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">{c.brand_name ?? "-"} · {c.mode === "create_new" ? "Original UGC" : "Approved clips"}</p>
                     <div className="mt-3 flex justify-between text-sm">
                       <span className="tabular text-[var(--color-brand-soft)]">{fmtMoney(c.cpm_rate)} CPM</span>
                       <span className="tabular text-[var(--color-text-secondary)]">{fmtMoney(c.budget)}</span>
@@ -174,7 +174,7 @@ export default function AdminCampaignsPage() {
                     <tr key={c.id} className="bg-[var(--color-bg)] transition hover:bg-[var(--color-surface)]/50">
                       <td className="px-4 py-3">
                         <Link href={`/admin/campaigns/${c.id}`} className="font-medium text-[var(--color-text)] hover:text-[var(--color-brand)]">{c.name}</Link>
-                        <p className="text-xs text-[var(--color-text-muted)]">{c.brand_name ?? "—"}</p>
+                        <p className="text-xs text-[var(--color-text-muted)]">{c.brand_name ?? "-"}</p>
                       </td>
                       <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.mode === "create_new" ? "Create new" : "Repost"}</td>
                       <td className="tabular px-4 py-3 text-[var(--color-text)]">{fmtMoney(c.cpm_rate)}</td>

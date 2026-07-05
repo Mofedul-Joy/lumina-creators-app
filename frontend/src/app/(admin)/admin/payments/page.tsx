@@ -111,7 +111,7 @@ export default function AdminPaymentsPage() {
           <button
             onClick={() => setShowAdd(true)}
             className="shrink-0 cursor-pointer text-sm text-[var(--color-text-secondary)] underline decoration-dotted underline-offset-4 transition hover:text-[var(--color-text)]"
-            title="Log a payment made outside the app — a manual bookkeeping entry, separate from the Pay now flow"
+            title="Log a payment made outside the app. A manual bookkeeping entry, separate from the Pay now flow"
           >
             Log a manual payment
           </button>
@@ -179,7 +179,7 @@ export default function AdminPaymentsPage() {
                         <td className="px-6 py-4 text-[var(--color-text-secondary)]">
                           {r.payout_address ? (
                             <>
-                              <span className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">{METHOD_LABEL[r.payout_method ?? ""] ?? "—"}</span>
+                              <span className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">{METHOD_LABEL[r.payout_method ?? ""] ?? "-"}</span>
                               <span className="block max-w-[220px] truncate text-xs">{r.payout_address}</span>
                             </>
                           ) : (
@@ -273,7 +273,7 @@ export default function AdminPaymentsPage() {
                       <tr key={s.id} className="border-t border-[var(--color-border)]/40">
                         <td className="px-6 py-4 text-[var(--color-text)]">{s.creator_name ?? "Unnamed"}</td>
                         <td className="px-6 py-4 text-[var(--color-text-secondary)]">{s.campaign_name}</td>
-                        <td className="max-w-[280px] px-6 py-4 text-[var(--color-text-secondary)]">{s.verification_note ?? "—"}</td>
+                        <td className="max-w-[280px] px-6 py-4 text-[var(--color-text-secondary)]">{s.verification_note ?? "-"}</td>
                         <td className="px-6 py-4 text-right text-[var(--color-text-muted)]">
                           {new Date(s.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                         </td>
@@ -296,7 +296,7 @@ export default function AdminPaymentsPage() {
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                 </button>
               </div>
-              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Log a payment you made outside the app — this only creates a receipt.</p>
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Log a payment you made outside the app. This only creates a receipt.</p>
 
               <div className="mt-5 space-y-4">
                 <label className="block">

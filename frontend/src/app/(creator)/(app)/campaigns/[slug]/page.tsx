@@ -5,6 +5,7 @@ import { use, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
+import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { getAuthToken } from "@/lib/auth";
 import { getCampaign, joinCampaign, submitClip } from "@/lib/campaigns";
 import { fmtMoney } from "@/lib/format";
@@ -63,9 +64,12 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
               <Stat label="Platforms" value={String(c.platforms.length)} />
             </div>
 
-            <div className="mt-3 flex flex-wrap gap-1.5">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               {c.platforms.map((p) => (
-                <span key={p} className="rounded-md bg-[var(--color-surface-2)] px-2 py-0.5 text-[11px] text-[var(--color-text-secondary)]">{p}</span>
+                <span key={p} className="inline-flex items-center gap-1.5 rounded-md bg-[var(--color-surface-2)] px-2.5 py-1 text-[11px] text-[var(--color-text-secondary)]">
+                  <PlatformIcon name={p} className="h-3.5 w-3.5" />
+                  {platformLabel(p)}
+                </span>
               ))}
             </div>
 
@@ -117,7 +121,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-sm font-medium text-[var(--color-brand)]">You’re in this campaign — submit your post URL.</p>
+                  <p className="text-sm font-medium text-[var(--color-brand)]">You’re in this campaign. Submit your post URL.</p>
                   <Field
                     label="Post URL"
                     placeholder="https://tiktok.com/@you/video/…"
@@ -130,7 +134,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
                     </Button>
                   </div>
                   {submit.isError ? <p className="text-sm text-[var(--color-danger)]">{(submit.error as Error).message}</p> : null}
-                  {submit.isSuccess ? <p className="text-sm text-[var(--color-brand)]">Submitted — we’ll track the views.</p> : null}
+                  {submit.isSuccess ? <p className="text-sm text-[var(--color-brand)]">Submitted. We’ll track the views.</p> : null}
                 </div>
               )}
             </div>

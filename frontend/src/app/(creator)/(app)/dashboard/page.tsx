@@ -8,6 +8,7 @@ import { getAuthToken } from "@/lib/auth";
 import { getProfile, isAuthError } from "@/lib/api";
 import { browseCampaigns, listSubmissions } from "@/lib/campaigns";
 import { fmtInt, fmtMoney } from "@/lib/format";
+import { Skeleton, SkeletonStats } from "@/components/ui/Skeleton";
 
 const STATUS_STYLE: Record<string, string> = {
   approved: "border-[var(--color-brand)]/40 text-[var(--color-brand)]",
@@ -50,8 +51,12 @@ export default function DashboardPage() {
 
   if (!ready || !token || profileQ.isLoading)
     return (
-      <main className="flex min-h-[100dvh] items-center justify-center px-4 py-10">
-        <p className="text-sm text-[var(--color-text-secondary)]">Loading…</p>
+      <main className="mx-auto max-w-5xl px-6 py-10">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="mt-3 h-10 w-72" />
+        <div className="mt-8"><SkeletonStats count={4} /></div>
+        <Skeleton className="mt-8 h-6 w-40" />
+        <Skeleton className="mt-3 h-64 w-full" />
       </main>
     );
 
@@ -118,7 +123,7 @@ export default function DashboardPage() {
         <div>
           <p className="text-sm font-semibold text-[var(--color-brand-soft)]">Add portfolio videos</p>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-            Paste links to your best content — it&apos;s a credibility signal brands see when matching campaigns to you.
+            Paste links to your best content. It&apos;s a credibility signal brands see when matching campaigns to you.
           </p>
         </div>
         <span className="shrink-0 text-sm font-medium text-[var(--color-brand-soft)]">Add now →</span>

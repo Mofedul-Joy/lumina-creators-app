@@ -44,7 +44,7 @@ function SuccessInner() {
       } else if (res.status === "password_not_set") {
         setMode("new");
       } else {
-        setError("Check your inbox — we need you to verify your email first.");
+        setError("Check your inbox. We need you to verify your email first.");
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong.");

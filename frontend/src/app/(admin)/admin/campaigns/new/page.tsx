@@ -132,7 +132,7 @@ export default function NewCampaignPage() {
           <div className="space-y-2">
             <label className={labelCls}>Client (brand account)</label>
             <select className={controlCls} value={clientId} onChange={(e) => setClientId(e.target.value)}>
-              <option value="">No client — internal campaign</option>
+              <option value="">No client (internal campaign)</option>
               {(clientsQ.data ?? []).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name ?? c.email}

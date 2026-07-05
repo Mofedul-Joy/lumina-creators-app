@@ -6,6 +6,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAuthToken } from "@/lib/auth";
 import { browseCampaigns, listSubmissions, uploadProofVideo } from "@/lib/campaigns";
 import { fmtInt, fmtMoney } from "@/lib/format";
+import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
+import { SkeletonCardGrid, SkeletonStats } from "@/components/ui/Skeleton";
 
 const STATUS_STYLE: Record<string, string> = {
   approved: "border-[var(--color-brand)]/40 text-[var(--color-brand)]",
@@ -79,7 +81,10 @@ export default function SubmissionsPage() {
         </p>
 
         {subsQ.isLoading ? (
-          <p className="mt-8 text-[var(--color-text-muted)]">Loading submissions…</p>
+          <div className="mt-8 space-y-8">
+            <SkeletonStats count={3} />
+            <SkeletonCardGrid count={6} />
+          </div>
         ) : subsQ.isError ? (
           <p className="mt-8 text-sm text-[var(--color-danger)]">{(subsQ.error as Error).message}</p>
         ) : subs.length === 0 ? (
@@ -112,87 +117,76 @@ export default function SubmissionsPage() {
               </div>
             </div>
 
-            <div className="card-lumina mt-8 overflow-hidden rounded-[var(--radius-card)]">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                      <th className="px-5 py-3 font-medium">Campaign</th>
-                      <th className="px-5 py-3 font-medium">Post</th>
-                      <th className="px-5 py-3 text-right font-medium">Views</th>
-                      <th className="px-5 py-3 text-right font-medium">Est. earnings</th>
-                      <th className="px-5 py-3 font-medium">Status</th>
-                      <th className="px-5 py-3 font-medium">Proof</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {subs.map((s) => {
-                      const needsProof = modeById.get(s.campaign_id) === "create_new";
-                      return (
-                      <tr key={s.id} className="border-t border-[var(--color-border)]">
-                        <td className="px-5 py-3 text-[var(--color-text)]">
-                          {nameById.get(s.campaign_id) ?? "Campaign"}
-                        </td>
-                        <td className="max-w-[260px] truncate px-5 py-3">
-                          <a
-                            href={s.post_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[var(--color-brand)] hover:underline"
+            <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {subs.map((s) => {
+                const needsProof = modeById.get(s.campaign_id) === "create_new";
+                return (
+                  <div key={s.id} className="card-lumina flex flex-col overflow-hidden rounded-[var(--radius-card)]">
+                    <a
+                      href={s.post_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="relative block aspect-video w-full bg-gradient-to-br from-[var(--color-brand)]/20 to-[var(--color-bg-deep)] bg-cover bg-center"
+                      style={s.thumbnail_url ? { backgroundImage: `url(${s.thumbnail_url})` } : undefined}
+                    >
+                      <span className="absolute inset-0 grid place-items-center">
+                        <span className="grid h-11 w-11 place-items-center rounded-full bg-black/40 text-white">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7L8 5Z" /></svg>
+                        </span>
+                      </span>
+                      <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/50 text-white">
+                        <PlatformIcon name={s.platform} className="h-3.5 w-3.5" />
+                      </span>
+                    </a>
+                    <div className="flex flex-1 flex-col p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="truncate text-sm font-medium text-[var(--color-text)]">{nameById.get(s.campaign_id) ?? "Campaign"}</p>
+                        <StatusPill label={s.verification_status} />
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-sm">
+                        <span className="tabular text-[var(--color-text-secondary)]">{fmtInt(s.views)} views</span>
+                        <span className="tabular font-medium text-[var(--color-text)]">{fmtMoney(s.estimated_amount)}</span>
+                      </div>
+                      {s.verification_status === "rejected" && s.verification_note ? (
+                        <p className="mt-2 text-xs text-[var(--color-text-muted)]">{s.verification_note}</p>
+                      ) : null}
+                      {needsProof ? (
+                        <div className="mt-3">
+                          <input
+                            ref={(el) => { fileInputs.current[s.id] = el; }}
+                            type="file"
+                            accept="video/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) proofM.mutate({ id: s.id, file });
+                              e.target.value = "";
+                            }}
+                          />
+                          <button
+                            type="button"
+                            disabled={uploadingId === s.id}
+                            onClick={() => fileInputs.current[s.id]?.click()}
+                            className={`w-full cursor-pointer rounded-md py-1.5 text-xs font-medium transition disabled:opacity-50 ${
+                              s.has_proof_video
+                                ? "text-[var(--color-brand)] ring-1 ring-inset ring-[var(--color-brand)]/30 hover:bg-[var(--color-brand)]/10"
+                                : "bg-amber-500/15 text-amber-400 ring-1 ring-inset ring-amber-500/25 hover:bg-amber-500/25"
+                            }`}
                           >
-                            {s.platform} ↗
-                          </a>
-                        </td>
-                        <td className="tabular px-5 py-3 text-right">{fmtInt(s.views)}</td>
-                        <td className="tabular px-5 py-3 text-right">{fmtMoney(s.estimated_amount)}</td>
-                        <td className="px-5 py-3">
-                          <StatusPill label={s.verification_status} />
-                          {s.verification_status === "rejected" && s.verification_note ? (
-                            <p className="mt-1 max-w-[220px] text-xs text-[var(--color-text-muted)]">{s.verification_note}</p>
-                          ) : null}
-                        </td>
-                        <td className="px-5 py-3">
-                          {!needsProof ? (
-                            <span className="text-xs text-[var(--color-text-muted)]">Not required</span>
-                          ) : (
-                            <>
-                              <input
-                                ref={(el) => { fileInputs.current[s.id] = el; }}
-                                type="file"
-                                accept="video/*"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) proofM.mutate({ id: s.id, file });
-                                  e.target.value = "";
-                                }}
-                              />
-                              <button
-                                type="button"
-                                disabled={uploadingId === s.id}
-                                onClick={() => fileInputs.current[s.id]?.click()}
-                                className="rounded-md border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)] disabled:opacity-50"
-                              >
-                                {uploadingId === s.id
-                                  ? "Uploading…"
-                                  : s.has_proof_video
-                                    ? "Replace video"
-                                    : "Upload proof video"}
-                              </button>
-                              {s.has_proof_video && uploadingId !== s.id ? (
-                                <span className="ml-2 text-xs text-[var(--color-brand)]">Uploaded ✓</span>
-                              ) : null}
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            {uploadingId === s.id
+                              ? "Uploading..."
+                              : s.has_proof_video
+                                ? "Proof uploaded ✓ · Replace"
+                                : "Upload proof video"}
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+            <p className="mt-4 text-xs text-[var(--color-text-muted)]">
               Views refresh automatically as Lumina tracks each post. Earnings are estimates until a campaign finalizes.
             </p>
           </>

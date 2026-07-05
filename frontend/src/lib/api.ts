@@ -173,6 +173,9 @@ export const UPLOAD_PURPOSES = [
 export type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];
 
 // ── Creator profile schemas ───────────────────────────────────────────────────
+export const PAYOUT_METHODS = ["paypal", "solana", "whop"] as const;
+export type PayoutMethod = (typeof PAYOUT_METHODS)[number];
+
 export type ProfileIn = {
   display_name?: string;
   bio?: string;
@@ -184,6 +187,8 @@ export type ProfileIn = {
   country?: string;
   city?: string;
   avatar_object_id?: string;
+  payout_method?: PayoutMethod;
+  payout_address?: string;
 };
 
 export type ProfileOut = {
@@ -198,6 +203,8 @@ export type ProfileOut = {
   city: string | null;
   avatar_object_id: string | null;
   avatar_url: string | null;
+  payout_method: PayoutMethod | null;
+  payout_address: string | null;
   completed: boolean;
   missing: string[];
 };

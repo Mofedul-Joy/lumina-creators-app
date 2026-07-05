@@ -16,6 +16,8 @@ class ProfileIn(BaseModel):
     country: Optional[str] = None
     city: Optional[str] = None
     avatar_object_id: Optional[str] = None
+    payout_method: Optional[str] = None   # paypal | solana | whop
+    payout_address: Optional[str] = None  # email / wallet / handle
 
 
 class ProfileOut(BaseModel):
@@ -30,6 +32,8 @@ class ProfileOut(BaseModel):
     city: Optional[str] = None
     avatar_object_id: Optional[str] = None
     avatar_url: Optional[str] = None
+    payout_method: Optional[str] = None
+    payout_address: Optional[str] = None
     completed: bool = False
     missing: List[str] = []
 

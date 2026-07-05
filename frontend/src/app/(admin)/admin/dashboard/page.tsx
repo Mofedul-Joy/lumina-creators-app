@@ -110,18 +110,18 @@ export default function AdminDashboardPage() {
         <div className="mt-8 grid grid-cols-3 gap-4">
           <StatCard
             label="Active campaigns"
-            value={s ? fmtInt(s.active_campaigns) : "—"}
+            value={s ? fmtInt(s.active_campaigns) : "-"}
             hint={s ? `${fmtInt(s.total_campaigns)} total` : undefined}
             accent
           />
           <StatCard
             label="Creators"
-            value={s ? fmtInt(s.total_creators) : "—"}
+            value={s ? fmtInt(s.total_creators) : "-"}
             hint={s ? `${fmtInt(s.completed_creators)} active` : undefined}
           />
           <StatCard
             label="Submissions"
-            value={s ? fmtInt(s.total_submissions) : "—"}
+            value={s ? fmtInt(s.total_submissions) : "-"}
             hint={s ? `${fmtInt(s.total_views)} views tracked` : undefined}
           />
         </div>

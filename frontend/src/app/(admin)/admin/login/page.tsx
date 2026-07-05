@@ -40,7 +40,7 @@ function AdminLoginInner() {
   }
 
   return (
-    <AuthCard title="Admin sign in" subtitle="Manage Lumina creator operations.">
+    <AuthCard title="Admin sign in" subtitle="Manage Lumina creator operations." hideMarketing eyebrow="Lumina Admin">
       {error ? (
         <p role="alert" className="mb-4 text-sm text-[var(--color-danger)]">
           {error}

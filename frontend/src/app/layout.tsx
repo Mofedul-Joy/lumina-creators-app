@@ -13,7 +13,7 @@ const serif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Lumina Creators — Get paid to post",
+  title: "Lumina Creators · Get paid to post",
   description:
     "Enter Lumina campaigns, post to your socials, and get paid per 1,000 views. Create original content or repost approved clips.",
 };

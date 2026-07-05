@@ -199,8 +199,8 @@ export default function AdminCreatorsPage() {
                     </div>
                   </div>
                   <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
-                    <dt className="text-[var(--color-text-muted)]">Country</dt><dd className="text-right text-[var(--color-text)]">{c.country ?? "—"}</dd>
-                    <dt className="text-[var(--color-text-muted)]">Language</dt><dd className="text-right text-[var(--color-text)]">{c.primary_language ?? "—"}</dd>
+                    <dt className="text-[var(--color-text-muted)]">Country</dt><dd className="text-right text-[var(--color-text)]">{c.country ?? "-"}</dd>
+                    <dt className="text-[var(--color-text-muted)]">Language</dt><dd className="text-right text-[var(--color-text)]">{c.primary_language ?? "-"}</dd>
                     <dt className="text-[var(--color-text-muted)]">Followers</dt><dd className="tabular text-right text-[var(--color-text)]">{c.total_followers.toLocaleString()}</dd>
                   </dl>
                   {c.platforms.length ? (
@@ -219,8 +219,8 @@ export default function AdminCreatorsPage() {
                   {pageRows.map((c) => (
                     <tr key={c.id} className="transition hover:bg-[var(--color-surface)]/50">
                       <td className="px-4 py-3"><Link href={`/admin/creators/${c.id}`} className="font-medium text-[var(--color-text)] hover:text-[var(--color-brand)]">{c.display_name ?? "Unnamed"}</Link><p className="text-xs text-[var(--color-text-muted)]">{c.email}</p></td>
-                      <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.country ?? "—"}</td>
-                      <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.primary_language ?? "—"}</td>
+                      <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.country ?? "-"}</td>
+                      <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.primary_language ?? "-"}</td>
                       <td className="tabular px-4 py-3 text-right text-[var(--color-text)]">{c.total_followers.toLocaleString()}</td>
                       <td className="px-4 py-3">
                         {c.completed ? <span className="text-xs text-emerald-400">Complete</span> : <span className="text-xs text-[var(--color-text-muted)]">Incomplete</span>}

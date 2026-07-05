@@ -27,7 +27,7 @@ function VerifyEmailInner() {
 
   const resend = useMutation({
     mutationFn: () => resendEmailCode(email),
-    onSuccess: () => setNotice("A new code is on its way — check your inbox."),
+    onSuccess: () => setNotice("A new code is on its way. Check your inbox."),
     onError: (err) => setError((err as Error).message),
   });
 
