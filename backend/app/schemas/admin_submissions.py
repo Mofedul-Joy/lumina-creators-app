@@ -22,6 +22,7 @@ class AdminSubmissionRow(BaseModel):
     verification_status: str
     scrape_status: str
     status: str  # computed lifecycle: awaiting_stats|proof_uploaded|stats_verified|paid|rejected
+    is_suspicious: bool = False
     verification_note: Optional[str] = None
     proof_url: Optional[str] = None
     last_scraped_at: Optional[datetime] = None

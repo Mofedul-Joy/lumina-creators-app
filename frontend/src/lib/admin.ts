@@ -127,6 +127,7 @@ export type AdminSubmission = {
   estimated_amount: number | string;
   verification_status: "pending" | "verified" | "rejected";
   status: "awaiting_stats" | "proof_uploaded" | "stats_verified" | "paid" | "rejected";
+  is_suspicious: boolean;
   scrape_status: string;
   verification_note: string | null;
   proof_url: string | null;
@@ -157,6 +158,9 @@ export const rejectSubmission = (id: string, note: string) =>
 
 export const scrapeNow = (id: string) =>
   apiFetch<AdminSubmission>(`/api/admin/submissions/${id}/scrape-now`, { method: "POST", ...auth() });
+
+export const toggleSuspicious = (id: string) =>
+  apiFetch<AdminSubmission>(`/api/admin/submissions/${id}/toggle-suspicious`, { method: "POST", ...auth() });
 
 /* ---- payouts ---- */
 export type OwedRow = {

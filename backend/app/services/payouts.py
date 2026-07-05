@@ -31,6 +31,7 @@ def _unpaid_verified(db: Session, creator_id: uuid.UUID):
     return db.scalars(
         select(Submission).where(
             Submission.verification_status == "verified",
+            Submission.is_suspicious.is_(False),  # bought-views guard (Clippers rule)
             Submission.creator_id == creator_id,
             Submission.id.not_in(_active_items_subq()),
         )
@@ -53,6 +54,7 @@ def amounts_owed(db: Session):
         .outerjoin(CreatorProfile, CreatorProfile.creator_id == Submission.creator_id)
         .where(
             Submission.verification_status == "verified",
+            Submission.is_suspicious.is_(False),
             Submission.id.not_in(_active_items_subq()),
         )
         .group_by(Submission.creator_id, CreatorProfile.display_name,

@@ -32,6 +32,7 @@ def _row(db: Session, sub: Submission, name: str, mode: str, display_name, is_pa
         post_url=sub.post_url, views=sub.views, likes=sub.likes, comments=sub.comments,
         estimated_amount=sub.estimated_amount, verification_status=sub.verification_status,
         scrape_status=sub.scrape_status, status=svc.lifecycle_status(sub, is_paid),
+        is_suspicious=sub.is_suspicious,
         verification_note=sub.verification_note,
         proof_url=_proof_url(db, sub), last_scraped_at=sub.last_scraped_at,
         created_at=sub.created_at,
@@ -59,6 +60,20 @@ def counts(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_
     c = svc.counts_by_status(db)
     return SubmissionCounts(pending=c.get("pending", 0), verified=c.get("verified", 0),
                             rejected=c.get("rejected", 0))
+
+
+@router.post("/{submission_id}/toggle-suspicious", response_model=AdminSubmissionRow)
+def toggle_suspicious(submission_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
+                      db: Session = Depends(get_db)):
+    """Flag/unflag bought-looking views. Suspicious submissions are excluded from
+    payable earnings (Clippers rule)."""
+    from fastapi import HTTPException, status as st
+    sub = db.get(Submission, submission_id)
+    if sub is None:
+        raise HTTPException(st.HTTP_404_NOT_FOUND, "Submission not found")
+    sub.is_suspicious = not sub.is_suspicious
+    db.commit()
+    return _reload(db, sub)
 
 
 @router.post("/{submission_id}/scrape-now", response_model=AdminSubmissionRow)

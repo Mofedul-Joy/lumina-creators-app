@@ -84,6 +84,7 @@ class Submission(TimestampMixin, Base):
     proof_object_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("storage_objects.id")
     )
+    is_suspicious: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     embed_broken: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     post_unavailable: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text("false")

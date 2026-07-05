@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pager } from "@/components/admin/Pager";
-import { listSubmissions, rejectSubmission, scrapeNow, verifySubmission } from "@/lib/admin";
+import { listSubmissions, rejectSubmission, scrapeNow, toggleSuspicious, verifySubmission } from "@/lib/admin";
 import { fmtInt, fmtMoney } from "@/lib/format";
 
 const PLATFORM_LABEL: Record<string, string> = {
@@ -49,6 +49,7 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
     mutationFn: scrapeNow,
     onSuccess: (d) => { setRefreshed(d.id); setTimeout(() => setRefreshed(null), 3000); refresh(); },
   });
+  const suspiciousM = useMutation({ mutationFn: toggleSuspicious, onSuccess: refresh });
   const rejectM = useMutation({
     mutationFn: ({ id, note }: { id: string; note: string }) => rejectSubmission(id, note),
     onSuccess: () => { setRejecting(null); setNote(""); refresh(); },
@@ -86,7 +87,10 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
                   <span className="grid h-11 w-11 place-items-center rounded-full bg-black/40 text-white">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7L8 5Z" /></svg>
                   </span>
-                  <span className="absolute left-2 top-2"><StatusBadge status={s.status} /></span>
+                  <span className="absolute left-2 top-2 flex gap-1.5">
+                    <StatusBadge status={s.status} />
+                    {s.is_suspicious ? <StatusBadge status="suspicious" /> : null}
+                  </span>
                   <span className="absolute right-2 top-2 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-medium text-white">{PLATFORM_LABEL[s.platform] ?? s.platform}</span>
                 </a>
                 <div className="p-3">
@@ -105,6 +109,14 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
                         className="cursor-pointer text-[var(--color-text-muted)] transition hover:text-[var(--color-brand)] disabled:opacity-50"
                       >
                         {refreshed === s.id ? "✓ queued" : "↻"}
+                      </button>
+                      <button
+                        title={s.is_suspicious ? "Unflag — include in payouts again" : "Flag as suspicious (bought views) — excluded from payouts"}
+                        disabled={suspiciousM.isPending}
+                        onClick={() => suspiciousM.mutate(s.id)}
+                        className={`cursor-pointer transition disabled:opacity-50 ${s.is_suspicious ? "text-orange-400" : "text-[var(--color-text-muted)] hover:text-orange-400"}`}
+                      >
+                        ⚑
                       </button>
                     </span>
                     <span className="tabular font-medium text-[var(--color-text)]">{fmtMoney(s.estimated_amount)}</span>

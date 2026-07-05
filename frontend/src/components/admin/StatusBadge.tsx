@@ -14,6 +14,7 @@ const STYLES: Record<string, string> = {
   archived: "bg-white/5 text-[var(--color-text-muted)] ring-white/10",
   rejected: "bg-red-500/15 text-red-400 ring-red-500/25",
   failed: "bg-red-500/15 text-red-400 ring-red-500/25",
+  suspicious: "bg-orange-500/15 text-orange-400 ring-orange-500/25",
 };
 
 export function StatusBadge({ status }: { status: string }) {
