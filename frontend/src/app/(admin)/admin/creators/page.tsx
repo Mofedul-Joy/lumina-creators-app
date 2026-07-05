@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { Avatar } from "@/components/admin/Avatar";
 import { Pager } from "@/components/admin/Pager";
 import { getAdminToken } from "@/lib/auth";
@@ -93,11 +94,12 @@ export default function AdminCreatorsPage() {
 
   return (
     <div className="min-h-[100dvh]">
-      <AdminNav />
+      <AdminShell />
       <main className="mx-auto max-w-6xl px-6 py-10">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Operations Terminal</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Creator database</h1>
         <p className="mt-2 text-[var(--color-text-secondary)]">Search the full roster by name, email, or social link.</p>
+        <AdminTabs />
 
         {/* search row */}
         <div className="mt-6 flex flex-wrap items-center gap-3">

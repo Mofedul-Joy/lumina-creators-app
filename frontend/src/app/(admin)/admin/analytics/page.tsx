@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { getAdminToken } from "@/lib/auth";
 import { getAdminAnalytics } from "@/lib/admin";
 import { isAuthError } from "@/lib/api";
@@ -88,13 +89,14 @@ export default function AdminAnalyticsPage() {
 
   return (
     <div className="min-h-[100dvh]">
-      <AdminNav />
+      <AdminShell />
       <main className="mx-auto max-w-6xl px-6 py-10">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Operations Terminal</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Analytics</h1>
         <p className="mt-2 max-w-xl text-[var(--color-text-secondary)]">
           Network-wide performance across every campaign and creator.
         </p>
+        <AdminTabs />
 
         {q.isLoading ? (
           <p className="mt-10 text-sm text-[var(--color-text-secondary)]">Loading analytics…</p>

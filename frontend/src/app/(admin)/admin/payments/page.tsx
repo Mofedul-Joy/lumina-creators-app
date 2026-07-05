@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getAdminToken } from "@/lib/auth";
 import { listOwed, listPayouts, logManualPayment, type PayoutMethod, recordPayout } from "@/lib/admin";
@@ -84,7 +85,7 @@ export default function AdminPaymentsPage() {
 
   return (
     <div className="min-h-[100dvh]">
-      <AdminNav />
+      <AdminShell />
       <main className="mx-auto max-w-6xl px-6 py-10">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -101,6 +102,7 @@ export default function AdminPaymentsPage() {
             + Add payment
           </button>
         </div>
+        <AdminTabs />
 
         {/* summary */}
         <div className="mt-8 grid grid-cols-3 gap-4">

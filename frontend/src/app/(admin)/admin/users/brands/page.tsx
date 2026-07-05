@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getAdminToken } from "@/lib/auth";
 import { listAdminClients, reactivateClient, suspendClient } from "@/lib/admin";
@@ -39,11 +40,12 @@ export default function AdminBrandsPage() {
 
   return (
     <div className="min-h-[100dvh]">
-      <AdminNav />
+      <AdminShell />
       <main className="mx-auto max-w-6xl px-6 py-10">
         <Link href="/admin/users" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">← Users</Link>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Brand accounts</h1>
         <p className="mt-2 text-[var(--color-text-secondary)]">Search brands, review their campaigns, and approve access.</p>
+        <AdminTabs />
 
         <div className="mt-6 max-w-md">
           <input

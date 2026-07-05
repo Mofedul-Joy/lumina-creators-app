@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { SubmissionsSection } from "@/components/admin/SubmissionsSection";
 import { getAdminToken } from "@/lib/auth";
 import { getAdminStats } from "@/lib/admin";
@@ -72,7 +73,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-[100dvh]">
-      <AdminNav />
+      <AdminShell />
       <main className="mx-auto max-w-6xl px-6 py-10">
         {/* ops-terminal header */}
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">
@@ -100,6 +101,7 @@ export default function AdminDashboardPage() {
             Browse creators
           </Link>
         </div>
+        <AdminTabs />
 
         {/* stat cards — Bill: "Active campaigns, creators, submissions, that's enough" */}
         {q.isError && !isAuthError(q.error) ? (

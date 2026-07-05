@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pager } from "@/components/admin/Pager";
 import { getAdminToken } from "@/lib/auth";
@@ -63,9 +64,9 @@ export default function AdminCampaignsPage() {
 
   return (
     <div className="min-h-[100dvh]">
-      <AdminNav />
+      <AdminShell />
       <main className="mx-auto max-w-6xl px-6 py-10">
-        <div className="mb-8 flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-text)]">Campaigns</h1>
             <p className="mt-1 text-[var(--color-text-secondary)]">Create, publish, and manage every campaign.</p>
@@ -93,6 +94,7 @@ export default function AdminCampaignsPage() {
             </Link>
           </div>
         </div>
+        <AdminTabs />
 
         {/* status filters + search — the Clippers campaign states */}
         <div className="mb-6 flex flex-wrap items-center gap-3">

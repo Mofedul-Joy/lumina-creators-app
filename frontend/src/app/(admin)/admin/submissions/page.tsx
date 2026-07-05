@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pager } from "@/components/admin/Pager";
 import { getAdminToken } from "@/lib/auth";
@@ -89,13 +90,14 @@ function SubmissionsInner() {
 
   return (
     <div className="min-h-[100dvh]">
-      <AdminNav />
+      <AdminShell />
       <main className="mx-auto max-w-6xl px-6 py-10">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Operations Terminal</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Submissions</h1>
         <p className="mt-2 max-w-xl text-[var(--color-text-secondary)]">
           Review posted clips, verify original-content proof, and gate what becomes payable.
         </p>
+        <AdminTabs />
 
         {/* filter chips with counts */}
         <div className="mt-6 flex flex-wrap gap-2">

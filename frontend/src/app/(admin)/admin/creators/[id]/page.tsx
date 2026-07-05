@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { Avatar } from "@/components/admin/Avatar";
 import { getAdminToken } from "@/lib/auth";
 import { flagCreatorSuspicious, getCreatorDetail, isAuthError, unflagCreatorSuspicious } from "@/lib/api";
@@ -77,11 +78,12 @@ export default function AdminCreatorDetailPage() {
 
   return (
     <div className="min-h-[100dvh]">
-      <AdminNav />
+      <AdminShell />
       <main className="mx-auto max-w-3xl px-6 py-10 space-y-6">
       <Link href="/admin/creators" className="text-sm text-[var(--color-brand)] underline">
         ← Back to database
       </Link>
+      <AdminTabs />
 
       <header className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">

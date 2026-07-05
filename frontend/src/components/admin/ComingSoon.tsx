@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { getAdminToken } from "@/lib/auth";
 
 export function ComingSoon({ title, blurb }: { title: string; blurb: string }) {
@@ -16,12 +17,13 @@ export function ComingSoon({ title, blurb }: { title: string; blurb: string }) {
 
   return (
     <div className="min-h-[100dvh]">
-      <AdminNav />
+      <AdminShell />
       <main className="mx-auto max-w-6xl px-6 py-10">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">
           Operations Terminal
         </p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">{title}</h1>
+        <AdminTabs />
 
         <div className="card-lumina mt-8 flex flex-col items-center gap-3 rounded-[var(--radius-card)] px-6 py-16 text-center">
           <span className="grid h-12 w-12 place-items-center rounded-full border border-[var(--color-brand)]/30 text-[var(--color-brand)]">

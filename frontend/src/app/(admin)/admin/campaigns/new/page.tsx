@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { BannerInput } from "@/components/admin/BannerInput";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
@@ -93,12 +94,13 @@ export default function NewCampaignPage() {
 
   return (
     <div className="min-h-[100dvh]">
-      <AdminNav />
+      <AdminShell />
       <main className="mx-auto max-w-2xl px-6 py-10">
         <Link href="/admin/campaigns" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
           ← Campaigns
         </Link>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[var(--color-text)]">New campaign</h1>
+        <AdminTabs />
 
         <div className="mt-8 space-y-6">
           {/* mode */}
