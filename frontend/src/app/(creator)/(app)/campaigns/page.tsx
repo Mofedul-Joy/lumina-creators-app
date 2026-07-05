@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CreatorNav } from "@/components/creator/CreatorNav";
 import { CampaignCard } from "@/components/campaign/CampaignCard";
 import { getAuthToken } from "@/lib/auth";
 import { browseCampaigns } from "@/lib/campaigns";
@@ -20,9 +19,7 @@ export default function CampaignsPage() {
   });
 
   return (
-    <div className="min-h-[100dvh]">
-      <CreatorNav />
-      <main className="mx-auto max-w-6xl px-6 py-10">
+    <main className="mx-auto max-w-6xl px-6 py-10">
         <div className="mb-8">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Creator workspace</p>
           <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Campaigns</h1>
@@ -55,7 +52,6 @@ export default function CampaignsPage() {
           />
         )}
       </main>
-    </div>
   );
 }
 

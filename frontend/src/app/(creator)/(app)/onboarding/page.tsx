@@ -8,7 +8,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
-import { CreatorNav } from "@/components/creator/CreatorNav";
 import { getAuthToken } from "@/lib/auth";
 import {
   GENDERS,
@@ -53,10 +52,6 @@ const EMPTY: ProfileForm = {
   display_name: "", bio: "", date_of_birth: "", gender: "",
   ethnicity: "", primary_language: "", country: "", city: "",
 };
-// Basics that block "Save & continue" when empty.
-const REQUIRED: (keyof ProfileForm)[] = ["display_name", "date_of_birth", "gender", "primary_language", "country"];
-const REQUIRED_MSG = "This field is required to continue.";
-
 export default function OnboardingPage() {
   const qc = useQueryClient();
   const router = useRouter();
@@ -163,36 +158,22 @@ export default function OnboardingPage() {
   const socials = socialsQ.data ?? [];
   const portfolio = portfolioQ.data ?? [];
   const avatarUrl = profileQ.data?.avatar_url ?? null;
-  // Live completeness for the footer (profileQ is frozen after first load).
-  const looksComplete =
-    REQUIRED.every((f) => form[f].trim()) && socials.length > 0 && portfolio.length > 0;
+  const [saved, setSaved] = useState(false);
 
-  // Save & continue: validate everything, block if incomplete, else save + go.
+  // Nothing here blocks saving — every field is an optional credibility
+  // signal, so this just persists whatever's filled in and confirms it.
   const saveM = useMutation({
     mutationFn: () => updateProfile(bearer, cleanPatch(form)),
-    onSuccess: (data) => {
-      if (data.completed) {
-        router.push("/dashboard");
-      } else {
-        setBanner("Almost there — a couple of required items are still missing.");
-      }
+    onSuccess: () => {
+      setBanner("");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
     },
     onError: (err) => setBanner((err as Error).message),
   });
 
   function saveAndContinue() {
-    const next: typeof errors = {};
-    for (const f of REQUIRED) if (!form[f].trim()) next[f] = REQUIRED_MSG;
-    if (socials.length === 0) next.social = "Add at least one social account.";
-    if (portfolio.length === 0) next.portfolio = "Add at least one video link.";
-    setErrors(next);
-    if (Object.keys(next).length > 0) {
-      setBanner("Please fill in the required fields marked in red before continuing.");
-      const first = document.querySelector('[aria-invalid="true"], [data-invalid="true"]');
-      first?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
-    }
-    setBanner("");
+    setErrors({});
     saveM.mutate();
   }
 
@@ -214,9 +195,7 @@ export default function OnboardingPage() {
     );
 
   return (
-    <div className="min-h-[100dvh]">
-      <CreatorNav />
-      <main className="mx-auto max-w-2xl px-6 py-10 pb-28 space-y-6">
+    <main className="mx-auto max-w-2xl px-6 py-10 pb-28 space-y-6">
         <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)]">
           ← Back to workspace
         </Link>
@@ -224,7 +203,7 @@ export default function OnboardingPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Creator workspace</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Build your profile</h1>
         <p className="mt-2 text-[var(--color-text-secondary)]">
-          Fields marked <span className="text-[var(--color-danger)]">*</span> are required. Complete them to unlock campaigns.
+          Everything below is optional — the more you fill in, the more campaigns you get matched to.
         </p>
       </header>
 
@@ -278,7 +257,6 @@ export default function OnboardingPage() {
 
         <Field
           label="Display name"
-          requiredMark
           value={form.display_name}
           error={errors.display_name}
           onChange={(e) => setForm({ ...form, display_name: e.target.value })}
@@ -291,18 +269,14 @@ export default function OnboardingPage() {
           <Field
             label="Date of birth"
             type="date"
-            requiredMark
             value={form.date_of_birth}
             error={errors.date_of_birth}
             onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}
           />
           <div className="space-y-2">
-            <label className={labelCls}>
-              Gender<span className="ml-0.5 text-[var(--color-danger)]">*</span>
-            </label>
+            <label className={labelCls}>Gender</label>
             <select
-              className={`${controlCls} ${errors.gender ? "border-[var(--color-danger)]" : ""}`}
-              data-invalid={errors.gender ? "true" : "false"}
+              className={controlCls}
               value={form.gender}
               onChange={(e) => setForm({ ...form, gender: e.target.value })}
             >
@@ -311,18 +285,15 @@ export default function OnboardingPage() {
                 <option key={g} value={g}>{g.replace(/_/g, " ")}</option>
               ))}
             </select>
-            {errors.gender ? <p className="text-sm text-[var(--color-danger)]">{errors.gender}</p> : null}
           </div>
           <Field
             label="Primary language"
-            requiredMark
             value={form.primary_language}
             error={errors.primary_language}
             onChange={(e) => setForm({ ...form, primary_language: e.target.value })}
           />
           <Field
             label="Country"
-            requiredMark
             value={form.country}
             error={errors.country}
             onChange={(e) => setForm({ ...form, country: e.target.value })}
@@ -335,15 +306,12 @@ export default function OnboardingPage() {
       {/* SOCIAL ACCOUNTS */}
       <section className={cardCls}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--color-text)]">
-            Social accounts<span className="ml-0.5 text-[var(--color-danger)]">*</span>
-          </h2>
+          <h2 className="text-lg font-semibold text-[var(--color-text)]">Social accounts</h2>
           <span className="tabular text-sm text-[var(--color-text-muted)]">{socials.length} added</span>
         </div>
         <p className="text-sm text-[var(--color-text-secondary)]">
-          At least one is required. <span className="text-[var(--color-brand-soft)]">Creators with 3+ platforms get matched to more campaigns</span> — add every account you post on.
+          <span className="text-[var(--color-brand-soft)]">Creators with 3+ platforms get matched to more campaigns</span> — add every account you post on.
         </p>
-        {errors.social ? <p data-invalid="true" className="text-sm text-[var(--color-danger)]">{errors.social}</p> : null}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {PLATFORMS.map((p) => {
@@ -415,15 +383,12 @@ export default function OnboardingPage() {
       {/* PORTFOLIO (links) */}
       <section className={cardCls}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--color-text)]">
-            Best videos<span className="ml-0.5 text-[var(--color-danger)]">*</span>
-          </h2>
+          <h2 className="text-lg font-semibold text-[var(--color-text)]">Best videos</h2>
           <span className="tabular text-sm text-[var(--color-text-muted)]">{portfolio.length} added</span>
         </div>
         <p className="text-sm text-[var(--color-text-secondary)]">
-          Paste a link to your best content (TikTok, Instagram, YouTube, X, or Facebook) — no heavy uploads, just the URL.
+          <span className="text-[var(--color-brand-soft)]">Boosts credibility with brands</span> — paste a link to your best content (TikTok, Instagram, YouTube, X, or Facebook), no heavy uploads.
         </p>
-        {errors.portfolio ? <p data-invalid="true" className="text-sm text-[var(--color-danger)]">{errors.portfolio}</p> : null}
 
         <ul className="space-y-2">
           {portfolio.map((p) => (
@@ -463,17 +428,16 @@ export default function OnboardingPage() {
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--color-border)] bg-[var(--color-bg-deep)]/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 px-6 py-3">
           <p className="text-sm text-[var(--color-text-secondary)]">
-            {looksComplete ? "All set — save to continue ✓" : "Complete the required fields to continue"}
+            {saved ? "Saved ✓" : "Everything here is optional — save anytime"}
           </p>
-          <div className="w-48">
+          <div className="w-40">
             <Button type="button" loading={saveM.isPending} onClick={saveAndContinue}>
-              Save &amp; continue →
+              Save
             </Button>
           </div>
         </div>
       </div>
       </main>
-    </div>
   );
 }
 

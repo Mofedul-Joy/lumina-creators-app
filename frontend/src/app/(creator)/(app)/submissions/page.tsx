@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CreatorNav } from "@/components/creator/CreatorNav";
 import { getAuthToken } from "@/lib/auth";
 import { browseCampaigns, listSubmissions, uploadProofVideo } from "@/lib/campaigns";
 import { fmtInt, fmtMoney } from "@/lib/format";
@@ -72,9 +71,7 @@ export default function SubmissionsPage() {
   );
 
   return (
-    <div className="min-h-[100dvh]">
-      <CreatorNav />
-      <main className="mx-auto max-w-5xl px-6 py-10">
+    <main className="mx-auto max-w-5xl px-6 py-10">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Creator workspace</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">My submissions</h1>
         <p className="mt-2 text-[var(--color-text-secondary)]">
@@ -201,6 +198,5 @@ export default function SubmissionsPage() {
           </>
         )}
       </main>
-    </div>
   );
 }
