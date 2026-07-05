@@ -15,6 +15,8 @@ class ProfileIn(BaseModel):
     languages: Optional[List[str]] = None
     country: Optional[str] = None
     city: Optional[str] = None
+    payout_method: Optional[str] = None
+    payout_address: Optional[str] = None
     avatar_object_id: Optional[str] = None
 
 
@@ -28,6 +30,8 @@ class ProfileOut(BaseModel):
     languages: List[str] = []
     country: Optional[str] = None
     city: Optional[str] = None
+    payout_method: Optional[str] = None
+    payout_address: Optional[str] = None
     avatar_object_id: Optional[str] = None
     avatar_url: Optional[str] = None
     completed: bool = False

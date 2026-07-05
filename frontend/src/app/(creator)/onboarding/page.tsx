@@ -48,10 +48,13 @@ type ProfileForm = {
   primary_language: string;
   country: string;
   city: string;
+  payout_method: string;
+  payout_address: string;
 };
 const EMPTY: ProfileForm = {
   display_name: "", bio: "", date_of_birth: "", gender: "",
   ethnicity: "", primary_language: "", country: "", city: "",
+  payout_method: "", payout_address: "",
 };
 // Basics that block "Save & continue" when empty.
 const REQUIRED: (keyof ProfileForm)[] = ["display_name", "date_of_birth", "gender", "primary_language", "country"];
@@ -93,6 +96,7 @@ export default function OnboardingPage() {
         display_name: d.display_name ?? "", bio: d.bio ?? "", date_of_birth: d.date_of_birth ?? "",
         gender: d.gender ?? "", ethnicity: d.ethnicity ?? "", primary_language: d.primary_language ?? "",
         country: d.country ?? "", city: d.city ?? "",
+        payout_method: d.payout_method ?? "", payout_address: d.payout_address ?? "",
       });
     }
   }, [profileQ.data]);
@@ -332,6 +336,35 @@ export default function OnboardingPage() {
         </div>
       </section>
 
+      {/* GETTING PAID — where we send your earnings (Clippers pattern) */}
+      <section className={cardCls}>
+        <h2 className="text-lg font-semibold text-[var(--color-text)]">Getting paid</h2>
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          Where should we send your earnings? You can update this any time.
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <label className={labelCls}>Payout method</label>
+            <select
+              className={controlCls}
+              value={form.payout_method}
+              onChange={(e) => setForm({ ...form, payout_method: e.target.value })}
+            >
+              <option value="">Select…</option>
+              <option value="paypal">PayPal</option>
+              <option value="solana">Solana (USDC)</option>
+              <option value="whop">Whop</option>
+            </select>
+          </div>
+          <Field
+            label={form.payout_method === "solana" ? "Wallet address" : form.payout_method === "whop" ? "Whop username" : "PayPal email"}
+            placeholder={form.payout_method === "solana" ? "Your Solana wallet…" : form.payout_method === "whop" ? "@username" : "you@email.com"}
+            value={form.payout_address}
+            onChange={(e) => setForm({ ...form, payout_address: e.target.value })}
+          />
+        </div>
+      </section>
+
       {/* SOCIAL ACCOUNTS */}
       <section className={cardCls}>
         <div className="flex items-center justify-between">
@@ -487,5 +520,7 @@ function cleanPatch(form: ProfileForm): ProfileIn {
   if (form.primary_language) out.primary_language = form.primary_language;
   if (form.country) out.country = form.country;
   if (form.city) out.city = form.city;
+  if (form.payout_method) out.payout_method = form.payout_method;
+  if (form.payout_address) out.payout_address = form.payout_address;
   return out;
 }

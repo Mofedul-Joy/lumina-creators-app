@@ -208,6 +208,18 @@ export default function AdminCampaignDetailPage() {
                       <div><p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Budget</p><p className="tabular text-[var(--color-text)]">{fmtMoney(form.budget || 0)}</p></div>
                       <div><p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Budget used</p><p className="tabular text-[var(--color-text)]">{fmtMoney(c.spent_amount)}</p></div>
                     </div>
+                    {/* budget usage bar (Clippers pattern) */}
+                    <div className="mt-3">
+                      <div className="h-1.5 overflow-hidden rounded-full bg-[var(--color-surface-2)]">
+                        <div
+                          className="h-full rounded-full bg-[var(--color-brand)]"
+                          style={{ width: `${Math.min(100, (Number(c.spent_amount) / Math.max(1, Number(form.budget || c.budget))) * 100)}%` }}
+                        />
+                      </div>
+                      <p className="mt-1 text-right text-[10px] text-[var(--color-text-muted)]">
+                        {Math.min(100, Math.round((Number(c.spent_amount) / Math.max(1, Number(form.budget || c.budget))) * 100))}% of budget used
+                      </p>
+                    </div>
                     <div className="mt-4">
                       <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Accepted platforms</p>
                       <div className="mt-1.5 flex flex-wrap gap-1.5">

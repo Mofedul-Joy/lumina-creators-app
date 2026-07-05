@@ -129,6 +129,8 @@ export type ProfileIn = {
   languages?: string[];
   country?: string;
   city?: string;
+  payout_method?: string;
+  payout_address?: string;
   avatar_object_id?: string;
 };
 
@@ -142,6 +144,8 @@ export type ProfileOut = {
   languages: string[];
   country: string | null;
   city: string | null;
+  payout_method: string | null;
+  payout_address: string | null;
   avatar_object_id: string | null;
   avatar_url: string | null;
   completed: boolean;

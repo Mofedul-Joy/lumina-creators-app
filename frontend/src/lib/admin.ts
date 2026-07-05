@@ -154,10 +154,15 @@ export const rejectSubmission = (id: string, note: string) =>
     ...auth(),
   });
 
+export const scrapeNow = (id: string) =>
+  apiFetch<AdminSubmission>(`/api/admin/submissions/${id}/scrape-now`, { method: "POST", ...auth() });
+
 /* ---- payouts ---- */
 export type OwedRow = {
   creator_id: string;
   display_name: string | null;
+  payout_method: string | null;
+  payout_address: string | null;
   submission_count: number;
   amount_owed: number | string;
 };

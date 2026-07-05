@@ -19,6 +19,7 @@ export default function AdminPaymentsPage() {
   const [ready, setReady] = useState(false);
   const [hasToken, setHasToken] = useState(false);
   const [method, setMethod] = useState<Record<string, PayoutMethod>>({});
+  const [copiedAddr, setCopiedAddr] = useState("");
 
   useEffect(() => {
     setHasToken(!!getAdminToken());
@@ -144,7 +145,20 @@ export default function AdminPaymentsPage() {
                 <tbody>
                   {owed.map((r) => (
                     <tr key={r.creator_id} className="border-t border-[var(--color-border)]/40">
-                      <td className="px-6 py-4 text-[var(--color-text)]">{r.display_name ?? "Unnamed"}</td>
+                      <td className="px-6 py-4">
+                        <span className="text-[var(--color-text)]">{r.display_name ?? "Unnamed"}</span>
+                        {r.payout_address ? (
+                          <button
+                            onClick={() => { navigator.clipboard.writeText(r.payout_address!); setCopiedAddr(r.creator_id); setTimeout(() => setCopiedAddr(""), 1500); }}
+                            title="Copy payout address"
+                            className="mt-0.5 block cursor-pointer text-xs text-[var(--color-text-muted)] hover:text-[var(--color-brand)]"
+                          >
+                            {copiedAddr === r.creator_id ? "Copied ✓" : `${METHOD_LABEL[r.payout_method ?? ""] ?? r.payout_method ?? ""} · ${r.payout_address.length > 28 ? r.payout_address.slice(0, 28) + "…" : r.payout_address} ⧉`}
+                          </button>
+                        ) : (
+                          <span className="mt-0.5 block text-xs text-[var(--color-text-muted)]">No payout details set</span>
+                        )}
+                      </td>
                       <td className="tabular px-6 py-4 text-right text-[var(--color-text-secondary)]">{r.submission_count}</td>
                       <td className="tabular px-6 py-4 text-right font-medium text-[var(--color-text)]">{fmtMoney(r.amount_owed)}</td>
                       <td className="px-6 py-4">

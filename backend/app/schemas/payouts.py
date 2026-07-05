@@ -10,6 +10,8 @@ from pydantic import BaseModel
 class OwedRow(BaseModel):
     creator_id: str
     display_name: Optional[str] = None
+    payout_method: Optional[str] = None
+    payout_address: Optional[str] = None
     submission_count: int
     amount_owed: Decimal
 

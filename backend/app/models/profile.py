@@ -87,6 +87,8 @@ class CreatorProfile(TimestampMixin, Base):
     )
     country: Mapped[Optional[str]] = mapped_column(Text)
     city: Mapped[Optional[str]] = mapped_column(Text)
+    payout_method: Mapped[Optional[str]] = mapped_column(Text)   # paypal | solana | whop
+    payout_address: Mapped[Optional[str]] = mapped_column(Text)  # email / wallet / handle
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
 

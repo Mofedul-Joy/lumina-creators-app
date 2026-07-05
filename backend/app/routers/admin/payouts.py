@@ -25,8 +25,9 @@ def _payout_row(p: Payout, name) -> PayoutRow:
 @router.get("/owed", response_model=list[OwedRow])
 def owed(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     return [
-        OwedRow(creator_id=str(cid), display_name=name, submission_count=n, amount_owed=owed)
-        for cid, name, n, owed in svc.amounts_owed(db)
+        OwedRow(creator_id=str(cid), display_name=name, payout_method=pm, payout_address=pa,
+                submission_count=n, amount_owed=owed)
+        for cid, name, pm, pa, n, owed in svc.amounts_owed(db)
     ]
 
 

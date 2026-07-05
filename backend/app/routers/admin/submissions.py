@@ -60,6 +60,28 @@ def counts(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_
                             rejected=c.get("rejected", 0))
 
 
+@router.post("/{submission_id}/scrape-now", response_model=AdminSubmissionRow)
+def scrape_now(submission_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
+               db: Session = Depends(get_db)):
+    """Queue an immediate stat refresh — the Apify worker picks it up within ~60s."""
+    from app.core.security import _now
+    from app.models import ScrapeJob
+    sub = db.get(Submission, submission_id)
+    if sub is None:
+        from fastapi import HTTPException, status as st
+        raise HTTPException(st.HTTP_404_NOT_FOUND, "Submission not found")
+    job = db.scalar(select(ScrapeJob).where(ScrapeJob.submission_id == submission_id))
+    if job is None:
+        job = ScrapeJob(submission_id=submission_id)
+        db.add(job)
+    job.status = "queued"
+    job.attempts = 0
+    job.next_run_at = _now()
+    sub.scrape_status = "pending"
+    db.commit()
+    return _reload(db, sub)
+
+
 @router.post("/{submission_id}/verify", response_model=AdminSubmissionRow)
 def verify(submission_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
            db: Session = Depends(get_db)):

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pager } from "@/components/admin/Pager";
-import { listSubmissions, rejectSubmission, verifySubmission } from "@/lib/admin";
+import { listSubmissions, rejectSubmission, scrapeNow, verifySubmission } from "@/lib/admin";
 import { fmtInt, fmtMoney } from "@/lib/format";
 
 const PLATFORM_LABEL: Record<string, string> = {
@@ -35,6 +35,11 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["dash-submissions"] });
   const verifyM = useMutation({ mutationFn: verifySubmission, onSuccess: refresh });
+  const [refreshed, setRefreshed] = useState<string | null>(null);
+  const scrapeM = useMutation({
+    mutationFn: scrapeNow,
+    onSuccess: (d) => { setRefreshed(d.id); setTimeout(() => setRefreshed(null), 3000); refresh(); },
+  });
   const rejectM = useMutation({
     mutationFn: ({ id, note }: { id: string; note: string }) => rejectSubmission(id, note),
     onSuccess: () => { setRejecting(null); setNote(""); refresh(); },
@@ -79,7 +84,17 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
                   <p className="truncate text-sm font-medium text-[var(--color-text)]">{s.creator_name ?? "Unnamed"}</p>
                   <p className="truncate text-xs text-[var(--color-text-muted)]">{s.campaign_name}</p>
                   <div className="mt-2 flex items-center justify-between text-sm">
-                    <span className="tabular text-[var(--color-text-secondary)]">{fmtInt(s.views)} views</span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="tabular text-[var(--color-text-secondary)]">{fmtInt(s.views)} views</span>
+                      <button
+                        title="Refresh stats now (Apify picks it up within a minute)"
+                        disabled={scrapeM.isPending}
+                        onClick={() => scrapeM.mutate(s.id)}
+                        className="cursor-pointer text-[var(--color-text-muted)] transition hover:text-[var(--color-brand)] disabled:opacity-50"
+                      >
+                        {refreshed === s.id ? "✓ queued" : "↻"}
+                      </button>
+                    </span>
                     <span className="tabular font-medium text-[var(--color-text)]">{fmtMoney(s.estimated_amount)}</span>
                   </div>
                   {rejecting === s.id ? (

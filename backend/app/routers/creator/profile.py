@@ -36,6 +36,7 @@ def _profile_out(db: Session, prof: CreatorProfile, complete: bool, missing: lis
         display_name=prof.display_name, bio=prof.bio, date_of_birth=prof.date_of_birth,
         gender=prof.gender, ethnicity=prof.ethnicity, primary_language=prof.primary_language,
         languages=prof.languages or [], country=prof.country, city=prof.city,
+        payout_method=prof.payout_method, payout_address=prof.payout_address,
         avatar_object_id=str(prof.avatar_object_id) if prof.avatar_object_id else None,
         avatar_url=_avatar_url(db, prof),
         completed=complete, missing=missing,
