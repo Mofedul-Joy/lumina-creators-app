@@ -8,6 +8,7 @@ UGC content, and a lot of infrastructure to take on speculatively.
 """
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass
 from typing import Optional
@@ -53,12 +54,29 @@ def _token() -> str:
     return token
 
 
+_IG_SHORTCODE_RE = re.compile(r"instagram\.com/(?:reel|reels|p|tv)/([A-Za-z0-9_-]+)", re.IGNORECASE)
+
+
+def _to_ig_reel_url(url: str) -> str:
+    """apify~instagram-reel-scraper only accepts canonical /reel/ URLs — convert
+    any /reels/, /p/, /tv/ form so the run isn't rejected with a 400."""
+    m = _IG_SHORTCODE_RE.search(url)
+    return f"https://www.instagram.com/reel/{m.group(1)}/" if m else url
+
+
 def _run_input(platform: str, post_urls: list[str]) -> dict:
     if platform == "instagram":
-        # resultsLimit MUST be 1 per profile URL — omitting it fetches every
-        # reel on the profile instead of just the one requested (a lumina-
-        # clippers incident once returned 3,041 reels for ~150 requested URLs).
-        return {"directUrls": post_urls, "resultsLimit": 1}
+        # The actor's input field is `username` (a list of reel URLs), NOT
+        # `directUrls` — sending directUrls returns a 400 at run creation.
+        # resultsLimit=1 keeps it to one result per input URL (unbounded, the
+        # actor falls back to "all reels on the profile" — a lumina-clippers
+        # incident once returned 3,041 reels for ~150 requested URLs).
+        return {
+            "dataDetailLevel": "basicData",
+            "resultsLimit": 1,
+            "skipPinnedPosts": False,
+            "username": [_to_ig_reel_url(u) for u in post_urls],
+        }
     if platform == "tiktok":
         # Covers are needed for submission thumbnails — this was previously off,
         # which is the whole reason TikTok thumbnails never showed up anywhere.
@@ -68,7 +86,9 @@ def _run_input(platform: str, post_urls: list[str]) -> dict:
     if platform == "twitter":
         return {"startUrls": post_urls}
     if platform == "facebook":
-        return {"startUrls": post_urls}
+        # clappi~facebook-posts-reels-scraper's input field is `postUrls`, not
+        # `startUrls` — startUrls is rejected with a 400.
+        return {"postUrls": post_urls}
     raise ValueError(f"No Apify actor configured for platform {platform!r}")
 
 
@@ -150,8 +170,8 @@ def _item_stats(platform: str, item: dict) -> ScrapedStats:
     if platform == "twitter":
         return ScrapedStats(_nn(item.get("viewCount")), _nn(item.get("likeCount")), _nn(item.get("replyCount")))
     if platform == "facebook":
-        return ScrapedStats(_nn(item.get("videoViewCount") or item.get("viewsCount")),
-                             _nn(item.get("likesCount") or item.get("reactionsCount")), _nn(item.get("commentsCount")))
+        # clappi actor returns flat fields: views/likes/comments/shares.
+        return ScrapedStats(_nn(item.get("views")), _nn(item.get("likes")), _nn(item.get("comments")))
     return ScrapedStats(0, 0, 0)
 
 

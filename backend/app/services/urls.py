@@ -90,6 +90,15 @@ def is_video_url(url: str) -> bool:
 
 _YOUTUBE_ID_RE = re.compile(r"(?:v=|/shorts/|/embed/|youtu\.be/)([A-Za-z0-9_-]{11})")
 _TWEET_ID_RE = re.compile(r"/status/(\d+)")
+# Instagram serves the same shortcode under /reel/, /reels/, /p/, and /tv/ —
+# match on the shortcode so a submission stored as /reels/X still matches the
+# Apify item the actor returns as /reel/X.
+_IG_SHORTCODE_RE = re.compile(r"instagram\.com/(?:reel|reels|p|tv)/([A-Za-z0-9_-]+)", re.IGNORECASE)
+
+
+def instagram_shortcode(url: str) -> str | None:
+    m = _IG_SHORTCODE_RE.search(url)
+    return m.group(1) if m else None
 
 
 def youtube_video_id(url: str) -> str | None:
@@ -115,6 +124,9 @@ def match_key(platform: str, url: str) -> str:
         return youtube_video_id(url) or canonicalize_url(url)
     if platform == "twitter":
         return tweet_id(url) or canonicalize_url(url)
+    if platform == "instagram":
+        sc = instagram_shortcode(url)
+        return f"ig:{sc}" if sc else canonicalize_url(url)
     return canonicalize_url(url)
 
 
