@@ -20,6 +20,15 @@ const STATUSES = [
 ] as const;
 const PAGE = 6;
 
+/** "updated 2h ago" freshness label from the Apify stat-updater. */
+function agoLabel(iso: string | null): string {
+  if (!iso) return "not scraped yet";
+  const mins = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 60) return `updated ${mins}m ago`;
+  const h = Math.floor(mins / 60);
+  return h < 48 ? `updated ${h}h ago` : `updated ${Math.floor(h / 24)}d ago`;
+}
+
 export function SubmissionsSection({ campaignId }: { campaignId?: string } = {}) {
   const qc = useQueryClient();
   const [status, setStatus] = useState("");
@@ -82,7 +91,10 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
                 </a>
                 <div className="p-3">
                   <p className="truncate text-sm font-medium text-[var(--color-text)]">{s.creator_name ?? "Unnamed"}</p>
-                  <p className="truncate text-xs text-[var(--color-text-muted)]">{s.campaign_name}</p>
+                  <p className="truncate text-xs text-[var(--color-text-muted)]">
+                    {s.campaign_name}
+                    <span className="float-right">{agoLabel(s.last_scraped_at)}</span>
+                  </p>
                   <div className="mt-2 flex items-center justify-between text-sm">
                     <span className="flex items-center gap-1.5">
                       <span className="tabular text-[var(--color-text-secondary)]">{fmtInt(s.views)} views</span>

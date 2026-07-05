@@ -33,7 +33,8 @@ def _row(db: Session, sub: Submission, name: str, mode: str, display_name, is_pa
         estimated_amount=sub.estimated_amount, verification_status=sub.verification_status,
         scrape_status=sub.scrape_status, status=svc.lifecycle_status(sub, is_paid),
         verification_note=sub.verification_note,
-        proof_url=_proof_url(db, sub), created_at=sub.created_at,
+        proof_url=_proof_url(db, sub), last_scraped_at=sub.last_scraped_at,
+        created_at=sub.created_at,
     )
 
 

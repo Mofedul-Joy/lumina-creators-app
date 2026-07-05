@@ -80,7 +80,9 @@ export default function AdminUsersPage() {
   const [copied, setCopied] = useState("");
   function copyInvite(realm: "admin" | "client", email: string) {
     const link = `${window.location.origin}/${realm === "admin" ? "admin/login" : "client/login"}?email=${encodeURIComponent(email)}`;
-    navigator.clipboard.writeText(link);
+    // clipboard API can reject (permissions/insecure context) — fall back so the
+    // button always gives feedback and the link is still obtainable
+    navigator.clipboard?.writeText(link).catch(() => window.prompt("Copy this invite link:", link));
     setCopied(email);
     setTimeout(() => setCopied(""), 1500);
   }

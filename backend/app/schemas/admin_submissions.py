@@ -24,6 +24,7 @@ class AdminSubmissionRow(BaseModel):
     status: str  # computed lifecycle: awaiting_stats|proof_uploaded|stats_verified|paid|rejected
     verification_note: Optional[str] = None
     proof_url: Optional[str] = None
+    last_scraped_at: Optional[datetime] = None
     created_at: datetime
 
 

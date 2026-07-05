@@ -130,6 +130,7 @@ export type AdminSubmission = {
   scrape_status: string;
   verification_note: string | null;
   proof_url: string | null;
+  last_scraped_at: string | null;
   created_at: string;
 };
 

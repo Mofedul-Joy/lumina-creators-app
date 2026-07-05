@@ -34,7 +34,7 @@ def create_submission(db: Session, creator_id: uuid.UUID, campaign_slug: str, po
     canonical = urls.canonicalize_url(post_url)
     url_hash = urls.url_hash(post_url)
     if db.scalar(select(Submission.id).where(Submission.campaign_id == campaign.id, Submission.url_hash == url_hash)):
-        raise HTTPException(status.HTTP_409_CONFLICT, "This post was already submitted to this campaign")
+        raise HTTPException(status.HTTP_409_CONFLICT, "This post URL has already been submitted to this campaign (possibly by another creator) — each post can only be entered once")
 
     sub = Submission(
         participation_id=participation.id, campaign_id=campaign.id, creator_id=creator_id,
@@ -50,7 +50,7 @@ def create_submission(db: Session, creator_id: uuid.UUID, campaign_slug: str, po
         # Concurrent submit of the same post won the unique (campaign_id, url_hash)
         # race between the pre-check above and this commit.
         db.rollback()
-        raise HTTPException(status.HTTP_409_CONFLICT, "This post was already submitted to this campaign")
+        raise HTTPException(status.HTTP_409_CONFLICT, "This post URL has already been submitted to this campaign (possibly by another creator) — each post can only be entered once")
     db.refresh(sub)
     return sub
 

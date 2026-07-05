@@ -39,7 +39,12 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
     stmt = select(Creator).outerjoin(CreatorProfile, CreatorProfile.creator_id == Creator.id)
     P = CreatorProfile
     if q:
-        stmt = stmt.where(or_(Creator.email.ilike(f"%{q}%"), P.display_name.ilike(f"%{q}%")))
+        # match the email's local part only — '%ma%' must not hit every '@gmail.com'
+        from sqlalchemy import func as sqlfunc
+        stmt = stmt.where(or_(
+            sqlfunc.split_part(Creator.email, "@", 1).ilike(f"%{q}%"),
+            P.display_name.ilike(f"%{q}%"),
+        ))
     if gender:
         stmt = stmt.where(P.gender == gender)
     if ethnicity:

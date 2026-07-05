@@ -288,8 +288,8 @@ export default function OnboardingPage() {
           onChange={(e) => setForm({ ...form, display_name: e.target.value })}
         />
         <div className="space-y-2">
-          <label className={labelCls}>Bio</label>
-          <textarea rows={3} className={controlCls + " py-2"} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
+          <label htmlFor="onboarding-bio" className={labelCls}>Bio</label>
+          <textarea id="onboarding-bio" rows={3} className={controlCls + " py-2"} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field
