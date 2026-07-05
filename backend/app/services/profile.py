@@ -59,11 +59,19 @@ def update_profile(db: Session, creator_id: uuid.UUID, data: dict) -> CreatorPro
         _require_owned_object(db, creator_id, data["avatar_object_id"], "avatar")
     for field in ("display_name", "bio", "date_of_birth", "gender", "ethnicity",
                   "primary_language", "country", "city", "avatar_object_id",
-                  "payout_method", "payout_address"):
+                  "payout_method", "payout_address",
+                  "payout_paypal", "payout_solana", "payout_whop"):
         if field in data and data[field] is not None:
             setattr(prof, field, data[field])
     if data.get("languages") is not None:
         prof.languages = data["languages"]
+    # Keep payout_address as the resolved address for the selected method so
+    # the admin payout prefill + claim gate (which read payout_address) stay
+    # correct regardless of which per-method field the creator just edited.
+    if prof.payout_method in _PAYOUT_METHODS:
+        resolved = getattr(prof, f"payout_{prof.payout_method}", None)
+        if resolved:
+            prof.payout_address = resolved
     db.commit()
     recompute_completion(db, creator_id)
     return prof

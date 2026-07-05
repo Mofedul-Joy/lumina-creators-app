@@ -17,7 +17,10 @@ class ProfileIn(BaseModel):
     city: Optional[str] = None
     avatar_object_id: Optional[str] = None
     payout_method: Optional[str] = None   # paypal | solana | whop
-    payout_address: Optional[str] = None  # email / wallet / handle
+    payout_address: Optional[str] = None  # legacy single address (still accepted)
+    payout_paypal: Optional[str] = None
+    payout_solana: Optional[str] = None
+    payout_whop: Optional[str] = None
 
 
 class ProfileOut(BaseModel):
@@ -34,6 +37,9 @@ class ProfileOut(BaseModel):
     avatar_url: Optional[str] = None
     payout_method: Optional[str] = None
     payout_address: Optional[str] = None
+    payout_paypal: Optional[str] = None
+    payout_solana: Optional[str] = None
+    payout_whop: Optional[str] = None
     completed: bool = False
     missing: List[str] = []
 

@@ -7,6 +7,7 @@ import { publicApi, type PublicCampaign } from "@/lib/api";
 import { fmtMoney } from "@/lib/format";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { SkeletonCardGrid } from "@/components/ui/Skeleton";
+import { LuminaMark } from "@/components/ui/LuminaMark";
 
 const MODE_LABEL: Record<PublicCampaign["mode"], string> = {
   create_new: "Create new content",
@@ -76,11 +77,7 @@ export default function Home() {
       <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-bg-deep)]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
           <Link href="/" className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--color-brand)] text-[var(--color-on-brand)]">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M8 5v14l11-7L8 5Z" fill="currentColor" />
-              </svg>
-            </span>
+            <LuminaMark size={28} />
             <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text)]">Lumina Creators</span>
           </Link>
           <Link

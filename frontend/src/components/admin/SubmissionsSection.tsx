@@ -7,6 +7,7 @@ import { Pager } from "@/components/admin/Pager";
 import { SubmissionDetailModal } from "@/components/admin/SubmissionDetailModal";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { SkeletonCardGrid } from "@/components/ui/Skeleton";
+import { SubmissionThumbnail } from "@/components/ui/SubmissionThumbnail";
 import { listAdminCampaigns, listSubmissions, type AdminSubmission } from "@/lib/admin";
 import { fmtInt, fmtMoney } from "@/lib/format";
 
@@ -49,6 +50,7 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
 
   const all = q.data ?? [];
   const filtered = useMemo(() => (status ? all.filter((s) => s.status === status) : all), [all, status]);
+  const thumbPool = useMemo(() => all.map((s) => s.thumbnail_url).filter(Boolean) as string[], [all]);
   const pageCount = Math.ceil(filtered.length / PAGE);
   const rows = filtered.slice((page - 1) * PAGE, page * PAGE);
 
@@ -105,9 +107,12 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
                 onClick={() => setDetail(s)}
                 className="card-lumina card-interactive flex flex-col overflow-hidden rounded-[var(--radius-card)] text-left"
               >
-                <div
-                  className="relative aspect-video w-full bg-gradient-to-br from-[var(--color-brand)]/25 to-[var(--color-bg-deep)] bg-cover bg-center"
-                  style={s.thumbnail_url ? { backgroundImage: `url(${s.thumbnail_url})` } : undefined}
+                <SubmissionThumbnail
+                  thumbnailUrl={s.thumbnail_url}
+                  postUrl={s.post_url}
+                  platform={s.platform}
+                  pool={thumbPool}
+                  className="aspect-video w-full"
                 >
                   <span className="absolute inset-0 grid place-items-center">
                     <span className="grid h-11 w-11 place-items-center rounded-full bg-black/40 text-white">
@@ -121,7 +126,7 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
                   {s.post_unavailable ? (
                     <span className="absolute bottom-2 left-2 rounded-full bg-red-500/80 px-2 py-0.5 text-[10px] font-medium text-white">Post unavailable</span>
                   ) : null}
-                </div>
+                </SubmissionThumbnail>
                 {/* bottom detail section — solid surface for legibility against
                     the atmospheric background (was low-contrast before) */}
                 <div className="flex flex-1 flex-col gap-2 bg-[var(--color-surface-2)] p-4">

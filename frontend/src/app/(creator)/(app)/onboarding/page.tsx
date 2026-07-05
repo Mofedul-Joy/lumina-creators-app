@@ -81,7 +81,11 @@ export default function ProfilePage() {
   const portfolioQ = useQuery({ queryKey: ["portfolio"], queryFn: () => listPortfolio(bearer), enabled, retry: false });
 
   const [form, setForm] = useState<ProfileForm>(EMPTY);
-  const [payout, setPayout] = useState<{ method: string; address: string }>({ method: "", address: "" });
+  // Each method keeps its own address so switching method never reuses another
+  // method's value.
+  const [payout, setPayout] = useState<{ method: string; paypal: string; solana: string; whop: string }>({
+    method: "", paypal: "", solana: "", whop: "",
+  });
   const [banner, setBanner] = useState("");
   const [saved, setSaved] = useState(false);
   const seeded = useRef(false);
@@ -95,7 +99,13 @@ export default function ProfilePage() {
         gender: d.gender ?? "", ethnicity: d.ethnicity ?? "", primary_language: d.primary_language ?? "",
         country: d.country ?? "", city: d.city ?? "",
       });
-      setPayout({ method: d.payout_method ?? "", address: d.payout_address ?? "" });
+      // fall back to the legacy single address for whichever method it belonged to
+      setPayout({
+        method: d.payout_method ?? "",
+        paypal: d.payout_paypal ?? (d.payout_method === "paypal" ? d.payout_address ?? "" : ""),
+        solana: d.payout_solana ?? (d.payout_method === "solana" ? d.payout_address ?? "" : ""),
+        whop: d.payout_whop ?? (d.payout_method === "whop" ? d.payout_address ?? "" : ""),
+      });
     }
   }, [profileQ.data]);
 
@@ -161,7 +171,9 @@ export default function ProfilePage() {
   function savePayment() {
     saveM.mutate({
       payout_method: (payout.method || undefined) as PayoutMethod | undefined,
-      payout_address: payout.address || undefined,
+      payout_paypal: payout.paypal || undefined,
+      payout_solana: payout.solana || undefined,
+      payout_whop: payout.whop || undefined,
     });
   }
 
@@ -362,7 +374,12 @@ export default function ProfilePage() {
           {payout.method ? (
             <div className="space-y-2">
               <label className={labelCls}>{PAYOUT_LABEL[payout.method as PayoutMethod]} details</label>
-              <input className={controlCls} placeholder={PAYOUT_PLACEHOLDER[payout.method as PayoutMethod]} value={payout.address} onChange={(e) => setPayout({ ...payout, address: e.target.value })} />
+              <input
+                className={controlCls}
+                placeholder={PAYOUT_PLACEHOLDER[payout.method as PayoutMethod]}
+                value={payout[payout.method as PayoutMethod]}
+                onChange={(e) => setPayout({ ...payout, [payout.method]: e.target.value } as typeof payout)}
+              />
             </div>
           ) : null}
           <div className="flex items-center justify-end gap-3 pt-2">

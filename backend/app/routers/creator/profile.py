@@ -39,6 +39,8 @@ def _profile_out(db: Session, prof: CreatorProfile, complete: bool, missing: lis
         avatar_object_id=str(prof.avatar_object_id) if prof.avatar_object_id else None,
         avatar_url=_avatar_url(db, prof),
         payout_method=prof.payout_method, payout_address=prof.payout_address,
+        payout_paypal=prof.payout_paypal, payout_solana=prof.payout_solana,
+        payout_whop=prof.payout_whop,
         completed=complete, missing=missing,
     )
 

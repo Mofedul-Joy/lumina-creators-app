@@ -189,6 +189,9 @@ export type ProfileIn = {
   avatar_object_id?: string;
   payout_method?: PayoutMethod;
   payout_address?: string;
+  payout_paypal?: string;
+  payout_solana?: string;
+  payout_whop?: string;
 };
 
 export type ProfileOut = {
@@ -205,6 +208,9 @@ export type ProfileOut = {
   avatar_url: string | null;
   payout_method: PayoutMethod | null;
   payout_address: string | null;
+  payout_paypal: string | null;
+  payout_solana: string | null;
+  payout_whop: string | null;
   completed: boolean;
   missing: string[];
 };

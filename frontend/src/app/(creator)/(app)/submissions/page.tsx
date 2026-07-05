@@ -9,6 +9,7 @@ import { ApiError } from "@/lib/api";
 import { fmtInt, fmtMoney } from "@/lib/format";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { SkeletonCardGrid, SkeletonStats } from "@/components/ui/Skeleton";
+import { SubmissionThumbnail } from "@/components/ui/SubmissionThumbnail";
 
 const STATUS_STYLE: Record<string, string> = {
   approved: "border-[var(--color-brand)]/40 text-[var(--color-brand)]",
@@ -76,6 +77,7 @@ export default function SubmissionsPage() {
     );
 
   const subs = subsQ.data ?? [];
+  const thumbPool = subs.map((s) => s.thumbnail_url).filter(Boolean) as string[];
   const totals = subs.reduce(
     (acc, s) => ({
       views: acc.views + s.views,
@@ -134,21 +136,23 @@ export default function SubmissionsPage() {
                 const needsProof = modeById.get(s.campaign_id) === "create_new";
                 return (
                   <div key={s.id} className="card-lumina flex flex-col overflow-hidden rounded-[var(--radius-card)]">
-                    <a
-                      href={s.post_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="relative block aspect-video w-full bg-gradient-to-br from-[var(--color-brand)]/20 to-[var(--color-bg-deep)] bg-cover bg-center"
-                      style={s.thumbnail_url ? { backgroundImage: `url(${s.thumbnail_url})` } : undefined}
-                    >
-                      <span className="absolute inset-0 grid place-items-center">
-                        <span className="grid h-11 w-11 place-items-center rounded-full bg-black/40 text-white">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7L8 5Z" /></svg>
+                    <a href={s.post_url} target="_blank" rel="noreferrer" className="block">
+                      <SubmissionThumbnail
+                        thumbnailUrl={s.thumbnail_url}
+                        postUrl={s.post_url}
+                        platform={s.platform}
+                        pool={thumbPool}
+                        className="aspect-video w-full"
+                      >
+                        <span className="absolute inset-0 grid place-items-center">
+                          <span className="grid h-11 w-11 place-items-center rounded-full bg-black/40 text-white">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7L8 5Z" /></svg>
+                          </span>
                         </span>
-                      </span>
-                      <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/50 text-white">
-                        <PlatformIcon name={s.platform} className="h-3.5 w-3.5" />
-                      </span>
+                        <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/50 text-white">
+                          <PlatformIcon name={s.platform} className="h-3.5 w-3.5" />
+                        </span>
+                      </SubmissionThumbnail>
                     </a>
                     <div className="flex flex-1 flex-col p-4">
                       <div className="flex items-start justify-between gap-2">

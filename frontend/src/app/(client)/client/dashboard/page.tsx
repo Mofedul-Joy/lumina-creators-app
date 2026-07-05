@@ -9,7 +9,9 @@ import { listClientCampaigns, listClientSubmissions, type ClientCampaign } from 
 import { downloadCsv } from "@/lib/api";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { SkeletonCardGrid, SkeletonStats } from "@/components/ui/Skeleton";
+import { SubmissionThumbnail } from "@/components/ui/SubmissionThumbnail";
 import { fmtInt } from "@/lib/format";
+import { LuminaMark } from "@/components/ui/LuminaMark";
 
 const ALL_PLATFORMS = ["tiktok", "instagram", "youtube", "twitter", "facebook"] as const;
 
@@ -35,6 +37,11 @@ function SubmissionsSection({ campaign }: { campaign: ClientCampaign }) {
   const rows = useMemo(
     () => (q.data ?? []).filter((s) => !platform || s.platform === platform),
     [q.data, platform],
+  );
+  // pool of real thumbnails in this campaign, borrowed by cards that lack one
+  const thumbPool = useMemo(
+    () => (q.data ?? []).map((s) => s.thumbnail_url).filter(Boolean) as string[],
+    [q.data],
   );
 
   return (
@@ -91,9 +98,12 @@ function SubmissionsSection({ campaign }: { campaign: ClientCampaign }) {
               rel="noreferrer"
               className="card-lumina card-interactive flex flex-col overflow-hidden rounded-[var(--radius-card)]"
             >
-              <div
-                className="relative aspect-video w-full bg-gradient-to-br from-[var(--color-brand)]/25 to-[var(--color-bg-deep)] bg-cover bg-center"
-                style={s.thumbnail_url ? { backgroundImage: `url(${s.thumbnail_url})` } : undefined}
+              <SubmissionThumbnail
+                thumbnailUrl={s.thumbnail_url}
+                postUrl={s.post_url}
+                platform={s.platform}
+                pool={thumbPool}
+                className="aspect-video w-full"
               >
                 <span className="absolute inset-0 grid place-items-center">
                   <span className="grid h-11 w-11 place-items-center rounded-full bg-black/40 text-white">
@@ -106,7 +116,7 @@ function SubmissionsSection({ campaign }: { campaign: ClientCampaign }) {
                 {s.post_unavailable ? (
                   <span className="absolute bottom-2 left-2 rounded-full bg-red-500/80 px-2 py-0.5 text-[10px] font-medium text-white">Unavailable</span>
                 ) : null}
-              </div>
+              </SubmissionThumbnail>
               <div className="flex items-center justify-between gap-2 bg-[var(--color-surface-2)] px-4 py-3 text-xs text-[var(--color-text-secondary)]">
                 <span className="tabular">{fmtInt(s.views)} views</span>
                 <span className="tabular">{fmtInt(s.likes)} likes</span>
@@ -166,9 +176,7 @@ function DashboardInner() {
       <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-bg-deep)]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
           <Link href="/client/dashboard" className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--color-brand)] text-[var(--color-on-brand)] shadow-[0_0_16px_-2px_rgba(34,197,94,0.6)]">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M8 5v14l11-7L8 5Z" fill="currentColor" /></svg>
-            </span>
+            <LuminaMark size={28} />
             <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text)]">Lumina <span className="text-[var(--color-text-muted)]">Brand</span></span>
           </Link>
           <button

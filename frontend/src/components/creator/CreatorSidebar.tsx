@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { clearAuthToken } from "@/lib/auth";
+import { LuminaMark } from "@/components/ui/LuminaMark";
 
 function DashboardIcon() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="2" /><rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="2" /><rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="2" /><rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="2" /></svg>;
@@ -38,11 +39,7 @@ export function CreatorSidebar() {
           brand-tinted active pill, muted idle items */}
       <aside className="sticky top-0 hidden h-[100dvh] w-60 shrink-0 flex-col bg-[var(--color-bg-deep)]/40 px-4 py-6 lg:flex">
         <Link href="/dashboard" className="flex items-center gap-2 px-2">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--color-brand)] text-[var(--color-on-brand)]">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M8 5v14l11-7L8 5Z" fill="currentColor" />
-            </svg>
-          </span>
+          <LuminaMark size={28} />
           <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text)]">Lumina Creators</span>
         </Link>
 
@@ -89,11 +86,7 @@ export function CreatorSidebar() {
       {/* mobile top bar */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg-deep)]/80 px-4 py-3 backdrop-blur-xl lg:hidden">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--color-brand)] text-[var(--color-on-brand)]">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M8 5v14l11-7L8 5Z" fill="currentColor" />
-            </svg>
-          </span>
+          <LuminaMark size={28} />
           <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text)]">Lumina Creators</span>
         </Link>
         <button

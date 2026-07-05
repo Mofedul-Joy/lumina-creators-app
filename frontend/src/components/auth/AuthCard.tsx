@@ -1,13 +1,10 @@
 import Link from "next/link";
+import { LuminaMark } from "@/components/ui/LuminaMark";
 
 function Wordmark() {
   return (
     <Link href="/" className="inline-flex items-center gap-2">
-      <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--color-brand)] text-[var(--color-on-brand)]">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <path d="M8 5v14l11-7L8 5Z" fill="currentColor" />
-        </svg>
-      </span>
+      <LuminaMark size={28} />
       <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text)]">Lumina Creators</span>
     </Link>
   );
