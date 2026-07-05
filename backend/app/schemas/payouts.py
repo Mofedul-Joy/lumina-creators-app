@@ -12,6 +12,8 @@ class OwedRow(BaseModel):
     display_name: Optional[str] = None
     submission_count: int
     amount_owed: Decimal
+    payout_method: Optional[str] = None
+    payout_address: Optional[str] = None
 
 
 class PayoutRow(BaseModel):

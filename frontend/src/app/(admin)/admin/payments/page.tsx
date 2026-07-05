@@ -7,12 +7,18 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getAdminToken } from "@/lib/auth";
-import { listOwed, listPayouts, logManualPayment, type PayoutMethod, recordPayout } from "@/lib/admin";
+import { listOwed, listPayouts, listSubmissions, logManualPayment, type PayoutMethod, recordPayout } from "@/lib/admin";
 import { isAuthError, listCreators } from "@/lib/api";
 import { fmtMoney } from "@/lib/format";
 
 const METHODS: PayoutMethod[] = ["paypal", "solana", "whop"];
 const METHOD_LABEL: Record<string, string> = { paypal: "PayPal", solana: "Solana", whop: "Whop" };
+const PAY_TABS = [
+  { key: "to_be_paid", label: "To be paid" },
+  { key: "paid", label: "Paid" },
+  { key: "rejected", label: "Rejected" },
+] as const;
+type PayTab = (typeof PAY_TABS)[number]["key"];
 
 export default function AdminPaymentsPage() {
   const router = useRouter();
@@ -20,6 +26,7 @@ export default function AdminPaymentsPage() {
   const [ready, setReady] = useState(false);
   const [hasToken, setHasToken] = useState(false);
   const [method, setMethod] = useState<Record<string, PayoutMethod>>({});
+  const [tab, setTab] = useState<PayTab>("to_be_paid");
 
   useEffect(() => {
     setHasToken(!!getAdminToken());
@@ -32,6 +39,12 @@ export default function AdminPaymentsPage() {
   const enabled = ready && hasToken;
   const owedQ = useQuery({ queryKey: ["payouts-owed"], queryFn: listOwed, enabled, retry: false });
   const histQ = useQuery({ queryKey: ["payouts-history"], queryFn: listPayouts, enabled, retry: false });
+  const rejectedQ = useQuery({
+    queryKey: ["submissions-rejected"],
+    queryFn: () => listSubmissions({ status: "rejected" }),
+    enabled: enabled && tab === "rejected",
+    retry: false,
+  });
   useEffect(() => {
     if (owedQ.isError && isAuthError(owedQ.error)) router.replace("/admin/login");
   }, [owedQ.isError, owedQ.error, router]);
@@ -97,9 +110,10 @@ export default function AdminPaymentsPage() {
           </div>
           <button
             onClick={() => setShowAdd(true)}
-            className="shrink-0 cursor-pointer rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
+            className="shrink-0 cursor-pointer text-sm text-[var(--color-text-secondary)] underline decoration-dotted underline-offset-4 transition hover:text-[var(--color-text)]"
+            title="Log a payment made outside the app — a manual bookkeeping entry, separate from the Pay now flow"
           >
-            + Add payment
+            Log a manual payment
           </button>
         </div>
         <AdminTabs />
@@ -123,99 +137,154 @@ export default function AdminPaymentsPage() {
           </div>
         </div>
 
-        {/* outstanding balances */}
-        <div id="outstanding" className="card-lumina mt-6 scroll-mt-24 overflow-hidden rounded-[var(--radius-card)]">
-          <div className="border-b border-[var(--color-border)] px-6 py-4">
-            <h2 className="text-lg font-semibold text-[var(--color-text)]">Outstanding balances</h2>
-          </div>
-          {owedQ.isLoading ? (
-            <p className="p-6 text-sm text-[var(--color-text-secondary)]">Loading…</p>
-          ) : owed.length === 0 ? (
-            <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">All verified earnings are settled.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-sm">
-                <thead>
-                  <tr className="text-left text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
-                    <th className="px-6 py-3 font-medium">Creator</th>
-                    <th className="px-6 py-3 text-right font-medium">Verified clips</th>
-                    <th className="px-6 py-3 text-right font-medium">Owed</th>
-                    <th className="px-6 py-3 text-right font-medium">Record payout</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {owed.map((r) => (
-                    <tr key={r.creator_id} className="border-t border-[var(--color-border)]/40">
-                      <td className="px-6 py-4 text-[var(--color-text)]">{r.display_name ?? "Unnamed"}</td>
-                      <td className="tabular px-6 py-4 text-right text-[var(--color-text-secondary)]">{r.submission_count}</td>
-                      <td className="tabular px-6 py-4 text-right font-medium text-[var(--color-text)]">{fmtMoney(r.amount_owed)}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <select
-                            value={method[r.creator_id] ?? "paypal"}
-                            onChange={(e) => setMethod((m) => ({ ...m, [r.creator_id]: e.target.value as PayoutMethod }))}
-                            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-1 text-xs text-[var(--color-text)]"
-                          >
-                            {METHODS.map((m) => (
-                              <option key={m} value={m}>{METHOD_LABEL[m]}</option>
-                            ))}
-                          </select>
-                          <button
-                            disabled={payM.isPending}
-                            onClick={() => payM.mutate({ id: r.creator_id, m: method[r.creator_id] ?? "paypal" })}
-                            className="cursor-pointer rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-[var(--color-on-brand)] hover:bg-emerald-400 disabled:opacity-50"
-                          >
-                            {payM.isPending ? "Paying…" : "Pay now"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        {/* the three tabs ARE the organizing axis — no mixed tables, columns
+            change per tab so there's never a dead/empty column */}
+        <div className="mt-8 flex gap-1 border-b border-[var(--color-border)]">
+          {PAY_TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`cursor-pointer border-b-2 px-3 py-2.5 text-sm transition ${
+                tab === t.key ? "border-[var(--color-brand)] text-[var(--color-text)]" : "border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+              }`}
+            >
+              {t.label}
+              {t.key === "to_be_paid" ? ` (${owed.length})` : t.key === "rejected" ? (rejectedQ.data ? ` (${rejectedQ.data.length})` : "") : ""}
+            </button>
+          ))}
         </div>
 
-        {/* payout history */}
-        <div id="history" className="card-lumina mt-6 scroll-mt-24 overflow-hidden rounded-[var(--radius-card)]">
-          <div className="border-b border-[var(--color-border)] px-6 py-4">
-            <h2 className="text-lg font-semibold text-[var(--color-text)]">Payout history</h2>
-          </div>
-          {history.length === 0 ? (
-            <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">No payouts recorded yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[560px] text-sm">
-                <thead>
-                  <tr className="text-left text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
-                    <th className="px-6 py-3 font-medium">Creator</th>
-                    <th className="px-6 py-3 font-medium">Method</th>
-                    <th className="px-6 py-3 text-right font-medium">Amount</th>
-                    <th className="px-6 py-3 font-medium">Status</th>
-                    <th className="px-6 py-3 text-right font-medium">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.map((p) => (
-                    <tr key={p.id} className="border-t border-[var(--color-border)]/40">
-                      <td className="px-6 py-4 text-[var(--color-text)]">{p.creator_name ?? "Unnamed"}</td>
-                      <td className="px-6 py-4 text-[var(--color-text-secondary)]">
-                        {METHOD_LABEL[p.method] ?? p.method}
-                        {p.reference ? <span className="block text-xs text-[var(--color-text-muted)]">ref: {p.reference}</span> : null}
-                      </td>
-                      <td className="tabular px-6 py-4 text-right text-[var(--color-text)]">{fmtMoney(p.amount)}</td>
-                      <td className="px-6 py-4"><StatusBadge status={p.status} /></td>
-                      <td className="px-6 py-4 text-right text-[var(--color-text-muted)]">
-                        {new Date(p.paid_at ?? p.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                      </td>
+        {tab === "to_be_paid" ? (
+          <div className="card-lumina mt-4 overflow-hidden rounded-[var(--radius-card)]">
+            {owedQ.isLoading ? (
+              <p className="p-6 text-sm text-[var(--color-text-secondary)]">Loading…</p>
+            ) : owed.length === 0 ? (
+              <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">All verified earnings are settled.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
+                      <th className="px-6 py-3 font-medium">Creator</th>
+                      <th className="px-6 py-3 font-medium">Pay to</th>
+                      <th className="px-6 py-3 text-right font-medium">Verified clips</th>
+                      <th className="px-6 py-3 text-right font-medium">Owed</th>
+                      <th className="px-6 py-3 text-right font-medium">Record payout</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                  </thead>
+                  <tbody>
+                    {owed.map((r) => (
+                      <tr key={r.creator_id} className="border-t border-[var(--color-border)]/40">
+                        <td className="px-6 py-4 text-[var(--color-text)]">{r.display_name ?? "Unnamed"}</td>
+                        <td className="px-6 py-4 text-[var(--color-text-secondary)]">
+                          {r.payout_address ? (
+                            <>
+                              <span className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">{METHOD_LABEL[r.payout_method ?? ""] ?? "—"}</span>
+                              <span className="block max-w-[220px] truncate text-xs">{r.payout_address}</span>
+                            </>
+                          ) : (
+                            <span className="text-xs text-[var(--color-text-muted)]">No payout details on file</span>
+                          )}
+                        </td>
+                        <td className="tabular px-6 py-4 text-right text-[var(--color-text-secondary)]">{r.submission_count}</td>
+                        <td className="tabular px-6 py-4 text-right font-medium text-[var(--color-text)]">{fmtMoney(r.amount_owed)}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <select
+                              value={method[r.creator_id] ?? (r.payout_method as PayoutMethod) ?? "paypal"}
+                              onChange={(e) => setMethod((m) => ({ ...m, [r.creator_id]: e.target.value as PayoutMethod }))}
+                              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-1 text-xs text-[var(--color-text)]"
+                            >
+                              {METHODS.map((m) => (
+                                <option key={m} value={m}>{METHOD_LABEL[m]}</option>
+                              ))}
+                            </select>
+                            <button
+                              disabled={payM.isPending}
+                              onClick={() => payM.mutate({ id: r.creator_id, m: method[r.creator_id] ?? (r.payout_method as PayoutMethod) ?? "paypal" })}
+                              className="cursor-pointer rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-[var(--color-on-brand)] hover:bg-emerald-400 disabled:opacity-50"
+                            >
+                              {payM.isPending ? "Paying…" : "Pay now"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : tab === "paid" ? (
+          <div className="card-lumina mt-4 overflow-hidden rounded-[var(--radius-card)]">
+            {history.length === 0 ? (
+              <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">No payouts recorded yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[560px] text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
+                      <th className="px-6 py-3 font-medium">Creator</th>
+                      <th className="px-6 py-3 font-medium">Method</th>
+                      <th className="px-6 py-3 text-right font-medium">Amount</th>
+                      <th className="px-6 py-3 font-medium">Status</th>
+                      <th className="px-6 py-3 text-right font-medium">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {history.map((p) => (
+                      <tr key={p.id} className="border-t border-[var(--color-border)]/40">
+                        <td className="px-6 py-4 text-[var(--color-text)]">{p.creator_name ?? "Unnamed"}</td>
+                        <td className="px-6 py-4 text-[var(--color-text-secondary)]">
+                          {METHOD_LABEL[p.method] ?? p.method}
+                          {p.reference ? <span className="block text-xs text-[var(--color-text-muted)]">ref: {p.reference}</span> : null}
+                        </td>
+                        <td className="tabular px-6 py-4 text-right text-[var(--color-text)]">{fmtMoney(p.amount)}</td>
+                        <td className="px-6 py-4"><StatusBadge status={p.status} /></td>
+                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)]">
+                          {new Date(p.paid_at ?? p.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="card-lumina mt-4 overflow-hidden rounded-[var(--radius-card)]">
+            {rejectedQ.isLoading ? (
+              <p className="p-6 text-sm text-[var(--color-text-secondary)]">Loading…</p>
+            ) : (rejectedQ.data ?? []).length === 0 ? (
+              <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">No rejected submissions.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
+                      <th className="px-6 py-3 font-medium">Creator</th>
+                      <th className="px-6 py-3 font-medium">Campaign</th>
+                      <th className="px-6 py-3 font-medium">Reason</th>
+                      <th className="px-6 py-3 text-right font-medium">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(rejectedQ.data ?? []).map((s) => (
+                      <tr key={s.id} className="border-t border-[var(--color-border)]/40">
+                        <td className="px-6 py-4 text-[var(--color-text)]">{s.creator_name ?? "Unnamed"}</td>
+                        <td className="px-6 py-4 text-[var(--color-text-secondary)]">{s.campaign_name}</td>
+                        <td className="max-w-[280px] px-6 py-4 text-[var(--color-text-secondary)]">{s.verification_note ?? "—"}</td>
+                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)]">
+                          {new Date(s.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Add Payment modal — a receipt for money sent outside the app */}
         {showAdd ? (

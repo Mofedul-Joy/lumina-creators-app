@@ -39,20 +39,25 @@ def _unpaid_verified(db: Session, creator_id: uuid.UUID):
 
 
 def amounts_owed(db: Session):
-    """Per-creator outstanding verified earnings not yet in an active payout."""
+    """Per-creator outstanding verified earnings not yet in an active payout.
+    Includes the creator's declared payout method/address so the admin's
+    'Pay now' modal can pre-fill it instead of guessing."""
     return db.execute(
         select(
             Submission.creator_id,
             CreatorProfile.display_name,
             func.count().label("n"),
             func.coalesce(func.sum(Submission.estimated_amount), 0).label("owed"),
+            CreatorProfile.payout_method,
+            CreatorProfile.payout_address,
         )
         .outerjoin(CreatorProfile, CreatorProfile.creator_id == Submission.creator_id)
         .where(
             Submission.verification_status == "verified",
             Submission.id.not_in(_active_items_subq()),
         )
-        .group_by(Submission.creator_id, CreatorProfile.display_name)
+        .group_by(Submission.creator_id, CreatorProfile.display_name,
+                 CreatorProfile.payout_method, CreatorProfile.payout_address)
         .order_by(func.sum(Submission.estimated_amount).desc())
     ).all()
 
