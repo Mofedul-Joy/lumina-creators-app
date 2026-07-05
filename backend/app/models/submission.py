@@ -90,6 +90,9 @@ class Submission(TimestampMixin, Base):
     )
     thumbnail_url: Mapped[Optional[str]] = mapped_column(Text)
     last_scraped_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    # Creator claimed this verified submission for payout (signals intent-to-pay
+    # to the admin). Set once an active payout_item exists it becomes paid.
+    claimed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     # Admin-flagged fraud signal on this one post, independent of the
     # account-level Creator.is_suspicious flag.
     is_suspicious: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))

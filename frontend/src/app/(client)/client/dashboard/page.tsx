@@ -12,6 +12,8 @@ import {
   type ClientCampaign,
 } from "@/lib/client";
 import { downloadCsv } from "@/lib/api";
+import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
+import { SkeletonCardGrid } from "@/components/ui/Skeleton";
 
 import { fmtInt, fmtMoney } from "@/lib/format";
 
@@ -24,7 +26,7 @@ function StatTile({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SubmissionsTable({ campaignId }: { campaignId: string }) {
+function SubmissionsGrid({ campaignId }: { campaignId: string }) {
   const [platform, setPlatform] = useState("all");
   const [exporting, setExporting] = useState(false);
   const q = useQuery({
@@ -32,31 +34,29 @@ function SubmissionsTable({ campaignId }: { campaignId: string }) {
     queryFn: () => listClientSubmissions(campaignId),
   });
   if (q.isLoading)
-    return <p className="px-5 pb-5 text-sm text-[var(--color-text-muted)]">Loading submissions…</p>;
+    return <div className="px-5 pb-5"><SkeletonCardGrid count={3} /></div>;
   if (q.isError)
-    return (
-      <p className="px-5 pb-5 text-sm text-[var(--color-danger)]">{(q.error as Error).message}</p>
-    );
+    return <p className="px-5 pb-5 text-sm text-[var(--color-danger)]">{(q.error as Error).message}</p>;
   if (!q.data?.length)
     return <p className="px-5 pb-5 text-sm text-[var(--color-text-muted)]">No submissions yet.</p>;
   const platforms = ["all", ...Array.from(new Set(q.data.map((s) => s.platform)))];
   const rows = platform === "all" ? q.data : q.data.filter((s) => s.platform === platform);
   return (
-    <div className="overflow-x-auto px-5 pb-5">
-      {/* platform tabs — the Clippers client view pattern */}
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-2">
+    <div className="px-5 pb-5">
+      {/* platform icon filters + export */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-1 rounded-full bg-[var(--color-surface)] p-1">
           {platforms.map((p) => (
             <button
               key={p}
               onClick={() => setPlatform(p)}
-              className={`cursor-pointer rounded-full px-3 py-1 text-xs capitalize transition ${
-                platform === p
-                  ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]"
-                  : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+              aria-label={p === "all" ? "All" : platformLabel(p)}
+              title={p === "all" ? "All" : platformLabel(p)}
+              className={`grid h-8 min-w-8 cursor-pointer place-items-center rounded-full px-2 text-xs transition ${
+                platform === p ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
               }`}
             >
-              {p}
+              {p === "all" ? "All" : <PlatformIcon name={p} className="h-4 w-4" />}
             </button>
           ))}
         </div>
@@ -72,43 +72,47 @@ function SubmissionsTable({ campaignId }: { campaignId: string }) {
           {exporting ? "Exporting…" : "Export CSV"}
         </button>
       </div>
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-            <th className="py-2 pr-4 font-medium">Post</th>
-            <th className="py-2 pr-4 font-medium">Platform</th>
-            <th className="py-2 pr-4 text-right font-medium">Views</th>
-            <th className="py-2 pr-4 text-right font-medium">Likes</th>
-            <th className="py-2 text-right font-medium">Comments</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((s) => (
-            <tr key={s.id} className="border-t border-[var(--color-border)]">
-              <td className="max-w-[320px] truncate py-2.5 pr-4">
-                <a
-                  href={s.post_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[var(--color-brand)] hover:underline"
-                >
-                  {s.post_url}
-                </a>
-              </td>
-              <td className="py-2.5 pr-4 text-[var(--color-text-secondary)]">{s.platform}</td>
-              <td className="tabular py-2.5 pr-4 text-right">{fmtInt(s.views)}</td>
-              <td className="tabular py-2.5 pr-4 text-right">{fmtInt(s.likes)}</td>
-              <td className="tabular py-2.5 text-right">{fmtInt(s.comments)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {rows.map((s) => (
+          <a
+            key={s.id}
+            href={s.post_url}
+            target="_blank"
+            rel="noreferrer"
+            className="card-lumina card-interactive flex flex-col overflow-hidden rounded-[var(--radius-card)]"
+          >
+            <div
+              className="relative aspect-video w-full bg-gradient-to-br from-[var(--color-brand)]/25 to-[var(--color-bg-deep)] bg-cover bg-center"
+              style={s.thumbnail_url ? { backgroundImage: `url(${s.thumbnail_url})` } : undefined}
+            >
+              <span className="absolute inset-0 grid place-items-center">
+                <span className="grid h-11 w-11 place-items-center rounded-full bg-black/40 text-white">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7L8 5Z" /></svg>
+                </span>
+              </span>
+              <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/50 text-white">
+                <PlatformIcon name={s.platform} className="h-3.5 w-3.5" />
+              </span>
+              {s.post_unavailable ? (
+                <span className="absolute bottom-2 left-2 rounded-full bg-red-500/80 px-2 py-0.5 text-[10px] font-medium text-white">Unavailable</span>
+              ) : null}
+            </div>
+            <div className="flex items-center justify-between gap-2 bg-[var(--color-surface-2)] px-4 py-3 text-xs text-[var(--color-text-secondary)]">
+              <span className="tabular">{fmtInt(s.views)} views</span>
+              <span className="tabular">{fmtInt(s.likes)} likes</span>
+              <span className="tabular">{fmtInt(s.comments)} comments</span>
+            </div>
+          </a>
+        ))}
+      </div>
     </div>
   );
 }
 
 function CampaignCard({ c }: { c: ClientCampaign }) {
-  const [open, setOpen] = useState(false);
+  // Submissions grid is the default client view (open), matching the admin
+  // section — collapse is available but the grid shows straight away.
+  const [open, setOpen] = useState(true);
   return (
     <div className="card-lumina rounded-[var(--radius-card)]">
       <button
@@ -165,7 +169,7 @@ function CampaignCard({ c }: { c: ClientCampaign }) {
           {open ? "Hide submissions ▲" : "Show submissions ▼"}
         </p>
       </button>
-      {open ? <SubmissionsTable campaignId={c.id} /> : null}
+      {open ? <SubmissionsGrid campaignId={c.id} /> : null}
     </div>
   );
 }

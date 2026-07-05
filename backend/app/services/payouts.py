@@ -90,6 +90,38 @@ def log_manual_payment(db: Session, admin_id: uuid.UUID, creator_id: uuid.UUID,
     return payout
 
 
+def record_payout_for_submission(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID,
+                                 method: str, reference: str = "") -> Payout:
+    """Per-submission payout ('Log payout' on the admin submission modal).
+    Pays exactly this one submission's estimated earnings and marks it settled
+    via a single PayoutItem (the active-unique index prevents double-paying)."""
+    sub = db.get(Submission, submission_id)
+    if sub is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Submission not found")
+    if db.scalar(select(PayoutItem.id).where(
+            PayoutItem.submission_id == submission_id, PayoutItem.voided_at.is_(None))):
+        raise HTTPException(status.HTTP_409_CONFLICT, "This submission has already been paid")
+    amount = Decimal(sub.estimated_amount).quantize(_CENTS)
+    if amount <= 0:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "This submission has no payable earnings yet")
+
+    payout = Payout(creator_id=sub.creator_id, amount=amount, method=method, status="paid",
+                    processed_by=admin_id, paid_at=_now(), external_ref=reference.strip() or None)
+    db.add(payout)
+    try:
+        db.flush()
+        db.add(PayoutItem(payout_id=payout.id, submission_id=submission_id, amount=amount))
+        audit.log(db, actor_admin_id=admin_id, action="payout.record_submission", entity_type="payout",
+                 entity_id=payout.id, creator_id=str(sub.creator_id), amount=str(amount),
+                 method=method, submission_id=str(submission_id))
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, "This submission was just paid by someone else — refresh")
+    db.refresh(payout)
+    return payout
+
+
 def record_payout(db: Session, admin_id: uuid.UUID, creator_id: uuid.UUID, method: str) -> Payout:
     subs = _unpaid_verified(db, creator_id)
     # Only settle rows that round to a positive cent — the DB CHECK is amount > 0,

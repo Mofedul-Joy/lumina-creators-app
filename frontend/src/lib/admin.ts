@@ -62,6 +62,7 @@ export type CampaignCreate = {
   content_drive_url?: string;
   caption_rules?: string;
   required_mentions?: string[];
+  requirements_url?: string;
   brand_name?: string;
   brand_logo_url?: string;
   min_retention_days?: number;
@@ -135,6 +136,7 @@ export type AdminSubmission = {
   is_suspicious: boolean;
   creator_is_suspicious: boolean;
   thumbnail_url: string | null;
+  claimed: boolean;
   created_at: string;
 };
 
@@ -164,6 +166,16 @@ export const rejectSubmission = (id: string, note: string) =>
     body: JSON.stringify({ note }),
     ...auth(),
   });
+
+export const logSubmissionPayout = (id: string, method: PayoutMethod, reference?: string) =>
+  apiFetch<AdminSubmission>(`/api/admin/submissions/${id}/log-payout`, {
+    method: "POST",
+    body: JSON.stringify({ method, reference: reference ?? "" }),
+    ...auth(),
+  });
+
+export const deleteSubmission = (id: string) =>
+  apiFetch<void>(`/api/admin/submissions/${id}`, { method: "DELETE", ...auth() });
 
 /* ---- payouts ---- */
 export type OwedRow = {

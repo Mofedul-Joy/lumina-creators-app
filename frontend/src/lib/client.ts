@@ -30,6 +30,8 @@ export type ClientSubmission = {
   views: number;
   likes: number;
   comments: number;
+  thumbnail_url: string | null;
+  post_unavailable: boolean;
   submitted_at: string;
 };
 

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { BannerInput } from "@/components/admin/BannerInput";
@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import {
   createCampaign,
-  listAdminClients,
   publishCampaign,
   type CampaignCreate,
 } from "@/lib/admin";
@@ -37,6 +36,7 @@ export default function NewCampaignPage() {
     content_drive_url: "",
     caption_rules: "",
     required_mentions: "",
+    requirements_url: "",
   });
   const [platforms, setPlatforms] = useState<string[]>(["tiktok"]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -57,8 +57,6 @@ export default function NewCampaignPage() {
     return Object.keys(e).length === 0;
   }
   const [publishNow, setPublishNow] = useState(true);
-  const [clientId, setClientId] = useState("");
-  const clientsQ = useQuery({ queryKey: ["admin-clients"], queryFn: listAdminClients });
 
   function togglePlatform(p: string) {
     setPlatforms((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
@@ -76,7 +74,7 @@ export default function NewCampaignPage() {
         brand_logo_url: f.brand_logo_url.trim() || undefined,
         platforms,
         min_retention_days: Number(f.min_retention_days) || 30,
-        client_id: clientId || undefined,
+        requirements_url: f.requirements_url.trim() || undefined,
         caption_rules: f.caption_rules.trim() || undefined,
         required_mentions: f.required_mentions
           ? f.required_mentions.split(",").map((s) => s.trim()).filter(Boolean)
@@ -130,23 +128,20 @@ export default function NewCampaignPage() {
           <BannerInput value={f.brand_logo_url} onChange={(v) => setF({ ...f, brand_logo_url: v })} />
 
           <div className="space-y-2">
-            <label className={labelCls}>Client (brand account)</label>
-            <select className={controlCls} value={clientId} onChange={(e) => setClientId(e.target.value)}>
-              <option value="">No client (internal campaign)</option>
-              {(clientsQ.data ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name ?? c.email}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-[var(--color-text-muted)]">
-              Linked clients see this campaign&apos;s performance on their read-only dashboard.
-            </p>
-          </div>
-
-          <div className="space-y-2">
             <label className={labelCls}>Description</label>
             <textarea rows={2} className={controlCls + " py-2"} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
+          </div>
+
+          <div className="space-y-1">
+            <Field
+              label="Requirements URL"
+              value={f.requirements_url}
+              onChange={(e) => setF({ ...f, requirements_url: e.target.value })}
+              placeholder="https://docs.google.com/..."
+            />
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Shown to creators as a &quot;View requirements&quot; button on the campaign page.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

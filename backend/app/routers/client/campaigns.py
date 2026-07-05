@@ -50,6 +50,8 @@ class ClientSubmissionOut(BaseModel):
     views: int
     likes: int
     comments: int
+    thumbnail_url: Optional[str] = None
+    post_unavailable: bool = False
     submitted_at: datetime
 
 
@@ -113,7 +115,9 @@ def campaign_submissions(
     return [
         ClientSubmissionOut(
             id=str(s.id), post_url=s.post_url, platform=s.platform,
-            views=s.views, likes=s.likes, comments=s.comments, submitted_at=s.created_at,
+            views=s.views, likes=s.likes, comments=s.comments,
+            thumbnail_url=s.thumbnail_url, post_unavailable=s.post_unavailable,
+            submitted_at=s.created_at,
         )
         for s in subs
     ]

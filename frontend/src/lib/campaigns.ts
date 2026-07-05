@@ -42,6 +42,8 @@ export type Submission = {
   verification_note: string | null;
   has_proof_video: boolean;
   thumbnail_url: string | null;
+  claimed: boolean;
+  is_paid: boolean;
   created_at: string;
 };
 
@@ -49,6 +51,9 @@ export const browseCampaigns = () => apiFetch<Campaign[]>("/api/creator/campaign
 
 export const listSubmissions = () =>
   apiFetch<Submission[]>("/api/creator/submissions", auth());
+
+export const claimSubmission = (id: string) =>
+  apiFetch<Submission>(`/api/creator/submissions/${id}/claim`, { method: "POST", ...auth() });
 
 export const getCampaign = (slug: string) =>
   apiFetch<Campaign>(`/api/creator/campaigns/${slug}`, auth());

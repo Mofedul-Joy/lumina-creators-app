@@ -30,4 +30,6 @@ class SubmissionOut(BaseModel):
     verification_note: Optional[str] = None
     has_proof_video: bool = False
     thumbnail_url: Optional[str] = None
+    claimed: bool = False
+    is_paid: bool = False
     created_at: datetime

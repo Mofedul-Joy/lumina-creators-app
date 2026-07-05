@@ -8,7 +8,10 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models import CampaignParticipation, ScrapeJob, StorageObject, Submission
+from app.core.security import _now
+from app.models import (
+    CampaignParticipation, CreatorProfile, PayoutItem, ScrapeJob, StorageObject, Submission,
+)
 from app.services import campaign as campaign_svc
 from app.services import urls
 
@@ -65,6 +68,32 @@ def get_submission(db: Session, creator_id: uuid.UUID, submission_id: uuid.UUID)
     sub = db.get(Submission, submission_id)
     if sub is None or sub.creator_id != creator_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Submission not found")
+    return sub
+
+
+def _has_active_payout(db: Session, submission_id: uuid.UUID) -> bool:
+    return db.scalar(
+        select(PayoutItem.id).where(
+            PayoutItem.submission_id == submission_id, PayoutItem.voided_at.is_(None)
+        )
+    ) is not None
+
+
+def claim_submission(db: Session, creator_id: uuid.UUID, submission_id: uuid.UUID) -> Submission:
+    """Creator claims a verified submission for payout. Gated on a payout
+    method being set — the router turns 'no_payout_method' into the prompt the
+    frontend shows as a modal."""
+    sub = get_submission(db, creator_id, submission_id)  # 404 if not theirs
+    if sub.verification_status != "verified":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "not_verified")
+    if _has_active_payout(db, sub.id):
+        raise HTTPException(status.HTTP_409_CONFLICT, "already_paid")
+    prof = db.scalar(select(CreatorProfile).where(CreatorProfile.creator_id == creator_id))
+    if prof is None or not prof.payout_method or not prof.payout_address:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "no_payout_method")
+    sub.claimed_at = _now()
+    db.commit()
+    db.refresh(sub)
     return sub
 
 

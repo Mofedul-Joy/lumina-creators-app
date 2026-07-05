@@ -41,7 +41,7 @@ export default function AdminCreatorsPage() {
   const [social, setSocial] = useState("");
   const [prefs, setPrefs] = useState<Prefs>(EMPTY);
   const [showPrefs, setShowPrefs] = useState(false);
-  const [view, setView] = useState<"grid" | "line">("grid");
+  const [view, setView] = useState<"grid" | "line">("line");
   const [page, setPage] = useState(1);
   const [focused, setFocused] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -217,8 +217,8 @@ export default function AdminCreatorsPage() {
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
                   {pageRows.map((c) => (
-                    <tr key={c.id} className="transition hover:bg-[var(--color-surface)]/50">
-                      <td className="px-4 py-3"><Link href={`/admin/creators/${c.id}`} className="font-medium text-[var(--color-text)] hover:text-[var(--color-brand)]">{c.display_name ?? "Unnamed"}</Link><p className="text-xs text-[var(--color-text-muted)]">{c.email}</p></td>
+                    <tr key={c.id} onClick={() => router.push(`/admin/creators/${c.id}`)} className="cursor-pointer transition hover:bg-[var(--color-surface)]/50">
+                      <td className="px-4 py-3"><p className="font-medium text-[var(--color-text)]">{c.display_name ?? "Unnamed"}</p><p className="text-xs text-[var(--color-text-muted)]">{c.email}</p></td>
                       <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.country ?? "-"}</td>
                       <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.primary_language ?? "-"}</td>
                       <td className="tabular px-4 py-3 text-right text-[var(--color-text)]">{c.total_followers.toLocaleString()}</td>

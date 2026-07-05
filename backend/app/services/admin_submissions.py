@@ -125,13 +125,32 @@ def paid_submission_ids(db: Session) -> set:
 
 
 def lifecycle_status(sub: Submission, is_paid: bool) -> str:
-    """Bell's status set, derived from existing fields (no schema change)."""
+    """Bell's status set, derived from existing fields."""
     if is_paid:
         return "paid"
     if sub.verification_status == "rejected":
         return "rejected"
+    if sub.claimed_at is not None:
+        return "payment_claimed"
     if sub.verification_status == "verified":
         return "stats_verified"
     if sub.proof_object_id is not None:
         return "proof_uploaded"
     return "awaiting_stats"
+
+
+def delete_submission(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID) -> None:
+    """Hard-delete a submission (and its scrape job). Blocked if it has been
+    paid — a paid payout_item must be voided first (golden rule 5)."""
+    from app.models import ScrapeJob
+    sub = db.get(Submission, submission_id)
+    if sub is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Submission not found")
+    if _has_active_payout(db, submission_id):
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            "This submission has been paid — void the payout before deleting")
+    db.execute(ScrapeJob.__table__.delete().where(ScrapeJob.submission_id == submission_id))
+    audit.log(db, actor_admin_id=admin_id, action="submission.delete",
+             entity_type="submission", entity_id=submission_id)
+    db.delete(sub)
+    db.commit()

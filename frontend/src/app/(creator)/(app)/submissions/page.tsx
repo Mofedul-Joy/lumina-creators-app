@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAuthToken } from "@/lib/auth";
-import { browseCampaigns, listSubmissions, uploadProofVideo } from "@/lib/campaigns";
+import { browseCampaigns, claimSubmission, listSubmissions, uploadProofVideo } from "@/lib/campaigns";
+import { ApiError } from "@/lib/api";
 import { fmtInt, fmtMoney } from "@/lib/format";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { SkeletonCardGrid, SkeletonStats } from "@/components/ui/Skeleton";
@@ -44,7 +45,17 @@ export default function SubmissionsPage() {
   const modeById = new Map((campaignsQ.data ?? []).map((c) => [c.id, c.mode]));
 
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [payoutGate, setPayoutGate] = useState(false);
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const claimM = useMutation({
+    mutationFn: (id: string) => claimSubmission(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["submissions"] }),
+    onError: (err) => {
+      // Backend returns 400 'no_payout_method' when nothing is on file — show
+      // the set-your-method prompt instead of a raw error.
+      if (err instanceof ApiError && err.message === "no_payout_method") setPayoutGate(true);
+    },
+  });
   const proofM = useMutation({
     mutationFn: ({ id, file }: { id: string; file: File }) => uploadProofVideo(id, file),
     onMutate: ({ id }) => setUploadingId(id),
@@ -181,6 +192,22 @@ export default function SubmissionsPage() {
                           </button>
                         </div>
                       ) : null}
+
+                      {/* claim payment — only once verified, not already claimed/paid */}
+                      {s.is_paid ? (
+                        <p className="mt-3 rounded-md bg-[var(--color-brand)]/10 py-1.5 text-center text-xs font-medium text-[var(--color-brand)]">Paid ✓</p>
+                      ) : s.claimed ? (
+                        <p className="mt-3 rounded-md bg-amber-500/15 py-1.5 text-center text-xs font-medium text-amber-400">Payment claimed · pending</p>
+                      ) : s.verification_status === "verified" ? (
+                        <button
+                          type="button"
+                          disabled={claimM.isPending}
+                          onClick={() => claimM.mutate(s.id)}
+                          className="mt-3 w-full cursor-pointer rounded-md bg-[var(--color-brand)] py-1.5 text-xs font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)] disabled:opacity-50"
+                        >
+                          {claimM.isPending ? "Claiming..." : "Claim payment"}
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 );
@@ -191,6 +218,24 @@ export default function SubmissionsPage() {
             </p>
           </>
         )}
+
+        {/* payout-method gate: claim was blocked because no method is on file */}
+        {payoutGate ? (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setPayoutGate(false)}>
+            <div className="w-full max-w-sm rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-lg font-semibold text-[var(--color-text)]">Add a payout method first</h3>
+              <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                Set where we should send your earnings before you can claim a payment.
+              </p>
+              <div className="mt-5 flex justify-center gap-3">
+                <button onClick={() => setPayoutGate(false)} className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Not now</button>
+                <Link href="/onboarding" className="rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]">
+                  Set payout method
+                </Link>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </main>
   );
 }

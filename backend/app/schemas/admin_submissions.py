@@ -29,6 +29,7 @@ class AdminSubmissionRow(BaseModel):
     is_suspicious: bool = False
     creator_is_suspicious: bool = False
     thumbnail_url: Optional[str] = None
+    claimed: bool = False
     created_at: datetime
 
 

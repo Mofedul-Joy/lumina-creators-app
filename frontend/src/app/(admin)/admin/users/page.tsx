@@ -46,6 +46,7 @@ export default function AdminUsersPage() {
   const suspendM = useMutation({ mutationFn: suspendClient, onSuccess: refresh });
   const reactivateM = useMutation({ mutationFn: reactivateClient, onSuccess: refresh });
 
+  const [tab, setTab] = useState<"staff" | "clients">("staff");
   // add-user modal
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "admin" as "admin" | "client" });
@@ -124,28 +125,40 @@ export default function AdminUsersPage() {
               <StatTile label="Creators" value={fmtInt(u.creator_count)} hint={`${u.creator_active} active · view all →`} href="/admin/creators" />
             </div>
 
-            {/* staff */}
-            <div id="staff" className="card-lumina mt-6 scroll-mt-24 overflow-hidden rounded-[var(--radius-card)]">
-              <div className="border-b border-[var(--color-border)] px-6 py-4">
-                <h2 className="text-lg font-semibold text-[var(--color-text)]">Staff (admins)</h2>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[480px] text-sm">
-                  <thead>
-                    <tr className="text-left text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
-                      <th className="px-6 py-3 font-medium">Email</th>
-                      <th className="px-6 py-3 font-medium">Role</th>
-                      <th className="px-6 py-3 font-medium">Status</th>
-                      <th className="px-6 py-3 text-right font-medium">Actions</th>
+            {/* admin / client toggle */}
+            <div className="mt-8 flex gap-1 border-b border-[var(--color-border)]">
+              {([["staff", `Staff (${u.admins.length})`], ["clients", `Brands (${u.clients.length})`]] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setTab(key)}
+                  className={`cursor-pointer border-b-2 px-3 py-2.5 text-sm transition ${
+                    tab === key ? "border-[var(--color-brand)] text-[var(--color-text)]" : "border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* clean table (campaigns-style), one per tab */}
+            {tab === "staff" ? (
+              <div className="mt-4 overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)]">
+                <table className="w-full min-w-[480px] text-left text-sm">
+                  <thead className="bg-[var(--color-surface)] text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Email</th>
+                      <th className="px-4 py-3 font-medium">Role</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="px-4 py-3 text-right font-medium">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-[var(--color-border)]">
                     {u.admins.map((a) => (
-                      <tr key={a.id} className="border-t border-[var(--color-border)]/40">
-                        <td className="px-6 py-4"><Link href={`/admin/users/staff/${a.id}`} className="text-[var(--color-text)] hover:text-[var(--color-brand)]">{a.email}</Link></td>
-                        <td className="px-6 py-4 capitalize text-[var(--color-text-secondary)]">{a.role}</td>
-                        <td className="px-6 py-4"><StatusBadge status={a.status} /></td>
-                        <td className="px-6 py-4 text-right">
+                      <tr key={a.id} onClick={() => router.push(`/admin/users/staff/${a.id}`)} className="cursor-pointer transition hover:bg-[var(--color-surface)]/50">
+                        <td className="px-4 py-3 text-[var(--color-text)]">{a.email}</td>
+                        <td className="px-4 py-3 capitalize text-[var(--color-text-secondary)]">{a.role}</td>
+                        <td className="px-4 py-3"><StatusBadge status={a.status} /></td>
+                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => copyInvite("admin", a.email)}
                             className="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-brand)]"
@@ -158,68 +171,58 @@ export default function AdminUsersPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
-
-            {/* clients */}
-            <div id="brands" className="card-lumina mt-6 scroll-mt-24 overflow-hidden rounded-[var(--radius-card)]">
-              <div className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-4">
-                <h2 className="text-lg font-semibold text-[var(--color-text)]">Brand accounts (clients)</h2>
-                <Link href="/admin/users/brands" className="text-sm font-medium text-[var(--color-brand)] hover:underline">Manage all brands →</Link>
-              </div>
-              {u.clients.length === 0 ? (
-                <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">No brand accounts yet.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[560px] text-sm">
-                    <thead>
-                      <tr className="text-left text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
-                        <th className="px-6 py-3 font-medium">Brand</th>
-                        <th className="px-6 py-3 font-medium">Email</th>
-                        <th className="px-6 py-3 font-medium">Status</th>
-                        <th className="px-6 py-3 text-right font-medium">Access</th>
+            ) : u.clients.length === 0 ? (
+              <div className="mt-4 rounded-[var(--radius-card)] border border-dashed border-[var(--color-border)] p-10 text-center text-sm text-[var(--color-text-secondary)]">No brand accounts yet.</div>
+            ) : (
+              <div className="mt-4 overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)]">
+                <table className="w-full min-w-[620px] text-left text-sm">
+                  <thead className="bg-[var(--color-surface)] text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Brand</th>
+                      <th className="px-4 py-3 font-medium">Email</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="px-4 py-3 text-right font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--color-border)]">
+                    {u.clients.map((c) => (
+                      <tr key={c.id} onClick={() => router.push(`/admin/users/brands/${c.id}`)} className="cursor-pointer transition hover:bg-[var(--color-surface)]/50">
+                        <td className="px-4 py-3 text-[var(--color-text)]">{c.name ?? "-"}</td>
+                        <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.email}</td>
+                        <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
+                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-1.5 text-xs">
+                            <button
+                              onClick={() => { setEditing({ id: c.id, name: c.name ?? "" }); setEditForm({ name: c.name ?? "", password: "" }); setEditErr(""); }}
+                              className="cursor-pointer rounded-md px-2.5 py-1 font-medium text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-text)]"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => copyInvite("client", c.email)}
+                              className="cursor-pointer rounded-md px-2.5 py-1 font-medium text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-brand)]"
+                            >
+                              {copied === c.email ? "Copied ✓" : "Invite link"}
+                            </button>
+                            {c.status === "active" ? (
+                              <button disabled={busy} onClick={() => suspendM.mutate(c.id)}
+                                className="cursor-pointer rounded-md px-2.5 py-1 font-medium text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-red-400 hover:ring-red-500/25 disabled:opacity-50">
+                                Suspend
+                              </button>
+                            ) : (
+                              <button disabled={busy} onClick={() => reactivateM.mutate(c.id)}
+                                className="cursor-pointer rounded-md bg-emerald-500/15 px-2.5 py-1 font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-50">
+                                Reactivate
+                              </button>
+                            )}
+                          </div>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {u.clients.map((c) => (
-                        <tr key={c.id} className="border-t border-[var(--color-border)]/40">
-                          <td className="px-6 py-4"><Link href={`/admin/users/brands/${c.id}`} className="text-[var(--color-text)] hover:text-[var(--color-brand)]">{c.name ?? "-"}</Link></td>
-                          <td className="px-6 py-4 text-[var(--color-text-secondary)]">{c.email}</td>
-                          <td className="px-6 py-4"><StatusBadge status={c.status} /></td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center justify-end gap-1.5 text-xs">
-                              <button
-                                onClick={() => { setEditing({ id: c.id, name: c.name ?? "" }); setEditForm({ name: c.name ?? "", password: "" }); setEditErr(""); }}
-                                className="cursor-pointer rounded-md px-2.5 py-1 font-medium text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-text)]"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => copyInvite("client", c.email)}
-                                className="cursor-pointer rounded-md px-2.5 py-1 font-medium text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-brand)]"
-                              >
-                                {copied === c.email ? "Copied ✓" : "Invite link"}
-                              </button>
-                              {c.status === "active" ? (
-                                <button disabled={busy} onClick={() => suspendM.mutate(c.id)}
-                                  className="cursor-pointer rounded-md px-2.5 py-1 font-medium text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-red-400 hover:ring-red-500/25 disabled:opacity-50">
-                                  Suspend
-                                </button>
-                              ) : (
-                                <button disabled={busy} onClick={() => reactivateM.mutate(c.id)}
-                                  className="cursor-pointer rounded-md bg-emerald-500/15 px-2.5 py-1 font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-50">
-                                  Reactivate
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </>
         )}
 

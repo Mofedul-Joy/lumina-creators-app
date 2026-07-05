@@ -17,6 +17,7 @@ import logging
 import uuid
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Iterable
 
 from sqlalchemy import select
@@ -71,6 +72,13 @@ def _mark_failed(db: Session, job: ScrapeJob, error: str) -> None:
     job.next_run_at = _backoff(job.attempts)
 
 
+def compute_estimated_amount(sub: Submission) -> Decimal:
+    """Earnings = CPM x views / 1000 (geo/eligible-pct does not affect payout).
+    Rounded to cents so the stored value matches what the UI shows."""
+    raw = (Decimal(sub.cpm_rate_snapshot) * Decimal(sub.views)) / Decimal(1000)
+    return raw.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
 def _apply_stats(sub: Submission, stats: apify.ScrapedStats) -> None:
     # Independent of the raise-only view-count logic below — a thumbnail is
     # never "wrong to update," so it's written whenever Apify gave us one,
@@ -95,6 +103,7 @@ def _apply_stats(sub: Submission, stats: apify.ScrapedStats) -> None:
     sub.views = stats.views
     sub.likes = max(sub.likes, stats.likes)
     sub.comments = max(sub.comments, stats.comments)
+    sub.estimated_amount = compute_estimated_amount(sub)
     sub.scrape_status = "success"
     sub.embed_broken = False
     sub.post_unavailable = False

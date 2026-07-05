@@ -5,6 +5,7 @@ import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -14,6 +15,7 @@ from app.integrations import storage
 from app.models import Admin, Campaign, Creator, CreatorProfile, StorageObject, Submission
 from app.schemas.admin_submissions import AdminSubmissionRow, RejectIn, SubmissionCounts
 from app.services import admin_submissions as svc
+from app.services import payouts as payout_svc
 
 router = APIRouter(prefix="/submissions", tags=["admin-submissions"])
 
@@ -37,7 +39,7 @@ def _row(db: Session, sub: Submission, name: str, mode: str, display_name,
         proof_url=_proof_url(db, sub),
         embed_broken=sub.embed_broken, post_unavailable=sub.post_unavailable,
         is_suspicious=sub.is_suspicious, creator_is_suspicious=creator_is_suspicious,
-        thumbnail_url=sub.thumbnail_url, created_at=sub.created_at,
+        thumbnail_url=sub.thumbnail_url, claimed=sub.claimed_at is not None, created_at=sub.created_at,
     )
 
 
@@ -91,6 +93,31 @@ def unflag_suspicious(submission_id: uuid.UUID, admin: Admin = Depends(get_curre
                       db: Session = Depends(get_db)):
     sub = svc.set_suspicious(db, submission_id, False, admin.id)
     return _reload(db, sub)
+
+
+class LogPayoutIn(BaseModel):
+    method: str  # paypal | solana | whop
+    reference: str = ""
+
+
+_METHODS = {"paypal", "solana", "whop"}
+
+
+@router.post("/{submission_id}/log-payout", response_model=AdminSubmissionRow)
+def log_payout(submission_id: uuid.UUID, body: LogPayoutIn,
+               admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    if body.method not in _METHODS:
+        from fastapi import HTTPException, status as st
+        raise HTTPException(st.HTTP_400_BAD_REQUEST, "Invalid payout method")
+    payout_svc.record_payout_for_submission(db, admin.id, submission_id, body.method, body.reference)
+    sub = db.get(Submission, submission_id)
+    return _reload(db, sub)
+
+
+@router.delete("/{submission_id}", status_code=204)
+def delete(submission_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
+           db: Session = Depends(get_db)):
+    svc.delete_submission(db, admin.id, submission_id)
 
 
 def _reload(db: Session, sub: Submission) -> AdminSubmissionRow:

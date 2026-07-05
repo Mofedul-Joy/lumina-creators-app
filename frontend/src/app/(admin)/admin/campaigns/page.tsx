@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
@@ -13,6 +14,13 @@ import { archiveCampaign, closeCampaign, listAdminCampaigns, publishCampaign } f
 
 const PAGE_SIZE = 8;
 
+// small action icons for the campaigns table
+const iconBtn = "grid h-8 w-8 cursor-pointer place-items-center rounded-md text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] transition";
+function PencilIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
+function RocketIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 15c-1.5 1.5-2 5-2 5s3.5-.5 5-2m4-4 6-6a4 4 0 0 0-6-6l-6 6 6 6Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
+function CloseIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" /><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>; }
+function ArchiveIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="4" rx="1" stroke="currentColor" strokeWidth="2" /><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>; }
+
 function LineIcon() {
   return <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>;
 }
@@ -22,6 +30,7 @@ function GridIcon() {
 
 export default function AdminCampaignsPage() {
   const qc = useQueryClient();
+  const router = useRouter();
   const [hasToken, setHasToken] = useState(false);
   const [view, setView] = useState<"line" | "grid">("line");
   const [page, setPage] = useState(1);
@@ -171,30 +180,30 @@ export default function AdminCampaignsPage() {
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
                   {rows.map((c) => (
-                    <tr key={c.id} className="bg-[var(--color-bg)] transition hover:bg-[var(--color-surface)]/50">
+                    <tr
+                      key={c.id}
+                      onClick={() => router.push(`/admin/campaigns/${c.id}`)}
+                      className="cursor-pointer bg-[var(--color-bg)] transition hover:bg-[var(--color-surface)]/50"
+                    >
                       <td className="px-4 py-3">
-                        <Link href={`/admin/campaigns/${c.id}`} className="font-medium text-[var(--color-text)] hover:text-[var(--color-brand)]">{c.name}</Link>
+                        <p className="font-medium text-[var(--color-text)]">{c.name}</p>
                         <p className="text-xs text-[var(--color-text-muted)]">{c.brand_name ?? "-"}</p>
                       </td>
                       <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.mode === "create_new" ? "Create new" : "Repost"}</td>
                       <td className="tabular px-4 py-3 text-[var(--color-text)]">{fmtMoney(c.cpm_rate)}</td>
                       <td className="tabular px-4 py-3 text-[var(--color-text-secondary)]">{fmtMoney(c.budget)}</td>
                       <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
-                      <td className="px-4 py-3">
-                        {/* Bill's actions: view, edit, close/change state */}
-                        <div className="flex items-center justify-end gap-1.5 text-sm">
-                          <Link href={`/admin/campaigns/${c.id}`} className="rounded-md px-2 py-1 text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-text)]">View</Link>
-                          {c.status !== "archived" ? (
-                            <Link href={`/admin/campaigns/${c.id}`} className="rounded-md px-2 py-1 text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-text)]">Edit</Link>
-                          ) : null}
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Link href={`/admin/campaigns/${c.id}`} title="Edit" className={`${iconBtn} hover:text-[var(--color-text)]`}><PencilIcon /></Link>
                           {c.status === "draft" ? (
-                            <button className="cursor-pointer rounded-md bg-emerald-500/15 px-2 py-1 font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/25 hover:bg-emerald-500/25" onClick={() => publish.mutate(c.id)}>Publish</button>
+                            <button title="Publish" className={`${iconBtn} text-emerald-400 ring-emerald-500/25 hover:bg-emerald-500/15`} onClick={() => publish.mutate(c.id)}><RocketIcon /></button>
                           ) : null}
                           {c.status === "active" ? (
-                            <button className="cursor-pointer rounded-md px-2 py-1 text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-amber-400 hover:ring-amber-500/25" onClick={() => close.mutate(c.id)}>Close</button>
+                            <button title="Close" className={`${iconBtn} hover:text-amber-400 hover:ring-amber-500/25`} onClick={() => close.mutate(c.id)}><CloseIcon /></button>
                           ) : null}
                           {c.status !== "archived" ? (
-                            <button className="cursor-pointer rounded-md px-2 py-1 text-[var(--color-text-muted)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-danger)]" onClick={() => archive.mutate(c.id)}>Archive</button>
+                            <button title="Archive" className={`${iconBtn} hover:text-[var(--color-danger)]`} onClick={() => archive.mutate(c.id)}><ArchiveIcon /></button>
                           ) : null}
                         </div>
                       </td>
