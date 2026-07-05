@@ -72,6 +72,12 @@ def _mark_failed(db: Session, job: ScrapeJob, error: str) -> None:
 
 
 def _apply_stats(sub: Submission, stats: apify.ScrapedStats) -> None:
+    # Independent of the raise-only view-count logic below — a thumbnail is
+    # never "wrong to update," so it's written whenever Apify gave us one,
+    # even on a 0-views/post_unavailable read (the post may still be visible,
+    # just not counting views yet).
+    if stats.thumbnail_url:
+        sub.thumbnail_url = stats.thumbnail_url
     if stats.views == 0:
         # 0 views from a batch that DID return results for other URLs almost
         # always means this specific post is gone/age-gated — but the raise-

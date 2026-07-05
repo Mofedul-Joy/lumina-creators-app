@@ -39,6 +39,7 @@ class ScrapedStats:
     views: int
     likes: int
     comments: int
+    thumbnail_url: Optional[str] = None
 
 
 class ApifyNotConfigured(RuntimeError):
@@ -59,7 +60,9 @@ def _run_input(platform: str, post_urls: list[str]) -> dict:
         # clippers incident once returned 3,041 reels for ~150 requested URLs).
         return {"directUrls": post_urls, "resultsLimit": 1}
     if platform == "tiktok":
-        return {"postURLs": post_urls, "shouldDownloadVideos": False, "shouldDownloadCovers": False}
+        # Covers are needed for submission thumbnails — this was previously off,
+        # which is the whole reason TikTok thumbnails never showed up anywhere.
+        return {"postURLs": post_urls, "shouldDownloadVideos": False, "shouldDownloadCovers": True}
     if platform == "youtube":
         return {"startUrls": [{"url": u} for u in post_urls], "maxResults": 1}
     if platform == "twitter":
@@ -152,6 +155,35 @@ def _item_stats(platform: str, item: dict) -> ScrapedStats:
     return ScrapedStats(0, 0, 0)
 
 
+# Best-effort cover/thumbnail field names for platforms without a confirmed
+# actor schema (unlike TikTok's clockworks/tiktok-scraper, whose `covers`/
+# `videoMeta` shape is documented and stable). First match wins; verify
+# against a live dataset sample if a real scrape still comes back without one.
+_THUMBNAIL_KEYS: dict[str, tuple[str, ...]] = {
+    "instagram": ("displayUrl", "thumbnailUrl", "imageUrl"),
+    "twitter": ("thumbnailUrl", "media_url_https", "mediaUrl"),
+    "facebook": ("thumbnailUrl", "previewImage", "picture", "imageUrl"),
+}
+
+
+def _item_thumbnail(platform: str, item: dict, url: str) -> Optional[str]:
+    if platform == "youtube":
+        # No reliable cover field in this actor's dataset — the public
+        # img.youtube.com endpoint is a stable, no-auth thumbnail source keyed
+        # off the video ID alone, independent of anything Apify returns.
+        video_id = urls.youtube_video_id(url)
+        return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg" if video_id else None
+    if platform == "tiktok":
+        covers = item.get("covers") or {}
+        video_meta = item.get("videoMeta") or {}
+        return covers.get("default") or covers.get("origin") or video_meta.get("coverUrl")
+    for key in _THUMBNAIL_KEYS.get(platform, ()):
+        value = item.get(key)
+        if value:
+            return value
+    return None
+
+
 def match_dataset(platform: str, dataset: list[dict]) -> dict[str, ScrapedStats]:
     """Map stable match-key -> scraped stats, for every item Apify returned."""
     out: dict[str, ScrapedStats] = {}
@@ -159,7 +191,9 @@ def match_dataset(platform: str, dataset: list[dict]) -> dict[str, ScrapedStats]
         url = _item_url(platform, item)
         if not url:
             continue
-        out[urls.match_key(platform, url)] = _item_stats(platform, item)
+        stats = _item_stats(platform, item)
+        stats.thumbnail_url = _item_thumbnail(platform, item, url)
+        out[urls.match_key(platform, url)] = stats
     return out
 
 
