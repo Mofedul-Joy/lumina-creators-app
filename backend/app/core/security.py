@@ -41,6 +41,20 @@ def create_access_token(sub: str, aud: str) -> str:
     )
 
 
+def create_impersonation_token(client_id: str, admin_id: str, ttl_minutes: int = 15) -> str:
+    """Short-lived client-audience access token minted for an admin's 'View as
+    Client' — `imp_by` is carried for audit only; get_current_client's
+    validation (aud/type/exp/sub) doesn't look at it, so this is a normal
+    client access token in every way except how short it lives."""
+    s = get_settings()
+    now = _now()
+    return jwt.encode(
+        {"sub": client_id, "aud": "client", "type": "access", "jti": str(uuid.uuid4()),
+         "imp_by": admin_id, "iat": now, "exp": now + timedelta(minutes=ttl_minutes)},
+        s.jwt_secret, algorithm=_ALGO,
+    )
+
+
 def create_refresh_token(sub: str, aud: str) -> tuple[str, str, datetime]:
     """Returns (token, jti, expires_at)."""
     s = get_settings()

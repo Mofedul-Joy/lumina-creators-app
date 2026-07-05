@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { clearClientToken, getClientToken } from "@/lib/auth";
+import { useSearchParams } from "next/navigation";
+import { clearClientToken, getClientToken, setClientToken } from "@/lib/auth";
 import {
   listClientCampaigns,
   listClientSubmissions,
@@ -169,14 +170,23 @@ function CampaignCard({ c }: { c: ClientCampaign }) {
   );
 }
 
-export default function ClientDashboardPage() {
+function DashboardInner() {
   const router = useRouter();
+  const sp = useSearchParams();
   const [ready, setReady] = useState(false);
   const [hasToken, setHasToken] = useState(false);
   useEffect(() => {
+    // Admin "View as Client" lands here with a short-lived token in the URL —
+    // consume it into this domain's own token storage, then drop it from the
+    // URL so it never lingers in browser history/bookmarks.
+    const impersonateToken = sp.get("impersonate_token");
+    if (impersonateToken) {
+      setClientToken(impersonateToken);
+      router.replace("/client/dashboard");
+    }
     setHasToken(!!getClientToken());
     setReady(true);
-  }, []);
+  }, [sp, router]);
 
   const qc = useQueryClient();
   const q = useQuery({
@@ -271,5 +281,13 @@ export default function ClientDashboardPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function ClientDashboardPage() {
+  return (
+    <Suspense fallback={<main className="flex min-h-[100dvh] items-center justify-center"><p className="text-sm text-[var(--color-text-secondary)]">Loading…</p></main>}>
+      <DashboardInner />
+    </Suspense>
   );
 }

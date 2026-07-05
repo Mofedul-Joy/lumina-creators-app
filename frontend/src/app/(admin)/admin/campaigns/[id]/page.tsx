@@ -13,6 +13,7 @@ import {
   archiveCampaign,
   type CampaignUpdate,
   getAdminCampaign,
+  impersonateClient,
   publishCampaign,
   updateCampaign,
 } from "@/lib/admin";
@@ -88,6 +89,12 @@ export default function AdminCampaignDetailPage() {
   });
   const publishM = useMutation({ mutationFn: () => publishCampaign(id), onSuccess: refresh });
   const archiveM = useMutation({ mutationFn: () => archiveCampaign(id), onSuccess: refresh });
+  const viewAsClientM = useMutation({
+    mutationFn: () => impersonateClient(id),
+    onSuccess: ({ access_token }) => {
+      window.open(`/client/dashboard?impersonate_token=${encodeURIComponent(access_token)}`, "_blank");
+    },
+  });
 
   if (!ready || !hasToken)
     return <main className="flex min-h-[100dvh] items-center justify-center"><p className="text-sm text-[var(--color-text-secondary)]">Loading…</p></main>;
@@ -125,6 +132,15 @@ export default function AdminCampaignDetailPage() {
                 <StatusBadge status={c.status} />
               </div>
               <div className="flex items-center gap-2">
+                {c.client_id ? (
+                  <button
+                    onClick={() => viewAsClientM.mutate()}
+                    disabled={viewAsClientM.isPending}
+                    className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] hover:text-[var(--color-text)] disabled:opacity-50"
+                  >
+                    {viewAsClientM.isPending ? "Opening…" : "View as client"}
+                  </button>
+                ) : null}
                 <button
                   onClick={async () => {
                     setExporting(true);

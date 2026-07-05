@@ -171,6 +171,8 @@ export type OwedRow = {
   display_name: string | null;
   submission_count: number;
   amount_owed: number | string;
+  payout_method: string | null;
+  payout_address: string | null;
 };
 
 export type PayoutRow = {
@@ -260,6 +262,9 @@ export const archiveCampaign = (id: string) =>
 
 export const closeCampaign = (id: string) =>
   apiFetch<AdminCampaign>(`/api/admin/campaigns/${id}/close`, { method: "POST", ...auth() });
+
+export const impersonateClient = (campaignId: string) =>
+  apiFetch<{ access_token: string }>(`/api/admin/campaigns/${campaignId}/impersonate-client`, { method: "POST", ...auth() });
 
 /* ---- creator database ---- */
 export type CreatorRow = {

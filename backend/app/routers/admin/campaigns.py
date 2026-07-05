@@ -4,15 +4,16 @@ from __future__ import annotations
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_admin
+from app.core.security import create_impersonation_token
 from app.db.session import get_db
 from app.models import Admin, Campaign, CreatorProfile, Submission
 from app.schemas.campaign import CampaignCreateIn, CampaignOut, CampaignUpdateIn
-from app.services import campaign as svc
+from app.services import audit, campaign as svc
 from app.services.csv_export import csv_response
 
 router = APIRouter(prefix="/campaigns", tags=["admin-campaigns"])
@@ -66,6 +67,21 @@ def close(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db:
 @router.post("/{campaign_id}/archive", response_model=CampaignOut)
 def archive(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     return campaign_out(svc.archive_campaign(db, campaign_id, admin.id))
+
+
+@router.post("/{campaign_id}/impersonate-client")
+def impersonate_client(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Mints a 15-minute client-scoped token so an admin can see this campaign's
+    client dashboard exactly as that client would. Audit-logged since it's a
+    real (if short-lived) session as someone else's account."""
+    campaign = svc.get_campaign(db, campaign_id)
+    if campaign.client_id is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "This campaign has no client account linked")
+    token = create_impersonation_token(str(campaign.client_id), str(admin.id))
+    audit.log(db, actor_admin_id=admin.id, action="client.impersonate", entity_type="client",
+             entity_id=campaign.client_id, campaign_id=str(campaign_id))
+    db.commit()
+    return {"access_token": token}
 
 
 @router.get("/{campaign_id}/export")
