@@ -203,8 +203,8 @@ export type PayoutMethod = "paypal" | "solana" | "whop";
 
 export const listOwed = () => apiFetch<OwedRow[]>("/api/admin/payouts/owed", auth());
 export const listPayouts = () => apiFetch<PayoutRow[]>("/api/admin/payouts", auth());
-export const recordPayout = (creator_id: string, method: PayoutMethod) =>
-  apiFetch<PayoutRow>("/api/admin/payouts", { method: "POST", body: JSON.stringify({ creator_id, method }), ...auth() });
+export const recordPayout = (creator_id: string, method: PayoutMethod, reference?: string) =>
+  apiFetch<PayoutRow>("/api/admin/payouts", { method: "POST", body: JSON.stringify({ creator_id, method, reference }), ...auth() });
 
 export const logManualPayment = (body: { creator_id: string; amount: number; method: PayoutMethod; reference?: string }) =>
   apiFetch<PayoutRow>("/api/admin/payouts/manual", { method: "POST", body: JSON.stringify(body), ...auth() });

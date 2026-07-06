@@ -7,7 +7,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getAdminToken } from "@/lib/auth";
-import { listOwed, listPayouts, listSubmissions, logManualPayment, type PayoutMethod, recordPayout } from "@/lib/admin";
+import { listOwed, listPayouts, listSubmissions, logManualPayment, type OwedRow, type PayoutMethod, recordPayout } from "@/lib/admin";
 import { isAuthError, listCreators } from "@/lib/api";
 import { fmtMoney } from "@/lib/format";
 
@@ -25,8 +25,12 @@ export default function AdminPaymentsPage() {
   const qc = useQueryClient();
   const [ready, setReady] = useState(false);
   const [hasToken, setHasToken] = useState(false);
-  const [method, setMethod] = useState<Record<string, PayoutMethod>>({});
   const [tab, setTab] = useState<PayTab>("to_be_paid");
+  // "Pay now" opens a confirm/log modal for that one creator — payouts are sent
+  // out-of-band, so this records the payment rather than automating it.
+  const [payTarget, setPayTarget] = useState<OwedRow | null>(null);
+  const [payMethod, setPayMethod] = useState<PayoutMethod>("paypal");
+  const [payReference, setPayReference] = useState("");
 
   useEffect(() => {
     setHasToken(!!getAdminToken());
@@ -54,9 +58,15 @@ export default function AdminPaymentsPage() {
     qc.invalidateQueries({ queryKey: ["payouts-history"] });
   };
   const payM = useMutation({
-    mutationFn: ({ id, m }: { id: string; m: PayoutMethod }) => recordPayout(id, m),
-    onSuccess: refresh,
+    mutationFn: ({ id, m, reference }: { id: string; m: PayoutMethod; reference?: string }) => recordPayout(id, m, reference),
+    onSuccess: () => { setPayTarget(null); refresh(); },
   });
+  const openPay = (r: OwedRow) => {
+    setPayTarget(r);
+    setPayMethod((r.payout_method as PayoutMethod) || "paypal");
+    setPayReference("");
+    payM.reset();
+  };
 
   // Add Payment (Clippers receipt flow): money moved elsewhere, log it here
   const [showAdd, setShowAdd] = useState(false);
@@ -200,22 +210,12 @@ export default function AdminPaymentsPage() {
                         <td className="tabular px-6 py-4 text-right text-[var(--color-text-secondary)]">{r.submission_count}</td>
                         <td className="tabular px-6 py-4 text-right font-medium text-[var(--color-text)]">{fmtMoney(r.amount_owed)}</td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center justify-end gap-2">
-                            <select
-                              value={method[r.creator_id] ?? (r.payout_method as PayoutMethod) ?? "paypal"}
-                              onChange={(e) => setMethod((m) => ({ ...m, [r.creator_id]: e.target.value as PayoutMethod }))}
-                              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-1 text-xs text-[var(--color-text)]"
-                            >
-                              {METHODS.map((m) => (
-                                <option key={m} value={m}>{METHOD_LABEL[m]}</option>
-                              ))}
-                            </select>
+                          <div className="flex items-center justify-end">
                             <button
-                              disabled={payM.isPending}
-                              onClick={() => payM.mutate({ id: r.creator_id, m: method[r.creator_id] ?? (r.payout_method as PayoutMethod) ?? "paypal" })}
-                              className="cursor-pointer rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-[var(--color-on-brand)] hover:bg-emerald-400 disabled:opacity-50"
+                              onClick={() => openPay(r)}
+                              className="cursor-pointer rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-[var(--color-on-brand)] hover:bg-emerald-400"
                             >
-                              {payM.isPending ? "Paying…" : "Pay now"}
+                              Pay now
                             </button>
                           </div>
                         </td>
@@ -348,6 +348,61 @@ export default function AdminPaymentsPage() {
                     className="cursor-pointer rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] disabled:opacity-50"
                   >
                     {addM.isPending ? "Logging…" : "Log payment"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Log payout modal — confirm + record a manual payout for one creator */}
+        {payTarget ? (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setPayTarget(null)}>
+            <div className="w-full max-w-md rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-[var(--color-text)]">Log payout</h3>
+                <button onClick={() => setPayTarget(null)} className="cursor-pointer rounded-full p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]" aria-label="Close">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                </button>
+              </div>
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                Record a payment you&apos;ve sent to <span className="text-[var(--color-text)]">{payTarget.display_name ?? "this creator"}</span> out-of-band. It settles their {payTarget.submission_count} verified clip{payTarget.submission_count === 1 ? "" : "s"}.
+              </p>
+
+              <div className="mt-5 rounded-[var(--radius-btn)] bg-[var(--color-surface-2)] p-4">
+                <div className="flex items-end justify-between">
+                  <span className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Amount</span>
+                  <span className="tabular text-2xl font-semibold text-[var(--color-brand-soft)]">{fmtMoney(payTarget.amount_owed)}</span>
+                </div>
+                <div className="mt-2 border-t border-[var(--color-border)] pt-2 text-xs text-[var(--color-text-secondary)]">
+                  {payTarget.payout_address
+                    ? <>Creator&apos;s method on file: <span className="text-[var(--color-text)]">{METHOD_LABEL[payTarget.payout_method ?? ""] ?? "—"}</span> · {payTarget.payout_address}</>
+                    : "No payout details on file — confirm how you sent it below."}
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                <label className="block">
+                  <span className="mb-1.5 block text-sm text-[var(--color-text)]">Paid via</span>
+                  <select value={payMethod} onChange={(e) => setPayMethod(e.target.value as PayoutMethod)}
+                    className="min-h-10 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]">
+                    {METHODS.map((m) => <option key={m} value={m}>{METHOD_LABEL[m]}</option>)}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-sm text-[var(--color-text)]">Reference (optional)</span>
+                  <input value={payReference} onChange={(e) => setPayReference(e.target.value)} placeholder="Transaction ID, note…"
+                    className="min-h-10 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]" />
+                </label>
+                {payM.isError ? <p className="text-sm text-[var(--color-danger)]">{(payM.error as Error).message}</p> : null}
+                <div className="flex justify-end gap-3 pt-1">
+                  <button onClick={() => setPayTarget(null)} className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Cancel</button>
+                  <button
+                    disabled={payM.isPending}
+                    onClick={() => payM.mutate({ id: payTarget.creator_id, m: payMethod, reference: payReference.trim() || undefined })}
+                    className="cursor-pointer rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] hover:bg-emerald-400 disabled:opacity-50"
+                  >
+                    {payM.isPending ? "Logging…" : `Log ${fmtMoney(payTarget.amount_owed)} payout`}
                   </button>
                 </div>
               </div>

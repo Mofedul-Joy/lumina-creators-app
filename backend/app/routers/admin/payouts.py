@@ -40,7 +40,7 @@ def history(limit: int = 50, admin: Admin = Depends(get_current_admin), db: Sess
 def record(body: RecordPayoutIn, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     if body.method not in _METHODS:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid payout method")
-    p = svc.record_payout(db, admin.id, body.creator_id, body.method)
+    p = svc.record_payout(db, admin.id, body.creator_id, body.method, body.reference or "")
     return _payout_row(p, None)
 
 

@@ -31,6 +31,7 @@ class PayoutRow(BaseModel):
 class RecordPayoutIn(BaseModel):
     creator_id: uuid.UUID  # validated -> 422 on malformed, not a 500
     method: str  # paypal | solana | whop
+    reference: Optional[str] = None  # optional out-of-band transaction ref
 
 
 class ManualPaymentIn(BaseModel):

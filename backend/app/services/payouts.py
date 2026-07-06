@@ -122,7 +122,8 @@ def record_payout_for_submission(db: Session, admin_id: uuid.UUID, submission_id
     return payout
 
 
-def record_payout(db: Session, admin_id: uuid.UUID, creator_id: uuid.UUID, method: str) -> Payout:
+def record_payout(db: Session, admin_id: uuid.UUID, creator_id: uuid.UUID, method: str,
+                  reference: str = "") -> Payout:
     subs = _unpaid_verified(db, creator_id)
     # Only settle rows that round to a positive cent — the DB CHECK is amount > 0,
     # and paying $0.00 items would 500 or strand a zero payout.
@@ -133,7 +134,8 @@ def record_payout(db: Session, admin_id: uuid.UUID, creator_id: uuid.UUID, metho
     total = sum((amt for _, amt in items), Decimal(0))
 
     payout = Payout(creator_id=creator_id, amount=total, method=method, status="paid",
-                    processed_by=admin_id, paid_at=_now())
+                    processed_by=admin_id, paid_at=_now(),
+                    external_ref=reference.strip() or None)
     db.add(payout)
     try:
         db.flush()  # assign payout.id before linking items
