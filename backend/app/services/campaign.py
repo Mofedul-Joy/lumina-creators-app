@@ -154,6 +154,13 @@ def list_active_campaigns(db: Session):
     ).all()
 
 
+def list_completed_campaigns(db: Session):
+    """Publicly browsable past campaigns (for the landing 'Completed' tab)."""
+    return db.scalars(
+        select(Campaign).where(Campaign.status == "completed").order_by(Campaign.published_at.desc())
+    ).all()
+
+
 def get_active_campaign(db: Session, slug: str) -> Campaign:
     c = db.scalar(select(Campaign).where(Campaign.slug == slug, Campaign.status == "active"))
     if c is None:

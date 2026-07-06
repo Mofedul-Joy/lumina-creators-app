@@ -138,7 +138,8 @@ export type PublicCampaign = {
 };
 
 export const publicApi = {
-  campaigns: () => apiFetch<PublicCampaign[]>("/api/public/campaigns"),
+  campaigns: (status: "active" | "completed" = "active") =>
+    apiFetch<PublicCampaign[]>(`/api/public/campaigns?status=${status}`),
   campaign: (slug: string) => apiFetch<PublicCampaign>(`/api/public/campaigns/${slug}`),
   submit: (slug: string, body: { email: string; post_url: string }) =>
     apiFetch<{ status: string }>(`/api/public/campaigns/${slug}/submit`, {

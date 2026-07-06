@@ -30,8 +30,13 @@ def _out(c) -> CampaignPublicOut:
 
 
 @router.get("", response_model=list[CampaignPublicOut])
-def browse(db: Session = Depends(get_db)):
-    return [_out(c) for c in campaign_svc.list_active_campaigns(db)]
+def browse(status: str = "active", db: Session = Depends(get_db)):
+    campaigns = (
+        campaign_svc.list_completed_campaigns(db)
+        if status == "completed"
+        else campaign_svc.list_active_campaigns(db)
+    )
+    return [_out(c) for c in campaigns]
 
 
 @router.get("/{slug}", response_model=CampaignPublicOut)
