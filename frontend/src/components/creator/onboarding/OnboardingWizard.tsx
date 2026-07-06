@@ -21,7 +21,8 @@ import {
 // APIs; there is no server completion gate, so partial saves are safe. Every
 // step pre-fills from the loaded profile, so this doubles as "edit profile".
 
-const STEPS = [
+type StepKey = "type" | "details" | "socials" | "portfolio" | "audience" | "payment" | "done";
+const STEPS: { key: StepKey; label: string; optional?: boolean }[] = [
   { key: "type", label: "You" },
   { key: "details", label: "Details" },
   { key: "socials", label: "Socials" },
@@ -29,8 +30,7 @@ const STEPS = [
   { key: "audience", label: "Audience", optional: true },
   { key: "payment", label: "Payment" },
   { key: "done", label: "Done" },
-] as const;
-type StepKey = (typeof STEPS)[number]["key"];
+];
 
 const CREATOR_TYPE_COPY: Record<CreatorType, { title: string; blurb: string; icon: string }> = {
   ugc: { title: "UGC creator", blurb: "I make content for brands to use in their own ads.", icon: "🎬" },
@@ -248,11 +248,11 @@ export function OnboardingWizard() {
               </div>
               {payout.method ? (
                 <div className="space-y-2">
-                  <label className={labelCls}>{PAYOUT_LABEL[payout.method]} details</label>
+                  <label className={labelCls}>{PAYOUT_LABEL[payout.method as PayoutMethod]} details</label>
                   <input
                     className={control}
-                    placeholder={PAYOUT_PLACEHOLDER[payout.method]}
-                    value={payout[payout.method]}
+                    placeholder={PAYOUT_PLACEHOLDER[payout.method as PayoutMethod]}
+                    value={payout[payout.method as PayoutMethod]}
                     onChange={(e) => setPayout({ ...payout, [payout.method as PayoutMethod]: e.target.value } as typeof payout)}
                   />
                 </div>
