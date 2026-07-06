@@ -117,10 +117,21 @@ function SubmissionsSection({ campaign }: { campaign: ClientCampaign }) {
                   <span className="absolute bottom-2 left-2 rounded-full bg-red-500/80 px-2 py-0.5 text-[10px] font-medium text-white">Unavailable</span>
                 ) : null}
               </SubmissionThumbnail>
-              <div className="flex items-center justify-between gap-2 bg-[var(--color-surface-2)] px-4 py-3 text-xs text-[var(--color-text-secondary)]">
-                <span className="tabular">{fmtInt(s.views)} views</span>
-                <span className="tabular">{fmtInt(s.likes)} likes</span>
-                <span className="tabular">{fmtInt(s.comments)} comments</span>
+              {/* prominent stat strip — bright values over muted labels so the
+                  numbers read clearly against the dark card */}
+              <div className="grid grid-cols-3 divide-x divide-[var(--color-border)] bg-[var(--color-surface-2)] text-center">
+                <div className="px-2 py-3">
+                  <p className="tabular text-base font-semibold text-[var(--color-brand-soft)]">{fmtInt(s.views)}</p>
+                  <p className="mt-0.5 text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">Views</p>
+                </div>
+                <div className="px-2 py-3">
+                  <p className="tabular text-base font-semibold text-[var(--color-text)]">{fmtInt(s.likes)}</p>
+                  <p className="mt-0.5 text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">Likes</p>
+                </div>
+                <div className="px-2 py-3">
+                  <p className="tabular text-base font-semibold text-[var(--color-text)]">{fmtInt(s.comments)}</p>
+                  <p className="mt-0.5 text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">Comments</p>
+                </div>
               </div>
             </a>
           ))}
