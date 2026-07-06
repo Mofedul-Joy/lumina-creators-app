@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { clearClientToken, getClientToken, setClientToken } from "@/lib/auth";
 import { listClientCampaigns, listClientSubmissions, type ClientCampaign } from "@/lib/client";
-import { downloadCsv } from "@/lib/api";
+import { downloadCsv, isAuthError } from "@/lib/api";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { SkeletonCardGrid, SkeletonStats } from "@/components/ui/Skeleton";
 import { SubmissionThumbnail } from "@/components/ui/SubmissionThumbnail";
@@ -156,6 +156,15 @@ function DashboardInner() {
   });
 
   const campaigns = q.data ?? [];
+  // An expired/invalid token should just sign the client out, not dump a raw
+  // error onto the dashboard.
+  useEffect(() => {
+    if (q.isError && isAuthError(q.error)) {
+      clearClientToken();
+      qc.clear();
+      router.replace("/client/login");
+    }
+  }, [q.isError, q.error, qc, router]);
   useEffect(() => {
     if (campaigns.length && !campaigns.some((c) => c.id === selectedId)) setSelectedId(campaigns[0].id);
   }, [campaigns, selectedId]);
@@ -208,7 +217,9 @@ function DashboardInner() {
         {q.isLoading ? (
           <div className="mt-8 space-y-8"><SkeletonStats count={4} /><SkeletonCardGrid count={6} /></div>
         ) : q.isError ? (
-          <p className="mt-8 text-sm text-[var(--color-danger)]">{(q.error as Error).message}</p>
+          <p className="mt-8 text-sm text-[var(--color-text-secondary)]">
+            {isAuthError(q.error) ? "Signing you out…" : (q.error as Error).message}
+          </p>
         ) : !selected ? (
           <div className="card-lumina mt-8 rounded-[var(--radius-card)] p-10 text-center">
             <p className="text-lg font-medium text-[var(--color-text)]">No campaigns yet</p>

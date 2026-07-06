@@ -133,11 +133,26 @@ def list_portfolio(db: Session, creator_id: uuid.UUID):
 def add_portfolio(db: Session, creator_id: uuid.UUID, data: dict) -> PortfolioItem:
     if data.get("platform") is not None and data["platform"] not in _PLATFORMS:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid platform")
-    # Portfolio is now a LINK to the creator's best video, not an uploaded file —
-    # keeps the DB light and onboarding fast.
+
+    # Primary path: an uploaded video FILE (stored on R2), distinct from a
+    # submission. The playable URL is resolved from the storage object at read
+    # time so proxy/presigned URLs stay fresh.
+    if data.get("storage_object_id"):
+        obj = _require_owned_object(db, creator_id, data["storage_object_id"], "portfolio_video")
+        item = PortfolioItem(
+            creator_id=creator_id, storage_object_id=obj.id,
+            brand_name=data.get("brand_name"), caption=data.get("caption"),
+        )
+        db.add(item)
+        db.commit()
+        db.refresh(item)
+        recompute_completion(db, creator_id)
+        return item
+
+    # Legacy path: an external video LINK (kept so older clients still work).
     video_url = (data.get("video_url") or "").strip()
     if not video_url:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "A video link is required")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Upload a video or provide a video link")
     if not urls.is_video_url(video_url):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,

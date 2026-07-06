@@ -16,7 +16,6 @@ import {
   PAYOUT_METHODS,
   PLATFORMS,
   type PayoutMethod,
-  addPortfolio,
   addSocial,
   deletePortfolio,
   deleteSocial,
@@ -25,6 +24,7 @@ import {
   listSocials,
   updateProfile,
   uploadFile,
+  uploadPortfolioVideo,
   type Platform,
   type ProfileIn,
 } from "@/lib/api";
@@ -138,15 +138,23 @@ export default function ProfilePage() {
   });
   const removeSocialM = useMutation({ mutationFn: (id: string) => deleteSocial(bearer, id), onSuccess: () => qc.invalidateQueries({ queryKey: ["socials"] }) });
 
-  // portfolio
-  const [portfolioForm, setPortfolioForm] = useState({ video_url: "", brand_name: "", caption: "" });
-  const addPortfolioM = useMutation({
-    mutationFn: () => addPortfolio(bearer, {
-      video_url: portfolioForm.video_url.trim(),
+  // portfolio — uploaded video FILES (stored on R2), not links
+  const [portfolioForm, setPortfolioForm] = useState({ brand_name: "", caption: "" });
+  const portfolioFileRef = useRef<HTMLInputElement>(null);
+  const [portfolioPct, setPortfolioPct] = useState(0);
+  const [portfolioErr, setPortfolioErr] = useState("");
+  const uploadPortfolioM = useMutation({
+    mutationFn: (file: File) => uploadPortfolioVideo(bearer, file, {
       brand_name: portfolioForm.brand_name.trim() || undefined,
       caption: portfolioForm.caption.trim() || undefined,
-    }),
-    onSuccess: () => { setPortfolioForm({ video_url: "", brand_name: "", caption: "" }); qc.invalidateQueries({ queryKey: ["portfolio"] }); },
+    }, setPortfolioPct),
+    onSuccess: () => {
+      setPortfolioForm({ brand_name: "", caption: "" });
+      setPortfolioPct(0);
+      if (portfolioFileRef.current) portfolioFileRef.current.value = "";
+      qc.invalidateQueries({ queryKey: ["portfolio"] });
+    },
+    onError: (e) => { setPortfolioErr((e as Error).message); setPortfolioPct(0); },
   });
   const removePortfolioM = useMutation({ mutationFn: (id: string) => deletePortfolio(bearer, id), onSuccess: () => qc.invalidateQueries({ queryKey: ["portfolio"] }) });
 
@@ -319,31 +327,66 @@ export default function ProfilePage() {
         </section>
       ) : null}
 
-      {/* PORTFOLIO */}
+      {/* PORTFOLIO — uploaded video files, playable inline */}
       {tab === "portfolio" ? (
         <section className={cardCls}>
           <p className="text-sm text-[var(--color-text-secondary)]">
-            <span className="text-[var(--color-brand-soft)]">Boosts credibility with brands.</span> Paste a link to your best content (TikTok, Instagram, YouTube, X, or Facebook), no heavy uploads.
+            <span className="text-[var(--color-brand-soft)]">Upload your best videos.</span> Brands watch these when matching campaigns to you — a strong portfolio wins better, higher-paying work. These are showcase clips, separate from your campaign submissions.
           </p>
-          <ul className="space-y-2">
-            {portfolio.map((p) => (
-              <li key={p.id} className="flex items-center justify-between gap-3 rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-2">
-                <a href={p.video_url ?? "#"} target="_blank" rel="noreferrer" className="min-w-0 truncate text-sm text-[var(--color-brand)] hover:underline">
-                  {p.brand_name ? `${p.brand_name} · ` : ""}{p.video_url}
-                </a>
-                <button className="shrink-0 cursor-pointer text-xs text-[var(--color-danger)]" onClick={() => removePortfolioM.mutate(p.id)}>Remove</button>
-              </li>
-            ))}
-            {portfolio.length === 0 ? <li className="text-sm text-[var(--color-text-muted)]">No videos added yet.</li> : null}
-          </ul>
+
+          {portfolio.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {portfolio.map((p) => (
+                <div key={p.id} className="overflow-hidden rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)]">
+                  {p.is_upload && p.video_url ? (
+                    <video
+                      src={p.video_url}
+                      controls
+                      playsInline
+                      preload="metadata"
+                      poster={p.thumbnail_url ?? undefined}
+                      className="aspect-video w-full bg-black object-contain"
+                    />
+                  ) : (
+                    <a href={p.video_url ?? "#"} target="_blank" rel="noreferrer" className="flex aspect-video w-full items-center justify-center bg-gradient-to-br from-[var(--color-brand)]/20 to-[var(--color-bg-deep)] text-sm font-medium text-[var(--color-brand)]">
+                      Open video link ↗
+                    </a>
+                  )}
+                  <div className="flex items-center justify-between gap-2 px-3 py-2">
+                    <span className="min-w-0 truncate text-xs text-[var(--color-text-secondary)]">{p.brand_name || (p.is_upload ? "Portfolio video" : p.video_url)}</span>
+                    <button className="shrink-0 cursor-pointer text-xs text-[var(--color-danger)]" onClick={() => removePortfolioM.mutate(p.id)}>Remove</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-[var(--color-text-muted)]">No videos uploaded yet.</p>
+          )}
+
+          {/* upload control */}
           <div className="space-y-2">
-            <input className={controlCls} placeholder="https://tiktok.com/@you/video/..." value={portfolioForm.video_url} onChange={(e) => setPortfolioForm({ ...portfolioForm, video_url: e.target.value })} />
+            <input
+              ref={portfolioFileRef}
+              type="file"
+              accept="video/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) { setPortfolioErr(""); uploadPortfolioM.mutate(f); } }}
+            />
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <input className={controlCls + " text-sm"} placeholder="Brand (optional)" value={portfolioForm.brand_name} onChange={(e) => setPortfolioForm({ ...portfolioForm, brand_name: e.target.value })} />
               <input className={controlCls + " text-sm"} placeholder="Caption (optional)" value={portfolioForm.caption} onChange={(e) => setPortfolioForm({ ...portfolioForm, caption: e.target.value })} />
             </div>
-            {addPortfolioM.isError ? <p className="text-sm text-[var(--color-danger)]">{(addPortfolioM.error as Error).message}</p> : null}
-            <div className="w-40"><Button type="button" loading={addPortfolioM.isPending} disabled={!portfolioForm.video_url.trim()} onClick={() => addPortfolioM.mutate()}>Add video link</Button></div>
+            {uploadPortfolioM.isPending ? (
+              <div className="space-y-1.5">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
+                  <div className="h-full rounded-full bg-[var(--color-brand)] transition-all" style={{ width: `${portfolioPct}%` }} />
+                </div>
+                <p className="text-xs text-[var(--color-text-secondary)]">Uploading… {portfolioPct}%</p>
+              </div>
+            ) : (
+              <div className="w-48"><Button type="button" onClick={() => portfolioFileRef.current?.click()}>Upload a video</Button></div>
+            )}
+            {portfolioErr ? <p className="text-sm text-[var(--color-danger)]">{portfolioErr}</p> : null}
           </div>
         </section>
       ) : null}

@@ -96,7 +96,6 @@ export default function AdminCreatorsPage() {
     <div className="min-h-[100dvh]">
       <AdminShell />
       <main className="mx-auto max-w-6xl px-6 py-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Operations Terminal</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Creator database</h1>
         <p className="mt-2 text-[var(--color-text-secondary)]">Search the full roster by name, email, or social link.</p>
         <AdminTabs />

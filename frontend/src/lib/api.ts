@@ -237,7 +237,8 @@ export type SocialOut = {
 };
 
 export type PortfolioIn = {
-  video_url: string;
+  storage_object_id?: string;
+  video_url?: string;
   brand_name?: string;
   caption?: string;
   platform?: Platform;
@@ -247,6 +248,7 @@ export type PortfolioOut = {
   id: string;
   video_url: string | null;
   thumbnail_url: string | null;
+  is_upload: boolean;
   brand_name: string | null;
   caption: string | null;
   platform: Platform | null;
@@ -435,6 +437,22 @@ export async function uploadFile(
   await putToPresignedUrl(presigned.upload_url, file, onProgress);
   const finalized = await finalizeUpload(token, presigned.object_id);
   return finalized.id;
+}
+
+// Upload a portfolio video FILE (presign -> PUT -> finalize -> attach). Distinct
+// from a submission: it just showcases the creator's work, stored on R2.
+export async function uploadPortfolioVideo(
+  token: string,
+  file: File,
+  meta: { brand_name?: string; caption?: string },
+  onProgress?: (pct: number) => void,
+): Promise<PortfolioOut> {
+  const objectId = await uploadFile(token, file, "portfolio_video", onProgress);
+  return addPortfolio(token, {
+    storage_object_id: objectId,
+    brand_name: meta.brand_name || undefined,
+    caption: meta.caption || undefined,
+  });
 }
 
 // ── Admin creators methods (admin bearer token) ───────────────────────────────

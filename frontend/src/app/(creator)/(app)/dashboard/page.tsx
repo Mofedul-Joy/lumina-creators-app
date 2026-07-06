@@ -116,17 +116,26 @@ export default function DashboardPage() {
         </Link>
       ) : null}
 
+      {/* Portfolio upload — deliberately the loudest card on the page: full brand
+          fill + video icon, to pull creators into uploading a portfolio video. */}
       <Link
         href="/onboarding?tab=portfolio"
-        className="card-interactive mt-4 flex items-center justify-between gap-4 rounded-[var(--radius-card)] border border-[var(--color-brand)]/25 bg-gradient-to-br from-[var(--color-brand)]/12 to-[var(--color-bg-deep)] p-5"
+        className="card-interactive mt-6 flex items-center justify-between gap-4 rounded-[var(--radius-card)] bg-gradient-to-r from-[var(--color-brand)] to-[var(--color-brand-hover)] p-6 shadow-[0_0_28px_-8px_rgba(34,197,94,0.7)]"
       >
-        <div>
-          <p className="text-sm font-semibold text-[var(--color-brand-soft)]">Add portfolio videos</p>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-            Paste links to your best content. It&apos;s a credibility signal brands see when matching campaigns to you.
-          </p>
+        <div className="flex items-center gap-4">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-black/20 text-[var(--color-on-brand)]">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="14" height="14" rx="2.5" stroke="currentColor" strokeWidth="2" /><path d="M16 10l6-3v10l-6-3v-4Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
+          </span>
+          <div>
+            <p className="text-base font-bold text-[var(--color-on-brand)]">Upload a portfolio video</p>
+            <p className="mt-1 text-sm text-[var(--color-on-brand)]/85">
+              Show brands your best work. Creators with a portfolio get matched to more (and higher-paying) campaigns.
+            </p>
+          </div>
         </div>
-        <span className="shrink-0 text-sm font-medium text-[var(--color-brand-soft)]">Add now →</span>
+        <span className="hidden shrink-0 items-center gap-1 rounded-full bg-black/25 px-4 py-2 text-sm font-semibold text-[var(--color-on-brand)] sm:inline-flex">
+          Upload now →
+        </span>
       </Link>
 
       <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">

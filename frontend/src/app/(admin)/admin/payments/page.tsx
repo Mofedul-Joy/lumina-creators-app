@@ -102,7 +102,6 @@ export default function AdminPaymentsPage() {
       <main className="mx-auto max-w-6xl px-6 py-10">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Operations Terminal</p>
             <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Payments</h1>
             <p className="mt-2 max-w-xl text-[var(--color-text-secondary)]">
               Settle verified creator earnings. Each submission is paid at most once.
@@ -117,6 +116,18 @@ export default function AdminPaymentsPage() {
           </button>
         </div>
         <AdminTabs />
+
+        {/* pay-now result — previously the click gave no feedback at all, so a
+            failed payout looked like "nothing happened" */}
+        {payM.isSuccess ? (
+          <div className="mt-6 rounded-[var(--radius-btn)] border border-[var(--color-brand)]/30 bg-[var(--color-brand)]/10 px-4 py-3 text-sm text-[var(--color-brand-soft)]">
+            Recorded a {fmtMoney(payM.data.amount)} payout{payM.data.creator_name ? ` to ${payM.data.creator_name}` : ""}. It&apos;s now under the Paid tab.
+          </div>
+        ) : payM.isError ? (
+          <div className="mt-6 rounded-[var(--radius-btn)] border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/10 px-4 py-3 text-sm text-[var(--color-danger)]">
+            Couldn&apos;t record the payout: {(payM.error as Error).message}
+          </div>
+        ) : null}
 
         {/* summary */}
         <div className="mt-8 grid grid-cols-3 gap-4">

@@ -61,7 +61,10 @@ class SocialOut(BaseModel):
 
 
 class PortfolioIn(BaseModel):
-    video_url: str
+    # Either an uploaded video (storage_object_id, the primary path now) OR a
+    # legacy external link (video_url). One of the two is required.
+    storage_object_id: Optional[str] = None
+    video_url: Optional[str] = None
     brand_name: Optional[str] = None
     caption: Optional[str] = None
     platform: Optional[str] = None
@@ -69,8 +72,9 @@ class PortfolioIn(BaseModel):
 
 class PortfolioOut(BaseModel):
     id: str
-    video_url: Optional[str] = None
+    video_url: Optional[str] = None   # playable URL (R2 for uploads, external for links)
     thumbnail_url: Optional[str] = None
+    is_upload: bool = False           # true = an uploaded video file, render a player
     brand_name: Optional[str] = None
     caption: Optional[str] = None
     platform: Optional[str] = None

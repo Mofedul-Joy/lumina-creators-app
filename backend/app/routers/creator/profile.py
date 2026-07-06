@@ -87,20 +87,27 @@ def delete_social(social_id: uuid.UUID, current: Creator = Depends(get_current_c
 
 
 # ---- portfolio ----
-def _portfolio_out(p) -> PortfolioOut:
-    return PortfolioOut(id=str(p.id), video_url=p.video_url,
+def _portfolio_out(db: Session, p) -> PortfolioOut:
+    # Uploaded videos resolve their playable URL from the storage object (R2);
+    # legacy items keep their external link.
+    video_url = p.video_url
+    is_upload = p.storage_object_id is not None
+    if is_upload:
+        obj = db.get(StorageObject, p.storage_object_id)
+        video_url = storage.object_public_url(obj.object_key) if obj else None
+    return PortfolioOut(id=str(p.id), video_url=video_url, is_upload=is_upload,
                         thumbnail_url=p.thumbnail_url, brand_name=p.brand_name,
                         caption=p.caption, platform=p.platform)
 
 
 @router.get("/portfolio", response_model=list[PortfolioOut])
 def list_portfolio(current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
-    return [_portfolio_out(p) for p in svc.list_portfolio(db, current.id)]
+    return [_portfolio_out(db, p) for p in svc.list_portfolio(db, current.id)]
 
 
 @router.post("/portfolio", response_model=PortfolioOut)
 def add_portfolio(body: PortfolioIn, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
-    return _portfolio_out(svc.add_portfolio(db, current.id, body.model_dump()))
+    return _portfolio_out(db, svc.add_portfolio(db, current.id, body.model_dump()))
 
 
 @router.delete("/portfolio/{item_id}", status_code=204)

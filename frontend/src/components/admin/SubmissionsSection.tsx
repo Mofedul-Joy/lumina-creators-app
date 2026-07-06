@@ -153,7 +153,7 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
         </>
       )}
 
-      {detail ? <SubmissionDetailModal sub={detail} onClose={() => setDetail(null)} /> : null}
+      {detail ? <SubmissionDetailModal sub={detail} pool={thumbPool} onClose={() => setDetail(null)} /> : null}
     </div>
   );
 }

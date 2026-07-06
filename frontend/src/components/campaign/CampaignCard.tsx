@@ -50,9 +50,11 @@ export function CampaignCard({ c }: { c: Campaign }) {
           <span className="text-sm text-[var(--color-text-muted)]">CPM / 1,000 views</span>
         </div>
 
-        <div className="mt-auto flex items-center justify-between border-t border-[var(--color-border)] pt-4">
+        <div className="mt-auto border-t border-[var(--color-border)] pt-4">
           <span className="tabular text-xs text-[var(--color-text-muted)]">Budget {fmtMoney(c.budget)}</span>
-          <span className="text-sm font-medium text-[var(--color-brand)]">
+          {/* prominent filled CTA (a styled span, since the whole card is the
+              link) so it reads like the landing page's "Enter campaign" buttons */}
+          <span className="mt-3 flex min-h-10 w-full items-center justify-center rounded-full bg-[var(--color-brand)] px-4 text-sm font-semibold text-[var(--color-on-brand)] shadow-[0_0_20px_-6px_rgba(34,197,94,0.8)] transition group-hover:bg-[var(--color-brand-hover)]">
             {c.joined ? "View campaign" : "Enter campaign"}
           </span>
         </div>

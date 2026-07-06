@@ -19,10 +19,7 @@ export function ComingSoon({ title, blurb }: { title: string; blurb: string }) {
     <div className="min-h-[100dvh]">
       <AdminShell />
       <main className="mx-auto max-w-6xl px-6 py-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">
-          Operations Terminal
-        </p>
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">{title}</h1>
+        <h1 className="text-4xl font-semibold tracking-tight text-[var(--color-text)]">{title}</h1>
         <AdminTabs />
 
         <div className="card-lumina mt-8 flex flex-col items-center gap-3 rounded-[var(--radius-card)] px-6 py-16 text-center">
