@@ -182,26 +182,58 @@ export default function AdminCreatorsPage() {
           ) : view === "grid" ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {pageRows.map((c) => (
-                <Link key={c.id} href={`/admin/creators/${c.id}`} className="card-grad rounded-[var(--radius-card)] p-4 transition hover:ring-1 hover:ring-[var(--color-brand)]/40">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <Avatar url={c.avatar_url} name={c.display_name} size={40} />
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-[var(--color-text)]">{c.display_name ?? "Unnamed creator"}</p>
-                        <p className="truncate text-sm text-[var(--color-text-secondary)]">{c.email}</p>
+                <div key={c.id} className="card-grad group overflow-hidden rounded-[var(--radius-card)] transition hover:ring-1 hover:ring-[var(--color-brand)]/40">
+                  {/* Sideshift creator card: identity → socials → the actual content */}
+                  <Link href={`/admin/creators/${c.id}`} className="block p-4 pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <Avatar url={c.avatar_url} name={c.display_name} size={48} />
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-[var(--color-text)]">{c.display_name ?? "Unnamed creator"}</p>
+                          <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-[var(--color-text-secondary)]">
+                            {c.country ? (
+                              <>
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" className="shrink-0"><path d="M12 21s-7-5.1-7-11a7 7 0 1 1 14 0c0 5.9-7 11-7 11Z" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="2"/></svg>
+                                {[c.city, c.country].filter(Boolean).join(", ")}
+                              </>
+                            ) : c.email}
+                          </p>
+                        </div>
                       </div>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${c.completed ? "bg-emerald-500/15 text-emerald-400" : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]"}`}>{c.completed ? "Complete" : "Incomplete"}</span>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${c.completed ? "bg-emerald-500/15 text-emerald-400" : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]"}`}>{c.completed ? "Complete" : "Incomplete"}</span>
+                  </Link>
+
+                  {/* recent videos strip (real thumbnails from the stat-updater) */}
+                  {c.recent_videos.length ? (
+                    <div className="grid grid-cols-3 gap-1 px-4">
+                      {c.recent_videos.slice(0, 3).map((v, i) => (
+                        <a key={i} href={v.post_url} target="_blank" rel="noopener noreferrer" className="relative block aspect-[9/12] overflow-hidden rounded-lg bg-[var(--color-surface-2)]">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          {v.thumbnail_url ? <img src={v.thumbnail_url} alt="" loading="lazy" className="h-full w-full object-cover transition group-hover:scale-[1.02]" /> : null}
+                          <span className="tabular absolute bottom-1 left-1 rounded bg-black/60 px-1 py-0.5 text-[10px] text-white">▶ {v.views >= 1000 ? `${(v.views / 1000).toFixed(v.views >= 100000 ? 0 : 1)}K` : v.views}</span>
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mx-4 rounded-lg border border-dashed border-[var(--color-border)] py-4 text-center text-xs text-[var(--color-text-muted)]">No videos yet</div>
+                  )}
+
+                  {/* socials + followers */}
+                  <div className="flex items-center justify-between p-4 pt-3">
+                    <div className="flex gap-1.5">
+                      {c.socials.slice(0, 4).map((s) => (
+                        <a key={s.platform + s.handle} href={s.profile_url ?? "#"} target="_blank" rel="noopener noreferrer"
+                          title={`@${s.handle} on ${s.platform}`}
+                          className="rounded-full bg-[var(--color-surface-2)] px-2.5 py-1 text-xs capitalize text-[var(--color-text-secondary)] transition hover:bg-[var(--color-brand)]/15 hover:text-[var(--color-brand)]">
+                          {s.platform}
+                        </a>
+                      ))}
+                      {!c.socials.length ? <span className="text-xs text-[var(--color-text-muted)]">No socials</span> : null}
+                    </div>
+                    <span className="tabular text-sm text-[var(--color-text)]">{c.total_followers.toLocaleString()} <span className="text-xs text-[var(--color-text-muted)]">followers</span></span>
                   </div>
-                  <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
-                    <dt className="text-[var(--color-text-muted)]">Country</dt><dd className="text-right text-[var(--color-text)]">{c.country ?? "—"}</dd>
-                    <dt className="text-[var(--color-text-muted)]">Language</dt><dd className="text-right text-[var(--color-text)]">{c.primary_language ?? "—"}</dd>
-                    <dt className="text-[var(--color-text-muted)]">Followers</dt><dd className="tabular text-right text-[var(--color-text)]">{c.total_followers.toLocaleString()}</dd>
-                  </dl>
-                  {c.platforms.length ? (
-                    <div className="mt-3 flex flex-wrap gap-1.5">{c.platforms.map((p) => <span key={p} className="rounded-full bg-[var(--color-surface-2)] px-2 py-0.5 text-xs text-[var(--color-text-secondary)]">{p}</span>)}</div>
-                  ) : null}
-                </Link>
+                </div>
               ))}
             </div>
           ) : (

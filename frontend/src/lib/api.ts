@@ -211,6 +211,13 @@ export type StorageObjectOut = {
 };
 
 // ── Admin creators schemas ────────────────────────────────────────────────────
+export type RecentVideo = {
+  thumbnail_url: string | null;
+  post_url: string;
+  platform: string;
+  views: number;
+};
+
 export type CreatorListItem = {
   id: string;
   email: string;
@@ -219,8 +226,11 @@ export type CreatorListItem = {
   gender: Gender | null;
   country: string | null;
   primary_language: string | null;
+  city: string | null;
   total_followers: number;
   platforms: Platform[];
+  socials: SocialItem[];
+  recent_videos: RecentVideo[];
   completed: boolean;
 };
 
@@ -236,6 +246,8 @@ export type PortfolioItemOut = {
   brand_name: string | null;
   caption: string | null;
   platform: Platform | null;
+  video_url: string | null;
+  thumbnail_url: string | null;
 };
 
 export type CreatorDetail = {
@@ -253,6 +265,7 @@ export type CreatorDetail = {
   city: string | null;
   completed: boolean;
   socials: SocialItem[];
+  recent_videos: RecentVideo[];
   portfolio: PortfolioItemOut[];
 };
 

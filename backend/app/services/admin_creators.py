@@ -92,6 +92,7 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
     for s in db.scalars(select(SocialAccount).where(SocialAccount.creator_id.in_(ids))).all():
         socials_by_creator[s.creator_id].append(s)
     avatars = _avatar_urls(db, profiles.values())
+    videos = _recent_videos(db, ids)
 
     out = []
     for c in creators:
@@ -103,11 +104,34 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
             "avatar_url": avatars.get(c.id),
             "gender": prof.gender if prof else None,
             "country": prof.country if prof else None,
+            "city": prof.city if prof else None,
             "primary_language": prof.primary_language if prof else None,
             "total_followers": sum(s.follower_count for s in socials),
             "platforms": sorted({s.platform for s in socials}),
+            "socials": [{"platform": s.platform, "handle": s.handle, "profile_url": s.profile_url,
+                         "follower_count": s.follower_count} for s in socials],
+            "recent_videos": videos.get(c.id, []),
             "completed": bool(prof and prof.completed_at),
         })
+    return out
+
+
+def _recent_videos(db: Session, creator_ids, per_creator: int = 3) -> dict:
+    """creator_id -> up to N recent scraped videos (thumbnail via the Apify worker).
+    The Sideshift card pattern: show the creator's actual content at a glance."""
+    from app.models import Submission
+    rows = db.scalars(
+        select(Submission)
+        .where(Submission.creator_id.in_(creator_ids), Submission.thumbnail_url.is_not(None))
+        .order_by(Submission.last_scraped_at.desc().nullslast())
+        .limit(len(list(creator_ids)) * per_creator * 2)
+    ).all()
+    out: dict = {}
+    for s in rows:
+        lst = out.setdefault(s.creator_id, [])
+        if len(lst) < per_creator:
+            lst.append({"thumbnail_url": s.thumbnail_url, "post_url": s.post_url,
+                        "platform": s.platform, "views": s.views})
     return out
 
 
@@ -136,7 +160,9 @@ def get_creator_detail(db: Session, creator_id: uuid.UUID) -> dict:
             for s in socials
         ],
         "portfolio": [
-            {"id": str(p.id), "brand_name": p.brand_name, "caption": p.caption, "platform": p.platform}
+            {"id": str(p.id), "brand_name": p.brand_name, "caption": p.caption, "platform": p.platform,
+             "video_url": p.video_url, "thumbnail_url": p.thumbnail_url}
             for p in portfolio
         ],
+        "recent_videos": _recent_videos(db, [c.id], per_creator=8).get(c.id, []),
     }

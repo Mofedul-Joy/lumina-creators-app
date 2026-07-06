@@ -5,17 +5,11 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 
-class CreatorListItem(BaseModel):
-    id: str
-    email: str
-    display_name: Optional[str] = None
-    avatar_url: Optional[str] = None
-    gender: Optional[str] = None
-    country: Optional[str] = None
-    primary_language: Optional[str] = None
-    total_followers: int = 0
-    platforms: List[str] = []
-    completed: bool = False
+class RecentVideo(BaseModel):
+    thumbnail_url: Optional[str] = None
+    post_url: str
+    platform: str
+    views: int = 0
 
 
 class SocialItem(BaseModel):
@@ -25,11 +19,29 @@ class SocialItem(BaseModel):
     follower_count: int
 
 
+class CreatorListItem(BaseModel):
+    id: str
+    email: str
+    display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+    gender: Optional[str] = None
+    country: Optional[str] = None
+    city: Optional[str] = None
+    primary_language: Optional[str] = None
+    total_followers: int = 0
+    platforms: List[str] = []
+    socials: List[SocialItem] = []
+    recent_videos: List[RecentVideo] = []
+    completed: bool = False
+
+
 class PortfolioItemOut(BaseModel):
     id: str
     brand_name: Optional[str] = None
     caption: Optional[str] = None
     platform: Optional[str] = None
+    video_url: Optional[str] = None
+    thumbnail_url: Optional[str] = None
 
 
 class CreatorDetail(BaseModel):
@@ -46,5 +58,6 @@ class CreatorDetail(BaseModel):
     country: Optional[str] = None
     city: Optional[str] = None
     completed: bool = False
-    socials: List[SocialItem] = []
+    socials: List[SocialItem]
+    recent_videos: List[RecentVideo] = []
     portfolio: List[PortfolioItemOut] = []
