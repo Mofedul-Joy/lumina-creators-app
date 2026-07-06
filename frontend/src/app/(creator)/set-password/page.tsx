@@ -19,7 +19,6 @@ export default function CreatorSetPasswordPage() {
     mutationFn: () => creatorSetPassword(email, password),
     onSuccess: (data) => {
       setAuthToken(data.access_token, data.refresh_token);
-      console.log(data.access_token);
       router.push("/dashboard");
     },
     onError: (err) => setError((err as Error).message),

@@ -152,10 +152,14 @@ export const publicApi = {
 export const GENDERS = [
   "male",
   "female",
+  "non_binary",
   "other",
   "prefer_not_to_say",
 ] as const;
 export type Gender = (typeof GENDERS)[number];
+
+export const CREATOR_TYPES = ["ugc", "influencer", "both"] as const;
+export type CreatorType = (typeof CREATOR_TYPES)[number];
 
 export const PLATFORMS = [
   "instagram",
@@ -179,6 +183,7 @@ export type PayoutMethod = (typeof PAYOUT_METHODS)[number];
 
 export type ProfileIn = {
   display_name?: string;
+  creator_type?: CreatorType;
   bio?: string;
   date_of_birth?: string; // YYYY-MM-DD
   gender?: Gender;
@@ -197,6 +202,7 @@ export type ProfileIn = {
 
 export type ProfileOut = {
   display_name: string | null;
+  creator_type: CreatorType | null;
   bio: string | null;
   date_of_birth: string | null;
   gender: Gender | null;

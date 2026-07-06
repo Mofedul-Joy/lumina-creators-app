@@ -74,6 +74,7 @@ class CreatorProfile(TimestampMixin, Base):
         UUID(as_uuid=True), ForeignKey("creators.id", ondelete="CASCADE"), unique=True, nullable=False
     )
     display_name: Mapped[Optional[str]] = mapped_column(Text)
+    creator_type: Mapped[Optional[str]] = mapped_column(Text)  # ugc|influencer|both
     avatar_object_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("storage_objects.id")
     )

@@ -32,6 +32,7 @@ def _require_owned_object(db: Session, creator_id: uuid.UUID, object_id, purpose
 _PLATFORMS = {"instagram", "tiktok", "youtube", "twitter", "facebook"}
 _GENDERS = {"male", "female", "non_binary", "other", "prefer_not_to_say"}
 _PAYOUT_METHODS = {"paypal", "solana", "whop"}
+_CREATOR_TYPES = {"ugc", "influencer", "both"}
 # Nothing is mandatory — demographics (DOB/gender/country/ethnicity/language)
 # and socials/portfolio are dashboard incentives, not a signup gate. Kept as a
 # tuple (not deleted outright) since recompute_completion() still reports
@@ -55,9 +56,11 @@ def update_profile(db: Session, creator_id: uuid.UUID, data: dict) -> CreatorPro
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid gender")
     if data.get("payout_method") not in (None, "") and data["payout_method"] not in _PAYOUT_METHODS:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid payout method")
+    if data.get("creator_type") not in (None, "") and data["creator_type"] not in _CREATOR_TYPES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid creator type")
     if data.get("avatar_object_id") is not None:
         _require_owned_object(db, creator_id, data["avatar_object_id"], "avatar")
-    for field in ("display_name", "bio", "date_of_birth", "gender", "ethnicity",
+    for field in ("display_name", "creator_type", "bio", "date_of_birth", "gender", "ethnicity",
                   "primary_language", "country", "city", "avatar_object_id",
                   "payout_method", "payout_address",
                   "payout_paypal", "payout_solana", "payout_whop"):

@@ -62,7 +62,9 @@ function SuccessInner() {
     try {
       const res = await creatorSetPassword(email, password);
       setAuthToken(res.access_token, res.refresh_token);
-      continueToDashboard();
+      // brand-new creator → straight into the onboarding wizard (build a profile
+      // before hitting the dashboard); returning sign-in stays on /dashboard.
+      router.push("/onboarding");
     } catch (err) {
       if (err instanceof ApiError && err.status === 400) {
         // Race: password got set elsewhere between check-email and now.
