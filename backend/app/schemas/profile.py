@@ -12,6 +12,7 @@ class ProfileIn(BaseModel):
     date_of_birth: Optional[date] = None
     gender: Optional[str] = None
     ethnicity: Optional[str] = None
+    education: Optional[str] = None
     primary_language: Optional[str] = None
     languages: Optional[List[str]] = None
     country: Optional[str] = None
@@ -31,6 +32,7 @@ class ProfileOut(BaseModel):
     date_of_birth: Optional[date] = None
     gender: Optional[str] = None
     ethnicity: Optional[str] = None
+    education: Optional[str] = None
     primary_language: Optional[str] = None
     languages: List[str] = []
     country: Optional[str] = None

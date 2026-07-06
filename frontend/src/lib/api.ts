@@ -161,6 +161,9 @@ export type Gender = (typeof GENDERS)[number];
 export const CREATOR_TYPES = ["ugc", "influencer", "both"] as const;
 export type CreatorType = (typeof CREATOR_TYPES)[number];
 
+export const EDUCATION_LEVELS = ["in_high_school", "in_college", "graduated", "grad_school", "no_college", "na"] as const;
+export type EducationLevel = (typeof EDUCATION_LEVELS)[number];
+
 export const PLATFORMS = [
   "instagram",
   "tiktok",
@@ -188,6 +191,7 @@ export type ProfileIn = {
   date_of_birth?: string; // YYYY-MM-DD
   gender?: Gender;
   ethnicity?: string;
+  education?: EducationLevel;
   primary_language?: string;
   languages?: string[];
   country?: string;
@@ -207,6 +211,7 @@ export type ProfileOut = {
   date_of_birth: string | null;
   gender: Gender | null;
   ethnicity: string | null;
+  education: EducationLevel | null;
   primary_language: string | null;
   languages: string[];
   country: string | null;

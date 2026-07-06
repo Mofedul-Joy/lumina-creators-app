@@ -10,49 +10,86 @@ import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getAuthToken } from "@/lib/auth";
 import {
-  CREATOR_TYPES, GENDERS, PAYOUT_METHODS, PLATFORMS,
-  type CreatorType, type PayoutMethod, type Platform, type ProfileIn,
+  CREATOR_TYPES, EDUCATION_LEVELS, GENDERS, PAYOUT_METHODS,
+  type CreatorType, type EducationLevel, type Gender, type PayoutMethod, type Platform, type ProfileIn,
   addSocial, deletePortfolio, deleteSocial, getProfile, listPortfolio, listSocials,
   updateProfile, uploadFile, uploadPortfolioVideo,
 } from "@/lib/api";
 
-// Progressive, one-section-per-screen onboarding (SideShift-style flow, Lumina
-// dark-green skin). Save-as-you-go: each Continue persists via the existing
-// APIs; there is no server completion gate, so partial saves are safe. Every
-// step pre-fills from the loaded profile, so this doubles as "edit profile".
+// Progressive, one-question-per-screen onboarding — the granular SideShift-style
+// flow in the Lumina dark-green skin. Save-as-you-go (no server completion gate);
+// every step pre-fills from the profile so this doubles as "edit profile".
 
-type StepKey = "type" | "details" | "socials" | "portfolio" | "audience" | "payment" | "done";
-const STEPS: { key: StepKey; label: string; optional?: boolean }[] = [
-  { key: "type", label: "You" },
-  { key: "details", label: "Details" },
-  { key: "socials", label: "Socials" },
-  { key: "portfolio", label: "Videos" },
-  { key: "audience", label: "Audience", optional: true },
-  { key: "payment", label: "Payment" },
-  { key: "done", label: "Done" },
+type StepKey =
+  | "type" | "name" | "photo" | "bio"
+  | "soc_instagram" | "soc_tiktok" | "soc_youtube" | "soc_twitter" | "soc_facebook"
+  | "portfolio" | "birthday" | "gender" | "education" | "ethnicity" | "language" | "location"
+  | "payment" | "done";
+
+const STEPS: { key: StepKey; optional?: boolean }[] = [
+  { key: "type" },
+  { key: "name", optional: true },
+  { key: "photo", optional: true },
+  { key: "bio", optional: true },
+  { key: "soc_instagram", optional: true },
+  { key: "soc_tiktok", optional: true },
+  { key: "soc_youtube", optional: true },
+  { key: "soc_twitter", optional: true },
+  { key: "soc_facebook", optional: true },
+  { key: "portfolio", optional: true },
+  { key: "birthday", optional: true },
+  { key: "gender", optional: true },
+  { key: "education", optional: true },
+  { key: "ethnicity", optional: true },
+  { key: "language", optional: true },
+  { key: "location", optional: true },
+  { key: "payment", optional: true },
+  { key: "done" },
 ];
+
+// coarse sections for the clickable progress header (18 pills would be unusable)
+const SECTIONS: { label: string; first: StepKey }[] = [
+  { label: "About", first: "type" },
+  { label: "Socials", first: "soc_instagram" },
+  { label: "Videos", first: "portfolio" },
+  { label: "Details", first: "birthday" },
+  { label: "Payment", first: "payment" },
+];
+const SECTION_STARTS = SECTIONS.map((s) => STEPS.findIndex((x) => x.key === s.first));
 
 const CREATOR_TYPE_COPY: Record<CreatorType, { title: string; blurb: string; icon: string }> = {
   ugc: { title: "UGC creator", blurb: "I make content for brands to use in their own ads.", icon: "🎬" },
   influencer: { title: "Influencer", blurb: "I post to my own audience and drive engagement.", icon: "📣" },
   both: { title: "Both", blurb: "I create UGC and post to my own following.", icon: "✨" },
 };
-const PAYOUT_LABEL: Record<PayoutMethod, string> = { paypal: "PayPal", solana: "Solana (wallet)", whop: "Whop" };
-const PAYOUT_PLACEHOLDER: Record<PayoutMethod, string> = {
-  paypal: "PayPal email", solana: "Solana wallet address", whop: "Whop username",
+const GENDER_LABEL: Record<Gender, string> = { male: "Male", female: "Female", non_binary: "Non-binary", other: "Other", prefer_not_to_say: "Prefer not to say" };
+const EDUCATION_LABEL: Record<EducationLevel, string> = {
+  in_high_school: "In high school", in_college: "In college", graduated: "Graduated",
+  grad_school: "Grad school", no_college: "Didn't go to college", na: "N/A",
 };
+const PAYOUT_LABEL: Record<PayoutMethod, string> = { paypal: "PayPal", solana: "Solana (wallet)", whop: "Whop" };
+const PAYOUT_PLACEHOLDER: Record<PayoutMethod, string> = { paypal: "PayPal email", solana: "Solana wallet address", whop: "Whop username" };
 
 const control =
   "min-h-11 w-full rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-base text-[var(--color-text)] outline-none transition focus-visible:border-[var(--color-brand)] focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]";
 const labelCls = "block text-sm font-medium text-[var(--color-text)]";
 
-// old ?tab= deep-links (from the dashboard cards / payout gate) → wizard steps
 function resolveInitialStep(raw: string | null): number {
   if (!raw) return 0;
-  const alias: Record<string, StepKey> = { personal: "details", social: "socials", portfolio: "portfolio", payment: "payment" };
+  const alias: Record<string, StepKey> = { personal: "name", social: "soc_instagram", socials: "soc_instagram", portfolio: "portfolio", payment: "payment", details: "birthday" };
   const key = (alias[raw] ?? raw) as StepKey;
   const i = STEPS.findIndex((s) => s.key === key);
   return i < 0 ? 0 : i;
+}
+
+function ageFrom(dob: string): number | null {
+  if (!dob) return null;
+  const [y, m, d] = dob.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  const t = new Date();
+  let age = t.getFullYear() - y;
+  if (t.getMonth() + 1 < m || (t.getMonth() + 1 === m && t.getDate() < d)) age -= 1;
+  return age >= 0 && age < 120 ? age : null;
 }
 
 export function OnboardingWizard() {
@@ -63,27 +100,20 @@ export function OnboardingWizard() {
   const [token, setToken] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [step, setStep] = useState(0);
-  useEffect(() => {
-    setToken(getAuthToken());
-    setReady(true);
-    setStep(resolveInitialStep(sp.get("step") ?? sp.get("tab")));
-  }, [sp]);
+  useEffect(() => { setToken(getAuthToken()); setReady(true); setStep(resolveInitialStep(sp.get("step") ?? sp.get("tab"))); }, [sp]);
   const bearer = token ?? "";
   const enabled = ready && !!token;
 
-  const profileQ = useQuery({
-    queryKey: ["profile"], queryFn: () => getProfile(bearer), enabled, retry: false,
-    staleTime: Infinity, refetchOnWindowFocus: false, refetchOnMount: false,
-  });
+  const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfile(bearer), enabled, retry: false, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnMount: false });
   const socialsQ = useQuery({ queryKey: ["socials"], queryFn: () => listSocials(bearer), enabled, retry: false });
   const portfolioQ = useQuery({ queryKey: ["portfolio"], queryFn: () => listPortfolio(bearer), enabled, retry: false });
   useEffect(() => { if (profileQ.isError) router.replace("/login"); }, [profileQ.isError, router]);
 
-  // ---- editable local state, seeded once from the server ----
   const [creatorType, setCreatorType] = useState<CreatorType | "">("");
   const [details, setDetails] = useState({ display_name: "", bio: "" });
-  const [audience, setAudience] = useState({ date_of_birth: "", gender: "", ethnicity: "", primary_language: "", country: "", city: "" });
+  const [audience, setAudience] = useState({ date_of_birth: "", gender: "", education: "", ethnicity: "", primary_language: "", country: "", city: "" });
   const [payout, setPayout] = useState({ method: "" as PayoutMethod | "", paypal: "", solana: "", whop: "" });
+  const [socialForms, setSocialForms] = useState<Record<string, { handle: string; followers: string }>>({});
   const seeded = useRef(false);
   useEffect(() => {
     const d = profileQ.data;
@@ -92,7 +122,7 @@ export function OnboardingWizard() {
     setCreatorType((d.creator_type as CreatorType) ?? "");
     setDetails({ display_name: d.display_name ?? "", bio: d.bio ?? "" });
     setAudience({
-      date_of_birth: d.date_of_birth ?? "", gender: d.gender ?? "", ethnicity: d.ethnicity ?? "",
+      date_of_birth: d.date_of_birth ?? "", gender: d.gender ?? "", education: d.education ?? "", ethnicity: d.ethnicity ?? "",
       primary_language: d.primary_language ?? "", country: d.country ?? "", city: d.city ?? "",
     });
     setPayout({
@@ -103,16 +133,16 @@ export function OnboardingWizard() {
     });
   }, [profileQ.data]);
 
-  const saveM = useMutation({
-    mutationFn: (patch: ProfileIn) => updateProfile(bearer, patch),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["profile"] }),
+  const saveM = useMutation({ mutationFn: (patch: ProfileIn) => updateProfile(bearer, patch), onSuccess: () => qc.invalidateQueries({ queryKey: ["profile"] }) });
+  const addSocialM = useMutation({
+    mutationFn: (v: { platform: Platform; handle: string; follower_count: number }) => addSocial(bearer, v),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["socials"] }),
   });
-  const goTo = (i: number) => { saveM.reset(); setStep(Math.max(0, Math.min(STEPS.length - 1, i))); };
+  const delSocialM = useMutation({ mutationFn: (id: string) => deleteSocial(bearer, id), onSuccess: () => qc.invalidateQueries({ queryKey: ["socials"] }) });
+
+  const goTo = (i: number) => { saveM.reset(); addSocialM.reset(); setStep(Math.max(0, Math.min(STEPS.length - 1, i))); };
   const next = () => goTo(step + 1);
   const back = () => goTo(step - 1);
-  async function commit(patch: ProfileIn) {
-    try { await saveM.mutateAsync(patch); next(); } catch { /* error surfaced below */ }
-  }
 
   if (ready && !token)
     return (
@@ -124,9 +154,7 @@ export function OnboardingWizard() {
   if (!ready || profileQ.isLoading || !seeded.current)
     return (
       <main className="mx-auto max-w-xl px-6 py-12 space-y-4">
-        <Skeleton className="h-2 w-full" />
-        <Skeleton className="mt-8 h-9 w-72" />
-        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-2 w-full" /><Skeleton className="mt-8 h-9 w-72" /><Skeleton className="h-64 w-full" />
       </main>
     );
 
@@ -134,98 +162,150 @@ export function OnboardingWizard() {
   const portfolio = portfolioQ.data ?? [];
   const cur = STEPS[step];
   const isLast = step === STEPS.length - 1;
-  const err = saveM.isError ? (saveM.error as Error).message : "";
+  const curSection = SECTION_STARTS.reduce((acc, start, i) => (step >= start ? i : acc), 0);
+  const err = saveM.isError ? (saveM.error as Error).message : addSocialM.isError ? (addSocialM.error as Error).message : "";
+  const committing = saveM.isPending || addSocialM.isPending;
+
+  async function onContinue() {
+    try {
+      const k = cur.key;
+      if (k === "type") await saveM.mutateAsync({ creator_type: creatorType || undefined });
+      else if (k === "name") await saveM.mutateAsync({ display_name: details.display_name || undefined });
+      else if (k === "bio") await saveM.mutateAsync({ bio: details.bio || undefined });
+      else if (k === "birthday") await saveM.mutateAsync({ date_of_birth: audience.date_of_birth || undefined });
+      else if (k === "gender") await saveM.mutateAsync({ gender: (audience.gender || undefined) as Gender | undefined });
+      else if (k === "education") await saveM.mutateAsync({ education: (audience.education || undefined) as EducationLevel | undefined });
+      else if (k === "ethnicity") await saveM.mutateAsync({ ethnicity: audience.ethnicity || undefined });
+      else if (k === "language") await saveM.mutateAsync({ primary_language: audience.primary_language || undefined });
+      else if (k === "location") await saveM.mutateAsync({ country: audience.country || undefined, city: audience.city || undefined });
+      else if (k === "payment") await saveM.mutateAsync({ payout_method: (payout.method || undefined) as PayoutMethod | undefined, payout_paypal: payout.paypal || undefined, payout_solana: payout.solana || undefined, payout_whop: payout.whop || undefined });
+      else if (k.startsWith("soc_")) {
+        const p = k.slice(4) as Platform;
+        const f = socialForms[p];
+        const existing = socials.find((s) => s.platform === p);
+        if (f?.handle?.trim() && !existing) await addSocialM.mutateAsync({ platform: p, handle: f.handle.trim(), follower_count: Number(f.followers) || 0 });
+      }
+      next();
+    } catch { /* err surfaced below */ }
+  }
+
+  const socialPlatform = cur.key.startsWith("soc_") ? (cur.key.slice(4) as Platform) : null;
 
   return (
     <main className="mx-auto max-w-xl px-6 py-10">
-      {/* progress: thin bar + clickable step pills */}
+      {/* progress: thin bar + section pills + step counter */}
       <div className="mb-8">
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
           <div className="h-full rounded-full bg-[var(--color-brand)] transition-all duration-300" style={{ width: `${(step / (STEPS.length - 1)) * 100}%` }} />
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          {STEPS.map((s, i) => (
-            <button
-              key={s.key}
-              onClick={() => goTo(i)}
-              className={`cursor-pointer rounded-full px-2.5 py-1 text-[11px] transition ${
-                i === step
-                  ? "bg-[var(--color-brand)]/15 font-medium text-[var(--color-brand-soft)]"
-                  : i < step
-                    ? "text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
-                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-              }`}
-            >
-              {i < step ? "✓ " : ""}{s.label}
-            </button>
-          ))}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {SECTIONS.map((s, i) => (
+              <button key={s.label} onClick={() => goTo(SECTION_STARTS[i])}
+                className={`cursor-pointer rounded-full px-2.5 py-1 text-[11px] transition ${i === curSection ? "bg-[var(--color-brand)]/15 font-medium text-[var(--color-brand-soft)]" : i < curSection ? "text-[var(--color-text-secondary)] hover:text-[var(--color-text)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"}`}>
+                {i < curSection ? "✓ " : ""}{s.label}
+              </button>
+            ))}
+          </div>
+          {!isLast ? <span className="text-[11px] text-[var(--color-text-muted)]">Step {step + 1} of {STEPS.length - 1}</span> : null}
         </div>
       </div>
 
-      {/* step body */}
-      <div className="min-h-[320px]">
+      <div className="min-h-[340px]">
         {cur.key === "type" ? (
           <StepShell eyebrow="Welcome to Lumina" title="What kind of creator are you?" sub="This helps us match you to the right campaigns. You can change it anytime.">
             <div className="grid gap-3">
               {CREATOR_TYPES.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setCreatorType(t)}
-                  className={`card-grad flex items-center gap-4 rounded-[var(--radius-card)] p-4 text-left transition ${
-                    creatorType === t ? "ring-2 ring-[var(--color-brand)]" : "hover:ring-1 hover:ring-[var(--color-border)]"
-                  }`}
-                >
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--color-surface-2)] text-xl">{CREATOR_TYPE_COPY[t].icon}</span>
-                  <span>
-                    <span className="block font-semibold text-[var(--color-text)]">{CREATOR_TYPE_COPY[t].title}</span>
-                    <span className="block text-sm text-[var(--color-text-secondary)]">{CREATOR_TYPE_COPY[t].blurb}</span>
-                  </span>
-                </button>
+                <OptionCard key={t} selected={creatorType === t} onClick={() => setCreatorType(t)} icon={CREATOR_TYPE_COPY[t].icon} title={CREATOR_TYPE_COPY[t].title} blurb={CREATOR_TYPE_COPY[t].blurb} />
               ))}
             </div>
           </StepShell>
         ) : null}
 
-        {cur.key === "details" ? (
-          <StepShell eyebrow="About you" title="Add your name and photo" sub="This is what brands see first.">
-            <AvatarPicker bearer={bearer} avatarUrl={profileQ.data?.avatar_url ?? null} onSaved={() => qc.invalidateQueries({ queryKey: ["profile"] })} />
-            <div className="mt-5 space-y-4">
-              <Field label="Display name" placeholder="Your name or handle" value={details.display_name} onChange={(e) => setDetails({ ...details, display_name: e.target.value })} />
-              <div className="space-y-2">
-                <label className={labelCls}>Bio</label>
-                <textarea rows={3} className={control + " py-2"} placeholder="A sentence about the content you make…" value={details.bio} onChange={(e) => setDetails({ ...details, bio: e.target.value })} />
-              </div>
-            </div>
+        {cur.key === "name" ? (
+          <StepShell eyebrow="About you" title="What should we call you?" sub="Your name or handle — this is what brands see first.">
+            <Field label="Display name" placeholder="e.g. Alex Rivera" value={details.display_name} onChange={(e) => setDetails({ ...details, display_name: e.target.value })} autoFocus />
           </StepShell>
         ) : null}
 
-        {cur.key === "socials" ? (
-          <StepShell eyebrow="Your reach" title="Add your social accounts" sub="Creators with 3+ platforms get matched to more campaigns.">
-            <SocialsStep bearer={bearer} socials={socials} onChanged={() => qc.invalidateQueries({ queryKey: ["socials"] })} />
+        {cur.key === "photo" ? (
+          <StepShell eyebrow="About you" title="Add a profile photo" sub="A face (or logo) makes your profile far more likely to get picked.">
+            <AvatarPicker bearer={bearer} avatarUrl={profileQ.data?.avatar_url ?? null} onSaved={() => qc.invalidateQueries({ queryKey: ["profile"] })} />
+          </StepShell>
+        ) : null}
+
+        {cur.key === "bio" ? (
+          <StepShell eyebrow="About you" title="Write a short bio" sub="One or two sentences on the content you make.">
+            <textarea rows={4} className={control + " py-2"} placeholder="I make punchy skincare UGC and product demos…" value={details.bio} onChange={(e) => setDetails({ ...details, bio: e.target.value })} />
+          </StepShell>
+        ) : null}
+
+        {socialPlatform ? (
+          <StepShell eyebrow="Your reach" title={`Are you on ${platformLabel(socialPlatform)}?`} sub="Add your handle so brands can see your reach. Skip if you're not on it.">
+            <SocialStep
+              platform={socialPlatform}
+              existing={socials.find((s) => s.platform === socialPlatform)}
+              form={socialForms[socialPlatform] ?? { handle: "", followers: "" }}
+              onForm={(f) => setSocialForms({ ...socialForms, [socialPlatform]: f })}
+              onRemove={(id) => delSocialM.mutate(id)}
+            />
           </StepShell>
         ) : null}
 
         {cur.key === "portfolio" ? (
-          <StepShell eyebrow="Show your work" title="Upload your best videos" sub="Brands watch these when matching campaigns to you. These are showcase clips, separate from campaign submissions.">
+          <StepShell eyebrow="Show your work" title="Upload your best videos" sub="Brands watch these when matching campaigns to you. Showcase clips — separate from campaign submissions.">
             <PortfolioStep bearer={bearer} portfolio={portfolio} onChanged={() => qc.invalidateQueries({ queryKey: ["portfolio"] })} />
           </StepShell>
         ) : null}
 
-        {cur.key === "audience" ? (
-          <StepShell eyebrow="Optional" title="Tell brands about your audience" sub="All optional — the more you share, the better we can match you. Skip anytime.">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {cur.key === "birthday" ? (
+          <StepShell eyebrow="A few details" title="When's your birthday?" sub="Brands use this to check you're old enough to work with them. Kept private.">
+            <div className="max-w-xs">
               <Field label="Date of birth" type="date" value={audience.date_of_birth} onChange={(e) => setAudience({ ...audience, date_of_birth: e.target.value })} />
-              <div className="space-y-2">
-                <label className={labelCls}>Gender</label>
-                <select className={control} value={audience.gender} onChange={(e) => setAudience({ ...audience, gender: e.target.value })}>
-                  <option value="">Select…</option>
-                  {GENDERS.map((g) => <option key={g} value={g}>{g.replace(/_/g, " ")}</option>)}
-                </select>
-              </div>
-              <Field label="Primary language" value={audience.primary_language} onChange={(e) => setAudience({ ...audience, primary_language: e.target.value })} />
+              {ageFrom(audience.date_of_birth) !== null ? (
+                <p className="mt-2 text-sm text-[var(--color-brand-soft)]">{ageFrom(audience.date_of_birth)} years old</p>
+              ) : null}
+            </div>
+          </StepShell>
+        ) : null}
+
+        {cur.key === "gender" ? (
+          <StepShell eyebrow="A few details" title="What's your gender?" sub="Helps brands match campaigns. Optional.">
+            <div className="grid gap-2">
+              {GENDERS.map((g) => (
+                <OptionCard key={g} compact selected={audience.gender === g} onClick={() => setAudience({ ...audience, gender: g })} title={GENDER_LABEL[g]} />
+              ))}
+            </div>
+          </StepShell>
+        ) : null}
+
+        {cur.key === "education" ? (
+          <StepShell eyebrow="A few details" title="Where are you in your education?" sub="Optional — some campaigns target students or grads.">
+            <div className="grid gap-2">
+              {EDUCATION_LEVELS.map((e) => (
+                <OptionCard key={e} compact selected={audience.education === e} onClick={() => setAudience({ ...audience, education: e })} title={EDUCATION_LABEL[e]} />
+              ))}
+            </div>
+          </StepShell>
+        ) : null}
+
+        {cur.key === "ethnicity" ? (
+          <StepShell eyebrow="A few details" title="How would you describe your ethnicity?" sub="Optional — helps match campaigns looking for specific representation.">
+            <Field label="Ethnicity" placeholder="e.g. Latina, South Asian, Mixed…" value={audience.ethnicity} onChange={(e) => setAudience({ ...audience, ethnicity: e.target.value })} />
+          </StepShell>
+        ) : null}
+
+        {cur.key === "language" ? (
+          <StepShell eyebrow="A few details" title="What language do you create in?" sub="Your primary content language.">
+            <Field label="Primary language" placeholder="e.g. English" value={audience.primary_language} onChange={(e) => setAudience({ ...audience, primary_language: e.target.value })} />
+          </StepShell>
+        ) : null}
+
+        {cur.key === "location" ? (
+          <StepShell eyebrow="A few details" title="Where are you based?" sub="Some campaigns are region-specific.">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Country" value={audience.country} onChange={(e) => setAudience({ ...audience, country: e.target.value })} />
               <Field label="City" value={audience.city} onChange={(e) => setAudience({ ...audience, city: e.target.value })} />
-              <Field label="Ethnicity" value={audience.ethnicity} onChange={(e) => setAudience({ ...audience, ethnicity: e.target.value })} />
             </div>
           </StepShell>
         ) : null}
@@ -235,13 +315,8 @@ export function OnboardingWizard() {
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {PAYOUT_METHODS.map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setPayout({ ...payout, method: payout.method === m ? "" : m })}
-                    className={`cursor-pointer rounded-full px-4 py-2 text-sm transition ${
-                      payout.method === m ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]" : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
-                    }`}
-                  >
+                  <button key={m} onClick={() => setPayout({ ...payout, method: payout.method === m ? "" : m })}
+                    className={`cursor-pointer rounded-full px-4 py-2 text-sm transition ${payout.method === m ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]" : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"}`}>
                     {PAYOUT_LABEL[m]}
                   </button>
                 ))}
@@ -249,12 +324,7 @@ export function OnboardingWizard() {
               {payout.method ? (
                 <div className="space-y-2">
                   <label className={labelCls}>{PAYOUT_LABEL[payout.method as PayoutMethod]} details</label>
-                  <input
-                    className={control}
-                    placeholder={PAYOUT_PLACEHOLDER[payout.method as PayoutMethod]}
-                    value={payout[payout.method as PayoutMethod]}
-                    onChange={(e) => setPayout({ ...payout, [payout.method as PayoutMethod]: e.target.value } as typeof payout)}
-                  />
+                  <input className={control} placeholder={PAYOUT_PLACEHOLDER[payout.method as PayoutMethod]} value={payout[payout.method as PayoutMethod]} onChange={(e) => setPayout({ ...payout, [payout.method as PayoutMethod]: e.target.value } as typeof payout)} />
                 </div>
               ) : null}
             </div>
@@ -262,52 +332,18 @@ export function OnboardingWizard() {
         ) : null}
 
         {cur.key === "done" ? (
-          <DoneStep
-            name={(profileQ.data?.display_name ?? "").trim().split(" ")[0] || "creator"}
-            missing={profileQ.data?.missing ?? []}
-            hasType={!!creatorType}
-            socialCount={socials.length}
-            portfolioCount={portfolio.length}
-            hasPayout={!!payout.method}
-          />
+          <DoneStep name={(profileQ.data?.display_name ?? "").trim().split(" ")[0] || "creator"} hasType={!!creatorType} socialCount={socials.length} portfolioCount={portfolio.length} hasPayout={!!payout.method} />
         ) : null}
       </div>
 
       {err ? <p className="mt-4 text-sm text-[var(--color-danger)]">{err}</p> : null}
 
-      {/* footer nav */}
       {!isLast ? (
         <div className="mt-8 flex items-center justify-between gap-3">
-          <button onClick={back} disabled={step === 0}
-            className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)] disabled:invisible">
-            ← Back
-          </button>
+          <button onClick={back} disabled={step === 0} className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)] disabled:invisible">← Back</button>
           <div className="flex items-center gap-3">
-            {cur.optional ? (
-              <button onClick={next} className="cursor-pointer text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]">Skip for now</button>
-            ) : null}
-            <div className="w-40">
-              <Button
-                loading={saveM.isPending}
-                disabled={cur.key === "type" && !creatorType}
-                onClick={() => {
-                  if (cur.key === "type") return void commit({ creator_type: creatorType || undefined });
-                  if (cur.key === "details") return void commit({ display_name: details.display_name || undefined, bio: details.bio || undefined });
-                  if (cur.key === "audience") return void commit({
-                    date_of_birth: audience.date_of_birth || undefined, gender: (audience.gender || undefined) as ProfileIn["gender"],
-                    ethnicity: audience.ethnicity || undefined, primary_language: audience.primary_language || undefined,
-                    country: audience.country || undefined, city: audience.city || undefined,
-                  });
-                  if (cur.key === "payment") return void commit({
-                    payout_method: (payout.method || undefined) as PayoutMethod | undefined,
-                    payout_paypal: payout.paypal || undefined, payout_solana: payout.solana || undefined, payout_whop: payout.whop || undefined,
-                  });
-                  next(); // socials / portfolio save inline on add
-                }}
-              >
-                Continue
-              </Button>
-            </div>
+            {cur.optional ? <button onClick={next} className="cursor-pointer text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]">Skip for now</button> : null}
+            <div className="w-40"><Button loading={committing} disabled={cur.key === "type" && !creatorType} onClick={onContinue}>Continue</Button></div>
           </div>
         </div>
       ) : null}
@@ -326,16 +362,54 @@ function StepShell({ eyebrow, title, sub, children }: { eyebrow: string; title: 
   );
 }
 
+function OptionCard({ selected, onClick, title, blurb, icon, compact }: { selected: boolean; onClick: () => void; title: string; blurb?: string; icon?: string; compact?: boolean }) {
+  return (
+    <button onClick={onClick}
+      className={`card-grad flex items-center gap-4 rounded-[var(--radius-card)] text-left transition ${compact ? "px-4 py-3" : "p-4"} ${selected ? "ring-2 ring-[var(--color-brand)]" : "hover:ring-1 hover:ring-[var(--color-border)]"}`}>
+      {icon ? <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--color-surface-2)] text-xl">{icon}</span> : null}
+      <span className="min-w-0">
+        <span className="block font-semibold text-[var(--color-text)]">{title}</span>
+        {blurb ? <span className="block text-sm text-[var(--color-text-secondary)]">{blurb}</span> : null}
+      </span>
+      <span className={`ml-auto grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] ${selected ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]" : "border border-[var(--color-border)]"}`}>{selected ? "✓" : ""}</span>
+    </button>
+  );
+}
+
+function SocialStep({ platform, existing, form, onForm, onRemove }: {
+  platform: Platform;
+  existing?: { id: string; handle: string; follower_count: number };
+  form: { handle: string; followers: string };
+  onForm: (f: { handle: string; followers: string }) => void;
+  onRemove: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--color-surface-2)] text-[var(--color-text)]"><PlatformIcon name={platform} className="h-6 w-6" /></span>
+        <span className="text-lg font-semibold text-[var(--color-text)]">{platformLabel(platform)}</span>
+      </div>
+      {existing ? (
+        <div className="flex items-center justify-between gap-3 rounded-[var(--radius-btn)] border border-[var(--color-brand)]/40 bg-[var(--color-brand)]/5 px-4 py-3">
+          <span className="text-sm text-[var(--color-text)]">@{existing.handle} · <span className="tabular text-[var(--color-text-secondary)]">{existing.follower_count.toLocaleString()}</span> followers</span>
+          <button className="cursor-pointer text-xs text-[var(--color-danger)]" onClick={() => onRemove(existing.id)}>Remove</button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <input className={control} placeholder="handle (without @)" value={form.handle} onChange={(e) => onForm({ ...form, handle: e.target.value })} />
+          <input className={control} type="number" placeholder="follower count" value={form.followers} onChange={(e) => onForm({ ...form, followers: e.target.value })} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AvatarPicker({ bearer, avatarUrl, onSaved }: { bearer: string; avatarUrl: string | null; onSaved: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const m = useMutation({
-    mutationFn: async (file: File) => {
-      const objectId = await uploadFile(bearer, file, "avatar");
-      return updateProfile(bearer, { avatar_object_id: objectId });
-    },
-    onSuccess: onSaved,
-    onError: () => setPreview(null),
+    mutationFn: async (file: File) => { const objectId = await uploadFile(bearer, file, "avatar"); return updateProfile(bearer, { avatar_object_id: objectId }); },
+    onSuccess: onSaved, onError: () => setPreview(null),
   });
   const shown = preview ?? avatarUrl;
   return (
@@ -345,62 +419,12 @@ function AvatarPicker({ bearer, avatarUrl, onSaved }: { bearer: string; avatarUr
           // eslint-disable-next-line @next/next/no-img-element
           <img src={shown} alt="Your avatar" className="h-full w-full object-cover" />
         ) : "No photo"}
-        {m.isPending ? (
-          <span className="absolute inset-0 grid place-items-center bg-black/50">
-            <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-          </span>
-        ) : null}
+        {m.isPending ? <span className="absolute inset-0 grid place-items-center bg-black/50"><span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" /></span> : null}
       </div>
       <div>
-        <input ref={inputRef} type="file" accept="image/*" className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) { setPreview(URL.createObjectURL(f)); m.mutate(f); } }} />
-        <button onClick={() => inputRef.current?.click()}
-          className="cursor-pointer rounded-full border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text)] transition hover:border-[var(--color-brand)]">
-          {shown ? "Replace photo" : "Upload photo"}
-        </button>
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setPreview(URL.createObjectURL(f)); m.mutate(f); } }} />
+        <button onClick={() => inputRef.current?.click()} className="cursor-pointer rounded-full border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text)] transition hover:border-[var(--color-brand)]">{shown ? "Replace photo" : "Upload photo"}</button>
       </div>
-    </div>
-  );
-}
-
-function SocialsStep({ bearer, socials, onChanged }: { bearer: string; socials: { id: string; platform: string; handle: string; follower_count: number }[]; onChanged: () => void }) {
-  const [open, setOpen] = useState<Platform | null>(null);
-  const [form, setForm] = useState({ handle: "", follower_count: "" });
-  const addM = useMutation({
-    mutationFn: () => addSocial(bearer, { platform: open!, handle: form.handle.trim(), follower_count: Number(form.follower_count) || 0 }),
-    onSuccess: () => { setOpen(null); setForm({ handle: "", follower_count: "" }); onChanged(); },
-  });
-  const delM = useMutation({ mutationFn: (id: string) => deleteSocial(bearer, id), onSuccess: onChanged });
-  return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {PLATFORMS.map((p) => {
-        const existing = socials.find((s) => s.platform === p);
-        const isOpen = open === p;
-        return (
-          <div key={p} className={`rounded-[var(--radius-btn)] border p-3 transition ${existing ? "border-[var(--color-brand)]/40 bg-[var(--color-brand)]/5" : "border-[var(--color-border)]"}`}>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 font-medium text-[var(--color-text)]"><PlatformIcon name={p} className="h-4 w-4" /> {platformLabel(p)}</span>
-              {existing ? (
-                <button className="cursor-pointer text-xs text-[var(--color-danger)]" onClick={() => delM.mutate(existing.id)}>Remove</button>
-              ) : (
-                <button className="cursor-pointer text-xs font-medium text-[var(--color-brand)]" onClick={() => { setOpen(isOpen ? null : p); setForm({ handle: "", follower_count: "" }); }}>
-                  {isOpen ? "Cancel" : "+ Add"}
-                </button>
-              )}
-            </div>
-            {existing ? (
-              <p className="mt-1 text-xs text-[var(--color-text-secondary)]">@{existing.handle} · <span className="tabular">{existing.follower_count.toLocaleString()}</span> followers</p>
-            ) : isOpen ? (
-              <div className="mt-3 space-y-2">
-                <input className={control + " text-sm"} placeholder="handle (without @)" value={form.handle} onChange={(e) => setForm({ ...form, handle: e.target.value })} />
-                <input className={control + " text-sm"} type="number" placeholder="follower count" value={form.follower_count} onChange={(e) => setForm({ ...form, follower_count: e.target.value })} />
-                {addM.isError ? <p className="text-xs text-[var(--color-danger)]">{(addM.error as Error).message}</p> : null}
-                <Button type="button" loading={addM.isPending} disabled={!form.handle.trim()} onClick={() => addM.mutate()}>Add {platformLabel(p)}</Button>
-              </div>
-            ) : null}
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -433,26 +457,20 @@ function PortfolioStep({ bearer, portfolio, onChanged }: { bearer: string; portf
             </div>
           ))}
         </div>
-      ) : (
-        <p className="text-sm text-[var(--color-text-muted)]">No videos uploaded yet.</p>
-      )}
+      ) : <p className="text-sm text-[var(--color-text-muted)]">No videos uploaded yet.</p>}
       <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setError(""); upM.mutate(f); } }} />
       {upM.isPending ? (
         <div className="space-y-1.5">
           <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]"><div className="h-full rounded-full bg-[var(--color-brand)] transition-all" style={{ width: `${pct}%` }} /></div>
           <p className="text-xs text-[var(--color-text-secondary)]">Uploading… {pct}%</p>
         </div>
-      ) : (
-        <div className="w-48"><Button type="button" onClick={() => fileRef.current?.click()}>Upload a video</Button></div>
-      )}
+      ) : <div className="w-48"><Button type="button" onClick={() => fileRef.current?.click()}>Upload a video</Button></div>}
       {error ? <p className="text-sm text-[var(--color-danger)]">{error}</p> : null}
     </div>
   );
 }
 
-function DoneStep({ name, hasType, socialCount, portfolioCount, hasPayout }: {
-  name: string; missing: string[]; hasType: boolean; socialCount: number; portfolioCount: number; hasPayout: boolean;
-}) {
+function DoneStep({ name, hasType, socialCount, portfolioCount, hasPayout }: { name: string; hasType: boolean; socialCount: number; portfolioCount: number; hasPayout: boolean }) {
   const checks = [
     { ok: hasType, label: "Creator type" },
     { ok: socialCount > 0, label: `Social accounts (${socialCount})` },
@@ -465,8 +483,7 @@ function DoneStep({ name, hasType, socialCount, portfolioCount, hasPayout }: {
     <div className="text-center">
       <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[var(--color-brand)]/15 text-3xl">🎉</div>
       <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[var(--color-text)]">You&apos;re all set, {name}!</h1>
-      <p className="mt-2 text-[var(--color-text-secondary)]">Your profile is {pct}% complete. You can browse campaigns now — a fuller profile gets matched to more.</p>
-
+      <p className="mt-2 text-[var(--color-text-secondary)]">Your profile is {pct}% complete. Browse campaigns now — a fuller profile gets matched to more.</p>
       <div className="mx-auto mt-6 max-w-sm space-y-2 text-left">
         {checks.map((c) => (
           <div key={c.label} className="flex items-center gap-3 rounded-[var(--radius-btn)] bg-[var(--color-surface-2)] px-4 py-2.5 text-sm">
@@ -475,11 +492,8 @@ function DoneStep({ name, hasType, socialCount, portfolioCount, hasPayout }: {
           </div>
         ))}
       </div>
-
       <div className="mx-auto mt-8 w-56">
-        <Link href="/campaigns" className="flex min-h-11 items-center justify-center rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] shadow-[0_0_20px_-4px_rgba(34,197,94,0.7)] transition hover:bg-[var(--color-brand-hover)]">
-          Browse campaigns →
-        </Link>
+        <Link href="/campaigns" className="flex min-h-11 items-center justify-center rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] shadow-[0_0_20px_-4px_rgba(34,197,94,0.7)] transition hover:bg-[var(--color-brand-hover)]">Browse campaigns →</Link>
       </div>
     </div>
   );

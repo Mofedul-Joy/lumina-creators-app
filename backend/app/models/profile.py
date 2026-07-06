@@ -82,6 +82,7 @@ class CreatorProfile(TimestampMixin, Base):
     date_of_birth: Mapped[Optional[date]] = mapped_column(Date)
     gender: Mapped[Optional[str]] = mapped_column(GENDER)
     ethnicity: Mapped[Optional[str]] = mapped_column(Text)
+    education: Mapped[Optional[str]] = mapped_column(Text)  # in_high_school|in_college|graduated|grad_school|no_college|na
     primary_language: Mapped[Optional[str]] = mapped_column(Text)
     languages: Mapped[List[str]] = mapped_column(
         ARRAY(Text), nullable=False, server_default=text("'{}'::text[]")
