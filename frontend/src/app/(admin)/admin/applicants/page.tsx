@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { Avatar } from "@/components/admin/Avatar";
+import { CreatorDetailCard } from "@/components/admin/CreatorDetailCard";
 import { getAdminToken } from "@/lib/auth";
 import { isAuthError } from "@/lib/api";
 import {
@@ -292,60 +293,10 @@ export default function AdminApplicantsPage() {
               <p className="mt-10 text-sm text-[var(--color-text-secondary)]">Loading applicant…</p>
             ) : (
               <>
-                <div className="mt-4 flex items-center gap-4">
-                  <Avatar url={detail.avatar_url} name={detail.display_name ?? detail.email} size={64} />
-                  <div>
-                    <h2 className="text-2xl font-semibold text-[var(--color-text)]">{detail.display_name ?? "Unnamed"}</h2>
-                    <p className="text-sm text-[var(--color-text-muted)]">{detail.email}</p>
-                    <p className="mt-1 text-xs text-[var(--color-brand)]">{detail.campaign_name}</p>
-                  </div>
-                </div>
+                <p className="mt-4 text-xs text-[var(--color-brand)]">{detail.campaign_name}</p>
 
-                {detail.bio ? <p className="mt-4 text-sm text-[var(--color-text-secondary)]">{detail.bio}</p> : null}
-
-                <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-3">
-                    <p className="text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">Views</p>
-                    <p className="mt-1 font-semibold text-[var(--color-text)]">{fmtNumber(detail.views)}</p>
-                  </div>
-                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-3">
-                    <p className="text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">Earnings</p>
-                    <p className="mt-1 font-semibold text-[var(--color-text)]">{fmtMoney(detail.earnings)}</p>
-                  </div>
-                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-3">
-                    <p className="text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">Posts</p>
-                    <p className="mt-1 font-semibold text-[var(--color-text)]">{detail.posts}</p>
-                  </div>
-                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-3">
-                    <p className="text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">Streak</p>
-                    <p className="mt-1 font-semibold text-[var(--color-text)]">{detail.streak_days}d</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {detail.niches?.map((n) => (
-                    <span key={n} className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-0.5 text-[10px] text-[var(--color-text-muted)]">{n}</span>
-                  ))}
-                </div>
-
-                <h3 className="mt-6 text-sm font-semibold text-[var(--color-text)]">Social accounts</h3>
-                <div className="mt-2 flex flex-col gap-2">
-                  {detail.socials?.length ? detail.socials.map((s, i) => (
-                    <a key={i} href={s.profile_url ?? undefined} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm hover:border-[var(--color-brand)]">
-                      <span className="text-[var(--color-text)]">{s.platform} · @{s.handle}</span>
-                      <span className="text-xs text-[var(--color-text-muted)]">{fmtNumber(s.follower_count)} followers</span>
-                    </a>
-                  )) : <p className="text-sm text-[var(--color-text-muted)]">No linked socials.</p>}
-                </div>
-
-                <h3 className="mt-6 text-sm font-semibold text-[var(--color-text)]">Recent videos</h3>
-                <div className="mt-2 flex flex-col gap-2">
-                  {detail.recent_videos?.length ? detail.recent_videos.map((v, i) => (
-                    <a key={i} href={v.post_url ?? undefined} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm hover:border-[var(--color-brand)]">
-                      <span className="truncate text-[var(--color-text)]">{v.platform} video</span>
-                      <span className="text-xs text-[var(--color-text-muted)]">{fmtNumber(v.views)} views</span>
-                    </a>
-                  )) : <p className="text-sm text-[var(--color-text-muted)]">No videos submitted yet.</p>}
+                <div className="mt-4">
+                  <CreatorDetailCard creatorId={detail.creator_id} participationId={detail.id} />
                 </div>
 
                 <h3 className="mt-6 text-sm font-semibold text-[var(--color-text)]">Admin note</h3>

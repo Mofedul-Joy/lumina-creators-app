@@ -89,6 +89,9 @@ class Submission(TimestampMixin, Base):
         Boolean, nullable=False, server_default=text("false")
     )
     thumbnail_url: Mapped[Optional[str]] = mapped_column(Text)
+    # Share count on the source post (Feature 2 rich media reel). Nullable so
+    # existing rows stay valid — platforms without a shares metric leave this null.
+    shares: Mapped[Optional[int]] = mapped_column(Integer)
     last_scraped_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     # Creator claimed this verified submission for payout (signals intent-to-pay
     # to the admin). Set once an active payout_item exists it becomes paid.

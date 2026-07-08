@@ -96,6 +96,18 @@ class CreatorProfile(TimestampMixin, Base):
     payout_solana: Mapped[Optional[str]] = mapped_column(Text)
     payout_whop: Mapped[Optional[str]] = mapped_column(Text)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    # Gamification layer (Feature 2 — SideShift-style rich detail card,
+    # BUILD_SPEC.md §3.9). `rank` is nullable: when NULL the service computes
+    # the gemstone rank on the fly from `xp` so existing rows keep working.
+    rank: Mapped[Optional[str]] = mapped_column(Text)  # bronze|sapphire|gold|emerald|amber|ruby
+    xp: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    streak_days: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    awards: Mapped[List[str]] = mapped_column(
+        ARRAY(Text), nullable=False, server_default=text("'{}'::text[]")
+    )
+    niches: Mapped[List[str]] = mapped_column(
+        ARRAY(Text), nullable=False, server_default=text("'{}'::text[]")
+    )
 
 
 class SocialAccount(Base):
@@ -144,6 +156,28 @@ class PortfolioItem(Base):
     brand_name: Mapped[Optional[str]] = mapped_column(Text)
     caption: Mapped[Optional[str]] = mapped_column(Text)
     platform: Mapped[Optional[str]] = mapped_column(PLATFORM)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class CreatorExperience(Base):
+    """Résumé-style entry (e.g. past brand deal, agency, or role) shown on the
+    rich creator detail card (Feature 2). Read-only from the admin API for now
+    — no admin edit route yet, per BUILD_SPEC.md §3.1."""
+
+    __tablename__ = "creator_experiences"
+    __table_args__ = (Index("idx_experiences_creator", "creator_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    creator_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("creators.id", ondelete="CASCADE"), nullable=False
+    )
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    org: Mapped[Optional[str]] = mapped_column(Text)
+    url: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

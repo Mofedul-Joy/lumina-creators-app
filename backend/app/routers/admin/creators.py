@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_current_admin
 from app.db.session import get_db
 from app.models import Admin
-from app.schemas.admin_creators import CreatorDetail, CreatorListItem
+from app.schemas.admin_creators import CreatorDetail, CreatorListItem, CreatorRichDetail
 from app.services import admin_creators as svc
 
 router = APIRouter(prefix="/creators", tags=["admin-creators"])
@@ -46,6 +46,14 @@ def list_creators(
 @router.get("/{creator_id}", response_model=CreatorDetail)
 def creator_detail(creator_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     return CreatorDetail(**svc.get_creator_detail(db, creator_id))
+
+
+@router.get("/{creator_id}/rich", response_model=CreatorRichDetail)
+def creator_rich_detail(creator_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """SideShift-style rich detail card (Feature 2) — superset of `creator_detail`
+    with gamification (rank/xp/streak/awards), niches, experiences, and a
+    recent-submissions video reel. Keeps the plain endpoint above intact."""
+    return CreatorRichDetail(**svc.get_creator_rich_detail(db, creator_id))
 
 
 @router.post("/{creator_id}/flag-suspicious", response_model=CreatorDetail)

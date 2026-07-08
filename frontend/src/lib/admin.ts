@@ -314,6 +314,53 @@ export const listCreators = (f: CreatorFilters = {}) => {
   return apiFetch<CreatorRow[]>(`/api/admin/creators${qs ? `?${qs}` : ""}`, auth());
 };
 
+/* ---- rich creator/applicant detail card (Feature 2) ---- */
+export type RichSocialItem = { platform: string; handle: string; profile_url: string | null; follower_count: number };
+export type RecentSubmissionItem = {
+  id: string;
+  post_url: string;
+  platform: string;
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number | null;
+  thumbnail_url: string | null;
+};
+export type ExperienceItem = { id: string; title: string; org: string | null; url: string | null; created_at: string };
+
+export type CreatorRichDetail = {
+  id: string;
+  email: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  date_of_birth: string | null;
+  age: number | null;
+  gender: string | null;
+  ethnicity: string | null;
+  education: string | null;
+  primary_language: string | null;
+  languages: string[];
+  country: string | null;
+  city: string | null;
+  completed: boolean;
+  is_suspicious: boolean;
+  rank: string;
+  xp: number;
+  streak_days: number;
+  awards: string[];
+  niches: string[];
+  total_views: number;
+  total_earned: number | string;
+  total_posts: number;
+  socials: RichSocialItem[];
+  recent_submissions: RecentSubmissionItem[];
+  experiences: ExperienceItem[];
+};
+
+export const getCreatorRichDetail = (id: string) =>
+  apiFetch<CreatorRichDetail>(`/api/admin/creators/${id}/rich`, auth());
+
 /* ---- applicants pipeline (Feature 1 — SideShift-style admin triage) ---- */
 export type ApplicantVideo = {
   id: string;

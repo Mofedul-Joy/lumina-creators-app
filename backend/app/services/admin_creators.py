@@ -1,16 +1,62 @@
 """Admin creator database: filterable list + drill-down. Reads profile/socials/portfolio."""
 from __future__ import annotations
 
+import math
 import uuid
 from datetime import date, timedelta
+from decimal import Decimal
 
 from fastapi import HTTPException, status
-from sqlalchemy import exists, or_, select
+from sqlalchemy import exists, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.integrations import storage
-from app.models import Creator, CreatorProfile, PortfolioItem, SocialAccount, StorageObject
+from app.models import (
+    Creator,
+    CreatorExperience,
+    CreatorProfile,
+    PortfolioItem,
+    SocialAccount,
+    StorageObject,
+    Submission,
+)
 from app.services import audit
+
+# Gemstone rank thresholds (BUILD_SPEC.md §3.9) — ordered lowest to highest.
+_RANK_THRESHOLDS = (
+    ("bronze", 0),
+    ("sapphire", 100),
+    ("gold", 500),
+    ("emerald", 1500),
+    ("amber", 4000),
+    ("ruby", 8000),
+)
+
+
+def _rank_for_xp(xp: int) -> str:
+    rank = _RANK_THRESHOLDS[0][0]
+    for name, floor in _RANK_THRESHOLDS:
+        if xp >= floor:
+            rank = name
+    return rank
+
+
+def _xp_for(total_views: int, total_posts: int, streak_days: int) -> int:
+    return math.floor(total_views / 100) + total_posts * 5 + streak_days
+
+
+def _awards_for(total_posts: int, total_earned: Decimal, streak_days: int, stored: list[str] | None) -> list[str]:
+    awards: list[str] = []
+    if streak_days >= 7:
+        awards.append("persistent_pro")
+    if total_posts >= 10:
+        awards.append("gig_completion_mastery")
+    if total_earned >= 500:
+        awards.append("earnings_mastery")
+    # interview_mastery is a manual admin-set flag — no automatic computation.
+    if stored and "interview_mastery" in stored:
+        awards.append("interview_mastery")
+    return awards
 
 
 def _avatar_urls(db: Session, profiles) -> dict:
@@ -89,10 +135,28 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
         socials_by_creator[s.creator_id].append(s)
     avatars = _avatar_urls(db, profiles.values())
 
+    # Batch aggregate views/earnings per creator for the rank badge + stat chips
+    # on the list cards (Feature 2) — one query, not N.
+    agg_rows = db.execute(
+        select(
+            Submission.creator_id,
+            func.coalesce(func.sum(Submission.views), 0),
+            func.coalesce(func.sum(Submission.payable_amount), 0),
+            func.count(Submission.id),
+        )
+        .where(Submission.creator_id.in_(ids))
+        .group_by(Submission.creator_id)
+    ).all()
+    agg_by_creator = {cid: {"views": int(v), "earned": Decimal(e), "posts": int(c)} for cid, v, e, c in agg_rows}
+
     out = []
     for c in creators:
         prof = profiles.get(c.id)
         socials = socials_by_creator.get(c.id, [])
+        a = agg_by_creator.get(c.id, {"views": 0, "earned": Decimal("0"), "posts": 0})
+        streak_days = prof.streak_days if prof else 0
+        xp = (prof.xp if prof and prof.xp else 0) or _xp_for(a["views"], a["posts"], streak_days)
+        rank = (prof.rank if prof else None) or _rank_for_xp(xp)
         out.append({
             "id": str(c.id), "email": c.email,
             "display_name": prof.display_name if prof else None,
@@ -104,6 +168,9 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
             "platforms": sorted({s.platform for s in socials}),
             "completed": bool(prof and prof.completed_at),
             "is_suspicious": c.is_suspicious,
+            "rank": rank,
+            "total_views": a["views"],
+            "total_earned": a["earned"],
         })
     return out
 
@@ -147,6 +214,110 @@ def get_creator_detail(db: Session, creator_id: uuid.UUID) -> dict:
         "socials": [
             {"platform": s.platform, "handle": s.handle, "profile_url": s.profile_url, "follower_count": s.follower_count}
             for s in socials
+        ],
+        "portfolio": [
+            {"id": str(p.id), "brand_name": p.brand_name, "caption": p.caption, "platform": p.platform}
+            for p in portfolio
+        ],
+    }
+
+
+def _age(dob) -> int | None:
+    if not dob:
+        return None
+    today = date.today()
+    return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+
+
+def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
+    """SideShift-style rich detail card (Feature 2, BUILD_SPEC.md §3.1 + §3.9).
+    Superset of `get_creator_detail`: adds gamification (rank/xp/streak/awards),
+    niches, experiences, and a recent-submissions video reel. Rank/xp/awards are
+    computed on the fly whenever the stored columns are unset, so existing rows
+    keep working without a backfill.
+    """
+    c = db.get(Creator, creator_id)
+    if c is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Creator not found")
+    prof = db.scalar(select(CreatorProfile).where(CreatorProfile.creator_id == c.id))
+    socials = db.scalars(select(SocialAccount).where(SocialAccount.creator_id == c.id)).all()
+    portfolio = db.scalars(select(PortfolioItem).where(PortfolioItem.creator_id == c.id)).all()
+    experiences = db.scalars(
+        select(CreatorExperience)
+        .where(CreatorExperience.creator_id == c.id)
+        .order_by(CreatorExperience.created_at.desc())
+    ).all()
+
+    agg_row = db.execute(
+        select(
+            func.coalesce(func.sum(Submission.views), 0),
+            func.coalesce(func.sum(Submission.payable_amount), 0),
+            func.count(Submission.id),
+        ).where(Submission.creator_id == c.id)
+    ).first()
+    total_views = int(agg_row[0]) if agg_row else 0
+    total_earned = Decimal(agg_row[1]) if agg_row else Decimal("0")
+    total_posts = int(agg_row[2]) if agg_row else 0
+
+    recent_subs = db.scalars(
+        select(Submission)
+        .where(
+            Submission.creator_id == c.id,
+            Submission.verification_status.in_(("approved", "reviewed")),
+        )
+        .order_by(Submission.created_at.desc())
+        .limit(12)
+    ).all()
+
+    streak_days = prof.streak_days if prof else 0
+    xp = (prof.xp if prof and prof.xp else 0) or _xp_for(total_views, total_posts, streak_days)
+    rank = (prof.rank if prof else None) or _rank_for_xp(xp)
+    awards = _awards_for(total_posts, total_earned, streak_days, prof.awards if prof else None)
+
+    return {
+        "id": str(c.id), "email": c.email,
+        "display_name": prof.display_name if prof else None,
+        "avatar_url": _avatar_urls(db, [prof]).get(c.id) if prof else None,
+        "bio": prof.bio if prof else None,
+        "date_of_birth": prof.date_of_birth if prof else None,
+        "age": _age(prof.date_of_birth) if prof else None,
+        "gender": prof.gender if prof else None,
+        "ethnicity": prof.ethnicity if prof else None,
+        "education": prof.education if prof else None,
+        "primary_language": prof.primary_language if prof else None,
+        "languages": (prof.languages if prof else []) or [],
+        "country": prof.country if prof else None,
+        "city": prof.city if prof else None,
+        "completed": bool(prof and prof.completed_at),
+        "is_suspicious": c.is_suspicious,
+        "rank": rank,
+        "xp": xp,
+        "streak_days": streak_days,
+        "awards": awards,
+        "niches": (prof.niches if prof else []) or [],
+        "total_views": total_views,
+        "total_earned": total_earned,
+        "total_posts": total_posts,
+        "socials": [
+            {"platform": s.platform, "handle": s.handle, "profile_url": s.profile_url, "follower_count": s.follower_count}
+            for s in socials
+        ],
+        "recent_submissions": [
+            {
+                "id": str(s.id),
+                "post_url": s.post_url,
+                "platform": s.platform,
+                "views": s.views,
+                "likes": s.likes,
+                "comments": s.comments,
+                "shares": s.shares,
+                "thumbnail_url": s.thumbnail_url,
+            }
+            for s in recent_subs
+        ],
+        "experiences": [
+            {"id": str(e.id), "title": e.title, "org": e.org, "url": e.url, "created_at": e.created_at}
+            for e in experiences
         ],
         "portfolio": [
             {"id": str(p.id), "brand_name": p.brand_name, "caption": p.caption, "platform": p.platform}

@@ -300,6 +300,9 @@ export type CreatorListItem = {
   platforms: Platform[];
   completed: boolean;
   is_suspicious: boolean;
+  rank: string | null;
+  total_views: number;
+  total_earned: number | string;
 };
 
 export type SocialItem = {
@@ -350,6 +353,66 @@ export type CreatorFilters = {
   completed_only?: boolean;
   limit?: number;
   offset?: number;
+};
+
+// ── Feature 2: rich creator/applicant detail card ─────────────────────────────
+export type GemstoneRank = "bronze" | "sapphire" | "gold" | "emerald" | "amber" | "ruby";
+
+export type RichSocialItem = {
+  platform: Platform;
+  handle: string;
+  profile_url: string | null;
+  follower_count: number;
+};
+
+export type RecentSubmissionItem = {
+  id: string;
+  post_url: string;
+  platform: Platform;
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number | null;
+  thumbnail_url: string | null;
+};
+
+export type ExperienceItem = {
+  id: string;
+  title: string;
+  org: string | null;
+  url: string | null;
+  created_at: string;
+};
+
+export type CreatorRichDetail = {
+  id: string;
+  email: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  date_of_birth: string | null;
+  age: number | null;
+  gender: Gender | null;
+  ethnicity: string | null;
+  education: string | null;
+  primary_language: string | null;
+  languages: string[];
+  country: string | null;
+  city: string | null;
+  completed: boolean;
+  is_suspicious: boolean;
+  rank: GemstoneRank | string;
+  xp: number;
+  streak_days: number;
+  awards: string[];
+  niches: string[];
+  total_views: number;
+  total_earned: number | string;
+  total_posts: number;
+  socials: RichSocialItem[];
+  recent_submissions: RecentSubmissionItem[];
+  experiences: ExperienceItem[];
+  portfolio: PortfolioItemOut[];
 };
 
 // ── Creator profile methods (creator bearer token) ────────────────────────────
@@ -489,3 +552,6 @@ export const flagCreatorSuspicious = (token: string, id: string) =>
 
 export const unflagCreatorSuspicious = (token: string, id: string) =>
   apiFetch<CreatorDetail>(`/api/admin/creators/${id}/unflag-suspicious`, { method: "POST", token });
+
+export const getCreatorRichDetail = (token: string, id: string) =>
+  apiFetch<CreatorRichDetail>(`/api/admin/creators/${id}/rich`, { token });

@@ -6,21 +6,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
-import { Avatar } from "@/components/admin/Avatar";
+import { CreatorDetailCard } from "@/components/admin/CreatorDetailCard";
 import { getAdminToken } from "@/lib/auth";
 import { flagCreatorSuspicious, getCreatorDetail, isAuthError, unflagCreatorSuspicious } from "@/lib/api";
 
 const cardCls =
   "card-grad rounded-[var(--radius-card)] p-5 space-y-4";
-
-function Row({ label, value }: { label: string; value: string | null }) {
-  return (
-    <div className="flex justify-between gap-4 border-b border-[var(--color-border)] py-2 last:border-b-0">
-      <dt className="text-sm text-[var(--color-text-muted)]">{label}</dt>
-      <dd className="text-right text-sm text-[var(--color-text)]">{value ?? "-"}</dd>
-    </div>
-  );
-}
 
 export default function AdminCreatorDetailPage() {
   const router = useRouter();
@@ -85,16 +76,7 @@ export default function AdminCreatorDetailPage() {
       </Link>
       <AdminTabs />
 
-      <header className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Avatar url={c.avatar_url} name={c.display_name} size={64} />
-          <div>
-            <h1 className="text-3xl font-semibold text-[var(--color-text)]">
-              {c.display_name ?? "Unnamed creator"}
-            </h1>
-            <p className="mt-1 text-[var(--color-text-secondary)]">{c.email}</p>
-          </div>
-        </div>
+      <header className="flex items-start justify-end gap-4">
         <div className="flex shrink-0 flex-col items-end gap-2">
           <span
             className="rounded-[var(--radius-pill)] px-3 py-1 text-xs font-medium"
@@ -139,75 +121,8 @@ export default function AdminCreatorDetailPage() {
         </div>
       </header>
 
-      {c.bio ? (
-        <section className={cardCls}>
-          <h2 className="text-lg font-semibold text-[var(--color-text)]">Bio</h2>
-          <p className="text-sm leading-6 text-[var(--color-text-secondary)]">{c.bio}</p>
-        </section>
-      ) : null}
-
       <section className={cardCls}>
-        <h2 className="text-lg font-semibold text-[var(--color-text)]">Demographics</h2>
-        <dl>
-          <Row label="Date of birth" value={c.date_of_birth} />
-          <Row label="Gender" value={c.gender ? c.gender.replace(/_/g, " ") : null} />
-          <Row label="Ethnicity" value={c.ethnicity} />
-          <Row label="Primary language" value={c.primary_language} />
-          <Row label="Languages" value={c.languages.length ? c.languages.join(", ") : null} />
-          <Row label="Country" value={c.country} />
-          <Row label="City" value={c.city} />
-        </dl>
-      </section>
-
-      <section className={cardCls}>
-        <h2 className="text-lg font-semibold text-[var(--color-text)]">Social accounts</h2>
-        {c.socials.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-muted)]">No social accounts.</p>
-        ) : (
-          <ul className="space-y-2">
-            {c.socials.map((s, i) => (
-              <li
-                key={`${s.platform}-${s.handle}-${i}`}
-                className="flex items-center justify-between rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-2"
-              >
-                <span className="text-sm text-[var(--color-text)]">
-                  {s.platform} · @{s.handle} ·{" "}
-                  <span className="tabular">{s.follower_count.toLocaleString()}</span> followers
-                </span>
-                {s.profile_url ? (
-                  <a
-                    href={s.profile_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-[var(--color-brand)] underline"
-                  >
-                    Visit
-                  </a>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className={cardCls}>
-        <h2 className="text-lg font-semibold text-[var(--color-text)]">Portfolio</h2>
-        {c.portfolio.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-muted)]">No portfolio items.</p>
-        ) : (
-          <ul className="space-y-2">
-            {c.portfolio.map((p) => (
-              <li
-                key={p.id}
-                className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-text)]"
-              >
-                {p.brand_name ?? "Untitled"}
-                {p.platform ? ` · ${p.platform}` : ""}
-                {p.caption ? ` · ${p.caption}` : ""}
-              </li>
-            ))}
-          </ul>
-        )}
+        <CreatorDetailCard creatorId={id} />
       </section>
       </main>
     </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +15,30 @@ import { GENDERS, PLATFORMS, isAuthError, listCreators, type CreatorFilters, typ
 const PAGE_SIZE = 12;
 const control =
   "min-h-10 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]";
+
+// Gemstone rank chip styles (Feature 2) — kept local to the compact list card;
+// the full palette lives in CreatorDetailCard for the rich detail view.
+const RANK_STYLE: Record<string, CSSProperties> = {
+  bronze: { background: "rgba(180,120,70,0.18)", color: "#d79a67" },
+  sapphire: { background: "rgba(59,130,246,0.18)", color: "#60a5fa" },
+  gold: { background: "rgba(234,179,8,0.18)", color: "#facc15" },
+  emerald: { background: "rgba(34,197,94,0.18)", color: "#4ade80" },
+  amber: { background: "rgba(245,158,11,0.18)", color: "#fbbf24" },
+  ruby: { background: "rgba(244,63,94,0.18)", color: "#fb7185" },
+};
+
+function fmtNumber(n: number | string | null | undefined): string {
+  const v = typeof n === "string" ? Number(n) : n ?? 0;
+  if (!Number.isFinite(v)) return "0";
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
+  return String(Math.round(v));
+}
+
+function fmtMoney(n: number | string | null | undefined): string {
+  const v = typeof n === "string" ? Number(n) : n ?? 0;
+  return `$${Number.isFinite(v) ? v.toFixed(2) : "0.00"}`;
+}
 
 type Prefs = { gender: string; platform: string; ethnicity: string; primary_language: string; country: string; city: string; min_followers: string; completed_only: boolean };
 const EMPTY: Prefs = { gender: "", platform: "", ethnicity: "", primary_language: "", country: "", city: "", min_followers: "", completed_only: false };
@@ -197,10 +222,22 @@ export default function AdminCreatorsPage() {
                       {c.is_suspicious ? <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-400">Flagged</span> : null}
                     </div>
                   </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    {c.rank ? (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                        style={RANK_STYLE[c.rank ?? "bronze"] ?? RANK_STYLE.bronze}
+                      >
+                        💎 {c.rank}
+                      </span>
+                    ) : null}
+                  </div>
                   <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
                     <dt className="text-[var(--color-text-muted)]">Country</dt><dd className="text-right text-[var(--color-text)]">{c.country ?? "-"}</dd>
                     <dt className="text-[var(--color-text-muted)]">Language</dt><dd className="text-right text-[var(--color-text)]">{c.primary_language ?? "-"}</dd>
                     <dt className="text-[var(--color-text-muted)]">Followers</dt><dd className="tabular text-right text-[var(--color-text)]">{c.total_followers.toLocaleString()}</dd>
+                    <dt className="text-[var(--color-text-muted)]">Views</dt><dd className="tabular text-right text-[var(--color-text)]">{fmtNumber(c.total_views)}</dd>
+                    <dt className="text-[var(--color-text-muted)]">Earned</dt><dd className="tabular text-right text-[var(--color-text)]">{fmtMoney(c.total_earned)}</dd>
                   </dl>
                   {c.platforms.length ? (
                     <div className="mt-3 flex flex-wrap gap-1.5">{c.platforms.map((p) => <span key={p} className="rounded-full bg-[var(--color-surface-2)] px-2 py-0.5 text-xs text-[var(--color-text-secondary)]">{p}</span>)}</div>
