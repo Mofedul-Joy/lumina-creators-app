@@ -6,6 +6,22 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 
+class BonusMilestoneIn(BaseModel):
+    """Step 3 of the campaign wizard — repeatable views-threshold bonus row."""
+    views_threshold: int
+    bonus_amount: Decimal
+    description: Optional[str] = None
+    sort_order: int = 0
+
+
+class BonusMilestoneOut(BaseModel):
+    id: str
+    views_threshold: int
+    bonus_amount: Decimal
+    description: Optional[str] = None
+    sort_order: int = 0
+
+
 class CampaignCreateIn(BaseModel):
     name: str
     mode: str  # create_new | copy_paste
@@ -29,6 +45,27 @@ class CampaignCreateIn(BaseModel):
     ends_at: Optional[datetime] = None
     client_id: Optional[str] = None
 
+    # ── 6-step campaign builder wizard (Feature 3) ──────────────────────────────
+    job_type: Optional[str] = None
+    creator_type: Optional[str] = None
+    payment_type: Optional[str] = None
+    fixed_amount: Optional[Decimal] = None
+    weekly_hours_needed: Optional[int] = None
+    hourly_rate: Optional[Decimal] = None
+    required_hours: Optional[int] = None
+    per_post_amount: Optional[Decimal] = None
+    example_videos: List[str] = []
+    age_requirement: Optional[str] = None
+    platform_focus: List[str] = []
+    content_type: Optional[str] = None
+    posting_frequency: Optional[str] = None
+    video_length: Optional[str] = None
+    account_type: Optional[str] = None
+    is_app: bool = False
+    physical_product: bool = False
+    banner_url: Optional[str] = None
+    bonus_milestones: List[BonusMilestoneIn] = []
+
 
 class CampaignUpdateIn(BaseModel):
     name: Optional[str] = None
@@ -51,6 +88,27 @@ class CampaignUpdateIn(BaseModel):
     starts_at: Optional[datetime] = None
     ends_at: Optional[datetime] = None
     client_id: Optional[str] = None
+
+    # ── 6-step campaign builder wizard (Feature 3) ──────────────────────────────
+    job_type: Optional[str] = None
+    creator_type: Optional[str] = None
+    payment_type: Optional[str] = None
+    fixed_amount: Optional[Decimal] = None
+    weekly_hours_needed: Optional[int] = None
+    hourly_rate: Optional[Decimal] = None
+    required_hours: Optional[int] = None
+    per_post_amount: Optional[Decimal] = None
+    example_videos: Optional[List[str]] = None
+    age_requirement: Optional[str] = None
+    platform_focus: Optional[List[str]] = None
+    content_type: Optional[str] = None
+    posting_frequency: Optional[str] = None
+    video_length: Optional[str] = None
+    account_type: Optional[str] = None
+    is_app: Optional[bool] = None
+    physical_product: Optional[bool] = None
+    banner_url: Optional[str] = None
+    bonus_milestones: Optional[List[BonusMilestoneIn]] = None
 
 
 class CampaignOut(BaseModel):
@@ -81,6 +139,27 @@ class CampaignOut(BaseModel):
     starts_at: Optional[datetime] = None
     ends_at: Optional[datetime] = None
     published_at: Optional[datetime] = None
+
+    # ── 6-step campaign builder wizard (Feature 3) ──────────────────────────────
+    job_type: Optional[str] = None
+    creator_type: Optional[str] = None
+    payment_type: Optional[str] = None
+    fixed_amount: Optional[Decimal] = None
+    weekly_hours_needed: Optional[int] = None
+    hourly_rate: Optional[Decimal] = None
+    required_hours: Optional[int] = None
+    per_post_amount: Optional[Decimal] = None
+    example_videos: List[str] = []
+    age_requirement: Optional[str] = None
+    platform_focus: List[str] = []
+    content_type: Optional[str] = None
+    posting_frequency: Optional[str] = None
+    video_length: Optional[str] = None
+    account_type: Optional[str] = None
+    is_app: bool = False
+    physical_product: bool = False
+    banner_url: Optional[str] = None
+    bonus_milestones: List[BonusMilestoneOut] = []
 
 
 class CampaignPublicOut(BaseModel):

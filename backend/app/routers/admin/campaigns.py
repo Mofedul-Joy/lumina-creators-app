@@ -11,15 +11,29 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_current_admin
 from app.core.security import create_impersonation_token
 from app.db.session import get_db
-from app.models import Admin, Campaign, CreatorProfile, Submission
-from app.schemas.campaign import CampaignCreateIn, CampaignOut, CampaignUpdateIn
+from app.models import Admin, Campaign, CampaignBonusMilestone, CreatorProfile, Submission
+from app.schemas.campaign import BonusMilestoneOut, CampaignCreateIn, CampaignOut, CampaignUpdateIn
 from app.services import audit, campaign as svc
 from app.services.csv_export import csv_response
 
 router = APIRouter(prefix="/campaigns", tags=["admin-campaigns"])
 
 
-def campaign_out(c: Campaign) -> CampaignOut:
+def campaign_out(c: Campaign, db: Session | None = None) -> CampaignOut:
+    milestones: list[BonusMilestoneOut] = []
+    if db is not None:
+        rows = db.scalars(
+            select(CampaignBonusMilestone)
+            .where(CampaignBonusMilestone.campaign_id == c.id)
+            .order_by(CampaignBonusMilestone.sort_order.asc())
+        ).all()
+        milestones = [
+            BonusMilestoneOut(
+                id=str(m.id), views_threshold=m.views_threshold, bonus_amount=m.bonus_amount,
+                description=m.description, sort_order=m.sort_order,
+            )
+            for m in rows
+        ]
     return CampaignOut(
         id=str(c.id), slug=c.slug, name=c.name, description=c.description, mode=c.mode,
         status=c.status, cpm_rate=c.cpm_rate, budget=c.budget, spent_amount=c.spent_amount,
@@ -31,47 +45,55 @@ def campaign_out(c: Campaign) -> CampaignOut:
         requirements_url=c.requirements_url, brand_name=c.brand_name, brand_logo_url=c.brand_logo_url,
         client_id=str(c.client_id) if c.client_id else None,
         starts_at=c.starts_at, ends_at=c.ends_at, published_at=c.published_at,
+        job_type=c.job_type, creator_type=c.creator_type, payment_type=c.payment_type,
+        fixed_amount=c.fixed_amount, weekly_hours_needed=c.weekly_hours_needed,
+        hourly_rate=c.hourly_rate, required_hours=c.required_hours, per_post_amount=c.per_post_amount,
+        example_videos=list(c.example_videos or []), age_requirement=c.age_requirement,
+        platform_focus=list(c.platform_focus or []), content_type=c.content_type,
+        posting_frequency=c.posting_frequency, video_length=c.video_length, account_type=c.account_type,
+        is_app=c.is_app, physical_product=c.physical_product, banner_url=c.banner_url,
+        bonus_milestones=milestones,
     )
 
 
 @router.post("", response_model=CampaignOut)
 def create(body: CampaignCreateIn, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return campaign_out(svc.create_campaign(db, admin.id, body.model_dump()))
+    return campaign_out(svc.create_campaign(db, admin.id, body.model_dump()), db)
 
 
 @router.get("", response_model=list[CampaignOut])
 def list_all(status: Optional[str] = None, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return [campaign_out(c) for c in svc.list_campaigns(db, status)]
+    return [campaign_out(c, db) for c in svc.list_campaigns(db, status)]
 
 
 @router.get("/{campaign_id}", response_model=CampaignOut)
 def get_one(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return campaign_out(svc.get_campaign(db, campaign_id))
+    return campaign_out(svc.get_campaign(db, campaign_id), db)
 
 
 @router.patch("/{campaign_id}", response_model=CampaignOut)
 def update(campaign_id: uuid.UUID, body: CampaignUpdateIn, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return campaign_out(svc.update_campaign(db, campaign_id, body.model_dump(exclude_unset=True)))
+    return campaign_out(svc.update_campaign(db, campaign_id, body.model_dump(exclude_unset=True)), db)
 
 
 @router.post("/{campaign_id}/publish", response_model=CampaignOut)
 def publish(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return campaign_out(svc.publish_campaign(db, campaign_id, admin.id))
+    return campaign_out(svc.publish_campaign(db, campaign_id, admin.id), db)
 
 
 @router.post("/{campaign_id}/close", response_model=CampaignOut)
 def close(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return campaign_out(svc.close_campaign(db, campaign_id, admin.id))
+    return campaign_out(svc.close_campaign(db, campaign_id, admin.id), db)
 
 
 @router.post("/{campaign_id}/reopen", response_model=CampaignOut)
 def reopen(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return campaign_out(svc.reopen_campaign(db, campaign_id, admin.id))
+    return campaign_out(svc.reopen_campaign(db, campaign_id, admin.id), db)
 
 
 @router.post("/{campaign_id}/archive", response_model=CampaignOut)
 def archive(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return campaign_out(svc.archive_campaign(db, campaign_id, admin.id))
+    return campaign_out(svc.archive_campaign(db, campaign_id, admin.id), db)
 
 
 @router.post("/{campaign_id}/impersonate-client")

@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import _now
-from app.models import Campaign, CampaignParticipation
+from app.models import Campaign, CampaignBonusMilestone, CampaignParticipation
 from app.services import audit
 
 _MODES = {"create_new", "copy_paste"}
@@ -39,6 +39,8 @@ def _check_mode_content(mode: str, brief_script, content_drive_url) -> None:
 
 
 def create_campaign(db: Session, admin_id: uuid.UUID, data: dict) -> Campaign:
+    data = dict(data)
+    bonus_milestones = data.pop("bonus_milestones", None) or []
     _check_mode_content(data["mode"], data.get("brief_script"), data.get("content_drive_url"))
     if data["cpm_rate"] <= 0 or data["budget"] <= 0:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "cpm_rate and budget must be positive")
@@ -51,9 +53,30 @@ def create_campaign(db: Session, admin_id: uuid.UUID, data: dict) -> Campaign:
         **{k: v for k, v in data.items() if k not in ("client_id",)},
     )
     db.add(campaign)
+    db.flush()
+    _replace_bonus_milestones(db, campaign.id, bonus_milestones)
     db.commit()
     db.refresh(campaign)
     return campaign
+
+
+def _replace_bonus_milestones(db: Session, campaign_id: uuid.UUID, milestones: list) -> None:
+    """Step 3 of the wizard: bonus milestones are always fully replaced on write
+    (create sends the initial set; update resends the whole edited list)."""
+    db.query(CampaignBonusMilestone).filter(
+        CampaignBonusMilestone.campaign_id == campaign_id
+    ).delete()
+    for idx, m in enumerate(milestones):
+        m = m if isinstance(m, dict) else m.model_dump()
+        db.add(
+            CampaignBonusMilestone(
+                campaign_id=campaign_id,
+                views_threshold=m["views_threshold"],
+                bonus_amount=m["bonus_amount"],
+                description=m.get("description"),
+                sort_order=m.get("sort_order", idx),
+            )
+        )
 
 
 def get_campaign(db: Session, campaign_id: uuid.UUID) -> Campaign:
@@ -74,6 +97,9 @@ def update_campaign(db: Session, campaign_id: uuid.UUID, data: dict) -> Campaign
     c = get_campaign(db, campaign_id)
     if c.status == "archived":
         raise HTTPException(status.HTTP_409_CONFLICT, "Archived campaigns cannot be edited")
+    data = dict(data)
+    milestones_provided = "bonus_milestones" in data
+    bonus_milestones = data.pop("bonus_milestones", None) or []
     new_mode = c.mode
     new_brief = data.get("brief_script", c.brief_script)
     new_drive = data.get("content_drive_url", c.content_drive_url)
@@ -89,6 +115,8 @@ def update_campaign(db: Session, campaign_id: uuid.UUID, data: dict) -> Campaign
             setattr(c, field, value)
     if "client_id" in data:
         c.client_id = uuid.UUID(data["client_id"]) if data["client_id"] else None
+    if milestones_provided:
+        _replace_bonus_milestones(db, c.id, bonus_milestones)
     db.commit()
     db.refresh(c)
     return c

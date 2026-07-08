@@ -3,6 +3,16 @@ import { getAdminToken } from "@/lib/auth";
 
 const auth = () => ({ token: getAdminToken() ?? undefined });
 
+export type BonusMilestone = {
+  id?: string;
+  views_threshold: number;
+  bonus_amount: number | string;
+  description?: string | null;
+  sort_order?: number;
+};
+
+export type PaymentType = "fixed" | "cpm" | "mixed" | "per_hour" | "per_post";
+
 export type AdminCampaign = {
   id: string;
   slug: string;
@@ -27,6 +37,26 @@ export type AdminCampaign = {
   min_retention_days: number;
   client_id: string | null;
   published_at: string | null;
+  // ---- 6-step campaign builder wizard (Feature 3) ----
+  job_type: string | null;
+  creator_type: string | null;
+  payment_type: PaymentType | null;
+  fixed_amount: number | string | null;
+  weekly_hours_needed: number | null;
+  hourly_rate: number | string | null;
+  required_hours: number | null;
+  per_post_amount: number | string | null;
+  example_videos: string[];
+  age_requirement: string | null;
+  platform_focus: string[];
+  content_type: string | null;
+  posting_frequency: string | null;
+  video_length: string | null;
+  account_type: string | null;
+  is_app: boolean;
+  physical_product: boolean;
+  banner_url: string | null;
+  bonus_milestones: BonusMilestone[];
 };
 
 export type CampaignUpdate = Partial<{
@@ -44,6 +74,25 @@ export type CampaignUpdate = Partial<{
   content_drive_url: string;
   caption_rules: string;
   requirements_url: string;
+  job_type: string;
+  creator_type: string;
+  payment_type: PaymentType;
+  fixed_amount: number | null;
+  weekly_hours_needed: number | null;
+  hourly_rate: number | null;
+  required_hours: number | null;
+  per_post_amount: number | null;
+  example_videos: string[];
+  age_requirement: string;
+  platform_focus: string[];
+  content_type: string;
+  posting_frequency: string;
+  video_length: string;
+  account_type: string;
+  is_app: boolean;
+  physical_product: boolean;
+  banner_url: string;
+  bonus_milestones: BonusMilestone[];
 }>;
 
 export const getAdminCampaign = (id: string) => apiFetch<AdminCampaign>(`/api/admin/campaigns/${id}`, auth());
@@ -66,6 +115,26 @@ export type CampaignCreate = {
   brand_name?: string;
   brand_logo_url?: string;
   min_retention_days?: number;
+  // ---- 6-step campaign builder wizard (Feature 3) ----
+  job_type?: string;
+  creator_type?: string;
+  payment_type?: PaymentType;
+  fixed_amount?: number;
+  weekly_hours_needed?: number;
+  hourly_rate?: number;
+  required_hours?: number;
+  per_post_amount?: number;
+  example_videos?: string[];
+  age_requirement?: string;
+  platform_focus?: string[];
+  content_type?: string;
+  posting_frequency?: string;
+  video_length?: string;
+  account_type?: string;
+  is_app?: boolean;
+  physical_product?: boolean;
+  banner_url?: string;
+  bonus_milestones?: BonusMilestone[];
 };
 
 export type AdminClient = { id: string; email: string; name: string | null; status: string };

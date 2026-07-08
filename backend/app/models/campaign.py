@@ -6,6 +6,7 @@ from decimal import Decimal
 from typing import List, Optional
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -109,6 +110,52 @@ class Campaign(TimestampMixin, Base):
     ends_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     archived_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
+    # ── 6-step campaign builder wizard (Feature 3, BUILD_SPEC.md §3.3) ─────────
+    job_type: Mapped[Optional[str]] = mapped_column(Text)  # sales|marketing|content_creator|ambassador|other
+    creator_type: Mapped[Optional[str]] = mapped_column(Text)  # ugc_ads|high_volume_ugc|influencer|creator_manager|other
+    payment_type: Mapped[Optional[str]] = mapped_column(Text)  # fixed|cpm|mixed|per_hour|per_post
+    fixed_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 2))
+    weekly_hours_needed: Mapped[Optional[int]] = mapped_column(Integer)
+    hourly_rate: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 2))
+    required_hours: Mapped[Optional[int]] = mapped_column(Integer)
+    per_post_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 2))
+    example_videos: Mapped[List[str]] = mapped_column(
+        ARRAY(Text), nullable=False, server_default=text("'{}'::text[]")
+    )
+    age_requirement: Mapped[Optional[str]] = mapped_column(Text)
+    platform_focus: Mapped[List[str]] = mapped_column(
+        ARRAY(Text), nullable=False, server_default=text("'{}'::text[]")
+    )
+    content_type: Mapped[Optional[str]] = mapped_column(Text)
+    posting_frequency: Mapped[Optional[str]] = mapped_column(Text)
+    video_length: Mapped[Optional[str]] = mapped_column(Text)
+    account_type: Mapped[Optional[str]] = mapped_column(Text)
+    is_app: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    physical_product: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+    banner_url: Mapped[Optional[str]] = mapped_column(Text)
+
+
+class CampaignBonusMilestone(Base):
+    """Repeatable views-threshold bonus rows (step 3 of the wizard)."""
+
+    __tablename__ = "campaign_bonus_milestones"
+    __table_args__ = (
+        Index("idx_bonus_milestones_campaign", "campaign_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    campaign_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False
+    )
+    views_threshold: Mapped[int] = mapped_column(Integer, nullable=False)
+    bonus_amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
 
 
 class CampaignParticipation(Base):
