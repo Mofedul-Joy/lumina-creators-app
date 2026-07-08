@@ -135,3 +135,9 @@ class CampaignParticipation(Base):
     joined_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    messaged_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    bookmarked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    declined_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    admin_note: Mapped[Optional[str]] = mapped_column(Text)

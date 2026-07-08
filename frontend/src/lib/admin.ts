@@ -313,3 +313,123 @@ export const listCreators = (f: CreatorFilters = {}) => {
   const qs = p.toString();
   return apiFetch<CreatorRow[]>(`/api/admin/creators${qs ? `?${qs}` : ""}`, auth());
 };
+
+/* ---- applicants pipeline (Feature 1 — SideShift-style admin triage) ---- */
+export type ApplicantVideo = {
+  id: string;
+  thumbnail_url: string | null;
+  post_url: string;
+  platform: string;
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  caption?: string | null;
+};
+
+export type ApplicantSocial = {
+  platform: string;
+  handle: string;
+  profile_url: string | null;
+  follower_count: number;
+};
+
+export type ApplicantListItem = {
+  id: string;
+  campaign_id: string;
+  campaign_name: string;
+  creator_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  country: string | null;
+  gender: string | null;
+  city: string | null;
+  age: number | null;
+  status: string;
+  platforms: string[];
+  recent_videos: ApplicantVideo[];
+  views: number;
+  earnings: number | string;
+  applied_at: string;
+  admin_note: string | null;
+};
+
+export type ApplicantDetail = {
+  id: string;
+  campaign_id: string;
+  campaign_name: string;
+  creator_id: string;
+  email: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  country: string | null;
+  city: string | null;
+  gender: string | null;
+  age: number | null;
+  primary_language: string | null;
+  education: string | null;
+  status: string;
+  views: number;
+  earnings: number | string;
+  posts: number;
+  streak_days: number;
+  socials: ApplicantSocial[];
+  recent_videos: ApplicantVideo[];
+  niches: string[];
+  admin_note: string | null;
+  applied_at: string;
+  reviewed_at: string | null;
+  messaged_at: string | null;
+  bookmarked_at: string | null;
+  declined_at: string | null;
+  accepted_at: string | null;
+};
+
+export type ApplicantFilters = {
+  campaign_id?: string;
+  status?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type ApplicantCounts = {
+  new: number;
+  reviewed: number;
+  messaged: number;
+  declined: number;
+  bookmarked: number;
+  accepted: number;
+  submitted: number;
+  approved: number;
+  rejected: number;
+};
+
+export type ApplicantUpdateIn = Partial<{ status: string; admin_note: string }>;
+
+export const listApplicants = (f: ApplicantFilters = {}) => {
+  const p = new URLSearchParams();
+  Object.entries(f).forEach(([k, v]) => {
+    if (v !== undefined && v !== "") p.set(k, String(v));
+  });
+  const qs = p.toString();
+  return apiFetch<ApplicantListItem[]>(`/api/admin/applicants${qs ? `?${qs}` : ""}`, auth());
+};
+
+export const getApplicantCounts = (campaign_id?: string) =>
+  apiFetch<ApplicantCounts>(`/api/admin/applicants/counts${campaign_id ? `?campaign_id=${campaign_id}` : ""}`, auth());
+
+export const getApplicantDetail = (id: string) =>
+  apiFetch<ApplicantDetail>(`/api/admin/applicants/${id}`, auth());
+
+export const updateApplicant = (id: string, patch: ApplicantUpdateIn) =>
+  apiFetch<ApplicantDetail>(`/api/admin/applicants/${id}`, { method: "PATCH", body: JSON.stringify(patch), ...auth() });
+
+export function applicantsExportCsvUrl(f: { campaign_id?: string; status?: string } = {}): string {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  const p = new URLSearchParams();
+  Object.entries(f).forEach(([k, v]) => { if (v) p.set(k, String(v)); });
+  const qs = p.toString();
+  return `${API_URL}/api/admin/applicants/export.csv${qs ? `?${qs}` : ""}`;
+}
