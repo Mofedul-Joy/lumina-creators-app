@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { BannerInput } from "@/components/admin/BannerInput";
+import { SharePageLink } from "@/components/admin/SharePageLink";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { SubmissionsSection } from "@/components/admin/SubmissionsSection";
 import {
@@ -217,6 +218,8 @@ export default function AdminCampaignDetailPage() {
                     <TextField label="Requirements URL" value={form.requirements_url} onChange={(v) => set("requirements_url", v)} />
                   </div>
                 </section>
+
+                <SharePageLink campaignId={id} shareToken={c.share_token} shareEnabled={c.share_enabled} />
               </div>
 
               {/* live creator preview */}

@@ -161,6 +161,17 @@ class CampaignOut(BaseModel):
     banner_url: Optional[str] = None
     bonus_milestones: List[BonusMilestoneOut] = []
 
+    # ── Client read-only report + share_token (Feature 6) ──
+    share_token: Optional[str] = None
+    share_enabled: bool = False
+
+
+class ShareTokenOut(BaseModel):
+    """Returned by the admin enable/rotate share-token endpoints."""
+    share_token: str
+    share_enabled: bool
+    share_url: str
+
 
 class CampaignPublicOut(BaseModel):
     """Creator-facing browse/detail view — no spent_amount/client/created_by."""

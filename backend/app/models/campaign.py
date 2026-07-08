@@ -137,6 +137,10 @@ class Campaign(TimestampMixin, Base):
     )
     banner_url: Mapped[Optional[str]] = mapped_column(Text)
 
+    # ── Client read-only report + share_token (Feature 6, BUILD_SPEC.md §3.7) ──
+    share_token: Mapped[Optional[str]] = mapped_column(Text, unique=True)
+    share_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+
 
 class CampaignBonusMilestone(Base):
     """Repeatable views-threshold bonus rows (step 3 of the wizard)."""

@@ -57,6 +57,9 @@ export type AdminCampaign = {
   physical_product: boolean;
   banner_url: string | null;
   bonus_milestones: BonusMilestone[];
+  // ---- Client read-only report + share_token (Feature 6) ----
+  share_token: string | null;
+  share_enabled: boolean;
 };
 
 export type CampaignUpdate = Partial<{
@@ -433,6 +436,18 @@ export const reopenCampaign = (id: string) =>
 
 export const impersonateClient = (campaignId: string) =>
   apiFetch<{ access_token: string }>(`/api/admin/campaigns/${campaignId}/impersonate-client`, { method: "POST", ...auth() });
+
+/* ---- Share Page Link (Feature 6) ---- */
+export type ShareTokenOut = { share_token: string; share_enabled: boolean; share_url: string };
+
+export const enableShareToken = (campaignId: string) =>
+  apiFetch<ShareTokenOut>(`/api/admin/campaigns/${campaignId}/share`, { method: "POST", ...auth() });
+
+export const rotateShareToken = (campaignId: string) =>
+  apiFetch<ShareTokenOut>(`/api/admin/campaigns/${campaignId}/share/rotate`, { method: "POST", ...auth() });
+
+export const disableShareToken = (campaignId: string) =>
+  apiFetch<ShareTokenOut>(`/api/admin/campaigns/${campaignId}/share/disable`, { method: "POST", ...auth() });
 
 /* ---- creator database ---- */
 export type CreatorRow = {

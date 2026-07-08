@@ -75,6 +75,9 @@ class Settings(BaseSettings):
     def apify_configured(self) -> bool:
         return bool(self.apify_api_token)
 
+    # --- frontend base URL (for building absolute links, e.g. client share pages) ---
+    frontend_url: str = "https://lumina-creators-app.vercel.app"
+
     # --- CORS (comma-separated origins) ---
     cors_origins: str = "http://localhost:3000"
 

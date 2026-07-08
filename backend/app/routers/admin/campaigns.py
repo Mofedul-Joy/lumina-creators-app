@@ -1,6 +1,7 @@
 """Admin campaign builder: CRUD + publish + archive (soft-delete)."""
 from __future__ import annotations
 
+import secrets
 import uuid
 from typing import Optional
 
@@ -8,11 +9,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.deps import get_current_admin
 from app.core.security import create_impersonation_token
 from app.db.session import get_db
 from app.models import Admin, Campaign, CampaignBonusMilestone, CreatorProfile, Submission
-from app.schemas.campaign import BonusMilestoneOut, CampaignCreateIn, CampaignOut, CampaignUpdateIn
+from app.schemas.campaign import BonusMilestoneOut, CampaignCreateIn, CampaignOut, CampaignUpdateIn, ShareTokenOut
 from app.services import audit, campaign as svc
 from app.services.csv_export import csv_response
 
@@ -53,6 +55,7 @@ def campaign_out(c: Campaign, db: Session | None = None) -> CampaignOut:
         posting_frequency=c.posting_frequency, video_length=c.video_length, account_type=c.account_type,
         is_app=c.is_app, physical_product=c.physical_product, banner_url=c.banner_url,
         bonus_milestones=milestones,
+        share_token=c.share_token, share_enabled=c.share_enabled,
     )
 
 
@@ -139,3 +142,56 @@ def export_submissions_csv(campaign_id: uuid.UUID, admin: Admin = Depends(get_cu
         "Verification Status", "Scrape Status", "Suspicious", "Note", "Created At",
     ]
     return csv_response(f"{campaign.slug}_submissions.csv", header, rows_iter())
+
+
+# ── Client read-only report + share_token (Feature 6, BUILD_SPEC.md §3.7) ──
+# A copyable, no-login link an admin sends a client so they can watch a
+# single campaign's performance without an account. Gated by a high-entropy
+# token (secrets.token_urlsafe(24) — 32 url-safe chars) rather than any
+# per-client auth, so rotate/disable are the only "revoke access" levers.
+
+
+def _share_url(token: str) -> str:
+    return f"{get_settings().frontend_url.rstrip('/')}/report/{token}"
+
+
+@router.post("/{campaign_id}/share", response_model=ShareTokenOut)
+def enable_share(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Enable the public share page. Generates a token if one doesn't exist yet;
+    re-enabling an already-tokened campaign just flips share_enabled back on
+    (keeps the same link stable across disable/enable cycles)."""
+    campaign = svc.get_campaign(db, campaign_id)
+    if not campaign.share_token:
+        campaign.share_token = secrets.token_urlsafe(24)
+    campaign.share_enabled = True
+    audit.log(db, actor_admin_id=admin.id, action="campaign.share_enable", entity_type="campaign", entity_id=campaign_id)
+    db.commit()
+    db.refresh(campaign)
+    return ShareTokenOut(share_token=campaign.share_token, share_enabled=campaign.share_enabled, share_url=_share_url(campaign.share_token))
+
+
+@router.post("/{campaign_id}/share/rotate", response_model=ShareTokenOut)
+def rotate_share(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Generate a NEW token, immediately invalidating the old link."""
+    campaign = svc.get_campaign(db, campaign_id)
+    campaign.share_token = secrets.token_urlsafe(24)
+    campaign.share_enabled = True
+    audit.log(db, actor_admin_id=admin.id, action="campaign.share_rotate", entity_type="campaign", entity_id=campaign_id)
+    db.commit()
+    db.refresh(campaign)
+    return ShareTokenOut(share_token=campaign.share_token, share_enabled=campaign.share_enabled, share_url=_share_url(campaign.share_token))
+
+
+@router.post("/{campaign_id}/share/disable", response_model=ShareTokenOut)
+def disable_share(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Turn off public access. Keeps the token stored (re-enable restores the
+    same link) but the public GET 404s while disabled."""
+    campaign = svc.get_campaign(db, campaign_id)
+    campaign.share_enabled = False
+    audit.log(db, actor_admin_id=admin.id, action="campaign.share_disable", entity_type="campaign", entity_id=campaign_id)
+    db.commit()
+    db.refresh(campaign)
+    return ShareTokenOut(
+        share_token=campaign.share_token or "", share_enabled=campaign.share_enabled,
+        share_url=_share_url(campaign.share_token) if campaign.share_token else "",
+    )
