@@ -9,6 +9,7 @@ import { getProfile, isAuthError } from "@/lib/api";
 import { browseCampaigns, listSubmissions } from "@/lib/campaigns";
 import { fmtInt, fmtMoney } from "@/lib/format";
 import { Skeleton, SkeletonStats } from "@/components/ui/Skeleton";
+import { GamificationHero } from "@/components/gamification/GamificationHero";
 
 const STATUS_STYLE: Record<string, string> = {
   approved: "border-[var(--color-brand)]/40 text-[var(--color-brand)]",
@@ -96,6 +97,11 @@ export default function DashboardPage() {
         >
           Edit profile
         </Link>
+      </div>
+
+      {/* Gamification hero strip (Feature 7): rank + XP bar + streak + awards */}
+      <div className="mt-6">
+        <GamificationHero enabled={enabled} />
       </div>
 
       {/* incentive cards — prompts, never gates */}

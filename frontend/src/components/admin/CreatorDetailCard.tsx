@@ -11,22 +11,10 @@ import { Avatar } from "@/components/admin/Avatar";
 import { getAdminToken } from "@/lib/auth";
 import { getCreatorRichDetail, updateApplicantStatusSafe } from "@/lib/admin-rich";
 import type { CreatorRichDetail, GemstoneRank } from "@/lib/api";
-
-const RANK_STYLES: Record<string, { label: string; bg: string; fg: string; ring: string }> = {
-  bronze: { label: "Bronze", bg: "rgba(180,120,70,0.18)", fg: "#d79a67", ring: "rgba(180,120,70,0.45)" },
-  sapphire: { label: "Sapphire", bg: "rgba(59,130,246,0.18)", fg: "#60a5fa", ring: "rgba(59,130,246,0.45)" },
-  gold: { label: "Gold", bg: "rgba(234,179,8,0.18)", fg: "#facc15", ring: "rgba(234,179,8,0.45)" },
-  emerald: { label: "Emerald", bg: "rgba(34,197,94,0.18)", fg: "#4ade80", ring: "rgba(34,197,94,0.45)" },
-  amber: { label: "Amber", bg: "rgba(245,158,11,0.18)", fg: "#fbbf24", ring: "rgba(245,158,11,0.45)" },
-  ruby: { label: "Ruby", bg: "rgba(244,63,94,0.18)", fg: "#fb7185", ring: "rgba(244,63,94,0.45)" },
-};
-
-const AWARD_META: Record<string, { label: string; icon: string }> = {
-  persistent_pro: { label: "Persistent Pro", icon: "🔥" },
-  gig_completion_mastery: { label: "Gig Completion Mastery", icon: "🎯" },
-  earnings_mastery: { label: "Earnings Mastery", icon: "💰" },
-  interview_mastery: { label: "Interview Mastery", icon: "🎤" },
-};
+import { RankBadge, nextRankInfo } from "@/components/gamification/RankBadge";
+import { XpBar } from "@/components/gamification/XpBar";
+import { StreakFlame } from "@/components/gamification/StreakFlame";
+import { AwardRow } from "@/components/gamification/AwardBadge";
 
 const COUNTRY_FLAGS: Record<string, string> = {
   US: "🇺🇸", USA: "🇺🇸", GB: "🇬🇧", UK: "🇬🇧", CA: "🇨🇦", AU: "🇦🇺", DE: "🇩🇪", FR: "🇫🇷",
@@ -59,18 +47,6 @@ const PLATFORM_GRADIENT: Record<string, string> = {
   x: "linear-gradient(135deg,#00000055,#33333355)",
   twitter: "linear-gradient(135deg,#1DA1F255,#0d8ecf55)",
 };
-
-function RankBadge({ rank }: { rank: string }) {
-  const s = RANK_STYLES[rank] ?? RANK_STYLES.bronze;
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-3 py-1 text-xs font-semibold ring-1"
-      style={{ background: s.bg, color: s.fg, boxShadow: `0 0 0 1px ${s.ring} inset` }}
-    >
-      💎 {s.label}
-    </span>
-  );
-}
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -177,6 +153,14 @@ export function CreatorDetailCard({
         <StatCard label="Streak" value={`${c.streak_days}d`} />
       </div>
 
+      {/* 2b. XP progress + streak flame (Feature 7 shared components) */}
+      <div className="flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <XpBar xp={c.xp} xpToNext={nextRankInfo(c.xp).xpToNext} nextRank={nextRankInfo(c.xp).nextRank} />
+        </div>
+        <StreakFlame days={c.streak_days} />
+      </div>
+
       {/* 3. Recent videos reel */}
       <section>
         <h3 className="mb-2 text-sm font-semibold text-[var(--color-text)]">Recent videos</h3>
@@ -245,26 +229,7 @@ export function CreatorDetailCard({
       {/* 5. Awards */}
       <section>
         <h3 className="mb-2 text-sm font-semibold text-[var(--color-text)]">Awards</h3>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {Object.entries(AWARD_META).map(([key, meta]) => {
-            const earned = c.awards.includes(key);
-            return (
-              <div
-                key={key}
-                className={`rounded-xl border p-3 text-center transition ${
-                  earned
-                    ? "border-[var(--color-brand)]/50 bg-[var(--color-brand)]/10"
-                    : "border-[var(--color-border)] bg-[var(--color-surface-2)] opacity-50 grayscale"
-                }`}
-              >
-                <p className="text-xl">{meta.icon}</p>
-                <p className={`mt-1 text-[10px] font-medium ${earned ? "text-[var(--color-brand)]" : "text-[var(--color-text-muted)]"}`}>
-                  {meta.label}
-                </p>
-              </div>
-            );
-          })}
-        </div>
+        <AwardRow awards={c.awards} />
       </section>
 
       {/* 6. Experiences */}

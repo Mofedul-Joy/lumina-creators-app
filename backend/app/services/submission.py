@@ -14,6 +14,7 @@ from app.models import (
 )
 from app.services import campaign as campaign_svc
 from app.services import urls
+from app.services.gamification import bump_streak_on_submission, refresh_creator_gamification
 
 
 def create_submission(db: Session, creator_id: uuid.UUID, campaign_slug: str, post_url: str) -> Submission:
@@ -55,6 +56,15 @@ def create_submission(db: Session, creator_id: uuid.UUID, campaign_slug: str, po
         db.rollback()
         raise HTTPException(status.HTTP_409_CONFLICT, "This post was already submitted to this campaign")
     db.refresh(sub)
+    # Gamification (Feature 7): bump the daily-submission streak now that the
+    # insert is durable. Idempotent — recomputed from distinct submission
+    # days, so a second submission today doesn't inflate the count. Best
+    # effort: never let a streak-refresh hiccup block the submission itself.
+    try:
+        bump_streak_on_submission(db, creator_id)
+        refresh_creator_gamification(db, creator_id)
+    except Exception:
+        db.rollback()
     return sub
 
 

@@ -11,7 +11,9 @@ from app.core.deps import get_current_admin
 from app.db.session import get_db
 from app.models import Admin
 from app.schemas.admin_creators import CreatorDetail, CreatorListItem, CreatorRichDetail
+from app.schemas.gamification import CreatorGamificationOut
 from app.services import admin_creators as svc
+from app.services import gamification as gam_svc
 
 router = APIRouter(prefix="/creators", tags=["admin-creators"])
 
@@ -66,3 +68,19 @@ def flag_suspicious(creator_id: uuid.UUID, admin: Admin = Depends(get_current_ad
 def unflag_suspicious(creator_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     svc.set_suspicious(db, creator_id, False, admin.id)
     return CreatorDetail(**svc.get_creator_detail(db, creator_id))
+
+
+@router.post("/{creator_id}/refresh-gamification", response_model=CreatorGamificationOut)
+def refresh_gamification(creator_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Admin-triggered write-back (Feature 7): recompute rank/xp/awards for one
+    creator and persist to `creator_profiles`, then return the fresh snapshot."""
+    gam_svc.refresh_creator_gamification(db, creator_id)
+    return CreatorGamificationOut(**gam_svc.get_creator_gamification(db, creator_id))
+
+
+@router.post("/refresh-gamification-all")
+def refresh_gamification_all(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Admin-triggered bulk write-back (Feature 7): recompute rank/xp/awards
+    for every creator with a profile."""
+    count = gam_svc.refresh_all_gamification(db)
+    return {"updated": count}

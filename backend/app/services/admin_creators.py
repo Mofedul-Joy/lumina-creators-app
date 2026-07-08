@@ -1,7 +1,6 @@
 """Admin creator database: filterable list + drill-down. Reads profile/socials/portfolio."""
 from __future__ import annotations
 
-import math
 import uuid
 from datetime import date, timedelta
 from decimal import Decimal
@@ -21,42 +20,12 @@ from app.models import (
     Submission,
 )
 from app.services import audit
-
-# Gemstone rank thresholds (BUILD_SPEC.md §3.9) — ordered lowest to highest.
-_RANK_THRESHOLDS = (
-    ("bronze", 0),
-    ("sapphire", 100),
-    ("gold", 500),
-    ("emerald", 1500),
-    ("amber", 4000),
-    ("ruby", 8000),
-)
-
-
-def _rank_for_xp(xp: int) -> str:
-    rank = _RANK_THRESHOLDS[0][0]
-    for name, floor in _RANK_THRESHOLDS:
-        if xp >= floor:
-            rank = name
-    return rank
-
-
-def _xp_for(total_views: int, total_posts: int, streak_days: int) -> int:
-    return math.floor(total_views / 100) + total_posts * 5 + streak_days
-
-
-def _awards_for(total_posts: int, total_earned: Decimal, streak_days: int, stored: list[str] | None) -> list[str]:
-    awards: list[str] = []
-    if streak_days >= 7:
-        awards.append("persistent_pro")
-    if total_posts >= 10:
-        awards.append("gig_completion_mastery")
-    if total_earned >= 500:
-        awards.append("earnings_mastery")
-    # interview_mastery is a manual admin-set flag — no automatic computation.
-    if stored and "interview_mastery" in stored:
-        awards.append("interview_mastery")
-    return awards
+# Gamification formulas now live in app.services.gamification (Feature 7) —
+# re-exported here under their original private names so every call site in
+# this file (and any external importer) keeps working unchanged.
+from app.services.gamification import compute_awards as _awards_for
+from app.services.gamification import compute_rank as _rank_for_xp
+from app.services.gamification import compute_xp as _xp_for
 
 
 def _avatar_urls(db: Session, profiles) -> dict:
