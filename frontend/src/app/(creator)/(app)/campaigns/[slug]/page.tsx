@@ -6,9 +6,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
+import { Markdown } from "@/components/ui/Markdown";
+import { BonusMilestones } from "@/components/ui/BonusMilestones";
+import { ExampleVideos } from "@/components/ui/ExampleVideos";
 import { getAuthToken } from "@/lib/auth";
 import { getCampaign, getSubmission, joinCampaign, submitClip } from "@/lib/campaigns";
 import { fmtInt, fmtMoney } from "@/lib/format";
+import { paymentHeadline, paymentTypeLabel, targetingChips } from "@/lib/campaignDisplay";
 
 export default function CampaignDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -52,6 +56,11 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
   });
 
   const c = q.data;
+  const chips = c ? targetingChips(c) : [];
+  // Only a legacy copy_paste campaign with no wizard fields still needs the
+  // plain-text content_drive_url panel treated as the primary brief; every
+  // other campaign gets the rich native brief.
+  const isLegacyDriveOnly = c?.mode === "copy_paste" && !c?.payment_type && !c?.banner_url;
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
@@ -69,24 +78,54 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
           <p className="mt-6 text-[var(--color-danger)]">{(q.error as Error)?.message ?? "Campaign not found."}</p>
         ) : (
           <>
+            {/* Banner hero */}
+            {c.banner_url ? (
+              <div className="relative mt-5 aspect-[16/9] w-full overflow-hidden rounded-[var(--radius-card)] bg-[var(--color-surface-2)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={c.banner_url} alt="" className="h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-bg-deep)] via-transparent to-transparent" />
+                <div className="absolute bottom-0 left-0 p-5">
+                  <p className="text-xs font-medium text-[var(--color-text-secondary)]">{c.brand_name ?? "Lumina campaign"}</p>
+                  <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--color-text)] drop-shadow">{c.name}</h1>
+                </div>
+              </div>
+            ) : null}
+
             <div className="mt-5">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-[var(--color-text-secondary)]">{c.brand_name ?? "Lumina campaign"}</span>
                 <span className="rounded-full border border-[var(--color-border)] px-2.5 py-0.5 text-[11px] text-[var(--color-text-secondary)]">
                   {c.mode === "create_new" ? "Create new content" : "Repost approved clips"}
                 </span>
+                {c.job_type ? (
+                  <span className="rounded-full border border-[var(--color-border)] px-2.5 py-0.5 text-[11px] capitalize text-[var(--color-text-secondary)]">
+                    {c.job_type.replace(/_/g, " ")}
+                  </span>
+                ) : null}
               </div>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--color-text)]">{c.name}</h1>
+              {!c.banner_url ? (
+                <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--color-text)]">{c.name}</h1>
+              ) : null}
               {c.description ? <p className="mt-2 text-[var(--color-text-secondary)]">{c.description}</p> : null}
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Stat label="CPM" value={fmtMoney(c.cpm_rate)} />
-              <Stat label="Budget" value={fmtMoney(c.budget)} />
-              <Stat label="Min. retention" value={`${c.min_retention_days}d`} />
-              <Stat label="Platforms" value={String(c.platforms.length)} />
+            {/* Payment & Terms */}
+            <div className="mt-6 card-lumina rounded-[var(--radius-card)] p-5">
+              <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">
+                {paymentTypeLabel(c.payment_type)}
+              </p>
+              <p className="tabular mt-1 text-2xl font-semibold text-[var(--color-brand)]">
+                {paymentHeadline(c)}
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-3 border-t border-[var(--color-border)] pt-4 sm:grid-cols-4">
+                <Stat label="Budget" value={fmtMoney(c.budget)} />
+                <Stat label="Min. retention" value={`${c.min_retention_days}d`} />
+                {c.weekly_hours_needed ? <Stat label="Weekly hours" value={`${fmtInt(c.weekly_hours_needed)}/wk`} /> : null}
+                <Stat label="Platforms" value={String(c.platforms.length)} />
+              </div>
             </div>
 
+            {/* Platforms + targeting */}
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {c.platforms.map((p) => (
                 <span key={p} className="inline-flex items-center gap-1.5 rounded-md bg-[var(--color-surface-2)] px-2.5 py-1 text-[11px] text-[var(--color-text-secondary)]">
@@ -94,15 +133,21 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
                   {platformLabel(p)}
                 </span>
               ))}
+              {chips.map((chip) => (
+                <span key={chip} className="inline-flex items-center rounded-md border border-[var(--color-border)] px-2.5 py-1 text-[11px] text-[var(--color-text-secondary)]">
+                  {chip}
+                </span>
+              ))}
             </div>
 
-            {/* mode-specific content */}
-            {c.mode === "create_new" && c.brief_script ? (
+            {/* Native brief */}
+            {c.brief_script ? (
               <Panel title="Your brief">
-                <p className="whitespace-pre-wrap text-[var(--color-text-secondary)]">{c.brief_script}</p>
+                <Markdown content={c.brief_script} />
               </Panel>
             ) : null}
-            {c.mode === "copy_paste" && c.content_drive_url ? (
+
+            {isLegacyDriveOnly && c.content_drive_url ? (
               <Panel title="Approved clips">
                 <p className="text-[var(--color-text-secondary)]">Download a clip from the campaign folder and post it to your socials.</p>
                 <a href={c.content_drive_url} target="_blank" rel="noreferrer" className="mt-3 inline-block text-[var(--color-brand)] underline">
@@ -110,15 +155,40 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
                 </a>
               </Panel>
             ) : null}
+
+            {/* Bonus milestones */}
+            {c.bonus_milestones && c.bonus_milestones.length > 0 ? (
+              <Panel title="Bonus milestones">
+                <BonusMilestones milestones={c.bonus_milestones} />
+              </Panel>
+            ) : null}
+
+            {/* Example videos */}
+            {c.example_videos && c.example_videos.length > 0 ? (
+              <Panel title="Example videos">
+                <ExampleVideos urls={c.example_videos} />
+              </Panel>
+            ) : null}
+
             {c.caption_rules ? (
               <Panel title="Caption rules">
-                <p className="whitespace-pre-wrap text-[var(--color-text-secondary)]">{c.caption_rules}</p>
+                <Markdown content={c.caption_rules} />
               </Panel>
             ) : null}
             {c.required_mentions.length > 0 ? (
               <Panel title="Must mention">
                 <p className="text-[var(--color-text-secondary)]">{c.required_mentions.join(", ")}</p>
               </Panel>
+            ) : null}
+
+            {/* Legacy Google-Doc-shaped fallback — demoted to a small link, not a hero panel */}
+            {!isLegacyDriveOnly && c.content_drive_url ? (
+              <p className="mt-4 text-xs text-[var(--color-text-muted)]">
+                External clip folder:{" "}
+                <a href={c.content_drive_url} target="_blank" rel="noreferrer" className="text-[var(--color-brand)] underline">
+                  open ↗
+                </a>
+              </p>
             ) : null}
 
             {/* join / submit */}

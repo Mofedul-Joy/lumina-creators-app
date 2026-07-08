@@ -5,11 +5,13 @@ import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { ApiError, publicApi } from "@/lib/api";
-import { fmtMoney } from "@/lib/format";
+import { fmtInt, fmtMoney } from "@/lib/format";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { Skeleton } from "@/components/ui/Skeleton";
-
-const MODE_LABEL = { create_new: "Create new content", copy_paste: "Repost approved clips" } as const;
+import { Markdown } from "@/components/ui/Markdown";
+import { BonusMilestones } from "@/components/ui/BonusMilestones";
+import { ExampleVideos } from "@/components/ui/ExampleVideos";
+import { paymentHeadline, paymentTypeLabel, targetingChips } from "@/lib/campaignDisplay";
 
 export default function CampaignEntryPage() {
   const router = useRouter();
@@ -49,6 +51,9 @@ export default function CampaignEntryPage() {
       </main>
     );
 
+  const chips = targetingChips(c);
+  const isLegacyDriveOnly = c.mode === "copy_paste" && !c.payment_type && !c.banner_url;
+
   return (
     <div className="min-h-[100dvh]">
       <header className="border-b border-[var(--color-border)]">
@@ -59,14 +64,32 @@ export default function CampaignEntryPage() {
 
       <main className="mx-auto grid max-w-5xl gap-6 px-6 py-10 lg:grid-cols-[1fr_380px]">
         <section>
-          <div className="relative h-48 w-full overflow-hidden rounded-[var(--radius-card)] bg-gradient-to-br from-[var(--color-brand)]/30 to-[var(--color-bg-deep)]">
-            {c.brand_logo_url ? (
+          {/* Banner hero (falls back to brand-tinted gradient + logo) */}
+          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[var(--radius-card)] bg-gradient-to-br from-[var(--color-brand)]/30 to-[var(--color-bg-deep)] sm:h-48 sm:aspect-auto">
+            {c.banner_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={c.banner_url} alt="" className="h-full w-full object-cover" />
+            ) : c.brand_logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={c.brand_logo_url} alt="" className="h-full w-full object-cover" />
             ) : null}
+            {c.banner_url ? (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-bg-deep)] via-transparent to-transparent" />
+                <div className="absolute bottom-0 left-0 p-4">
+                  <p className="text-xs font-medium text-[var(--color-text-secondary)]">{c.brand_name ?? "Lumina campaign"}</p>
+                  <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--color-text)] drop-shadow">{c.name}</h1>
+                </div>
+              </>
+            ) : null}
           </div>
-          <p className="mt-4 text-xs font-medium text-[var(--color-text-secondary)]">{c.brand_name ?? "Lumina campaign"}</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-[var(--color-text)]">{c.name}</h1>
+
+          {!c.banner_url ? (
+            <>
+              <p className="mt-4 text-xs font-medium text-[var(--color-text-secondary)]">{c.brand_name ?? "Lumina campaign"}</p>
+              <h1 className="mt-1 text-3xl font-semibold tracking-tight text-[var(--color-text)]">{c.name}</h1>
+            </>
+          ) : null}
           {c.description ? <p className="mt-3 text-[var(--color-text-secondary)]">{c.description}</p> : null}
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -74,6 +97,11 @@ export default function CampaignEntryPage() {
               <span key={p} className="inline-flex items-center gap-1.5 rounded-md bg-[var(--color-surface-2)] px-2.5 py-1 text-xs text-[var(--color-text-secondary)]">
                 <PlatformIcon name={p} className="h-3.5 w-3.5" />
                 {platformLabel(p)}
+              </span>
+            ))}
+            {chips.map((chip) => (
+              <span key={chip} className="inline-flex items-center rounded-md border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-text-secondary)]">
+                {chip}
               </span>
             ))}
           </div>
@@ -90,37 +118,88 @@ export default function CampaignEntryPage() {
             </a>
           ) : null}
 
-          {c.mode === "create_new" && c.brief_script ? (
+          {c.brief_script ? (
             <div className="card-lumina mt-6 rounded-[var(--radius-card)] p-5">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Brief / script</h2>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-[var(--color-text-secondary)]">{c.brief_script}</p>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Your brief</h2>
+              <div className="mt-2">
+                <Markdown content={c.brief_script} />
+              </div>
             </div>
-          ) : c.mode === "copy_paste" && c.content_drive_url ? (
+          ) : isLegacyDriveOnly && c.content_drive_url ? (
             <div className="card-lumina mt-6 rounded-[var(--radius-card)] p-5">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Approved clips</h2>
               <a href={c.content_drive_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm text-[var(--color-brand)] hover:underline">Open clips folder ↗</a>
             </div>
           ) : null}
 
+          {c.bonus_milestones && c.bonus_milestones.length > 0 ? (
+            <div className="card-lumina mt-4 rounded-[var(--radius-card)] p-5">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Bonus milestones</h2>
+              <div className="mt-2">
+                <BonusMilestones milestones={c.bonus_milestones} />
+              </div>
+            </div>
+          ) : null}
+
+          {c.example_videos && c.example_videos.length > 0 ? (
+            <div className="card-lumina mt-4 rounded-[var(--radius-card)] p-5">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Example videos</h2>
+              <div className="mt-3">
+                <ExampleVideos urls={c.example_videos} />
+              </div>
+            </div>
+          ) : null}
+
           {c.caption_rules ? (
             <div className="card-lumina mt-4 rounded-[var(--radius-card)] p-5">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Caption rules</h2>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-[var(--color-text-secondary)]">{c.caption_rules}</p>
+              <div className="mt-2">
+                <Markdown content={c.caption_rules} />
+              </div>
             </div>
+          ) : null}
+
+          {c.required_mentions.length > 0 ? (
+            <div className="card-lumina mt-4 rounded-[var(--radius-card)] p-5">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Must mention</h2>
+              <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{c.required_mentions.join(", ")}</p>
+            </div>
+          ) : null}
+
+          {!isLegacyDriveOnly && c.content_drive_url ? (
+            <p className="mt-4 text-xs text-[var(--color-text-muted)]">
+              External clip folder:{" "}
+              <a href={c.content_drive_url} target="_blank" rel="noopener noreferrer" className="text-[var(--color-brand)] underline">
+                open ↗
+              </a>
+            </p>
           ) : null}
         </section>
 
         <aside className="lg:sticky lg:top-10 lg:self-start">
           <div className="card-lumina rounded-[var(--radius-card)] p-6">
-            <div className="grid grid-cols-2 gap-4 border-b border-[var(--color-border)] pb-5">
-              <div>
-                <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">CPM rate</p>
-                <p className="tabular text-xl font-semibold text-[var(--color-brand)]">{fmtMoney(c.cpm_rate)}</p>
-              </div>
+            <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">
+              {paymentTypeLabel(c.payment_type)}
+            </p>
+            <p className="tabular mt-1 text-xl font-semibold text-[var(--color-brand)]">
+              {paymentHeadline(c)}
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-4 border-t border-[var(--color-border)] pt-4">
               <div>
                 <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Budget</p>
-                <p className="tabular text-xl font-semibold text-[var(--color-text)]">{fmtMoney(c.budget)}</p>
+                <p className="tabular text-lg font-semibold text-[var(--color-text)]">{fmtMoney(c.budget)}</p>
               </div>
+              {c.weekly_hours_needed ? (
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Weekly hours</p>
+                  <p className="tabular text-lg font-semibold text-[var(--color-text)]">{fmtInt(c.weekly_hours_needed)}/wk</p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Min. retention</p>
+                  <p className="tabular text-lg font-semibold text-[var(--color-text)]">{c.min_retention_days}d</p>
+                </div>
+              )}
             </div>
 
             <h2 className="mt-5 text-lg font-semibold text-[var(--color-text)]">Submit your post</h2>

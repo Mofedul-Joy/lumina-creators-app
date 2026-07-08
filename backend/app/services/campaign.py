@@ -196,6 +196,16 @@ def get_active_campaign(db: Session, slug: str) -> Campaign:
     return c
 
 
+def get_bonus_milestones(db: Session, campaign_id: uuid.UUID) -> list[CampaignBonusMilestone]:
+    """Feature 5: eager-fetch bonus milestones for the native brief page (creator +
+    public views) — mirrors the admin campaign_out() query."""
+    return db.scalars(
+        select(CampaignBonusMilestone)
+        .where(CampaignBonusMilestone.campaign_id == campaign_id)
+        .order_by(CampaignBonusMilestone.sort_order.asc())
+    ).all()
+
+
 def creator_has_joined(db: Session, campaign_id: uuid.UUID, creator_id: uuid.UUID) -> bool:
     return db.scalar(
         select(CampaignParticipation.id).where(

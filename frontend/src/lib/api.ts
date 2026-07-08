@@ -114,6 +114,18 @@ export type Health = {
 // ── Public campaign entry (no auth) — the campaign-first funnel: browse,
 // pick one, submit an email + post URL. Auth (check-email/login/set-password)
 // happens one step later via the existing creator auth endpoints. ───────────
+// Bonus milestone + wizard fields (Feature 3, BUILD_SPEC.md §3.3) mirrored
+// from lib/campaigns.ts's CampaignWizardFields — duplicated (not imported) to
+// avoid a circular import between api.ts <-> campaigns.ts. Keep the two in
+// lockstep with backend/app/schemas/campaign.py's CampaignPublicOut.
+export type PublicBonusMilestone = {
+  id: string;
+  views_threshold: number;
+  bonus_amount: number;
+  description: string | null;
+  sort_order: number;
+};
+
 export type PublicCampaign = {
   id: string;
   slug: string;
@@ -135,6 +147,26 @@ export type PublicCampaign = {
   starts_at: string | null;
   ends_at: string | null;
   joined: boolean;
+  // ── 6-step campaign builder wizard (Feature 3) — surfaced natively (Feature 5) ──
+  payment_type: string | null;
+  fixed_amount: number | null;
+  weekly_hours_needed: number | null;
+  hourly_rate: number | null;
+  required_hours: number | null;
+  per_post_amount: number | null;
+  example_videos: string[];
+  age_requirement: string | null;
+  platform_focus: string[];
+  content_type: string | null;
+  posting_frequency: string | null;
+  video_length: string | null;
+  account_type: string | null;
+  is_app: boolean;
+  physical_product: boolean;
+  banner_url: string | null;
+  bonus_milestones: PublicBonusMilestone[];
+  job_type: string | null;
+  creator_type: string | null;
 };
 
 export const publicApi = {

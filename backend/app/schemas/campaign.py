@@ -185,6 +185,27 @@ class CampaignPublicOut(BaseModel):
     ends_at: Optional[datetime] = None
     joined: bool = False
 
+    # ── 6-step campaign builder wizard (Feature 3) — surfaced natively (Feature 5) ──
+    payment_type: Optional[str] = None
+    fixed_amount: Optional[Decimal] = None
+    weekly_hours_needed: Optional[int] = None
+    hourly_rate: Optional[Decimal] = None
+    required_hours: Optional[int] = None
+    per_post_amount: Optional[Decimal] = None
+    example_videos: List[str] = []
+    age_requirement: Optional[str] = None
+    platform_focus: List[str] = []
+    content_type: Optional[str] = None
+    posting_frequency: Optional[str] = None
+    video_length: Optional[str] = None
+    account_type: Optional[str] = None
+    is_app: bool = False
+    physical_product: bool = False
+    banner_url: Optional[str] = None
+    bonus_milestones: List[BonusMilestoneOut] = []
+    job_type: Optional[str] = None
+    creator_type: Optional[str] = None
+
 
 class ParticipationOut(BaseModel):
     id: str

@@ -3,6 +3,41 @@ import { getAuthToken } from "@/lib/auth";
 
 const auth = () => ({ token: getAuthToken() ?? undefined });
 
+// Bonus milestone row (Feature 3 wizard step 3) — surfaced natively on the
+// campaign brief page (Feature 5) instead of living only in the admin builder.
+export type BonusMilestone = {
+  id: string;
+  views_threshold: number;
+  bonus_amount: number;
+  description: string | null;
+  sort_order: number;
+};
+
+// Wizard fields (Feature 3, BUILD_SPEC.md §3.3) shared by the creator-facing
+// campaign types (CampaignPublicOut on the backend) — every field optional /
+// defaulted so legacy campaigns created before the wizard still render fine.
+export type CampaignWizardFields = {
+  payment_type: string | null;
+  fixed_amount: number | null;
+  weekly_hours_needed: number | null;
+  hourly_rate: number | null;
+  required_hours: number | null;
+  per_post_amount: number | null;
+  example_videos: string[];
+  age_requirement: string | null;
+  platform_focus: string[];
+  content_type: string | null;
+  posting_frequency: string | null;
+  video_length: string | null;
+  account_type: string | null;
+  is_app: boolean;
+  physical_product: boolean;
+  banner_url: string | null;
+  bonus_milestones: BonusMilestone[];
+  job_type: string | null;
+  creator_type: string | null;
+};
+
 export type Campaign = {
   id: string;
   slug: string;
@@ -24,7 +59,7 @@ export type Campaign = {
   starts_at: string | null;
   ends_at: string | null;
   joined: boolean;
-};
+} & CampaignWizardFields;
 
 export type Participation = { id: string; campaign_id: string; status: string };
 export type Submission = {
