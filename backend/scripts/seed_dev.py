@@ -67,7 +67,7 @@ def main() -> None:
                     email=CREATOR_EMAIL,
                     password_hash=hash_password(CREATOR_PASSWORD),
                     status="active",
-                    signup_source="seed",
+                    signup_source="admin_invite",
                     email_verified=True,
                 )
             )
