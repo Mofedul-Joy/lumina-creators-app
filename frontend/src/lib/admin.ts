@@ -642,7 +642,12 @@ export const updateApplicant = (id: string, patch: ApplicantUpdateIn) =>
   apiFetch<ApplicantDetail>(`/api/admin/applicants/${id}`, { method: "PATCH", body: JSON.stringify(patch), ...auth() });
 
 export function applicantsExportCsvUrl(f: { campaign_id?: string; status?: string } = {}): string {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  // Match resolveApiUrl() in api.ts — pin to prod backend when served from *.vercel.app.
+  const PROD_BACKEND_URL = "https://lumina-creators-api-ops-layer-gaps.onrender.com";
+  const runtimeHost = typeof window !== "undefined" ? window.location.hostname : "";
+  const API_URL = runtimeHost.endsWith(".vercel.app")
+    ? PROD_BACKEND_URL
+    : (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000");
   const p = new URLSearchParams();
   Object.entries(f).forEach(([k, v]) => { if (v) p.set(k, String(v)); });
   const qs = p.toString();

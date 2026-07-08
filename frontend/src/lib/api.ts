@@ -1,7 +1,23 @@
 // Typed API client — the contract with the FastAPI backend. Keep in lockstep with Pydantic schemas.
 import { clearSession, getRefresh, realmFromPath, saveSession, type Realm } from "@/lib/tokens";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Backend URL resolution order:
+//   1) Runtime: if we're served from *.vercel.app (production frontend), pin to the
+//      canonical Render backend regardless of stale/wrong build-time env vars.
+//      This survives Vercel env-var drift without redeploys.
+//   2) Build-time NEXT_PUBLIC_API_URL (dev, previews, or manual overrides).
+//   3) Local dev fallback.
+const PROD_BACKEND_URL = "https://lumina-creators-api-ops-layer-gaps.onrender.com";
+function resolveApiUrl(): string {
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host.endsWith(".vercel.app") || host === "lumina-creators-app.vercel.app") {
+      return PROD_BACKEND_URL;
+    }
+  }
+  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+}
+const API_URL = resolveApiUrl();
 
 // Downloads a CSV export that requires the bearer token — plain <a href> can't
 // attach an Authorization header, so this fetches the blob and triggers a
