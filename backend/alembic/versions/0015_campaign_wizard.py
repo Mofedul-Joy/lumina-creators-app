@@ -17,7 +17,7 @@ from alembic import op
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 
 revision: str = "0015_campaign_wizard"
-down_revision: Union[str, None] = "0014_creator_gamification_and_richer_media"
+down_revision: Union[str, None] = "0014_creator_gamif"
 branch_labels = None
 depends_on = None
 
