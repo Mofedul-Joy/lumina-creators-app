@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api";
+import { apiFetch, downloadCsv } from "@/lib/api";
 import { getAdminToken } from "@/lib/auth";
 
 const auth = () => ({ token: getAdminToken() ?? undefined });
@@ -277,6 +277,90 @@ export const recordPayout = (creator_id: string, method: PayoutMethod, reference
 
 export const logManualPayment = (body: { creator_id: string; amount: number; method: PayoutMethod; reference?: string }) =>
   apiFetch<PayoutRow>("/api/admin/payouts/manual", { method: "POST", body: JSON.stringify(body), ...auth() });
+
+/* ---- payouts engine (Feature 4 — auto-calc, Pay All, Wallet, Ledger, Forecast) ---- */
+export type WalletOut = {
+  id: string;
+  available_balance: number | string;
+  pending_balance: number | string;
+  currency: string;
+};
+
+export type WalletTransactionOut = {
+  id: string;
+  kind: "deposit" | "withdrawal" | "payout" | "refund" | "adjustment";
+  amount: number | string;
+  reference: string | null;
+  note: string | null;
+  created_at: string;
+  payout_id: string | null;
+};
+
+export type LedgerRow = WalletTransactionOut & { balance_after: number | string };
+
+export type OwedBreakdown = {
+  fixed: number | string;
+  cpm: number | string;
+  per_post: number | string;
+  milestones: number | string;
+};
+
+export type OwedRowV2 = {
+  creator_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  amount_owed: number | string;
+  start_date: string | null;
+  due_date: string | null;
+  program_name: string | null;
+  campaign_id: string | null;
+  unpaid_posts: number;
+  total_views: number;
+  total_earnings_to_date: number | string;
+  payout_method: string | null;
+  payout_address: string | null;
+  breakdown: OwedBreakdown;
+};
+
+export type PayAllOut = {
+  paid_count: number;
+  total_amount: number | string;
+  payouts: PayoutRow[];
+};
+
+export type ForecastRow = {
+  campaign_id: string;
+  campaign_name: string;
+  projected_amount: number | string;
+  active_creators: number;
+  total_views: number;
+  avg_daily_burn: number | string;
+  days_remaining: number | null;
+};
+
+export const listOwedV2 = () => apiFetch<OwedRowV2[]>("/api/admin/payouts/owed-v2", auth());
+
+export const getWallet = () => apiFetch<WalletOut>("/api/admin/payouts/wallet", auth());
+
+export const addWalletFunds = (body: { amount: number; reference?: string; note?: string }) =>
+  apiFetch<WalletOut>("/api/admin/payouts/wallet/add-funds", { method: "POST", body: JSON.stringify(body), ...auth() });
+
+export const getLedger = (limit = 100) =>
+  apiFetch<LedgerRow[]>(`/api/admin/payouts/ledger?limit=${limit}`, auth());
+
+export const payAll = (creator_ids?: string[]) =>
+  apiFetch<PayAllOut>("/api/admin/payouts/pay-all", { method: "POST", body: JSON.stringify({ creator_ids }), ...auth() });
+
+export const payOne = (creatorId: string) =>
+  apiFetch<PayoutRow>(`/api/admin/payouts/pay-one/${creatorId}`, { method: "POST", ...auth() });
+
+export const getForecast = () => apiFetch<ForecastRow[]>("/api/admin/payouts/forecast", auth());
+
+export const downloadPayoutReportsCsv = () => {
+  const token = getAdminToken();
+  if (!token) return Promise.reject(new Error("Not authenticated"));
+  return downloadCsv("/api/admin/payouts/reports.csv", token);
+};
 
 export const editClient = (id: string, body: { name?: string; password?: string; campaign_ids?: string[] }) =>
   apiFetch<UserRow>(`/api/admin/users/clients/${id}`, { method: "PATCH", body: JSON.stringify(body), ...auth() });

@@ -1,12 +1,23 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Numeric, Text, func, text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Numeric,
+    Text,
+    func,
+    text,
+)
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin
@@ -77,6 +88,83 @@ class Payout(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    # ── Payouts engine (Feature 4, BUILD_SPEC.md §3.6) ──────────────────────
+    due_date: Mapped[Optional[date]] = mapped_column(Date)
+    program_name: Mapped[Optional[str]] = mapped_column(Text)
+    campaign_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("campaigns.id", ondelete="SET NULL")
+    )
+    awarded_bonus_ids: Mapped[List[uuid.UUID]] = mapped_column(
+        ARRAY(UUID(as_uuid=True)), nullable=False, server_default=text("'{}'")
+    )
+
+
+class Wallet(Base):
+    """A pool of funds an admin pays creators from. A NULL admin_id is the
+    single system-wide wallet seeded by the payouts-engine migration — most
+    deployments only ever use that one wallet."""
+
+    __tablename__ = "wallets"
+    __table_args__ = (
+        Index("uq_wallets_system_wide", "admin_id", unique=True, postgresql_where=text("admin_id IS NULL")),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    admin_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("admins.id", ondelete="SET NULL")
+    )
+    available_balance: Mapped[Decimal] = mapped_column(
+        Numeric(14, 2), nullable=False, server_default=text("0")
+    )
+    pending_balance: Mapped[Decimal] = mapped_column(
+        Numeric(14, 2), nullable=False, server_default=text("0")
+    )
+    currency: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'USD'"))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class WalletTransaction(Base):
+    """The wallet ledger — one row per deposit/withdrawal/payout/refund/
+    adjustment. `amount` is always positive; direction is inferred from
+    `kind` (deposit/refund credit the wallet, withdrawal/payout debit it)."""
+
+    __tablename__ = "wallet_transactions"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('deposit', 'withdrawal', 'payout', 'refund', 'adjustment')",
+            name="chk_wallet_txn_kind",
+        ),
+        CheckConstraint("amount > 0", name="chk_wallet_txn_amount_positive"),
+        Index("idx_wallet_txn_wallet_created", "wallet_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    wallet_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("wallets.id", ondelete="CASCADE"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(Text, nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    reference: Mapped[Optional[str]] = mapped_column(Text)
+    payout_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("payouts.id", ondelete="SET NULL")
+    )
+    admin_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("admins.id", ondelete="SET NULL")
+    )
+    note: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

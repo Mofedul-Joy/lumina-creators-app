@@ -188,3 +188,9 @@ class CampaignParticipation(Base):
     declined_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     admin_note: Mapped[Optional[str]] = mapped_column(Text)
+    # Payouts engine (Feature 4, BUILD_SPEC.md §3.6): bonus_milestone ids
+    # already paid out for this participation — prevents Pay All / pay-one
+    # from double-awarding the same views-threshold bonus.
+    payout_awarded_bonus_ids: Mapped[List[uuid.UUID]] = mapped_column(
+        ARRAY(UUID(as_uuid=True)), nullable=False, server_default=text("'{}'")
+    )

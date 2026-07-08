@@ -1,8 +1,8 @@
 """Admin payout schemas."""
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -39,3 +39,77 @@ class ManualPaymentIn(BaseModel):
     amount: Decimal
     method: str
     reference: str = ""
+
+
+# ── Payouts engine (Feature 4, BUILD_SPEC.md §3.6) ─────────────────────
+
+
+class WalletOut(BaseModel):
+    id: str
+    available_balance: Decimal
+    pending_balance: Decimal
+    currency: str
+
+
+class WalletTransactionOut(BaseModel):
+    id: str
+    kind: str
+    amount: Decimal
+    reference: Optional[str] = None
+    note: Optional[str] = None
+    created_at: datetime
+    payout_id: Optional[str] = None
+
+
+class AddFundsIn(BaseModel):
+    amount: Decimal
+    reference: Optional[str] = None
+    note: Optional[str] = None
+
+
+class OwedBreakdown(BaseModel):
+    fixed: Decimal = Decimal("0")
+    cpm: Decimal = Decimal("0")
+    per_post: Decimal = Decimal("0")
+    milestones: Decimal = Decimal("0")
+
+
+class OwedRowV2(BaseModel):
+    creator_id: str
+    display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+    amount_owed: Decimal
+    start_date: Optional[datetime] = None
+    due_date: Optional[date] = None
+    program_name: Optional[str] = None
+    campaign_id: Optional[str] = None
+    unpaid_posts: int = 0
+    total_views: int = 0
+    total_earnings_to_date: Decimal = Decimal("0")
+    payout_method: Optional[str] = None
+    payout_address: Optional[str] = None
+    breakdown: OwedBreakdown
+
+
+class PayAllIn(BaseModel):
+    creator_ids: Optional[List[str]] = None
+
+
+class PayAllOut(BaseModel):
+    paid_count: int
+    total_amount: Decimal
+    payouts: List[PayoutRow]
+
+
+class ForecastRow(BaseModel):
+    campaign_id: str
+    campaign_name: str
+    projected_amount: Decimal
+    active_creators: int
+    total_views: int
+    avg_daily_burn: Decimal
+    days_remaining: Optional[int] = None
+
+
+class LedgerRow(WalletTransactionOut):
+    balance_after: Decimal

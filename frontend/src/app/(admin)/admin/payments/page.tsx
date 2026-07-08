@@ -5,32 +5,71 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
-import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getAdminToken } from "@/lib/auth";
-import { listOwed, listPayouts, listSubmissions, logManualPayment, type OwedRow, type PayoutMethod, recordPayout } from "@/lib/admin";
-import { isAuthError, listCreators } from "@/lib/api";
-import { fmtMoney } from "@/lib/format";
+import {
+  addWalletFunds,
+  downloadPayoutReportsCsv,
+  getForecast,
+  getLedger,
+  getWallet,
+  listCreators,
+  listOwedV2,
+  payAll,
+  payOne,
+  type CreatorRow,
+  type ForecastRow,
+  type LedgerRow,
+  type OwedRowV2,
+} from "@/lib/admin";
+import { isAuthError } from "@/lib/api";
+import { fmtInt, fmtMoney } from "@/lib/format";
 
-const METHODS: PayoutMethod[] = ["paypal", "solana", "whop"];
-const METHOD_LABEL: Record<string, string> = { paypal: "PayPal", solana: "Solana", whop: "Whop" };
-const PAY_TABS = [
-  { key: "to_be_paid", label: "To be paid" },
-  { key: "paid", label: "Paid" },
-  { key: "rejected", label: "Rejected" },
+const PAGE_TABS = [
+  { key: "payouts", label: "Payouts" },
+  { key: "ledger", label: "Ledger" },
+  { key: "creators", label: "Creators" },
+  { key: "forecast", label: "Forecast" },
+  { key: "agency", label: "Agency" },
 ] as const;
-type PayTab = (typeof PAY_TABS)[number]["key"];
+type PageTab = (typeof PAGE_TABS)[number]["key"];
+
+const LEDGER_BADGE: Record<string, string> = {
+  deposit: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  refund: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  withdrawal: "bg-red-500/15 text-red-400 border-red-500/30",
+  payout: "bg-sky-500/15 text-sky-400 border-sky-500/30",
+  adjustment: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+};
+
+function KindBadge({ kind }: { kind: string }) {
+  const cls = LEDGER_BADGE[kind] ?? "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] border-[var(--color-border)]";
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${cls}`}>
+      {kind}
+    </span>
+  );
+}
+
+function fmtDate(d: string | null | undefined) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
 
 export default function AdminPaymentsPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const [ready, setReady] = useState(false);
   const [hasToken, setHasToken] = useState(false);
-  const [tab, setTab] = useState<PayTab>("to_be_paid");
-  // "Pay now" opens a confirm/log modal for that one creator — payouts are sent
-  // out-of-band, so this records the payment rather than automating it.
-  const [payTarget, setPayTarget] = useState<OwedRow | null>(null);
-  const [payMethod, setPayMethod] = useState<PayoutMethod>("paypal");
-  const [payReference, setPayReference] = useState("");
+  const [tab, setTab] = useState<PageTab>("payouts");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [hoverRow, setHoverRow] = useState<string | null>(null);
+
+  const [walletOpen, setWalletOpen] = useState(false);
+  const [reportsOpen, setReportsOpen] = useState(false);
+  const [showAddFunds, setShowAddFunds] = useState(false);
+  const [addFundsForm, setAddFundsForm] = useState({ amount: "", reference: "", note: "" });
+  const [showPayAllConfirm, setShowPayAllConfirm] = useState(false);
+  const [payAllScope, setPayAllScope] = useState<"all" | "selected">("all");
 
   useEffect(() => {
     setHasToken(!!getAdminToken());
@@ -41,57 +80,65 @@ export default function AdminPaymentsPage() {
   }, [ready, hasToken, router]);
 
   const enabled = ready && hasToken;
-  const owedQ = useQuery({ queryKey: ["payouts-owed"], queryFn: listOwed, enabled, retry: false });
-  const histQ = useQuery({ queryKey: ["payouts-history"], queryFn: listPayouts, enabled, retry: false });
-  const rejectedQ = useQuery({
-    queryKey: ["submissions-rejected"],
-    queryFn: () => listSubmissions({ status: "rejected" }),
-    enabled: enabled && tab === "rejected",
+
+  const owedQ = useQuery({ queryKey: ["payouts-owed-v2"], queryFn: listOwedV2, enabled, retry: false });
+  const walletQ = useQuery({ queryKey: ["payouts-wallet"], queryFn: getWallet, enabled, retry: false });
+  const ledgerQ = useQuery({
+    queryKey: ["payouts-ledger"],
+    queryFn: () => getLedger(100),
+    enabled: enabled && tab === "ledger",
     retry: false,
   });
+  const forecastQ = useQuery({
+    queryKey: ["payouts-forecast"],
+    queryFn: getForecast,
+    enabled: enabled && tab === "forecast",
+    retry: false,
+  });
+  const creatorsQ = useQuery({
+    queryKey: ["payments-creators-tab"],
+    queryFn: () => listCreators({}),
+    enabled: enabled && tab === "creators",
+    retry: false,
+  });
+
   useEffect(() => {
     if (owedQ.isError && isAuthError(owedQ.error)) router.replace("/admin/login");
   }, [owedQ.isError, owedQ.error, router]);
 
   const refresh = () => {
-    qc.invalidateQueries({ queryKey: ["payouts-owed"] });
-    qc.invalidateQueries({ queryKey: ["payouts-history"] });
-  };
-  const payM = useMutation({
-    mutationFn: ({ id, m, reference }: { id: string; m: PayoutMethod; reference?: string }) => recordPayout(id, m, reference),
-    onSuccess: () => { setPayTarget(null); refresh(); },
-  });
-  const openPay = (r: OwedRow) => {
-    setPayTarget(r);
-    setPayMethod((r.payout_method as PayoutMethod) || "paypal");
-    setPayReference("");
-    payM.reset();
+    qc.invalidateQueries({ queryKey: ["payouts-owed-v2"] });
+    qc.invalidateQueries({ queryKey: ["payouts-wallet"] });
+    qc.invalidateQueries({ queryKey: ["payouts-ledger"] });
+    qc.invalidateQueries({ queryKey: ["payouts-forecast"] });
   };
 
-  // Add Payment (Clippers receipt flow): money moved elsewhere, log it here
-  const [showAdd, setShowAdd] = useState(false);
-  const [addForm, setAddForm] = useState({ creator_id: "", amount: "", method: "paypal" as PayoutMethod, reference: "" });
-  const [addErr, setAddErr] = useState("");
-  const creatorsQ = useQuery({
-    queryKey: ["payments-creators"],
-    queryFn: () => listCreators(getAdminToken() ?? "", { limit: 500 }),
-    enabled: enabled && showAdd,
-    retry: false,
-  });
-  const addM = useMutation({
-    mutationFn: () => logManualPayment({
-      creator_id: addForm.creator_id,
-      amount: Number(addForm.amount),
-      method: addForm.method,
-      reference: addForm.reference.trim() || undefined,
-    }),
+  const addFundsM = useMutation({
+    mutationFn: () =>
+      addWalletFunds({
+        amount: Number(addFundsForm.amount),
+        reference: addFundsForm.reference.trim() || undefined,
+        note: addFundsForm.note.trim() || undefined,
+      }),
     onSuccess: () => {
-      setShowAdd(false);
-      setAddForm({ creator_id: "", amount: "", method: "paypal", reference: "" });
-      setAddErr("");
+      setShowAddFunds(false);
+      setAddFundsForm({ amount: "", reference: "", note: "" });
       refresh();
     },
-    onError: (e) => setAddErr((e as Error).message),
+  });
+
+  const payAllM = useMutation({
+    mutationFn: () => payAll(payAllScope === "selected" ? Array.from(selected) : undefined),
+    onSuccess: () => {
+      setShowPayAllConfirm(false);
+      setSelected(new Set());
+      refresh();
+    },
+  });
+
+  const payOneM = useMutation({
+    mutationFn: (creatorId: string) => payOne(creatorId),
+    onSuccess: () => refresh(),
   });
 
   if (!ready || !hasToken)
@@ -102,159 +149,272 @@ export default function AdminPaymentsPage() {
     );
 
   const owed = owedQ.data ?? [];
-  const history = histQ.data ?? [];
+  const wallet = walletQ.data;
+  const ledger = ledgerQ.data ?? [];
+  const forecast = forecastQ.data ?? [];
+  const creators = creatorsQ.data ?? [];
+
   const totalOwed = owed.reduce((s, r) => s + Number(r.amount_owed), 0);
-  const totalPaid = history.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
+  const availableBalance = wallet ? Number(wallet.available_balance) : 0;
+  const pendingBalance = wallet ? Number(wallet.pending_balance) : 0;
+
+  const toggleRow = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const toggleAll = () => {
+    setSelected((prev) => (prev.size === owed.length ? new Set() : new Set(owed.map((r) => r.creator_id))));
+  };
+
+  const selectedOwedTotal = owed.filter((r) => selected.has(r.creator_id)).reduce((s, r) => s + Number(r.amount_owed), 0);
 
   return (
     <div className="min-h-[100dvh]">
       <AdminShell />
       <main className="mx-auto max-w-6xl px-6 py-10">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Payments</h1>
+            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Payouts</h1>
             <p className="mt-2 max-w-xl text-[var(--color-text-secondary)]">
-              Settle verified creator earnings. Each submission is paid at most once.
+              Review performance and pay creators.
             </p>
           </div>
-          <button
-            onClick={() => setShowAdd(true)}
-            className="shrink-0 cursor-pointer text-sm text-[var(--color-text-secondary)] underline decoration-dotted underline-offset-4 transition hover:text-[var(--color-text)]"
-            title="Log a payment made outside the app. A manual bookkeeping entry, separate from the Pay now flow"
-          >
-            Log a manual payment
-          </button>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={refresh}
+              className="cursor-pointer rounded-full border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)]"
+            >
+              Refresh
+            </button>
+
+            <div className="relative">
+              <button
+                onClick={() => { setWalletOpen((v) => !v); setReportsOpen(false); }}
+                className="cursor-pointer rounded-full border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)]"
+              >
+                Wallet {wallet ? `· ${fmtMoney(availableBalance)}` : ""} ▾
+              </button>
+              {walletOpen ? (
+                <div className="absolute right-0 z-50 mt-2 w-56 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface)] p-2 shadow-xl" onMouseLeave={() => setWalletOpen(false)}>
+                  <div className="px-3 py-2 text-xs text-[var(--color-text-muted)]">
+                    Available: <span className="text-[var(--color-text)]">{fmtMoney(availableBalance)}</span>
+                  </div>
+                  <button
+                    onClick={() => { setShowAddFunds(true); setWalletOpen(false); }}
+                    className="w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-2)]"
+                  >
+                    Add Funds
+                  </button>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="relative">
+              <button
+                onClick={() => { setReportsOpen((v) => !v); setWalletOpen(false); }}
+                className="cursor-pointer rounded-full border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)]"
+              >
+                Reports ▾
+              </button>
+              {reportsOpen ? (
+                <div className="absolute right-0 z-50 mt-2 w-48 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface)] p-2 shadow-xl" onMouseLeave={() => setReportsOpen(false)}>
+                  <button
+                    onClick={() => { downloadPayoutReportsCsv(); setReportsOpen(false); }}
+                    className="w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-2)]"
+                  >
+                    Download CSV
+                  </button>
+                </div>
+              ) : null}
+            </div>
+
+            <button
+              onClick={() => { setPayAllScope(selected.size > 0 ? "selected" : "all"); setShowPayAllConfirm(true); }}
+              disabled={owed.length === 0}
+              className="cursor-pointer rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] transition hover:opacity-90 disabled:opacity-40"
+            >
+              Pay All
+            </button>
+          </div>
         </div>
+
         <AdminTabs />
 
-        {/* pay-now result — previously the click gave no feedback at all, so a
-            failed payout looked like "nothing happened" */}
-        {payM.isSuccess ? (
-          <div className="mt-6 rounded-[var(--radius-btn)] border border-[var(--color-brand)]/30 bg-[var(--color-brand)]/10 px-4 py-3 text-sm text-[var(--color-brand-soft)]">
-            Recorded a {fmtMoney(payM.data.amount)} payout{payM.data.creator_name ? ` to ${payM.data.creator_name}` : ""}. It&apos;s now under the Paid tab.
+        {payAllM.isSuccess ? (
+          <div className="mt-2 rounded-[var(--radius-btn)] border border-[var(--color-brand)]/30 bg-[var(--color-brand)]/10 px-4 py-3 text-sm text-[var(--color-brand-soft)]">
+            Paid {payAllM.data.paid_count} creator{payAllM.data.paid_count === 1 ? "" : "s"} a total of {fmtMoney(payAllM.data.total_amount)}.
           </div>
-        ) : payM.isError ? (
-          <div className="mt-6 rounded-[var(--radius-btn)] border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/10 px-4 py-3 text-sm text-[var(--color-danger)]">
-            Couldn&apos;t record the payout: {(payM.error as Error).message}
+        ) : payAllM.isError ? (
+          <div className="mt-2 rounded-[var(--radius-btn)] border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/10 px-4 py-3 text-sm text-[var(--color-danger)]">
+            Pay All failed: {(payAllM.error as Error).message}
           </div>
         ) : null}
 
-        {/* summary */}
-        <div className="mt-8 grid grid-cols-3 gap-4">
-          <div className="card-grad rounded-[var(--radius-card)] p-5">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Outstanding</p>
-            <p className="tabular mt-3 text-3xl font-semibold text-[var(--color-brand-soft)]">{fmtMoney(totalOwed)}</p>
-            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{owed.length} creators awaiting payout</p>
+        {/* stat tiles */}
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="card-lumina rounded-[var(--radius-card)] p-5">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Available Balance</p>
+            <p className="tabular mt-3 text-3xl font-semibold text-[var(--color-brand-soft)]">{fmtMoney(availableBalance)}</p>
+            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">In the system wallet</p>
           </div>
-          <div className="card-grad rounded-[var(--radius-card)] p-5">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Paid all-time</p>
-            <p className="tabular mt-3 text-3xl font-semibold text-[var(--color-text)]">{fmtMoney(totalPaid)}</p>
-            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{history.length} payouts</p>
+          <div className="card-lumina rounded-[var(--radius-card)] p-5">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Pending Balance</p>
+            <p className="tabular mt-3 text-3xl font-semibold text-[var(--color-text)]">{fmtMoney(pendingBalance)}</p>
+            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Reserved, not yet settled</p>
           </div>
-          <div className="card-grad rounded-[var(--radius-card)] p-5">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Methods</p>
-            <p className="mt-3 text-lg font-semibold text-[var(--color-text)]">PayPal · Solana · Whop</p>
-            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Sent out-of-band, logged here</p>
+          <div className="card-lumina rounded-[var(--radius-card)] p-5">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Total Owed</p>
+            <p className="tabular mt-3 text-3xl font-semibold text-[var(--color-text)]">{fmtMoney(totalOwed)}</p>
+            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{owed.length} creator rows</p>
           </div>
         </div>
 
-        {/* the three tabs ARE the organizing axis — no mixed tables, columns
-            change per tab so there's never a dead/empty column */}
-        <div className="mt-8 flex gap-1 border-b border-[var(--color-border)]">
-          {PAY_TABS.map((t) => (
+        {/* page tabs */}
+        <div className="mt-8 flex gap-1 overflow-x-auto border-b border-[var(--color-border)] no-scrollbar">
+          {PAGE_TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`cursor-pointer border-b-2 px-3 py-2.5 text-sm transition ${
+              className={`shrink-0 cursor-pointer border-b-2 px-3 py-2.5 text-sm transition ${
                 tab === t.key ? "border-[var(--color-brand)] text-[var(--color-text)]" : "border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
               }`}
             >
               {t.label}
-              {t.key === "to_be_paid" ? ` (${owed.length})` : t.key === "rejected" ? (rejectedQ.data ? ` (${rejectedQ.data.length})` : "") : ""}
             </button>
           ))}
         </div>
 
-        {tab === "to_be_paid" ? (
+        {tab === "payouts" ? (
+          <div className="mt-4">
+            {selected.size > 0 ? (
+              <div className="mb-3 flex items-center justify-between rounded-[var(--radius-btn)] border border-[var(--color-brand)]/30 bg-[var(--color-brand)]/10 px-4 py-2.5">
+                <span className="text-sm text-[var(--color-brand-soft)]">
+                  {selected.size} selected · {fmtMoney(selectedOwedTotal)}
+                </span>
+                <button
+                  onClick={() => { setPayAllScope("selected"); setShowPayAllConfirm(true); }}
+                  className="cursor-pointer rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-[var(--color-on-brand)] hover:bg-emerald-400"
+                >
+                  Pay Selected
+                </button>
+              </div>
+            ) : null}
+            <div className="card-lumina overflow-hidden rounded-[var(--radius-card)]">
+              {owedQ.isLoading ? (
+                <p className="p-6 text-sm text-[var(--color-text-secondary)]">Loading…</p>
+              ) : owed.length === 0 ? (
+                <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">Everyone is paid up.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[920px] text-sm">
+                    <thead>
+                      <tr className="text-left text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
+                        <th className="px-4 py-3 font-medium">
+                          <input type="checkbox" checked={selected.size === owed.length && owed.length > 0} onChange={toggleAll} className="cursor-pointer" />
+                        </th>
+                        <th className="px-4 py-3 font-medium">Name</th>
+                        <th className="px-4 py-3 text-right font-medium">Amount</th>
+                        <th className="px-4 py-3 font-medium">Start Date</th>
+                        <th className="px-4 py-3 font-medium">Due Date</th>
+                        <th className="px-4 py-3 font-medium">Program</th>
+                        <th className="px-4 py-3 text-right font-medium">Unpaid Posts</th>
+                        <th className="px-4 py-3 font-medium">Metrics</th>
+                        <th className="px-4 py-3 text-right font-medium">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {owed.map((r: OwedRowV2) => (
+                        <tr key={`${r.creator_id}-${r.campaign_id}`} className="border-t border-[var(--color-border)]/40">
+                          <td className="px-4 py-4">
+                            <input type="checkbox" checked={selected.has(r.creator_id)} onChange={() => toggleRow(r.creator_id)} className="cursor-pointer" />
+                          </td>
+                          <td className="px-4 py-4 text-[var(--color-text)]">
+                            <div className="flex items-center gap-2">
+                              {r.avatar_url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={r.avatar_url} alt="" className="h-7 w-7 rounded-full object-cover" />
+                              ) : (
+                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-surface-2)] text-xs text-[var(--color-text-muted)]">
+                                  {(r.display_name ?? "?").slice(0, 1).toUpperCase()}
+                                </span>
+                              )}
+                              <span>{r.display_name ?? "Unnamed"}</span>
+                            </div>
+                          </td>
+                          <td
+                            className="tabular relative px-4 py-4 text-right font-medium text-[var(--color-text)]"
+                            onMouseEnter={() => setHoverRow(`${r.creator_id}-${r.campaign_id}`)}
+                            onMouseLeave={() => setHoverRow(null)}
+                          >
+                            {fmtMoney(r.amount_owed)}
+                            {hoverRow === `${r.creator_id}-${r.campaign_id}` ? (
+                              <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-left text-xs shadow-xl">
+                                <div className="flex justify-between py-0.5"><span className="text-[var(--color-text-muted)]">Fixed</span><span className="text-[var(--color-text)]">{fmtMoney(r.breakdown.fixed)}</span></div>
+                                <div className="flex justify-between py-0.5"><span className="text-[var(--color-text-muted)]">CPM</span><span className="text-[var(--color-text)]">{fmtMoney(r.breakdown.cpm)}</span></div>
+                                <div className="flex justify-between py-0.5"><span className="text-[var(--color-text-muted)]">Per-post</span><span className="text-[var(--color-text)]">{fmtMoney(r.breakdown.per_post)}</span></div>
+                                <div className="flex justify-between py-0.5"><span className="text-[var(--color-text-muted)]">Milestones</span><span className="text-[var(--color-text)]">{fmtMoney(r.breakdown.milestones)}</span></div>
+                              </div>
+                            ) : null}
+                          </td>
+                          <td className="px-4 py-4 text-[var(--color-text-secondary)]">{fmtDate(r.start_date)}</td>
+                          <td className="px-4 py-4 text-[var(--color-text-secondary)]">{fmtDate(r.due_date)}</td>
+                          <td className="px-4 py-4 text-[var(--color-text-secondary)]" title={r.program_name ?? undefined}>
+                            <span className="block max-w-[160px] truncate">{r.program_name ?? "—"}</span>
+                          </td>
+                          <td className="tabular px-4 py-4 text-right text-[var(--color-text-secondary)]">{r.unpaid_posts}</td>
+                          <td className="px-4 py-4 text-[var(--color-text-secondary)]">{fmtInt(r.total_views)} views</td>
+                          <td className="px-4 py-4 text-right">
+                            <button
+                              onClick={() => payOneM.mutate(r.creator_id)}
+                              disabled={payOneM.isPending}
+                              className="cursor-pointer rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-[var(--color-on-brand)] hover:bg-emerald-400 disabled:opacity-50"
+                            >
+                              Pay
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : tab === "ledger" ? (
           <div className="card-lumina mt-4 overflow-hidden rounded-[var(--radius-card)]">
-            {owedQ.isLoading ? (
+            {ledgerQ.isLoading ? (
               <p className="p-6 text-sm text-[var(--color-text-secondary)]">Loading…</p>
-            ) : owed.length === 0 ? (
-              <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">All verified earnings are settled.</p>
+            ) : ledger.length === 0 ? (
+              <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">No wallet activity yet.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[720px] text-sm">
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
-                      <th className="px-6 py-3 font-medium">Creator</th>
-                      <th className="px-6 py-3 font-medium">Pay to</th>
-                      <th className="px-6 py-3 text-right font-medium">Verified clips</th>
-                      <th className="px-6 py-3 text-right font-medium">Owed</th>
-                      <th className="px-6 py-3 text-right font-medium">Record payout</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {owed.map((r) => (
-                      <tr key={r.creator_id} className="border-t border-[var(--color-border)]/40">
-                        <td className="px-6 py-4 text-[var(--color-text)]">{r.display_name ?? "Unnamed"}</td>
-                        <td className="px-6 py-4 text-[var(--color-text-secondary)]">
-                          {r.payout_address ? (
-                            <>
-                              <span className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">{METHOD_LABEL[r.payout_method ?? ""] ?? "-"}</span>
-                              <span className="block max-w-[220px] truncate text-xs">{r.payout_address}</span>
-                            </>
-                          ) : (
-                            <span className="text-xs text-[var(--color-text-muted)]">No payout details on file</span>
-                          )}
-                        </td>
-                        <td className="tabular px-6 py-4 text-right text-[var(--color-text-secondary)]">{r.submission_count}</td>
-                        <td className="tabular px-6 py-4 text-right font-medium text-[var(--color-text)]">{fmtMoney(r.amount_owed)}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-end">
-                            <button
-                              onClick={() => openPay(r)}
-                              className="cursor-pointer rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-[var(--color-on-brand)] hover:bg-emerald-400"
-                            >
-                              Pay now
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        ) : tab === "paid" ? (
-          <div className="card-lumina mt-4 overflow-hidden rounded-[var(--radius-card)]">
-            {history.length === 0 ? (
-              <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">No payouts recorded yet.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[560px] text-sm">
-                  <thead>
-                    <tr className="text-left text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
-                      <th className="px-6 py-3 font-medium">Creator</th>
-                      <th className="px-6 py-3 font-medium">Method</th>
+                      <th className="px-6 py-3 font-medium">Date</th>
+                      <th className="px-6 py-3 font-medium">Kind</th>
                       <th className="px-6 py-3 text-right font-medium">Amount</th>
-                      <th className="px-6 py-3 font-medium">Status</th>
-                      <th className="px-6 py-3 text-right font-medium">Date</th>
+                      <th className="px-6 py-3 font-medium">Reference</th>
+                      <th className="px-6 py-3 font-medium">Note</th>
+                      <th className="px-6 py-3 text-right font-medium">Balance After</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {history.map((p) => (
-                      <tr key={p.id} className="border-t border-[var(--color-border)]/40">
-                        <td className="px-6 py-4 text-[var(--color-text)]">{p.creator_name ?? "Unnamed"}</td>
-                        <td className="px-6 py-4 text-[var(--color-text-secondary)]">
-                          {METHOD_LABEL[p.method] ?? p.method}
-                          {p.reference ? <span className="block text-xs text-[var(--color-text-muted)]">ref: {p.reference}</span> : null}
+                    {ledger.map((t: LedgerRow) => (
+                      <tr key={t.id} className="border-t border-[var(--color-border)]/40">
+                        <td className="px-6 py-4 text-[var(--color-text-muted)]">
+                          {new Date(t.created_at).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
                         </td>
-                        <td className="tabular px-6 py-4 text-right text-[var(--color-text)]">{fmtMoney(p.amount)}</td>
-                        <td className="px-6 py-4"><StatusBadge status={p.status} /></td>
-                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)]">
-                          {new Date(p.paid_at ?? p.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                        </td>
+                        <td className="px-6 py-4"><KindBadge kind={t.kind} /></td>
+                        <td className="tabular px-6 py-4 text-right text-[var(--color-text)]">{fmtMoney(t.amount)}</td>
+                        <td className="px-6 py-4 text-[var(--color-text-secondary)]">{t.reference ?? "—"}</td>
+                        <td className="max-w-[220px] px-6 py-4 text-[var(--color-text-secondary)]">{t.note ?? "—"}</td>
+                        <td className="tabular px-6 py-4 text-right font-medium text-[var(--color-text)]">{fmtMoney(t.balance_after)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -262,92 +422,130 @@ export default function AdminPaymentsPage() {
               </div>
             )}
           </div>
-        ) : (
+        ) : tab === "creators" ? (
           <div className="card-lumina mt-4 overflow-hidden rounded-[var(--radius-card)]">
-            {rejectedQ.isLoading ? (
+            {creatorsQ.isLoading ? (
               <p className="p-6 text-sm text-[var(--color-text-secondary)]">Loading…</p>
-            ) : (rejectedQ.data ?? []).length === 0 ? (
-              <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">No rejected submissions.</p>
+            ) : creators.length === 0 ? (
+              <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">No creators yet.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[640px] text-sm">
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
                       <th className="px-6 py-3 font-medium">Creator</th>
-                      <th className="px-6 py-3 font-medium">Campaign</th>
-                      <th className="px-6 py-3 font-medium">Reason</th>
-                      <th className="px-6 py-3 text-right font-medium">Date</th>
+                      <th className="px-6 py-3 font-medium">Country</th>
+                      <th className="px-6 py-3 text-right font-medium">Followers</th>
+                      <th className="px-6 py-3 text-right font-medium">Currently Owed</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {(rejectedQ.data ?? []).map((s) => (
-                      <tr key={s.id} className="border-t border-[var(--color-border)]/40">
-                        <td className="px-6 py-4 text-[var(--color-text)]">{s.creator_name ?? "Unnamed"}</td>
-                        <td className="px-6 py-4 text-[var(--color-text-secondary)]">{s.campaign_name}</td>
-                        <td className="max-w-[280px] px-6 py-4 text-[var(--color-text-secondary)]">{s.verification_note ?? "-"}</td>
-                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)]">
-                          {new Date(s.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                        </td>
-                      </tr>
-                    ))}
+                    {creators.map((c: CreatorRow) => {
+                      const owedForCreator = owed
+                        .filter((r) => r.creator_id === c.id)
+                        .reduce((s, r) => s + Number(r.amount_owed), 0);
+                      return (
+                        <tr key={c.id} className="border-t border-[var(--color-border)]/40">
+                          <td className="px-6 py-4 text-[var(--color-text)]">{c.display_name ?? c.email}</td>
+                          <td className="px-6 py-4 text-[var(--color-text-secondary)]">{c.country ?? "—"}</td>
+                          <td className="tabular px-6 py-4 text-right text-[var(--color-text-secondary)]">{fmtInt(c.total_followers)}</td>
+                          <td className="tabular px-6 py-4 text-right font-medium text-[var(--color-text)]">{fmtMoney(owedForCreator)}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             )}
           </div>
+        ) : tab === "forecast" ? (
+          <div className="mt-4">
+            {forecastQ.isLoading ? (
+              <p className="p-6 text-sm text-[var(--color-text-secondary)]">Loading…</p>
+            ) : forecast.length === 0 ? (
+              <p className="card-lumina rounded-[var(--radius-card)] p-10 text-center text-sm text-[var(--color-text-secondary)]">No active campaigns to forecast.</p>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {forecast.map((f: ForecastRow) => {
+                  const pct = f.days_remaining !== null && f.days_remaining !== undefined
+                    ? Math.max(0, Math.min(100, 100 - f.days_remaining))
+                    : null;
+                  return (
+                    <div key={f.campaign_id} className="card-lumina rounded-[var(--radius-card)] p-5">
+                      <p className="text-sm font-semibold text-[var(--color-text)]">{f.campaign_name}</p>
+                      <p className="tabular mt-2 text-2xl font-semibold text-[var(--color-brand-soft)]">{fmtMoney(f.projected_amount)}</p>
+                      <p className="text-xs text-[var(--color-text-secondary)]">Projected spend</p>
+                      <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <p className="text-[var(--color-text-muted)]">Creators</p>
+                          <p className="tabular text-[var(--color-text)]">{f.active_creators}</p>
+                        </div>
+                        <div>
+                          <p className="text-[var(--color-text-muted)]">Daily burn</p>
+                          <p className="tabular text-[var(--color-text)]">{fmtMoney(f.avg_daily_burn)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[var(--color-text-muted)]">Days left</p>
+                          <p className="tabular text-[var(--color-text)]">{f.days_remaining ?? "—"}</p>
+                        </div>
+                      </div>
+                      {pct !== null ? (
+                        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
+                          <div className="h-full rounded-full bg-[var(--color-brand)]" style={{ width: `${pct}%` }} />
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="card-lumina mt-4 rounded-[var(--radius-card)] p-10 text-center text-sm text-[var(--color-text-secondary)]">
+            Agency payouts are coming soon.
+          </div>
         )}
 
-        {/* Add Payment modal — a receipt for money sent outside the app */}
-        {showAdd ? (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowAdd(false)}>
+        {/* Add Funds modal */}
+        {showAddFunds ? (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowAddFunds(false)}>
             <div className="w-full max-w-md rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-[var(--color-text)]">Add payment</h3>
-                <button onClick={() => setShowAdd(false)} className="cursor-pointer rounded-full p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]" aria-label="Close">
+                <h3 className="text-xl font-semibold text-[var(--color-text)]">Add Funds</h3>
+                <button onClick={() => setShowAddFunds(false)} className="cursor-pointer rounded-full p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]" aria-label="Close">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                 </button>
               </div>
-              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Log a payment you made outside the app. This only creates a receipt.</p>
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                Mock top-up — increments the wallet&apos;s available balance. No real payment rail is used.
+              </p>
 
               <div className="mt-5 space-y-4">
                 <label className="block">
-                  <span className="mb-1.5 block text-sm text-[var(--color-text)]">Creator</span>
-                  <select value={addForm.creator_id} onChange={(e) => setAddForm({ ...addForm, creator_id: e.target.value })}
-                    className="min-h-10 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]">
-                    <option value="">Select a creator…</option>
-                    {(creatorsQ.data ?? []).map((c) => (
-                      <option key={c.id} value={c.id}>{c.display_name ?? c.email}</option>
-                    ))}
-                  </select>
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="block">
-                    <span className="mb-1.5 block text-sm text-[var(--color-text)]">Amount ($)</span>
-                    <input type="number" min="0" step="0.01" value={addForm.amount} onChange={(e) => setAddForm({ ...addForm, amount: e.target.value })}
-                      className="min-h-10 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]" />
-                  </label>
-                  <label className="block">
-                    <span className="mb-1.5 block text-sm text-[var(--color-text)]">Method</span>
-                    <select value={addForm.method} onChange={(e) => setAddForm({ ...addForm, method: e.target.value as PayoutMethod })}
-                      className="min-h-10 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]">
-                      {METHODS.map((m) => <option key={m} value={m}>{METHOD_LABEL[m]}</option>)}
-                    </select>
-                  </label>
-                </div>
-                <label className="block">
-                  <span className="mb-1.5 block text-sm text-[var(--color-text)]">Reference (optional)</span>
-                  <input value={addForm.reference} onChange={(e) => setAddForm({ ...addForm, reference: e.target.value })} placeholder="Transaction ID, note…"
+                  <span className="mb-1.5 block text-sm text-[var(--color-text)]">Amount ($)</span>
+                  <input type="number" min="0" step="0.01" value={addFundsForm.amount}
+                    onChange={(e) => setAddFundsForm({ ...addFundsForm, amount: e.target.value })}
                     className="min-h-10 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]" />
                 </label>
-                {addErr ? <p className="text-sm text-[var(--color-danger)]">{addErr}</p> : null}
+                <label className="block">
+                  <span className="mb-1.5 block text-sm text-[var(--color-text)]">Reference (optional)</span>
+                  <input value={addFundsForm.reference} onChange={(e) => setAddFundsForm({ ...addFundsForm, reference: e.target.value })} placeholder="Bank transfer, invoice #…"
+                    className="min-h-10 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]" />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-sm text-[var(--color-text)]">Note (optional)</span>
+                  <input value={addFundsForm.note} onChange={(e) => setAddFundsForm({ ...addFundsForm, note: e.target.value })} placeholder="Notes for the ledger…"
+                    className="min-h-10 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]" />
+                </label>
+                {addFundsM.isError ? <p className="text-sm text-[var(--color-danger)]">{(addFundsM.error as Error).message}</p> : null}
                 <div className="flex justify-end gap-3 pt-1">
-                  <button onClick={() => setShowAdd(false)} className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Cancel</button>
+                  <button onClick={() => setShowAddFunds(false)} className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Cancel</button>
                   <button
-                    disabled={addM.isPending || !addForm.creator_id || !addForm.amount || Number(addForm.amount) <= 0}
-                    onClick={() => { setAddErr(""); addM.mutate(); }}
+                    disabled={addFundsM.isPending || !addFundsForm.amount || Number(addFundsForm.amount) <= 0}
+                    onClick={() => addFundsM.mutate()}
                     className="cursor-pointer rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] disabled:opacity-50"
                   >
-                    {addM.isPending ? "Logging…" : "Log payment"}
+                    {addFundsM.isPending ? "Adding…" : "Add Funds"}
                   </button>
                 </div>
               </div>
@@ -355,56 +553,29 @@ export default function AdminPaymentsPage() {
           </div>
         ) : null}
 
-        {/* Log payout modal — confirm + record a manual payout for one creator */}
-        {payTarget ? (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setPayTarget(null)}>
+        {/* Pay All confirmation modal */}
+        {showPayAllConfirm ? (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowPayAllConfirm(false)}>
             <div className="w-full max-w-md rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-[var(--color-text)]">Log payout</h3>
-                <button onClick={() => setPayTarget(null)} className="cursor-pointer rounded-full p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]" aria-label="Close">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-                </button>
-              </div>
-              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                Record a payment you&apos;ve sent to <span className="text-[var(--color-text)]">{payTarget.display_name ?? "this creator"}</span> out-of-band. It settles their {payTarget.submission_count} verified clip{payTarget.submission_count === 1 ? "" : "s"}.
+              <h3 className="text-xl font-semibold text-[var(--color-text)]">
+                {payAllScope === "selected" ? "Pay selected creators?" : "Pay all creators?"}
+              </h3>
+              <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                {payAllScope === "selected"
+                  ? `This pays ${selected.size} selected creator${selected.size === 1 ? "" : "s"} a total of ${fmtMoney(selectedOwedTotal)} from the wallet.`
+                  : `This pays every creator with an outstanding balance — ${fmtMoney(totalOwed)} across ${owed.length} row${owed.length === 1 ? "" : "s"} — from the wallet.`}
+                {" "}Bonus milestones are only awarded once.
               </p>
-
-              <div className="mt-5 rounded-[var(--radius-btn)] bg-[var(--color-surface-2)] p-4">
-                <div className="flex items-end justify-between">
-                  <span className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Amount</span>
-                  <span className="tabular text-2xl font-semibold text-[var(--color-brand-soft)]">{fmtMoney(payTarget.amount_owed)}</span>
-                </div>
-                <div className="mt-2 border-t border-[var(--color-border)] pt-2 text-xs text-[var(--color-text-secondary)]">
-                  {payTarget.payout_address
-                    ? <>Creator&apos;s method on file: <span className="text-[var(--color-text)]">{METHOD_LABEL[payTarget.payout_method ?? ""] ?? "—"}</span> · {payTarget.payout_address}</>
-                    : "No payout details on file — confirm how you sent it below."}
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-4">
-                <label className="block">
-                  <span className="mb-1.5 block text-sm text-[var(--color-text)]">Paid via</span>
-                  <select value={payMethod} onChange={(e) => setPayMethod(e.target.value as PayoutMethod)}
-                    className="min-h-10 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]">
-                    {METHODS.map((m) => <option key={m} value={m}>{METHOD_LABEL[m]}</option>)}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="mb-1.5 block text-sm text-[var(--color-text)]">Reference (optional)</span>
-                  <input value={payReference} onChange={(e) => setPayReference(e.target.value)} placeholder="Transaction ID, note…"
-                    className="min-h-10 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]" />
-                </label>
-                {payM.isError ? <p className="text-sm text-[var(--color-danger)]">{(payM.error as Error).message}</p> : null}
-                <div className="flex justify-end gap-3 pt-1">
-                  <button onClick={() => setPayTarget(null)} className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Cancel</button>
-                  <button
-                    disabled={payM.isPending}
-                    onClick={() => payM.mutate({ id: payTarget.creator_id, m: payMethod, reference: payReference.trim() || undefined })}
-                    className="cursor-pointer rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] hover:bg-emerald-400 disabled:opacity-50"
-                  >
-                    {payM.isPending ? "Logging…" : `Log ${fmtMoney(payTarget.amount_owed)} payout`}
-                  </button>
-                </div>
+              {payAllM.isError ? <p className="mt-3 text-sm text-[var(--color-danger)]">{(payAllM.error as Error).message}</p> : null}
+              <div className="mt-5 flex justify-end gap-3">
+                <button onClick={() => setShowPayAllConfirm(false)} className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Cancel</button>
+                <button
+                  disabled={payAllM.isPending}
+                  onClick={() => payAllM.mutate()}
+                  className="cursor-pointer rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] disabled:opacity-50"
+                >
+                  {payAllM.isPending ? "Paying…" : "Confirm Pay All"}
+                </button>
               </div>
             </div>
           </div>

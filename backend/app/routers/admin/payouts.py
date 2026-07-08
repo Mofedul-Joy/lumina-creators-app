@@ -1,15 +1,32 @@
 """Admin payouts: outstanding balances, history, record a payout. Admin-only."""
 from __future__ import annotations
 
+import csv
+import io
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_admin
 from app.db.session import get_db
 from app.models import Admin, Payout
-from app.schemas.payouts import ManualPaymentIn, OwedRow, PayoutRow, RecordPayoutIn
+from app.schemas.payouts import (
+    AddFundsIn,
+    ForecastRow,
+    LedgerRow,
+    ManualPaymentIn,
+    OwedRow,
+    OwedRowV2,
+    PayAllIn,
+    PayAllOut,
+    PayoutRow,
+    RecordPayoutIn,
+    WalletOut,
+)
 from app.services import payouts as svc
+from app.services import payouts_v2 as svc2
 
 router = APIRouter(prefix="/payouts", tags=["admin-payouts"])
 
@@ -51,3 +68,76 @@ def manual(body: ManualPaymentIn, admin: Admin = Depends(get_current_admin), db:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid payout method")
     p = svc.log_manual_payment(db, admin.id, body.creator_id, body.amount, body.method, body.reference)
     return _payout_row(p, None)
+
+
+# ── Payouts engine (Feature 4, BUILD_SPEC.md §3.6) ─────────────────────
+
+
+@router.get("/owed-v2", response_model=list[OwedRowV2])
+def owed_v2(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Auto-calc'd owed per (creator, campaign) using payment_type + bonus
+    milestones. The legacy /owed (per-submission verified-earnings) stays
+    intact above for back compat."""
+    return [OwedRowV2(**{k: v for k, v in r.items() if not k.startswith("_")}) for r in svc2.compute_owed_all(db)]
+
+
+@router.get("/wallet", response_model=WalletOut)
+def wallet(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    w = svc2.wallet_get(db)
+    return WalletOut(id=str(w.id), available_balance=w.available_balance,
+                     pending_balance=w.pending_balance, currency=w.currency)
+
+
+@router.post("/wallet/add-funds", response_model=WalletOut)
+def wallet_add_funds(body: AddFundsIn, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Mock top-up — no real Whop/Stripe integration, just increments balance."""
+    w = svc2.wallet_add_funds(db, admin.id, body.amount, body.reference, body.note)
+    return WalletOut(id=str(w.id), available_balance=w.available_balance,
+                     pending_balance=w.pending_balance, currency=w.currency)
+
+
+@router.get("/ledger", response_model=list[LedgerRow])
+def ledger(limit: int = 100, offset: int = 0, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    return [LedgerRow(**row) for row in svc2.wallet_ledger(db, limit=limit, offset=offset)]
+
+
+@router.post("/pay-all", response_model=PayAllOut)
+def pay_all(body: PayAllIn, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    result = svc2.pay_all(db, admin.id, creator_ids=body.creator_ids)
+    return PayAllOut(
+        paid_count=result["paid_count"],
+        total_amount=result["total_amount"],
+        payouts=[_payout_row(p, None) for p in result["payouts"]],
+    )
+
+
+@router.post("/pay-one/{creator_id}", response_model=PayoutRow)
+def pay_one(creator_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    p = svc2.pay_one(db, admin.id, creator_id)
+    return _payout_row(p, None)
+
+
+@router.get("/forecast", response_model=list[ForecastRow])
+def forecast(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    return [ForecastRow(**row) for row in svc2.forecast_all(db)]
+
+
+@router.get("/reports.csv")
+def reports_csv(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    rows = list(svc2.payout_report_rows(db))
+
+    def _gen():
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(["creator", "amount", "campaign", "paid_at", "method", "external_ref"])
+        yield buf.getvalue()
+        buf.seek(0); buf.truncate(0)
+        for r in rows:
+            writer.writerow([r["creator"], r["amount"], r["campaign"], r["paid_at"], r["method"], r["external_ref"]])
+            yield buf.getvalue()
+            buf.seek(0); buf.truncate(0)
+
+    return StreamingResponse(
+        _gen(), media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=payout_reports.csv"},
+    )
