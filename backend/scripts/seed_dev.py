@@ -17,12 +17,14 @@ from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
 from app.db.session import get_engine
-from app.models.identity import Admin, Client
+from app.models.identity import Admin, Client, Creator
 
 ADMIN_EMAIL = "admin@lumina.dev"
 ADMIN_PASSWORD = "admin12345"
 CLIENT_EMAIL = "client@lumina.dev"
 CLIENT_PASSWORD = "client12345"
+CREATOR_EMAIL = "creator@lumina.dev"
+CREATOR_PASSWORD = "creator12345"
 
 
 def main() -> None:
@@ -57,6 +59,24 @@ def main() -> None:
         else:
             client.password_hash = hash_password(CLIENT_PASSWORD)
             print(f"client exists  {CLIENT_EMAIL} (password reset to dev default)")
+
+        creator = db.execute(select(Creator).where(Creator.email == CREATOR_EMAIL)).scalar_one_or_none()
+        if creator is None:
+            db.add(
+                Creator(
+                    email=CREATOR_EMAIL,
+                    password_hash=hash_password(CREATOR_PASSWORD),
+                    status="active",
+                    signup_source="seed",
+                    email_verified=True,
+                )
+            )
+            print(f"created creator {CREATOR_EMAIL} / {CREATOR_PASSWORD}")
+        else:
+            creator.password_hash = hash_password(CREATOR_PASSWORD)
+            creator.email_verified = True
+            creator.status = "active"
+            print(f"creator exists {CREATOR_EMAIL} (password reset to dev default)")
 
         db.commit()
     finally:
