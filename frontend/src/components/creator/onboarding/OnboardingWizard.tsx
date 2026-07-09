@@ -12,8 +12,8 @@ import { getAuthToken } from "@/lib/auth";
 import {
   CREATOR_TYPES, EDUCATION_LEVELS, GENDERS, PAYOUT_METHODS,
   type CreatorType, type EducationLevel, type Gender, type PayoutMethod, type Platform, type ProfileIn,
-  addPortfolio, addSocial, deletePortfolio, deleteSocial, getProfile, listPortfolio, listSocials,
-  updateProfile, uploadFile, uploadPortfolioVideo,
+  addPortfolio, addSocial, confirmSocialVerify, deletePortfolio, deleteSocial, getProfile, listPortfolio, listSocials,
+  startSocialVerify, updateProfile, uploadFile, uploadPortfolioVideo,
 } from "@/lib/api";
 import { isValidVideoUrl, platformFromUrl } from "@/lib/videoLink";
 
@@ -245,10 +245,12 @@ export function OnboardingWizard() {
           <StepShell eyebrow="Your reach" title={`Are you on ${platformLabel(socialPlatform)}?`} sub="Add your handle so brands can see your reach. Skip if you're not on it.">
             <SocialStep
               platform={socialPlatform}
+              bearer={bearer}
               existing={socials.find((s) => s.platform === socialPlatform)}
               form={socialForms[socialPlatform] ?? { handle: "", followers: "" }}
               onForm={(f) => setSocialForms({ ...socialForms, [socialPlatform]: f })}
               onRemove={(id) => delSocialM.mutate(id)}
+              onChanged={() => qc.invalidateQueries({ queryKey: ["socials"] })}
             />
           </StepShell>
         ) : null}
@@ -377,31 +379,121 @@ function OptionCard({ selected, onClick, title, blurb, icon, compact }: { select
   );
 }
 
-function SocialStep({ platform, existing, form, onForm, onRemove }: {
+const VERIFIABLE_PLATFORMS: Platform[] = ["instagram", "tiktok"];
+
+function SocialStep({ platform, bearer, existing, form, onForm, onRemove, onChanged }: {
   platform: Platform;
-  existing?: { id: string; handle: string; follower_count: number };
+  bearer: string;
+  existing?: { id: string; handle: string; follower_count: number; is_verified: boolean };
   form: { handle: string; followers: string };
   onForm: (f: { handle: string; followers: string }) => void;
   onRemove: (id: string) => void;
+  onChanged: () => void;
 }) {
+  const verifiable = VERIFIABLE_PLATFORMS.includes(platform);
+  const [code, setCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const startM = useMutation({
+    mutationFn: () => startSocialVerify(bearer, platform, form.handle.trim()),
+    onSuccess: (r) => { setCode(r.code); onChanged(); },
+  });
+  const confirmM = useMutation({
+    mutationFn: () => confirmSocialVerify(bearer, platform, form.handle.trim()),
+    onSuccess: () => { setCode(null); onChanged(); },
+  });
+  const err = startM.isError ? (startM.error as Error).message
+    : confirmM.isError ? (confirmM.error as Error).message : "";
+
+  const copy = async () => {
+    if (!code) return;
+    try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {}
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--color-surface-2)] text-[var(--color-text)]"><PlatformIcon name={platform} className="h-6 w-6" /></span>
         <span className="text-lg font-semibold text-[var(--color-text)]">{platformLabel(platform)}</span>
       </div>
-      {existing ? (
+
+      {existing && existing.is_verified ? (
         <div className="flex items-center justify-between gap-3 rounded-[var(--radius-btn)] border border-[var(--color-brand)]/40 bg-[var(--color-brand)]/5 px-4 py-3">
-          <span className="text-sm text-[var(--color-text)]">@{existing.handle} · <span className="tabular text-[var(--color-text-secondary)]">{existing.follower_count.toLocaleString()}</span> followers</span>
+          <span className="flex items-center gap-2 text-sm text-[var(--color-text)]">
+            <CheckBadge />
+            @{existing.handle} · <span className="tabular text-[var(--color-text-secondary)]">{existing.follower_count.toLocaleString()}</span> followers
+            <span className="rounded-full bg-[var(--color-brand)]/15 px-2 py-0.5 text-[11px] font-medium text-[var(--color-brand)]">Verified</span>
+          </span>
           <button className="cursor-pointer text-xs text-[var(--color-danger)]" onClick={() => onRemove(existing.id)}>Remove</button>
         </div>
+      ) : !verifiable ? (
+        // youtube / x / facebook: self-reported handle + followers (no bio verify)
+        existing ? (
+          <div className="flex items-center justify-between gap-3 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3">
+            <span className="text-sm text-[var(--color-text)]">@{existing.handle} · <span className="tabular text-[var(--color-text-secondary)]">{existing.follower_count.toLocaleString()}</span> followers</span>
+            <button className="cursor-pointer text-xs text-[var(--color-danger)]" onClick={() => onRemove(existing.id)}>Remove</button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <input className={control} placeholder="handle (without @)" value={form.handle} onChange={(e) => onForm({ ...form, handle: e.target.value })} />
+            <input className={control} type="number" placeholder="follower count" value={form.followers} onChange={(e) => onForm({ ...form, followers: e.target.value })} />
+          </div>
+        )
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <input className={control} placeholder="handle (without @)" value={form.handle} onChange={(e) => onForm({ ...form, handle: e.target.value })} />
-          <input className={control} type="number" placeholder="follower count" value={form.followers} onChange={(e) => onForm({ ...form, followers: e.target.value })} />
+        // instagram / tiktok: bio-code verification
+        <div className="space-y-3">
+          <div className="flex items-center overflow-hidden rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)]">
+            <span className="pl-3 pr-1 text-[var(--color-text-muted)]">@</span>
+            <input
+              className="min-h-11 flex-1 bg-transparent px-1 text-[var(--color-text)] outline-none placeholder:text-[var(--color-text-muted)]"
+              placeholder="your handle"
+              value={form.handle}
+              onChange={(e) => { onForm({ ...form, handle: e.target.value }); if (code) setCode(null); }}
+            />
+          </div>
+
+          {!code ? (
+            <button
+              disabled={!form.handle.trim() || startM.isPending}
+              onClick={() => startM.mutate()}
+              className="min-h-11 w-full rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)] disabled:opacity-50"
+            >
+              {startM.isPending ? "Getting your code…" : "Get verification code"}
+            </button>
+          ) : (
+            <div className="space-y-3 rounded-[var(--radius-card)] border border-[var(--color-brand)]/30 bg-[var(--color-brand)]/5 p-4">
+              <p className="text-sm text-[var(--color-text-secondary)]">
+                Add this code anywhere in your {platformLabel(platform)} bio, then tap Verify. You can remove it after.
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="tabular flex-1 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg-deep)] px-3 py-2 text-lg font-semibold tracking-wider text-[var(--color-brand)]">{code}</code>
+                <button onClick={copy} className="min-h-11 rounded-full border border-[var(--color-border)] px-4 text-sm text-[var(--color-text)] transition hover:border-[var(--color-brand)]">{copied ? "Copied" : "Copy"}</button>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={confirmM.isPending}
+                  onClick={() => confirmM.mutate()}
+                  className="min-h-11 flex-1 rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)] disabled:opacity-50"
+                >
+                  {confirmM.isPending ? "Checking your bio…" : "Verify"}
+                </button>
+                <button onClick={() => startM.mutate()} className="min-h-11 rounded-full border border-[var(--color-border)] px-4 text-sm text-[var(--color-text-secondary)] transition hover:border-[var(--color-brand)]">New code</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
+
+      {err ? <p className="text-sm text-[var(--color-danger)]">{err}</p> : null}
     </div>
+  );
+}
+
+function CheckBadge() {
+  return (
+    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--color-brand)] text-[var(--color-on-brand)]">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden><path d="m5 13 4 4L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    </span>
   );
 }
 

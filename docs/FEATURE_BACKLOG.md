@@ -65,6 +65,24 @@ in Portfolio "Top Content".
 
 ---
 
+## 6. Real campaign thumbnail images — PARTLY DONE
+Campaign cards should show real, campaign-relevant images (stock / TikTok /
+SideShift-style) instead of gradient wordmarks.
+**Done:** commit `a07c0a2` added `campaignImage()` — uploaded banner, else a
+niche-matched Unsplash photo, else a generic UGC image. **Remaining:** curate a
+richer/on-brand image set (per-niche + a few campaign-type variants), ensure the
+Explore grid + campaign detail + public landing all use it, and consider caching/
+self-hosting the images rather than hotlinking Unsplash.
+
+---
+
+## Decisions locked
+- Bio-code verification for BOTH Instagram and TikTok (no TikTok OAuth).
+- Top Videos: NO ownership verification (paste link = added).
+- Ownership: THIS session (Opus harness) owns all 6 features end-to-end; the
+  other harness is paused on these. Needs the real prod DATABASE_URL + an alembic
+  re-stamp before migrations (0018+) apply.
+
 ## Blockers / risks
 - **Alembic chain drift:** the DB in `backend/.env` (`dpg-d92v6…`) is stamped at
   `0007_suspicious_flag`, which no migration file defines → `alembic upgrade head`

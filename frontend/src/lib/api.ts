@@ -493,6 +493,29 @@ export const deleteSocial = (token: string, id: string) =>
     token,
   });
 
+// ── Handle verification (bio-code method) ─────────────────────────────────────
+export type SocialVerifyStartOut = {
+  platform: Platform;
+  handle: string;
+  code: string;
+  expires_at: string | null;
+  instructions: string;
+};
+
+export const startSocialVerify = (token: string, platform: Platform, handle: string) =>
+  apiFetch<SocialVerifyStartOut>("/api/creator/profile/socials/verify/start", {
+    method: "POST",
+    body: JSON.stringify({ platform, handle }),
+    token,
+  });
+
+export const confirmSocialVerify = (token: string, platform: Platform, handle: string) =>
+  apiFetch<SocialOut>("/api/creator/profile/socials/verify/confirm", {
+    method: "POST",
+    body: JSON.stringify({ platform, handle }),
+    token,
+  });
+
 export const listPortfolio = (token: string) =>
   apiFetch<PortfolioOut[]>("/api/creator/profile/portfolio", { token });
 
