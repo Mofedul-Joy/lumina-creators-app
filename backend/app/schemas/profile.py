@@ -1,5 +1,5 @@
 """Creator profile schemas. Optional/List (not `X | None`) so Pydantic evals on 3.9."""
-from datetime import date
+from datetime import date, datetime
 from typing import List, Optional
 
 from pydantic import BaseModel
@@ -62,6 +62,19 @@ class SocialOut(BaseModel):
     profile_url: Optional[str] = None
     follower_count: int
     is_verified: bool
+
+
+class SocialVerifyIn(BaseModel):
+    platform: str
+    handle: str
+
+
+class SocialVerifyStartOut(BaseModel):
+    platform: str
+    handle: str
+    code: str
+    expires_at: Optional[datetime] = None
+    instructions: str
 
 
 class PortfolioIn(BaseModel):

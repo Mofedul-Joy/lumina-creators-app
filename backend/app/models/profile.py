@@ -132,6 +132,10 @@ class SocialAccount(Base):
         Integer, nullable=False, server_default=text("0")
     )
     is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    # Bio-code verification: the code the creator must place in their platform bio,
+    # and its expiry. Both cleared once is_verified flips true.
+    verification_code: Mapped[Optional[str]] = mapped_column(Text)
+    verification_code_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     last_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

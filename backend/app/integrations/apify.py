@@ -227,3 +227,77 @@ def scrape_batch(platform: str, post_urls: list[str]) -> tuple[dict[str, Scraped
     dataset_id = run["defaultDatasetId"]
     dataset = fetch_dataset(dataset_id)
     return match_dataset(platform, dataset), cost
+
+
+# ── Profile (bio) scraping — used for handle verification (bio-code method) ──
+# A separate actor per platform that returns account-level fields (bio text,
+# follower count, avatar) rather than per-post stats. Only the platforms we let
+# creators verify need one.
+PROFILE_ACTORS = {
+    "instagram": "apify~instagram-profile-scraper",
+    "tiktok": "clockworks~tiktok-profile-scraper",
+}
+
+
+@dataclass
+class ProfileInfo:
+    handle: str
+    bio: str
+    followers: int
+    avatar_url: Optional[str] = None
+    display_name: Optional[str] = None
+
+
+def _profile_run_input(platform: str, handle: str) -> dict:
+    if platform == "instagram":
+        return {"usernames": [handle]}
+    if platform == "tiktok":
+        return {"profiles": [handle], "resultsPerPage": 1, "shouldDownloadVideos": False,
+                "shouldDownloadCovers": False}
+    raise ValueError(f"No Apify profile actor configured for platform {platform!r}")
+
+
+def _parse_profile(platform: str, item: dict) -> ProfileInfo:
+    """Defensive parse — actor field names vary, so try the known keys in order."""
+    if platform == "instagram":
+        return ProfileInfo(
+            handle=str(item.get("username") or "").lstrip("@"),
+            bio=str(item.get("biography") or ""),
+            followers=_nn(item.get("followersCount")),
+            avatar_url=item.get("profilePicUrlHD") or item.get("profilePicUrl"),
+            display_name=item.get("fullName"),
+        )
+    if platform == "tiktok":
+        # tiktok profile/video actors nest account fields under authorMeta.
+        a = item.get("authorMeta") or item
+        return ProfileInfo(
+            handle=str(a.get("name") or a.get("uniqueId") or item.get("name") or "").lstrip("@"),
+            bio=str(a.get("signature") or a.get("bio") or ""),
+            followers=_nn(a.get("fans") or a.get("followers") or a.get("followerCount")),
+            avatar_url=a.get("avatar") or a.get("avatarLarger"),
+            display_name=a.get("nickName") or a.get("nickname"),
+        )
+    return ProfileInfo(handle="", bio="", followers=0)
+
+
+def scrape_profile(platform: str, handle: str) -> Optional[ProfileInfo]:
+    """Fetch one account's bio/followers/avatar. Returns None if the actor run
+    failed or the account couldn't be found (caller treats that as 'not verified
+    yet')."""
+    if platform not in PROFILE_ACTORS:
+        raise ValueError(f"No Apify profile actor configured for platform {platform!r}")
+    actor = PROFILE_ACTORS[platform]
+    resp = httpx.post(
+        f"{APIFY_BASE}/acts/{actor}/runs",
+        params={"token": _token()},
+        json=_profile_run_input(platform, handle),
+        timeout=30,
+    )
+    resp.raise_for_status()
+    run = poll_run(resp.json()["data"]["id"])
+    if run["status"] != "SUCCEEDED":
+        return None
+    dataset = fetch_dataset(run["defaultDatasetId"])
+    if not dataset:
+        return None
+    return _parse_profile(platform, dataset[0])

@@ -18,8 +18,11 @@ from app.schemas.profile import (
     ProfileOut,
     SocialIn,
     SocialOut,
+    SocialVerifyIn,
+    SocialVerifyStartOut,
 )
 from app.services import profile as svc
+from app.services import socials_verify as verify_svc
 
 router = APIRouter(prefix="/profile", tags=["creator-profile"])
 
@@ -84,6 +87,18 @@ def add_social(body: SocialIn, current: Creator = Depends(get_current_creator), 
 @router.delete("/socials/{social_id}", status_code=204)
 def delete_social(social_id: uuid.UUID, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
     svc.delete_social(db, current.id, social_id)
+
+
+@router.post("/socials/verify/start", response_model=SocialVerifyStartOut)
+def start_social_verify(body: SocialVerifyIn, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
+    """Issue a bio-code for the creator to paste into their platform bio."""
+    return verify_svc.start_verification(db, current.id, body.platform, body.handle)
+
+
+@router.post("/socials/verify/confirm", response_model=SocialOut)
+def confirm_social_verify(body: SocialVerifyIn, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
+    """Scrape the bio and, if the code is present, mark the handle verified."""
+    return _social_out(verify_svc.confirm_verification(db, current.id, body.platform, body.handle))
 
 
 # ---- portfolio ----

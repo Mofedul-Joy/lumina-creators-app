@@ -216,9 +216,18 @@ def creator_has_joined(db: Session, campaign_id: uuid.UUID, creator_id: uuid.UUI
 
 
 def join_campaign(db: Session, creator_id: uuid.UUID, slug: str) -> CampaignParticipation:
-    # Profile completion is an incentive (dashboard cards), not a join gate —
-    # a stranger who just submitted an email+URL from the public flow has no
-    # profile at all yet, and that's fine.
+    # Applying to a campaign requires a minimally-complete profile (name + at
+    # least one social) — SideShift-style "complete your profile" wall. This is
+    # the AUTHENTICATED creator path only; the public email+URL submit flow is
+    # separate and intentionally ungated.
+    from app.services import socials_verify
+
+    eligible, missing = socials_verify.apply_eligibility(db, creator_id)
+    if not eligible:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            detail={"code": "profile_incomplete", "missing": missing},
+        )
     campaign = get_active_campaign(db, slug)
     existing = db.scalar(
         select(CampaignParticipation).where(
