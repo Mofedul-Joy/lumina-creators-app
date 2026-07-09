@@ -40,10 +40,14 @@ export function campaignText(c: Campaign): string {
 }
 
 export function matchesNiche(c: Campaign, nicheKey: string): boolean {
-  if (!nicheKey || nicheKey === "other") return true;
+  if (!nicheKey) return true;
+  const text = campaignText(c);
+  // "Other" = uncategorised: a campaign that matches none of the keyworded niches.
+  if (nicheKey === "other") {
+    return !NICHES.some((n) => n.keywords.length > 0 && n.keywords.some((k) => text.includes(k)));
+  }
   const niche = NICHES.find((n) => n.key === nicheKey);
   if (!niche || niche.keywords.length === 0) return true;
-  const text = campaignText(c);
   return niche.keywords.some((k) => text.includes(k));
 }
 

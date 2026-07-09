@@ -55,8 +55,10 @@ export default function DashboardPage() {
   const firstName = (profileQ.data?.display_name ?? "").trim().split(" ")[0] || "creator";
 
   const today = new Date().getDay(); // 0 Sun … 6 Sat
-  const streakStart = today - Math.max(0, streak - 1);
-  const dayActive = (d: number) => streak > 0 && d <= today && d >= streakStart;
+  // Light the last `streak` days (capped to a week), wrapping across Sunday so a
+  // streak that began before this week still shows a flame on every day.
+  const litDays = Math.min(streak, 7);
+  const dayActive = (d: number) => streak > 0 && (today - d + 7) % 7 < litDays;
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Campaign } from "@/lib/campaigns";
 import { fmtInt, fmtMoney } from "@/lib/format";
@@ -17,14 +17,20 @@ import { BonusMilestones } from "@/components/ui/BonusMilestones";
 export function CampaignModal({ campaign, onClose }: { campaign: Campaign | null; onClose: () => void }) {
   const router = useRouter();
   const [tab, setTab] = useState<"overview" | "payments">("overview");
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
+  // Reset the tab only when a different campaign opens, and bind Escape once per
+  // open — keying this on `onClose` (an inline arrow) would re-run on every
+  // parent render and bounce the user off the Payments tab.
+  const campaignId = campaign?.id ?? null;
   useEffect(() => {
-    if (!campaign) return;
+    if (!campaignId) return;
     setTab("overview");
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onCloseRef.current(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [campaign, onClose]);
+  }, [campaignId]);
 
   if (!campaign) return null;
   const c = campaign;
