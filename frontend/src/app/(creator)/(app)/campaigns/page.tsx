@@ -4,18 +4,29 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CampaignCard } from "@/components/campaign/CampaignCard";
+import { CampaignSearchModal } from "@/components/creator/CampaignSearchModal";
 import { getAuthToken } from "@/lib/auth";
-import { browseCampaigns } from "@/lib/campaigns";
+import { browseCampaigns, type Campaign } from "@/lib/campaigns";
+import { NICHES, campaignText, matchesNiche, nicheLabel } from "@/lib/niches";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { SkeletonCardGrid } from "@/components/ui/Skeleton";
 
 const ALL_PLATFORMS = ["tiktok", "instagram", "youtube", "twitter", "facebook"] as const;
+const SORTS = [["newest", "Newest"], ["trending", "Trending"], ["highest", "Highest pay"]] as const;
+type Sort = (typeof SORTS)[number][0];
+
+// A single comparable "pay" number so Highest-pay sort works across pricing models.
+const payValue = (c: Campaign) => c.cpm_rate || c.per_post_amount || c.fixed_amount || c.hourly_rate || 0;
 
 export default function CampaignsPage() {
   const [hasToken, setHasToken] = useState(false);
   useEffect(() => setHasToken(!!getAuthToken()), []);
   const [tab, setTab] = useState<"all" | "submitted">("all");
   const [platform, setPlatform] = useState<string>("");
+  const [search, setSearch] = useState("");
+  const [niche, setNiche] = useState("");
+  const [sort, setSort] = useState<Sort>("newest");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["campaigns"],
@@ -25,12 +36,20 @@ export default function CampaignsPage() {
   });
 
   const campaigns = useMemo(() => {
-    return (data ?? []).filter((c) => {
+    const q = search.trim().toLowerCase();
+    const list = (data ?? []).filter((c) => {
       if (tab === "submitted" && !c.joined) return false;
       if (platform && !c.platforms.includes(platform)) return false;
+      if (niche && !matchesNiche(c, niche)) return false;
+      if (q && !campaignText(c).includes(q)) return false;
       return true;
     });
-  }, [data, tab, platform]);
+    const sorted = [...list];
+    if (sort === "highest") sorted.sort((a, b) => payValue(b) - payValue(a));
+    else if (sort === "trending") sorted.sort((a, b) => b.budget - a.budget);
+    else sorted.sort((a, b) => (b.starts_at ?? "").localeCompare(a.starts_at ?? ""));
+    return sorted;
+  }, [data, tab, platform, niche, search, sort]);
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
@@ -43,6 +62,78 @@ export default function CampaignsPage() {
         </div>
 
         {hasToken ? (
+          <>
+          {/* search trigger — opens the SideShift-style search overlay */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="mb-4 flex w-full max-w-xl cursor-pointer items-center gap-2.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-left text-[var(--color-text-muted)] transition hover:border-[var(--color-text-muted)]"
+          >
+            <svg className="h-[18px] w-[18px] shrink-0" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" /><path d="m20 20-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            <span className="text-sm">Search campaigns…</span>
+          </button>
+
+          {/* Find by niche */}
+          <h2 className="mb-3 text-lg font-semibold tracking-tight text-[var(--color-text)]">Find by niche</h2>
+
+          {/* sort pills */}
+          <div className="mb-3 flex items-center gap-1 overflow-x-auto no-scrollbar">
+            {SORTS.map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setSort(key)}
+                className={`min-h-8 shrink-0 cursor-pointer rounded-full px-3.5 text-sm transition ${
+                  sort === key ? "bg-[var(--color-brand)]/12 font-medium text-[var(--color-brand-soft)] ring-1 ring-inset ring-[var(--color-brand)]/30" : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* niche chips — click to filter; active chip glows brand green */}
+          <div className="mb-4 flex flex-wrap gap-2">
+            {NICHES.map((n) => {
+              const active = niche === n.key;
+              return (
+                <button
+                  key={n.key}
+                  onClick={() => setNiche(active ? "" : n.key)}
+                  aria-pressed={active}
+                  className={`inline-flex min-h-8 shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm transition ${
+                    active
+                      ? "border-[var(--color-brand)]/40 bg-[var(--color-brand)]/15 font-medium text-[var(--color-brand-soft)]"
+                      : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                  }`}
+                >
+                  <span className={active ? "text-[var(--color-brand-soft)]" : "text-[var(--color-text-muted)]"}><n.Icon /></span>
+                  {n.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* active search / niche chips */}
+          {(search || niche) ? (
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              {search ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand)]/12 py-1 pl-3 pr-1.5 text-sm text-[var(--color-brand-soft)]">
+                  “{search}”
+                  <button onClick={() => setSearch("")} aria-label="Clear search" className="grid h-5 w-5 cursor-pointer place-items-center rounded-full hover:bg-[var(--color-brand)]/20">
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
+                  </button>
+                </span>
+              ) : null}
+              {niche ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand)]/12 py-1 pl-3 pr-1.5 text-sm text-[var(--color-brand-soft)]">
+                  {nicheLabel(niche)}
+                  <button onClick={() => setNiche("")} aria-label="Clear niche" className="grid h-5 w-5 cursor-pointer place-items-center rounded-full hover:bg-[var(--color-brand)]/20">
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
+                  </button>
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="mb-6 flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1 rounded-full bg-[var(--color-surface)] p-1">
               {([["all", "All campaigns"], ["submitted", "Submitted"]] as const).map(([key, label]) => (
@@ -81,7 +172,15 @@ export default function CampaignsPage() {
               ))}
             </div>
           </div>
+          </>
         ) : null}
+
+        <CampaignSearchModal
+          open={searchOpen}
+          onClose={() => setSearchOpen(false)}
+          onSearch={(q) => { setSearch(q); setNiche(""); }}
+          onNiche={(key) => { setNiche(key); setSearch(""); }}
+        />
 
         {!hasToken ? (
           <EmptyState
