@@ -60,11 +60,7 @@ function Footer({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter();
   const signOut = () => { clearAuthToken(); onNavigate?.(); router.push("/"); };
   return (
-    <div className="mt-4 space-y-3">
-      <Link href="/pro" onClick={onNavigate} className="card-interactive block rounded-[var(--radius-card)] border border-[var(--color-brand)]/25 bg-gradient-to-br from-[var(--color-brand)]/12 to-[var(--color-bg-deep)] p-3">
-        <span className="flex items-center gap-2 text-sm font-semibold text-[var(--color-brand-soft)]">⚡ Upgrade to Pro</span>
-        <span className="mt-1 block text-xs text-[var(--color-text-secondary)]">Unlimited applies &amp; priority visibility</span>
-      </Link>
+    <div className="mt-4">
       <button onClick={signOut} className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]">
         <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none"><path d="M15 12H4m0 0 3-3m-3 3 3 3M14 4h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
         Log out
