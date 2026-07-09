@@ -65,11 +65,13 @@ function Footer({ onNavigate }: { onNavigate?: () => void }) {
 
 // Persistent rail on desktop; an off-canvas drawer (controlled by the top bar
 // hamburger) on mobile.
-export function CreatorSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function CreatorSidebar({ mobileOpen, deskOpen, onClose }: { mobileOpen: boolean; deskOpen: boolean; onClose: () => void }) {
   return (
     <>
-      {/* desktop: persistent left rail */}
-      <aside className="sticky top-0 hidden h-[100dvh] w-60 shrink-0 flex-col border-r border-[var(--color-border)]/60 bg-[var(--color-bg-deep)]/40 px-4 py-6 lg:flex">
+      {/* desktop: collapsible left rail (toggled from the top bar) */}
+      <aside className={`sticky top-0 hidden h-[100dvh] shrink-0 flex-col overflow-hidden bg-[var(--color-bg-deep)]/40 transition-all duration-200 ease-out lg:flex ${
+        deskOpen ? "w-60 border-r border-[var(--color-border)]/60 px-4 py-6 opacity-100" : "pointer-events-none w-0 border-0 px-0 py-6 opacity-0"
+      }`}>
         <Link href="/dashboard" className="flex items-center gap-2 px-2">
           <LuminaMark size={28} />
           <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text)]">Lumina Creators</span>
@@ -81,8 +83,8 @@ export function CreatorSidebar({ open, onClose }: { open: boolean; onClose: () =
       </aside>
 
       {/* mobile: backdrop + off-canvas drawer */}
-      <div aria-hidden onClick={onClose} className={`fixed inset-0 z-40 bg-black/55 backdrop-blur-sm transition-opacity duration-200 lg:hidden ${open ? "opacity-100" : "pointer-events-none opacity-0"}`} />
-      <aside className={`fixed left-0 top-0 z-50 flex h-[100dvh] w-[260px] flex-col border-r border-[var(--color-border)] bg-[var(--color-bg-deep)] px-4 py-6 shadow-2xl transition-transform duration-200 ease-out lg:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}>
+      <div aria-hidden onClick={onClose} className={`fixed inset-0 z-40 bg-black/55 backdrop-blur-sm transition-opacity duration-200 lg:hidden ${mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"}`} />
+      <aside className={`fixed left-0 top-0 z-50 flex h-[100dvh] w-[260px] flex-col border-r border-[var(--color-border)] bg-[var(--color-bg-deep)] px-4 py-6 shadow-2xl transition-transform duration-200 ease-out lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex items-center justify-between px-1">
           <Link href="/dashboard" onClick={onClose} className="flex items-center gap-2">
             <LuminaMark size={28} />
