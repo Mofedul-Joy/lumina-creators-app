@@ -12,9 +12,10 @@ import { getAuthToken } from "@/lib/auth";
 import {
   CREATOR_TYPES, EDUCATION_LEVELS, GENDERS, PAYOUT_METHODS,
   type CreatorType, type EducationLevel, type Gender, type PayoutMethod, type Platform, type ProfileIn,
-  addSocial, deletePortfolio, deleteSocial, getProfile, listPortfolio, listSocials,
+  addPortfolio, addSocial, deletePortfolio, deleteSocial, getProfile, listPortfolio, listSocials,
   updateProfile, uploadFile, uploadPortfolioVideo,
 } from "@/lib/api";
+import { isValidVideoUrl, platformFromUrl } from "@/lib/videoLink";
 
 // Progressive, one-question-per-screen onboarding — the granular SideShift-style
 // flow in the Lumina dark-green skin. Save-as-you-go (no server completion gate);
@@ -429,16 +430,31 @@ function AvatarPicker({ bearer, avatarUrl, onSaved }: { bearer: string; avatarUr
   );
 }
 
-function PortfolioStep({ bearer, portfolio, onChanged }: { bearer: string; portfolio: { id: string; video_url: string | null; thumbnail_url: string | null; is_upload: boolean; brand_name: string | null }[]; onChanged: () => void }) {
+function PortfolioStep({ bearer, portfolio, onChanged }: { bearer: string; portfolio: { id: string; video_url: string | null; thumbnail_url: string | null; is_upload: boolean; brand_name: string | null; platform?: Platform | null }[]; onChanged: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pct, setPct] = useState(0);
   const [error, setError] = useState("");
+  // Which of the two add methods is showing: upload a file, or paste a link.
+  const [mode, setMode] = useState<"file" | "link">("file");
+  const [linkUrl, setLinkUrl] = useState("");
   const upM = useMutation({
     mutationFn: (file: File) => uploadPortfolioVideo(bearer, file, {}, setPct),
     onSuccess: () => { setPct(0); if (fileRef.current) fileRef.current.value = ""; onChanged(); },
     onError: (e) => { setError((e as Error).message); setPct(0); },
   });
+  const linkM = useMutation({
+    mutationFn: (url: string) => addPortfolio(bearer, { video_url: url.trim(), platform: platformFromUrl(url) ?? undefined }),
+    onSuccess: () => { setLinkUrl(""); onChanged(); },
+    onError: (e) => setError((e as Error).message),
+  });
   const delM = useMutation({ mutationFn: (id: string) => deletePortfolio(bearer, id), onSuccess: onChanged });
+
+  const addLink = () => {
+    setError("");
+    if (!isValidVideoUrl(linkUrl)) { setError("Enter a valid video URL (starting with http)."); return; }
+    linkM.mutate(linkUrl);
+  };
+
   return (
     <div className="space-y-4">
       {portfolio.length > 0 ? (
@@ -448,23 +464,60 @@ function PortfolioStep({ bearer, portfolio, onChanged }: { bearer: string; portf
               {p.is_upload && p.video_url ? (
                 <video src={p.video_url} controls playsInline preload="metadata" poster={p.thumbnail_url ?? undefined} className="aspect-video w-full bg-black object-contain" />
               ) : (
-                <a href={p.video_url ?? "#"} target="_blank" rel="noreferrer" className="flex aspect-video w-full items-center justify-center bg-gradient-to-br from-[var(--color-brand)]/20 to-[var(--color-bg-deep)] text-sm font-medium text-[var(--color-brand)]">Open video link ↗</a>
+                // link video — clicking opens the source platform in a new tab
+                <a href={p.video_url ?? "#"} target="_blank" rel="noreferrer" className="group flex aspect-video w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-[var(--color-brand)]/20 to-[var(--color-bg-deep)] text-sm font-medium text-[var(--color-brand)]">
+                  {p.platform ? <PlatformIcon name={p.platform} className="h-7 w-7" /> : null}
+                  <span className="flex items-center gap-1">Watch on {p.platform ? platformLabel(p.platform) : "source"} <span className="transition group-hover:translate-x-0.5">↗</span></span>
+                </a>
               )}
               <div className="flex items-center justify-between gap-2 px-3 py-2">
-                <span className="min-w-0 truncate text-xs text-[var(--color-text-secondary)]">{p.brand_name || "Portfolio video"}</span>
+                <span className="min-w-0 truncate text-xs text-[var(--color-text-secondary)]">{p.brand_name || (p.is_upload ? "Uploaded video" : "Linked video")}</span>
                 <button className="shrink-0 cursor-pointer text-xs text-[var(--color-danger)]" onClick={() => delM.mutate(p.id)}>Remove</button>
               </div>
             </div>
           ))}
         </div>
       ) : <p className="text-sm text-[var(--color-text-muted)]">No videos uploaded yet.</p>}
+
+      {/* two add options: from computer, or a link to a video */}
+      <div className="inline-flex rounded-full bg-[var(--color-surface)] p-1">
+        {(["file", "link"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => { setMode(m); setError(""); }}
+            className={`min-h-8 cursor-pointer rounded-full px-4 text-sm transition ${
+              mode === m ? "bg-[var(--color-surface-2)] font-medium text-[var(--color-text)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+            }`}
+          >
+            {m === "file" ? "From computer" : "Video link"}
+          </button>
+        ))}
+      </div>
+
       <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setError(""); upM.mutate(f); } }} />
-      {upM.isPending ? (
-        <div className="space-y-1.5">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]"><div className="h-full rounded-full bg-[var(--color-brand)] transition-all" style={{ width: `${pct}%` }} /></div>
-          <p className="text-xs text-[var(--color-text-secondary)]">Uploading… {pct}%</p>
+
+      {mode === "file" ? (
+        upM.isPending ? (
+          <div className="space-y-1.5">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]"><div className="h-full rounded-full bg-[var(--color-brand)] transition-all" style={{ width: `${pct}%` }} /></div>
+            <p className="text-xs text-[var(--color-text-secondary)]">Uploading… {pct}%</p>
+          </div>
+        ) : <div className="w-48"><Button type="button" onClick={() => fileRef.current?.click()}>Upload a video</Button></div>
+      ) : (
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            type="url"
+            inputMode="url"
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addLink(); } }}
+            placeholder="Paste a TikTok, YouTube, Instagram… link"
+            className="min-h-11 flex-1 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus-visible:border-[var(--color-brand)]"
+          />
+          <div className="w-32"><Button type="button" loading={linkM.isPending} disabled={!linkUrl.trim()} onClick={addLink}>Add link</Button></div>
         </div>
-      ) : <div className="w-48"><Button type="button" onClick={() => fileRef.current?.click()}>Upload a video</Button></div>}
+      )}
       {error ? <p className="text-sm text-[var(--color-danger)]">{error}</p> : null}
     </div>
   );
