@@ -90,7 +90,7 @@ export default function CreatorLoginPage() {
   return (
     <AuthCard
       title={step === "set-password" ? "Set your password" : "Creator sign in"}
-      subtitle="Access your creator workspace."
+      subtitle="Access your creator account."
     >
       {error ? (
         <p role="alert" className="mb-4 text-sm text-[var(--color-danger)]">

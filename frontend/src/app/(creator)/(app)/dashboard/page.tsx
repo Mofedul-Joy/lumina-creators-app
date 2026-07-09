@@ -78,7 +78,7 @@ export default function DashboardPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
-      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Creator workspace</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Lumina Creators</p>
       <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Welcome back, {firstName}</h1>
       <p className="mt-2 max-w-xl text-[var(--color-text-secondary)]">
         Enter campaigns, post to your socials, and earn on every verified view.

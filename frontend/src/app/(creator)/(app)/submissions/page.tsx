@@ -88,7 +88,7 @@ export default function SubmissionsPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Creator workspace</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Lumina Creators</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">My submissions</h1>
         <p className="mt-2 text-[var(--color-text-secondary)]">
           Every post you&apos;ve submitted, with live views and estimated earnings.

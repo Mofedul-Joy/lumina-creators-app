@@ -35,7 +35,7 @@ export default function CampaignsPage() {
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
         <div className="mb-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Creator workspace</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Lumina Creators</p>
           <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Campaigns</h1>
           <p className="mt-2 max-w-xl text-[var(--color-text-secondary)]">
             Live campaigns you can enter. Pick one, post, and get paid on the views.
