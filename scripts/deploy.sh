@@ -45,12 +45,13 @@ guard_db() {   # $1 = a DATABASE_URL string to validate
 }
 
 render_key() {
-  # shellcheck disable=SC1090
-  [ -f "$WORKSPACE_ENV" ] && source <(grep '^LUMINA_CREATORS_RENDER_API_KEY=' "$WORKSPACE_ENV")
-  if [ -z "${LUMINA_CREATORS_RENDER_API_KEY:-}" ]; then
+  local line key
+  line="$(grep '^LUMINA_CREATORS_RENDER_API_KEY=' "$WORKSPACE_ENV" 2>/dev/null || true)"
+  key="${line#*=}"; key="${key%\"}"; key="${key#\"}"
+  if [ -z "$key" ]; then
     echo "❌ LUMINA_CREATORS_RENDER_API_KEY not found in $WORKSPACE_ENV" >&2; exit 1
   fi
-  echo "$LUMINA_CREATORS_RENDER_API_KEY"
+  echo "$key"
 }
 
 case "${1:-}" in
