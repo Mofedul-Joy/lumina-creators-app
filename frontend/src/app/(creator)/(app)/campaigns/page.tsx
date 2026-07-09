@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CampaignCard } from "@/components/campaign/CampaignCard";
+import { CampaignModal } from "@/components/campaign/CampaignModal";
 import { CampaignSearchModal } from "@/components/creator/CampaignSearchModal";
 import { getAuthToken } from "@/lib/auth";
 import { browseCampaigns, type Campaign } from "@/lib/campaigns";
@@ -27,6 +28,7 @@ export default function CampaignsPage() {
   const [niche, setNiche] = useState("");
   const [sort, setSort] = useState<Sort>("newest");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [active, setActive] = useState<Campaign | null>(null);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["campaigns"],
@@ -181,6 +183,7 @@ export default function CampaignsPage() {
           onSearch={(q) => { setSearch(q); setNiche(""); }}
           onNiche={(key) => { setNiche(key); setSearch(""); }}
         />
+        <CampaignModal campaign={active} onClose={() => setActive(null)} />
 
         {!hasToken ? (
           <EmptyState
@@ -195,7 +198,7 @@ export default function CampaignsPage() {
         ) : campaigns.length > 0 ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {campaigns.map((c) => (
-              <CampaignCard key={c.id} c={c} />
+              <CampaignCard key={c.id} c={c} onOpen={setActive} />
             ))}
           </div>
         ) : (
