@@ -1,28 +1,19 @@
 import Link from "next/link";
 import type { Campaign } from "@/lib/campaigns";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
-import { campaignGradient, campaignTag, campaignWordmark, payBadge } from "@/lib/campaignTheme";
+import { campaignImage, campaignTag, payBadge } from "@/lib/campaignTheme";
 
 // Shared card visuals. On the Explore grid we pass `onOpen` so a click opens the
 // campaign popup; on the public landing page there's no modal, so it falls back
 // to linking straight to the campaign page.
 function CardInner({ c }: { c: Campaign }) {
-  const g = campaignGradient(c);
   return (
     <>
-      {/* Thumbnail — uploaded banner, else a premium gradient wordmark */}
-      <div className="relative aspect-[16/9] w-full overflow-hidden">
-        {c.banner_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={c.banner_url} alt="" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center px-4" style={{ background: g.bg }}>
-            <span className="truncate text-2xl font-extrabold tracking-tight" style={{ color: g.fg }}>
-              {campaignWordmark(c)}
-            </span>
-          </div>
-        )}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
+      {/* Thumbnail — uploaded banner, else a niche-relevant stock photo */}
+      <div className="relative aspect-[16/9] w-full overflow-hidden bg-[var(--color-surface-2)]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={campaignImage(c)} alt="" loading="lazy" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
         {/* pay badge (top-right, SideShift-style) */}
         <span className="tabular absolute right-2.5 top-2.5 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">
           {payBadge(c)}

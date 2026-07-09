@@ -40,3 +40,6 @@ Thumbs.db
 
 # e2e artifacts
 e2e/shots/
+
+# scrape/capture scratch
+.sideshift-deep/
