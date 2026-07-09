@@ -26,7 +26,7 @@ const SECTION_STEP: Record<ProfileSection, string> = {
   details: "details",
   payment: "payment",
 };
-const ORDER: ProfileSection[] = ["about", "socials", "videos", "details", "payment"];
+const ORDER: ProfileSection[] = ["about", "socials", "videos", "details"];
 
 export function ProfileGateModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [next, setNext] = useState<ProfileSection | null>(null);
@@ -64,7 +64,7 @@ export function ProfileGateModal({ open, onClose }: { open: boolean; onClose: ()
           Complete your profile first
         </h2>
         <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[var(--color-text-secondary)]">
-          Finish every part of your profile — About, Socials, Videos, Details and Payment —
+          Finish every part of your profile — About, Socials, Videos and Details —
           before you can apply to a campaign.
         </p>
 

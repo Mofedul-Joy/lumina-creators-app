@@ -229,6 +229,35 @@ def scrape_batch(platform: str, post_urls: list[str]) -> tuple[dict[str, Scraped
     return match_dataset(platform, dataset), cost
 
 
+def post_thumbnail(platform: str, url: str) -> Optional[str]:
+    """Best-effort real thumbnail for a single post/video link (portfolio "Top
+    Videos"). Fast, no-actor paths first (YouTube image endpoint, TikTok oEmbed);
+    otherwise a bounded Apify scrape. Returns None if nothing found — never raises."""
+    if platform == "youtube":
+        vid = urls.youtube_video_id(url)
+        return f"https://img.youtube.com/vi/{vid}/hqdefault.jpg" if vid else None
+    if platform == "tiktok":
+        try:
+            r = httpx.get("https://www.tiktok.com/oembed", params={"url": url},
+                          headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
+            if r.status_code == 200 and r.json().get("thumbnail_url"):
+                return r.json()["thumbnail_url"]
+        except Exception:  # noqa: BLE001 - fall through to the actor
+            pass
+    try:
+        run_id = start_run(platform, [url])
+        run = poll_run(run_id, timeout_sec=75)
+        if run["status"] == "SUCCEEDED":
+            for stats in match_dataset(platform, fetch_dataset(run["defaultDatasetId"])).values():
+                if stats.thumbnail_url:
+                    return stats.thumbnail_url
+    except ApifyNotConfigured:
+        return None
+    except Exception:  # noqa: BLE001 - thumbnail is best-effort, never block the add
+        return None
+    return None
+
+
 # ── Profile (bio) scraping — used for handle verification (bio-code method) ──
 # A separate actor per platform that returns account-level fields (bio text,
 # follower count, avatar) rather than per-post stats. Only the platforms we let

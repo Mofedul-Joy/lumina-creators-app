@@ -16,6 +16,7 @@ import {
   startSocialVerify, updateProfile, uploadFile, uploadPortfolioVideo,
 } from "@/lib/api";
 import { isValidVideoUrl, platformFromUrl } from "@/lib/videoLink";
+import { COUNTRIES } from "@/lib/countries";
 
 // Progressive, one-question-per-screen onboarding — the granular SideShift-style
 // flow in the Lumina dark-green skin. Save-as-you-go (no server completion gate);
@@ -162,6 +163,23 @@ export function OnboardingWizard() {
   const socials = socialsQ.data ?? [];
   const portfolio = portfolioQ.data ?? [];
   const cur = STEPS[step];
+
+  // Required steps can't be skipped and gate the Continue button until valid.
+  // Instagram + TikTok must be VERIFIED; YouTube/X/Facebook stay optional.
+  const isVerifiedSocial = (p: Platform) => socials.some((s) => s.platform === p && s.is_verified);
+  // Required to move forward (no skip). Payment + gender are NOT required —
+  // creators can set payment up later, and IG/TikTok are the required socials.
+  const REQUIRED: Partial<Record<StepKey, boolean>> = {
+    type: !!creatorType,
+    name: !!details.display_name.trim(),
+    soc_instagram: isVerifiedSocial("instagram"),
+    soc_tiktok: isVerifiedSocial("tiktok"),
+    portfolio: portfolio.length > 0,
+    birthday: !!audience.date_of_birth,
+    location: !!(audience.country.trim() && audience.city.trim()),
+  };
+  const stepRequired = cur.key in REQUIRED;
+  const canContinue = !stepRequired || !!REQUIRED[cur.key];
   const isLast = step === STEPS.length - 1;
   const curSection = SECTION_STARTS.reduce((acc, start, i) => (step >= start ? i : acc), 0);
   const err = saveM.isError ? (saveM.error as Error).message : addSocialM.isError ? (addSocialM.error as Error).message : "";
@@ -248,7 +266,7 @@ export function OnboardingWizard() {
         ) : null}
 
         {socialPlatform ? (
-          <StepShell eyebrow="Your reach" title={`Are you on ${platformLabel(socialPlatform)}?`} sub="Add your handle so brands can see your reach. Skip if you're not on it.">
+          <StepShell eyebrow="Your reach" title={`Are you on ${platformLabel(socialPlatform)}?`} sub={stepRequired ? "Verify your handle to continue — this one's required." : "Add your handle so brands can see your reach. Skip if you're not on it."}>
             <SocialStep
               platform={socialPlatform}
               bearer={bearer}
@@ -311,10 +329,16 @@ export function OnboardingWizard() {
         ) : null}
 
         {cur.key === "location" ? (
-          <StepShell eyebrow="A few details" title="Where are you based?" sub="Some campaigns are region-specific.">
+          <StepShell eyebrow="A few details" title="Where are you based?" sub="Required — pick your real country and enter your real city (we verify it).">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Country" value={audience.country} onChange={(e) => setAudience({ ...audience, country: e.target.value })} />
-              <Field label="City" value={audience.city} onChange={(e) => setAudience({ ...audience, city: e.target.value })} />
+              <div className="space-y-1.5">
+                <label className={labelCls}>Country</label>
+                <select className={control} value={audience.country} onChange={(e) => setAudience({ ...audience, country: e.target.value })}>
+                  <option value="">Select your country</option>
+                  {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <Field label="City" placeholder="e.g. Nairobi" value={audience.city} onChange={(e) => setAudience({ ...audience, city: e.target.value })} />
             </div>
           </StepShell>
         ) : null}
@@ -351,8 +375,8 @@ export function OnboardingWizard() {
         <div className="mt-8 flex items-center justify-between gap-3">
           <button onClick={back} disabled={step === 0} className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)] disabled:invisible">← Back</button>
           <div className="flex items-center gap-3">
-            {cur.optional ? <button onClick={next} className="cursor-pointer text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]">Skip for now</button> : null}
-            <div className="w-40"><Button loading={committing} disabled={cur.key === "type" && !creatorType} onClick={onContinue}>Continue</Button></div>
+            {cur.optional && !stepRequired ? <button onClick={next} className="cursor-pointer text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]">Skip for now</button> : null}
+            <div className="w-40"><Button loading={committing} disabled={!canContinue} onClick={onContinue}>Continue</Button></div>
           </div>
         </div>
       ) : null}
@@ -562,10 +586,30 @@ function PortfolioStep({ bearer, portfolio, onChanged }: { bearer: string; portf
               {p.is_upload && p.video_url ? (
                 <video src={p.video_url} controls playsInline preload="metadata" poster={p.thumbnail_url ?? undefined} className="aspect-video w-full bg-black object-contain" />
               ) : (
-                // link video — clicking opens the source platform in a new tab
-                <a href={p.video_url ?? "#"} target="_blank" rel="noreferrer" className="group flex aspect-video w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-[var(--color-brand)]/20 to-[var(--color-bg-deep)] text-sm font-medium text-[var(--color-brand)]">
-                  {p.platform ? <PlatformIcon name={p.platform} className="h-7 w-7" /> : null}
-                  <span className="flex items-center gap-1">Watch on {p.platform ? platformLabel(p.platform) : "source"} <span className="transition group-hover:translate-x-0.5">↗</span></span>
+                // link video — real thumbnail if we scraped one, else a fallback card
+                <a href={p.video_url ?? "#"} target="_blank" rel="noreferrer" className="group relative block aspect-video w-full overflow-hidden">
+                  {p.thumbnail_url ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.thumbnail_url} alt="" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
+                      <span className="pointer-events-none absolute inset-0 bg-black/25 transition group-hover:bg-black/10" />
+                      <span className="absolute inset-0 grid place-items-center">
+                        <span className="grid h-11 w-11 place-items-center rounded-full bg-black/55 text-white backdrop-blur">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M8 5v14l11-7L8 5Z" /></svg>
+                        </span>
+                      </span>
+                      {p.platform ? (
+                        <span className="absolute left-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/55 text-white backdrop-blur">
+                          <PlatformIcon name={p.platform} className="h-4 w-4" />
+                        </span>
+                      ) : null}
+                    </>
+                  ) : (
+                    <span className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-[var(--color-brand)]/20 to-[var(--color-bg-deep)] text-sm font-medium text-[var(--color-brand)]">
+                      {p.platform ? <PlatformIcon name={p.platform} className="h-7 w-7" /> : null}
+                      <span className="flex items-center gap-1">Watch on {p.platform ? platformLabel(p.platform) : "source"} <span className="transition group-hover:translate-x-0.5">↗</span></span>
+                    </span>
+                  )}
                 </a>
               )}
               <div className="flex items-center justify-between gap-2 px-3 py-2">

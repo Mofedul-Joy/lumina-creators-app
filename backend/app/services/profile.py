@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import _now
 from app.models import CreatorProfile, PortfolioItem, SocialAccount, StorageObject
-from app.services import urls
+from app.services import geo, urls
 
 
 def _require_owned_object(db: Session, creator_id: uuid.UUID, object_id, purpose: str) -> StorageObject:
@@ -61,6 +61,16 @@ def update_profile(db: Session, creator_id: uuid.UUID, data: dict) -> CreatorPro
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid creator type")
     if data.get("education") not in (None, "") and data["education"] not in _EDUCATION:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid education")
+    # Real-place validation — no made-up country/city.
+    if data.get("country") not in (None, "") and not geo.is_valid_country(data["country"]):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Please choose a real country from the list.")
+    if data.get("city") not in (None, ""):
+        country_for_city = data.get("country") or prof.country
+        if country_for_city and not geo.city_exists(data["city"].strip(), country_for_city):
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                f"We couldn't find “{data['city'].strip()}” in {country_for_city}. Enter a real city.",
+            )
     if data.get("avatar_object_id") is not None:
         _require_owned_object(db, creator_id, data["avatar_object_id"], "avatar")
     for field in ("display_name", "creator_type", "bio", "date_of_birth", "gender", "ethnicity", "education",
@@ -164,10 +174,21 @@ def add_portfolio(db: Session, creator_id: uuid.UUID, data: dict) -> PortfolioIt
             status.HTTP_400_BAD_REQUEST,
             "Link must be a TikTok, Instagram, YouTube, X, or Facebook video/post URL",
         )
+    canonical = urls.canonicalize_url(video_url)
+    platform = data.get("platform") or urls.detect_platform(video_url)
+    # Scrape the real video thumbnail so the card shows the actual frame, not a
+    # "Watch on <platform>" placeholder. Best-effort — never blocks the add.
+    thumb = data.get("thumbnail_url")
+    if not thumb:
+        from app.integrations import apify
+        try:
+            thumb = apify.post_thumbnail(platform, canonical)
+        except Exception:  # noqa: BLE001
+            thumb = None
     item = PortfolioItem(
-        creator_id=creator_id, video_url=urls.canonicalize_url(video_url),
-        thumbnail_url=data.get("thumbnail_url"), brand_name=data.get("brand_name"),
-        caption=data.get("caption"), platform=data.get("platform") or urls.detect_platform(video_url),
+        creator_id=creator_id, video_url=canonical,
+        thumbnail_url=thumb, brand_name=data.get("brand_name"),
+        caption=data.get("caption"), platform=platform,
     )
     db.add(item)
     db.commit()
@@ -210,21 +231,27 @@ def recompute_completion(db: Session, creator_id: uuid.UUID) -> tuple[bool, list
 # The whole profile must be filled before a creator can apply to a campaign:
 # About, Socials (>=1 VERIFIED), Videos, Details, Payment. Order matters — the
 # "complete your profile" popup routes the creator to `next_section`.
-SECTION_ORDER = ["about", "socials", "videos", "details", "payment"]
+# Payment is NOT a join requirement — creators can set up "where to send earnings"
+# later. Required to apply: About, Socials (Instagram AND TikTok verified),
+# Videos (>=1), Details (birthday + real country + real city).
+SECTION_ORDER = ["about", "socials", "videos", "details"]
+
+
+def _verified(db: Session, creator_id: uuid.UUID, platform: str) -> bool:
+    return db.scalar(select(SocialAccount.id).where(
+        SocialAccount.creator_id == creator_id, SocialAccount.platform == platform,
+        SocialAccount.is_verified.is_(True))) is not None
 
 
 def profile_completeness(db: Session, creator_id: uuid.UUID) -> dict:
     prof = get_or_create_profile(db, creator_id)
-    n_verified_social = db.scalar(select(func.count()).select_from(SocialAccount).where(
-        SocialAccount.creator_id == creator_id, SocialAccount.is_verified.is_(True)))
     n_portfolio = db.scalar(select(func.count()).select_from(PortfolioItem).where(
         PortfolioItem.creator_id == creator_id))
     sections = {
         "about": bool((prof.creator_type or "").strip() and (prof.display_name or "").strip()),
-        "socials": bool(n_verified_social),
+        "socials": _verified(db, creator_id, "instagram") and _verified(db, creator_id, "tiktok"),
         "videos": bool(n_portfolio),
-        "details": bool(prof.date_of_birth and prof.gender and (prof.country or "").strip()),
-        "payment": bool((prof.payout_method or "").strip() and (prof.payout_address or "").strip()),
+        "details": bool(prof.date_of_birth and (prof.country or "").strip() and (prof.city or "").strip()),
     }
     next_section = next((s for s in SECTION_ORDER if not sections[s]), None)
     return {"complete": next_section is None, "sections": sections, "next_section": next_section}
