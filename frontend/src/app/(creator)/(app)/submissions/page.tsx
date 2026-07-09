@@ -4,32 +4,28 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAuthToken } from "@/lib/auth";
-import { browseCampaigns, claimSubmission, listSubmissions, uploadProofVideo } from "@/lib/campaigns";
+import { browseCampaigns, claimSubmission, listSubmissions, uploadProofVideo, type Submission } from "@/lib/campaigns";
 import { ApiError } from "@/lib/api";
 import { fmtInt, fmtMoney } from "@/lib/format";
-import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
-import { SkeletonCardGrid, SkeletonStats } from "@/components/ui/Skeleton";
-import { SubmissionThumbnail } from "@/components/ui/SubmissionThumbnail";
+import { SkeletonCardGrid } from "@/components/ui/Skeleton";
 
-const STATUS_STYLE: Record<string, string> = {
-  approved: "border-[var(--color-brand)]/40 text-[var(--color-brand)]",
-  pending: "border-[var(--color-border)] text-[var(--color-text-muted)]",
-  rejected: "border-[var(--color-danger)]/40 text-[var(--color-danger)]",
+// One row per campaign the creator has joined: total views generated and the
+// money earned from it, plus how the payout looks. Deliberately simple.
+type Group = {
+  campaignId: string;
+  name: string;
+  brandLogo: string | null;
+  posts: Submission[];
+  views: number;
+  earned: number;
+  paid: number;
+  claimableIds: string[];
+  claimable: number;
+  pendingClaim: number;
+  needsProofIds: string[];
 };
 
-function StatusPill({ label }: { label: string }) {
-  return (
-    <span
-      className={`rounded-full border px-2.5 py-0.5 text-xs capitalize ${
-        STATUS_STYLE[label] ?? "border-[var(--color-border)] text-[var(--color-text-muted)]"
-      }`}
-    >
-      {label.replace(/_/g, " ")}
-    </span>
-  );
-}
-
-export default function SubmissionsPage() {
+export default function MyCampaignsPage() {
   const qc = useQueryClient();
   const [ready, setReady] = useState(false);
   const [hasToken, setHasToken] = useState(false);
@@ -42,21 +38,17 @@ export default function SubmissionsPage() {
   const subsQ = useQuery({ queryKey: ["submissions"], queryFn: listSubmissions, enabled, retry: false });
   const campaignsQ = useQuery({ queryKey: ["campaigns"], queryFn: browseCampaigns, enabled, retry: false });
 
-  const nameById = new Map((campaignsQ.data ?? []).map((c) => [c.id, c.name]));
-  const modeById = new Map((campaignsQ.data ?? []).map((c) => [c.id, c.mode]));
+  const cById = new Map((campaignsQ.data ?? []).map((c) => [c.id, c]));
 
+  const [payoutGate, setPayoutGate] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [uploadPct, setUploadPct] = useState(0);
-  const [payoutGate, setPayoutGate] = useState(false);
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
+
   const claimM = useMutation({
-    mutationFn: (id: string) => claimSubmission(id),
+    mutationFn: async (ids: string[]) => { for (const id of ids) await claimSubmission(id); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["submissions"] }),
-    onError: (err) => {
-      // Backend returns 400 'no_payout_method' when nothing is on file — show
-      // the set-your-method prompt instead of a raw error.
-      if (err instanceof ApiError && err.message === "no_payout_method") setPayoutGate(true);
-    },
+    onError: (err) => { if (err instanceof ApiError && err.message === "no_payout_method") setPayoutGate(true); },
   });
   const proofM = useMutation({
     mutationFn: ({ id, file }: { id: string; file: File }) => uploadProofVideo(id, file, setUploadPct),
@@ -67,187 +59,154 @@ export default function SubmissionsPage() {
 
   if (ready && !hasToken)
     return (
-      <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col justify-center gap-4 px-6 text-center">
+      <main className="mx-auto flex min-h-[60dvh] max-w-md flex-col justify-center gap-4 px-6 text-center">
         <h1 className="text-2xl font-semibold text-[var(--color-text)]">Please sign in</h1>
-        <p className="text-[var(--color-text-secondary)]">Sign in to see your submissions.</p>
-        <Link href="/login" className="text-[var(--color-brand)] underline">
-          Go to sign in
-        </Link>
+        <p className="text-[var(--color-text-secondary)]">Sign in to see your campaigns.</p>
+        <Link href="/login" className="text-[var(--color-brand)] underline">Go to sign in</Link>
       </main>
     );
 
   const subs = subsQ.data ?? [];
-  const thumbPool = subs.map((s) => s.thumbnail_url).filter(Boolean) as string[];
-  const totals = subs.reduce(
-    (acc, s) => ({
-      views: acc.views + s.views,
-      estimated: acc.estimated + Number(s.estimated_amount),
-    }),
-    { views: 0, estimated: 0 },
-  );
+
+  // group submissions by campaign
+  const groups: Group[] = [];
+  const byId = new Map<string, Group>();
+  for (const s of subs) {
+    let g = byId.get(s.campaign_id);
+    if (!g) {
+      const c = cById.get(s.campaign_id);
+      g = {
+        campaignId: s.campaign_id,
+        name: c?.name ?? "Campaign",
+        brandLogo: c?.brand_logo_url ?? null,
+        posts: [],
+        views: 0,
+        earned: 0,
+        paid: 0,
+        claimableIds: [],
+        claimable: 0,
+        pendingClaim: 0,
+        needsProofIds: [],
+      };
+      byId.set(s.campaign_id, g);
+      groups.push(g);
+    }
+    g.posts.push(s);
+    g.views += s.views;
+    g.earned += Number(s.estimated_amount);
+    if (s.is_paid) g.paid += Number(s.estimated_amount);
+    else if (s.claimed) g.pendingClaim += Number(s.estimated_amount);
+    else if (s.verification_status === "verified") { g.claimableIds.push(s.id); g.claimable += Number(s.estimated_amount); }
+    if (cById.get(s.campaign_id)?.mode === "create_new" && !s.has_proof_video) g.needsProofIds.push(s.id);
+  }
+  groups.sort((a, b) => b.earned - a.earned);
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Lumina Creators</p>
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">My submissions</h1>
-        <p className="mt-2 text-[var(--color-text-secondary)]">
-          Every post you&apos;ve submitted, with live views and estimated earnings.
-        </p>
+    <main className="mx-auto max-w-3xl px-6 py-8">
+      <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-text)]">My campaigns</h1>
+      <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+        Campaigns you&apos;ve joined — the views you&apos;ve generated and how your payout looks.
+      </p>
 
-        {subsQ.isLoading ? (
-          <div className="mt-8 space-y-8">
-            <SkeletonStats count={3} />
-            <SkeletonCardGrid count={6} />
-          </div>
-        ) : subsQ.isError ? (
-          <p className="mt-8 text-sm text-[var(--color-danger)]">{(subsQ.error as Error).message}</p>
-        ) : subs.length === 0 ? (
-          <div className="card-grad mt-8 rounded-[var(--radius-card)] border border-[var(--color-border)] p-10 text-center">
-            <p className="text-lg font-medium text-[var(--color-text)]">No submissions yet</p>
-            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-              Enter a campaign and submit a post to start earning on your views.
-            </p>
-            <Link
-              href="/campaigns"
-              className="mt-5 inline-flex min-h-11 items-center justify-center rounded-[var(--radius-btn)] bg-[var(--color-brand)] px-4 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
-            >
-              Browse campaigns
-            </Link>
-          </div>
-        ) : (
-          <>
-            <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <div className="card-grad rounded-[var(--radius-card)] border border-[var(--color-border)] p-5">
-                <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Submissions</p>
-                <p className="tabular mt-2 text-2xl font-semibold text-[var(--color-text)]">{fmtInt(subs.length)}</p>
-              </div>
-              <div className="card-grad rounded-[var(--radius-card)] border border-[var(--color-border)] p-5">
-                <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Total views</p>
-                <p className="tabular mt-2 text-2xl font-semibold text-[var(--color-brand-soft)]">{fmtInt(totals.views)}</p>
-              </div>
-              <div className="card-grad rounded-[var(--radius-card)] border border-[var(--color-border)] p-5">
-                <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Estimated earnings</p>
-                <p className="tabular mt-2 text-2xl font-semibold text-[var(--color-text)]">{fmtMoney(totals.estimated)}</p>
-              </div>
-            </div>
-
-            <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {subs.map((s) => {
-                const needsProof = modeById.get(s.campaign_id) === "create_new";
-                return (
-                  <div key={s.id} className="card-lumina flex flex-col overflow-hidden rounded-[var(--radius-card)]">
-                    <a href={s.post_url} target="_blank" rel="noreferrer" className="block">
-                      <SubmissionThumbnail
-                        thumbnailUrl={s.thumbnail_url}
-                        postUrl={s.post_url}
-                        platform={s.platform}
-                        pool={thumbPool}
-                        className="aspect-video w-full"
-                      >
-                        <span className="absolute inset-0 grid place-items-center">
-                          <span className="grid h-11 w-11 place-items-center rounded-full bg-black/40 text-white">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7L8 5Z" /></svg>
-                          </span>
-                        </span>
-                        <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/50 text-white">
-                          <PlatformIcon name={s.platform} className="h-3.5 w-3.5" />
-                        </span>
-                      </SubmissionThumbnail>
-                    </a>
-                    <div className="flex flex-1 flex-col p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="truncate text-sm font-medium text-[var(--color-text)]">{nameById.get(s.campaign_id) ?? "Campaign"}</p>
-                        <StatusPill label={s.verification_status} />
-                      </div>
-                      <div className="mt-3 flex items-center justify-between text-sm">
-                        <span className="tabular text-[var(--color-text-secondary)]">{fmtInt(s.views)} views</span>
-                        <span className="tabular font-medium text-[var(--color-text)]">{fmtMoney(s.estimated_amount)}</span>
-                      </div>
-                      {s.verification_status === "rejected" && s.verification_note ? (
-                        <p className="mt-2 text-xs text-[var(--color-text-muted)]">{s.verification_note}</p>
-                      ) : null}
-                      {needsProof ? (
-                        <div className="mt-3">
-                          <input
-                            ref={(el) => { fileInputs.current[s.id] = el; }}
-                            type="file"
-                            accept="video/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) proofM.mutate({ id: s.id, file });
-                              e.target.value = "";
-                            }}
-                          />
-                          {uploadingId === s.id ? (
-                            <div className="space-y-1.5">
-                              <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
-                                <div className="h-full rounded-full bg-[var(--color-brand)] transition-all" style={{ width: `${uploadPct}%` }} />
-                              </div>
-                              <p className="text-center text-[11px] text-[var(--color-text-muted)]">
-                                {uploadPct < 100 ? `Uploading proof video... ${uploadPct}%` : "Finishing..."}
-                              </p>
-                            </div>
-                          ) : s.has_proof_video ? (
-                            <div className="flex items-center justify-between gap-2 rounded-md bg-[var(--color-brand)]/10 px-2.5 py-1.5">
-                              <span className="text-xs font-medium text-[var(--color-brand)]">Proof uploaded ✓ · under review</span>
-                              <button type="button" onClick={() => fileInputs.current[s.id]?.click()} className="cursor-pointer text-[11px] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Replace</button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => fileInputs.current[s.id]?.click()}
-                              className="w-full cursor-pointer rounded-md bg-amber-500/15 py-1.5 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 transition hover:bg-amber-500/25"
-                            >
-                              Upload proof video
-                            </button>
-                          )}
-                        </div>
-                      ) : null}
-
-                      {/* claim payment — only once verified, not already claimed/paid */}
-                      {s.is_paid ? (
-                        <p className="mt-3 rounded-md bg-[var(--color-brand)]/10 py-1.5 text-center text-xs font-medium text-[var(--color-brand)]">Paid ✓</p>
-                      ) : s.claimed ? (
-                        <p className="mt-3 rounded-md bg-amber-500/15 py-1.5 text-center text-xs font-medium text-amber-400">Payment claimed · pending</p>
-                      ) : s.verification_status === "verified" ? (
-                        <button
-                          type="button"
-                          disabled={claimM.isPending}
-                          onClick={() => claimM.mutate(s.id)}
-                          className="mt-3 w-full cursor-pointer rounded-md bg-[var(--color-brand)] py-1.5 text-xs font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)] disabled:opacity-50"
-                        >
-                          {claimM.isPending ? "Claiming..." : "Claim payment"}
-                        </button>
-                      ) : null}
-                    </div>
+      {subsQ.isLoading ? (
+        <div className="mt-6"><SkeletonCardGrid count={3} /></div>
+      ) : subsQ.isError ? (
+        <p className="mt-6 text-sm text-[var(--color-danger)]">{(subsQ.error as Error).message}</p>
+      ) : groups.length === 0 ? (
+        <div className="mt-8 rounded-[var(--radius-card)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-12 text-center">
+          <p className="text-lg font-medium text-[var(--color-text)]">No active campaigns yet</p>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-[var(--color-text-secondary)]">
+            Join a campaign and post to your socials — it&apos;ll show up here with your views and earnings.
+          </p>
+          <Link href="/campaigns" className="mt-6 inline-flex min-h-11 items-center rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]">
+            Explore campaigns
+          </Link>
+        </div>
+      ) : (
+        <div className="mt-6 space-y-4">
+          {groups.map((g) => {
+            const status =
+              g.claimable > 0 ? { label: `Claimable ${fmtMoney(g.claimable)}`, cls: "text-[var(--color-brand)]" }
+              : g.pendingClaim > 0 ? { label: "Payout pending", cls: "text-amber-400" }
+              : g.paid > 0 ? { label: `Paid ${fmtMoney(g.paid)}`, cls: "text-[var(--color-brand)]" }
+              : { label: "Tracking views", cls: "text-[var(--color-text-muted)]" };
+            const firstProof = g.needsProofIds[0];
+            return (
+              <section key={g.campaignId} className="card-lumina rounded-[var(--radius-card)] p-5">
+                <div className="flex items-center gap-3">
+                  {g.brandLogo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={g.brandLogo} alt="" className="h-9 w-9 rounded-lg object-cover" />
+                  ) : (
+                    <span className="grid h-9 w-9 place-items-center rounded-lg bg-[var(--color-surface-2)] text-sm text-[var(--color-text-muted)]">{g.name.charAt(0)}</span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-[var(--color-text)]">{g.name}</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">{g.posts.length} post{g.posts.length === 1 ? "" : "s"}</p>
                   </div>
-                );
-              })}
-            </div>
-            <p className="mt-4 text-xs text-[var(--color-text-muted)]">
-              Views refresh automatically as Lumina tracks each post. Earnings are estimates until a campaign finalizes.
-            </p>
-          </>
-        )}
+                  <span className={`shrink-0 text-sm font-semibold ${status.cls}`}>{status.label}</span>
+                </div>
 
-        {/* payout-method gate: claim was blocked because no method is on file */}
-        {payoutGate ? (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setPayoutGate(false)}>
-            <div className="w-full max-w-sm rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-lg font-semibold text-[var(--color-text)]">Add a payout method first</h3>
-              <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                Set where we should send your earnings before you can claim a payment.
-              </p>
-              <div className="mt-5 flex justify-center gap-3">
-                <button onClick={() => setPayoutGate(false)} className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Not now</button>
-                <Link href="/onboarding?tab=payment" className="rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]">
-                  Set payout method
-                </Link>
-              </div>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-[var(--color-surface-2)]/60 p-3">
+                    <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Views generated</p>
+                    <p className="tabular mt-1 text-xl font-semibold text-[var(--color-brand-soft)]">{fmtInt(g.views)}</p>
+                  </div>
+                  <div className="rounded-xl bg-[var(--color-surface-2)]/60 p-3">
+                    <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Money earned</p>
+                    <p className="tabular mt-1 text-xl font-semibold text-[var(--color-text)]">{fmtMoney(g.earned)}</p>
+                  </div>
+                </div>
+
+                {g.claimable > 0 ? (
+                  <button
+                    type="button"
+                    disabled={claimM.isPending}
+                    onClick={() => claimM.mutate(g.claimableIds)}
+                    className="mt-4 w-full cursor-pointer rounded-full bg-[var(--color-brand)] py-2 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)] disabled:opacity-50"
+                  >
+                    {claimM.isPending ? "Claiming…" : `Claim ${fmtMoney(g.claimable)}`}
+                  </button>
+                ) : firstProof ? (
+                  <div className="mt-4">
+                    <input
+                      ref={(el) => { fileInputs.current[g.campaignId] = el; }}
+                      type="file" accept="video/*" className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) proofM.mutate({ id: firstProof, file: f }); e.target.value = ""; }}
+                    />
+                    {uploadingId === firstProof ? (
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
+                        <div className="h-full rounded-full bg-[var(--color-brand)] transition-all" style={{ width: `${uploadPct}%` }} />
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => fileInputs.current[g.campaignId]?.click()} className="w-full cursor-pointer rounded-full bg-amber-500/15 py-2 text-sm font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 transition hover:bg-amber-500/25">
+                        Upload proof video to get paid
+                      </button>
+                    )}
+                  </div>
+                ) : null}
+              </section>
+            );
+          })}
+          <p className="text-xs text-[var(--color-text-muted)]">
+            Views refresh automatically as Lumina tracks each post. Earnings are estimates until a campaign finalizes.
+          </p>
+        </div>
+      )}
+
+      {/* payout-method gate: claim blocked because no method is on file */}
+      {payoutGate ? (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setPayoutGate(false)}>
+          <div className="w-full max-w-sm rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-[var(--color-text)]">Add a payout method first</h3>
+            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Set where we should send your earnings before you can claim a payment.</p>
+            <div className="mt-5 flex justify-center gap-3">
+              <button onClick={() => setPayoutGate(false)} className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Not now</button>
+              <Link href="/onboarding?tab=payment" className="rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]">Set payout method</Link>
             </div>
           </div>
-        ) : null}
-      </main>
+        </div>
+      ) : null}
+    </main>
   );
 }
