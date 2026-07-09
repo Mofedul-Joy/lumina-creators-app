@@ -7,6 +7,7 @@ import { CampaignCard } from "@/components/campaign/CampaignCard";
 import { CampaignModal } from "@/components/campaign/CampaignModal";
 import { CampaignSearchModal } from "@/components/creator/CampaignSearchModal";
 import { getAuthToken } from "@/lib/auth";
+import { getProfile, listSocials } from "@/lib/api";
 import { browseCampaigns, type Campaign } from "@/lib/campaigns";
 import { NICHES, campaignText, matchesNiche, nicheLabel } from "@/lib/niches";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
@@ -20,8 +21,9 @@ type Sort = (typeof SORTS)[number][0];
 const payValue = (c: Campaign) => c.cpm_rate || c.per_post_amount || c.fixed_amount || c.hourly_rate || 0;
 
 export default function CampaignsPage() {
+  const [token, setToken] = useState<string | null>(null);
   const [hasToken, setHasToken] = useState(false);
-  useEffect(() => setHasToken(!!getAuthToken()), []);
+  useEffect(() => { const t = getAuthToken(); setToken(t); setHasToken(!!t); }, []);
   const [tab, setTab] = useState<"all" | "submitted">("all");
   const [platform, setPlatform] = useState<string>("");
   const [search, setSearch] = useState("");
@@ -53,6 +55,31 @@ export default function CampaignsPage() {
     return sorted;
   }, [data, tab, platform, niche, search, sort]);
 
+  // "For You": campaigns that best match the creator's profile + socials.
+  const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfile(token ?? ""), enabled: hasToken, retry: false });
+  const socialsQ = useQuery({ queryKey: ["socials"], queryFn: () => listSocials(token ?? ""), enabled: hasToken, retry: false });
+
+  const forYou = useMemo(() => {
+    const myPlatforms = new Set((socialsQ.data ?? []).map((s) => s.platform as string));
+    const creatorType = profileQ.data?.creator_type ?? null;
+    const bio = (profileQ.data?.bio ?? "").toLowerCase();
+    const myNiches = NICHES.filter((n) => n.keywords.some((k) => bio.includes(k))).map((n) => n.key);
+
+    const scored = (data ?? [])
+      .map((c) => {
+        let score = 0;
+        for (const p of c.platforms) if (myPlatforms.has(p)) score += 2;
+        if (creatorType && c.creator_type === creatorType) score += 3;
+        for (const nk of myNiches) if (matchesNiche(c, nk)) score += 1;
+        return { c, score };
+      })
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score);
+    return scored.slice(0, 4).map((x) => x.c);
+  }, [data, socialsQ.data, profileQ.data]);
+
+  const showForYou = tab === "all" && !search && !niche && !platform && forYou.length > 0;
+
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
         <div className="mb-6">
@@ -73,6 +100,21 @@ export default function CampaignsPage() {
             <svg className="h-[18px] w-[18px] shrink-0" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" /><path d="m20 20-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
             <span className="text-sm">Search campaigns…</span>
           </button>
+
+          {/* For you — best matches for this creator's profile + socials */}
+          {showForYou ? (
+            <section className="mb-7">
+              <div className="mb-3 flex items-center gap-2">
+                <h2 className="text-lg font-semibold tracking-tight text-[var(--color-text)]">For you</h2>
+                <span className="rounded-full bg-[var(--color-brand)]/12 px-2 py-0.5 text-[11px] font-medium text-[var(--color-brand-soft)]">Matched to your profile</span>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {forYou.map((c) => (
+                  <CampaignCard key={`fy-${c.id}`} c={c} onOpen={setActive} />
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           {/* Find by niche */}
           <h2 className="mb-3 text-lg font-semibold tracking-tight text-[var(--color-text)]">Find by niche</h2>
