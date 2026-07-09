@@ -643,7 +643,7 @@ export const updateApplicant = (id: string, patch: ApplicantUpdateIn) =>
 
 export function applicantsExportCsvUrl(f: { campaign_id?: string; status?: string } = {}): string {
   // Match resolveApiUrl() in api.ts — pin to prod backend when served from *.vercel.app.
-  const PROD_BACKEND_URL = "https://lumina-creators-api-ops-layer-gaps.onrender.com";
+  const PROD_BACKEND_URL = "https://lumina-creators-api-app.onrender.com";
   const runtimeHost = typeof window !== "undefined" ? window.location.hostname : "";
   const API_URL = runtimeHost.endsWith(".vercel.app")
     ? PROD_BACKEND_URL

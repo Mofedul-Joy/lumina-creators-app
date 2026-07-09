@@ -7,7 +7,7 @@ import { clearSession, getRefresh, realmFromPath, saveSession, type Realm } from
 //      This survives Vercel env-var drift without redeploys.
 //   2) Build-time NEXT_PUBLIC_API_URL (dev, previews, or manual overrides).
 //   3) Local dev fallback.
-const PROD_BACKEND_URL = "https://lumina-creators-api-ops-layer-gaps.onrender.com";
+const PROD_BACKEND_URL = "https://lumina-creators-api-app.onrender.com";
 function resolveApiUrl(): string {
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
