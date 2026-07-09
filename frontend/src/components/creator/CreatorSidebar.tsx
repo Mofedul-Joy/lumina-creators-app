@@ -10,9 +10,6 @@ const ic = "h-[19px] w-[19px] shrink-0";
 const HomeIcon = () => <svg className={ic} viewBox="0 0 24 24" fill="none"><path d="M4 11l8-6 8 6M6 10v9h4v-5h4v5h4v-9" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /></svg>;
 const ExploreIcon = () => <svg className={ic} viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" /><path d="m20 20-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>;
 const CampaignsIcon = () => <svg className={ic} viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7" stroke="currentColor" strokeWidth="2" /></svg>;
-const TrainingIcon = () => <svg className={ic} viewBox="0 0 24 24" fill="none"><path d="M12 4 2 9l10 5 10-5-10-5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /><path d="M6 11v4c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>;
-const MessageIcon = () => <svg className={ic} viewBox="0 0 24 24" fill="none"><path d="M4 5h16v11H9l-4 4V5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>;
-const AffiliatesIcon = () => <svg className={ic} viewBox="0 0 24 24" fill="none"><path d="M9 12a3 3 0 0 0 4.5.6l3-3A3 3 0 0 0 12.3 5.3l-1.6 1.6M15 12a3 3 0 0 0-4.5-.6l-3 3A3 3 0 0 0 11.7 18.7l1.6-1.6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 const ProfileIcon = () => <svg className={ic} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth="2" /><path d="M4.5 20c1.5-4 5-6 7.5-6s6 2 7.5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>;
 const AccountIcon = () => <svg className={ic} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" /><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>;
 const PortfolioIcon = () => <svg className={ic} viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2" /><path d="m10 10 5 3-5 3v-6Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>;
@@ -24,9 +21,6 @@ const NAV: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: HomeIcon },
   { href: "/campaigns", label: "Explore", icon: ExploreIcon },
   { href: "/submissions", label: "My Campaigns", icon: CampaignsIcon },
-  { href: "/training", label: "Training", icon: TrainingIcon },
-  { href: "/messages", label: "Messages", icon: MessageIcon },
-  { href: "/affiliates", label: "Affiliates", icon: AffiliatesIcon },
   { href: "/onboarding", label: "Profile", icon: ProfileIcon },
   { href: "/account", label: "Account", icon: AccountIcon },
   { href: "/onboarding?tab=portfolio", label: "Portfolio", icon: PortfolioIcon },
