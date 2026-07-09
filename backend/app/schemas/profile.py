@@ -72,9 +72,10 @@ class SocialVerifyIn(BaseModel):
 class SocialVerifyStartOut(BaseModel):
     platform: str
     handle: str
-    code: str
+    code: Optional[str] = None          # None when already verified
     expires_at: Optional[datetime] = None
     instructions: str
+    already_verified: bool = False
 
 
 class PortfolioIn(BaseModel):
@@ -100,3 +101,7 @@ class PortfolioOut(BaseModel):
 class CompletionOut(BaseModel):
     completed: bool
     missing: List[str]
+    # Per-section done flags + the first section the creator still needs to finish,
+    # so the "complete your profile" popup can route them straight there.
+    sections: dict = {}
+    next_section: Optional[str] = None

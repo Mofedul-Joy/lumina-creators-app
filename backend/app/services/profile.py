@@ -204,3 +204,27 @@ def recompute_completion(db: Session, creator_id: uuid.UUID) -> tuple[bool, list
     prof.completed_at = _now() if complete else None
     db.commit()
     return complete, missing
+
+
+# ---- apply-readiness (this IS a gate — join_campaign requires it) ----
+# The whole profile must be filled before a creator can apply to a campaign:
+# About, Socials (>=1 VERIFIED), Videos, Details, Payment. Order matters — the
+# "complete your profile" popup routes the creator to `next_section`.
+SECTION_ORDER = ["about", "socials", "videos", "details", "payment"]
+
+
+def profile_completeness(db: Session, creator_id: uuid.UUID) -> dict:
+    prof = get_or_create_profile(db, creator_id)
+    n_verified_social = db.scalar(select(func.count()).select_from(SocialAccount).where(
+        SocialAccount.creator_id == creator_id, SocialAccount.is_verified.is_(True)))
+    n_portfolio = db.scalar(select(func.count()).select_from(PortfolioItem).where(
+        PortfolioItem.creator_id == creator_id))
+    sections = {
+        "about": bool((prof.creator_type or "").strip() and (prof.display_name or "").strip()),
+        "socials": bool(n_verified_social),
+        "videos": bool(n_portfolio),
+        "details": bool(prof.date_of_birth and prof.gender and (prof.country or "").strip()),
+        "payment": bool((prof.payout_method or "").strip() and (prof.payout_address or "").strip()),
+    }
+    next_section = next((s for s in SECTION_ORDER if not sections[s]), None)
+    return {"complete": next_section is None, "sections": sections, "next_section": next_section}

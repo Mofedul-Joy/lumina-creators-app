@@ -64,8 +64,13 @@ def update_profile(body: ProfileIn, current: Creator = Depends(get_current_creat
 
 @router.get("/completion", response_model=CompletionOut)
 def completion(current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
-    complete, missing = svc.recompute_completion(db, current.id)
-    return CompletionOut(completed=complete, missing=missing)
+    _c, missing = svc.recompute_completion(db, current.id)
+    # apply-readiness (the join gate) — full profile across all 5 sections.
+    ready = svc.profile_completeness(db, current.id)
+    return CompletionOut(
+        completed=ready["complete"], missing=missing,
+        sections=ready["sections"], next_section=ready["next_section"],
+    )
 
 
 # ---- socials ----

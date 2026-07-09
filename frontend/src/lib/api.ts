@@ -275,9 +275,12 @@ export type ProfileOut = {
   missing: string[];
 };
 
+export type ProfileSection = "about" | "socials" | "videos" | "details" | "payment";
 export type CompletionOut = {
   completed: boolean;
   missing: string[];
+  sections: Partial<Record<ProfileSection, boolean>>;
+  next_section: ProfileSection | null;
 };
 
 export type SocialIn = {
@@ -497,9 +500,10 @@ export const deleteSocial = (token: string, id: string) =>
 export type SocialVerifyStartOut = {
   platform: Platform;
   handle: string;
-  code: string;
+  code: string | null;          // null when already verified
   expires_at: string | null;
   instructions: string;
+  already_verified: boolean;
 };
 
 export const startSocialVerify = (token: string, platform: Platform, handle: string) =>

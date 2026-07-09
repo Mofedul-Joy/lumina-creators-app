@@ -16,6 +16,7 @@ from __future__ import annotations
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -47,37 +48,62 @@ def _clean_handle(handle: str) -> str:
     return h
 
 
-def _get_or_create(db: Session, creator_id: uuid.UUID, platform: str, handle: str) -> SocialAccount:
-    social = db.scalar(
-        select(SocialAccount).where(
-            SocialAccount.creator_id == creator_id,
-            SocialAccount.platform == platform,
-            SocialAccount.handle == handle,
-        )
+def _resolve_social(db: Session, creator_id: uuid.UUID, platform: str, handle: str) -> SocialAccount:
+    """Exactly ONE account per (creator, platform). Dedupes any legacy duplicates
+    (a verification bug once created one row per typed handle): keep the verified
+    row if present, else the handle match, else the first — delete the rest. Lets
+    an as-yet-unverified account change its handle to what the creator just typed."""
+    rows = list(
+        db.scalars(
+            select(SocialAccount).where(
+                SocialAccount.creator_id == creator_id,
+                SocialAccount.platform == platform,
+            )
+        ).all()
     )
-    if social is None:
+    if not rows:
         social = SocialAccount(
-            creator_id=creator_id,
-            platform=platform,
-            handle=handle,
+            creator_id=creator_id, platform=platform, handle=handle,
             profile_url=urls.social_profile_url(platform, handle),
         )
         db.add(social)
-    return social
+        return social
+    keeper = (
+        next((r for r in rows if r.is_verified), None)
+        or next((r for r in rows if r.handle == handle), None)
+        or rows[0]
+    )
+    for r in rows:
+        if r is not keeper:
+            db.delete(r)
+    if not keeper.is_verified and keeper.handle != handle:
+        keeper.handle = handle
+        keeper.profile_url = urls.social_profile_url(platform, handle)
+    return keeper
 
 
 def start_verification(db: Session, creator_id: uuid.UUID, platform: str, handle: str) -> dict:
     if platform not in VERIFIABLE_PLATFORMS:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"{platform} verification isn't supported")
     handle = _clean_handle(handle)
-    social = _get_or_create(db, creator_id, platform, handle)
-    # Keep an existing, still-valid code stable so a page refresh doesn't change
-    # the code a creator already pasted into their bio.
+    social = _resolve_social(db, creator_id, platform, handle)
+
+    # Already verified → no-op. NEVER re-issue a code or clear is_verified here
+    # (that was the bug that "un-verified" a creator when the step re-rendered).
+    if social.is_verified:
+        db.commit()
+        db.refresh(social)
+        return {
+            "platform": platform, "handle": social.handle, "code": None, "expires_at": None,
+            "already_verified": True,
+            "instructions": f"Your {platform} @{social.handle} is already verified.",
+        }
+
+    # Reuse a still-valid code so a refresh doesn't change what they pasted in bio.
     if not (social.verification_code and social.verification_code_expires_at
-            and social.verification_code_expires_at > _now() and not social.is_verified):
+            and social.verification_code_expires_at > _now()):
         social.verification_code = _gen_code()
         social.verification_code_expires_at = _now() + timedelta(minutes=CODE_TTL_MINUTES)
-        social.is_verified = False
     db.commit()
     db.refresh(social)
     return {
@@ -85,6 +111,7 @@ def start_verification(db: Session, creator_id: uuid.UUID, platform: str, handle
         "handle": handle,
         "code": social.verification_code,
         "expires_at": social.verification_code_expires_at,
+        "already_verified": False,
         "instructions": (
             f"Add {social.verification_code} anywhere in your {platform} bio, then tap Verify. "
             "You can remove it once verified."
@@ -163,15 +190,9 @@ def _norm(s: str) -> str:
 
 
 # ── Apply-eligibility gate (used by join_campaign) ────────────────────────────
-# Separate from recompute_completion() (which is an incentive, not a gate). A
-# creator must have a name and at least one social account on file before they
-# can apply to a campaign — mirrors SideShift's "complete your profile" wall.
-def apply_eligibility(db: Session, creator_id: uuid.UUID) -> tuple[bool, list[str]]:
-    prof = profile_svc.get_or_create_profile(db, creator_id)
-    socials = profile_svc.list_socials(db, creator_id)
-    missing: list[str] = []
-    if not (prof.display_name or "").strip():
-        missing.append("your name")
-    if not socials:
-        missing.append("at least one social account")
-    return (not missing), missing
+# A creator must have a FULLY complete profile — About, Socials (>=1 verified),
+# Videos, Details, Payment — before they can apply to a campaign. Returns
+# (is_complete, next_section) where next_section is where the popup should route.
+def apply_eligibility(db: Session, creator_id: uuid.UUID) -> tuple[bool, Optional[str]]:
+    c = profile_svc.profile_completeness(db, creator_id)
+    return c["complete"], c["next_section"]

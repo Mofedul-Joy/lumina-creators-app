@@ -184,7 +184,13 @@ export function OnboardingWizard() {
         const p = k.slice(4) as Platform;
         const f = socialForms[p];
         const existing = socials.find((s) => s.platform === p);
-        if (f?.handle?.trim() && !existing) await addSocialM.mutateAsync({ platform: p, handle: f.handle.trim(), follower_count: Number(f.followers) || 0 });
+        // Instagram/TikTok are added ONLY through the Verify flow (which creates
+        // the account) — never auto-add an unverified row here, or it would
+        // create a duplicate that bypasses verification.
+        const verifiable = p === "instagram" || p === "tiktok";
+        if (!verifiable && f?.handle?.trim() && !existing) {
+          await addSocialM.mutateAsync({ platform: p, handle: f.handle.trim(), follower_count: Number(f.followers) || 0 });
+        }
       }
       next();
     } catch { /* err surfaced below */ }
