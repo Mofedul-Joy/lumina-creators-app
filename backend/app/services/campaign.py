@@ -222,12 +222,11 @@ def join_campaign(db: Session, creator_id: uuid.UUID, slug: str) -> CampaignPart
     # separate and intentionally ungated.
     from app.services import socials_verify
 
-    eligible, missing = socials_verify.apply_eligibility(db, creator_id)
+    eligible, _missing = socials_verify.apply_eligibility(db, creator_id)
     if not eligible:
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            detail={"code": "profile_incomplete", "missing": missing},
-        )
+        # String detail (not an object) so the frontend matches it directly and
+        # opens the "complete your profile" popup on this exact value.
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="profile_incomplete")
     campaign = get_active_campaign(db, slug)
     existing = db.scalar(
         select(CampaignParticipation).where(

@@ -9,6 +9,7 @@ import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { Markdown } from "@/components/ui/Markdown";
 import { BonusMilestones } from "@/components/ui/BonusMilestones";
 import { ExampleVideos } from "@/components/ui/ExampleVideos";
+import { ProfileGateModal } from "@/components/creator/ProfileGateModal";
 import { getAuthToken } from "@/lib/auth";
 import { getCampaign, getSubmission, joinCampaign, submitClip } from "@/lib/campaigns";
 import { fmtInt, fmtMoney } from "@/lib/format";
@@ -24,12 +25,14 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
   const [bulkText, setBulkText] = useState("");
   const [trackId, setTrackId] = useState<string | null>(null);
   const [bulkMsg, setBulkMsg] = useState("");
+  const [gateOpen, setGateOpen] = useState(false);
 
   const q = useQuery({ queryKey: ["campaign", slug], queryFn: () => getCampaign(slug), enabled: hasToken, retry: false });
 
   const join = useMutation({
     mutationFn: () => joinCampaign(slug),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["campaign", slug] }),
+    onError: (e) => { if ((e as Error).message === "profile_incomplete") setGateOpen(true); },
   });
   const submit = useMutation({
     mutationFn: () => submitClip(slug, postUrl.trim()),
@@ -199,17 +202,8 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
                   <div className="w-44">
                     <Button loading={join.isPending} onClick={() => join.mutate()}>Enter campaign</Button>
                   </div>
-                  {join.isError ? (
-                    (join.error as Error).message === "profile_incomplete" ? (
-                      <p className="text-sm text-[var(--color-warning)]">
-                        Finish your profile before entering campaigns.{" "}
-                        <Link href="/onboarding" className="text-[var(--color-brand)] underline">
-                          Complete profile
-                        </Link>
-                      </p>
-                    ) : (
-                      <p className="text-sm text-[var(--color-danger)]">{(join.error as Error).message}</p>
-                    )
+                  {join.isError && (join.error as Error).message !== "profile_incomplete" ? (
+                    <p className="text-sm text-[var(--color-danger)]">{(join.error as Error).message}</p>
                   ) : null}
                 </div>
               ) : (
@@ -285,6 +279,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
             </div>
           </>
         )}
+      <ProfileGateModal open={gateOpen} onClose={() => setGateOpen(false)} />
       </main>
   );
 }
