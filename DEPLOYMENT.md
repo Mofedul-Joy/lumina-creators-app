@@ -1,8 +1,43 @@
-# Deployment guide
+# ⚠️ DEPLOYMENT TARGETS — READ FIRST
+
+**TWO separate apps share this repo, each with its OWN backend + OWN database.
+Do NOT cross them. Deploying/migrating to the wrong database corrupts the other
+app's data.**
+
+### ✅ THIS APP — `lumina-creators-app` (the one we are building)
+| Layer | Target |
+|-------|--------|
+| Frontend | `https://lumina-creators-app.vercel.app` (Vercel project `prj_kg9jnxuc0snWYGY5a4dTQiuNusOU`, team `team_UmVDqekun0ZzNTbMKAjWFc3X`) |
+| Backend | `https://lumina-creators-api-app.onrender.com` (Render `srv-d97tf1rtqb8s73dl744g`, branch **`feat/social-verify-join-gate`**) |
+| **DATABASE** | **`lumina_creators`** — Render `lumina-creators-db` / `dpg-d92v6amh2hms73cv40g0` |
+
+→ **Every deploy, migration, and seed for this app goes to `lumina_creators` (dpg-d92v6). Nothing else.**
+`DATABASE_URL` must be `postgresql+psycopg://…@dpg-d92v6…/lumina_creators` (the `+psycopg` driver is required).
+
+### ⛔ NOT THIS APP — `lumina-creators-frontend` (Bill's) — DO NOT TOUCH
+| Layer | Target |
+|-------|--------|
+| Frontend | `https://lumina-creators-frontend.vercel.app` |
+| Backend | `https://lumina-creators-api-ops-layer-gaps.onrender.com` (`srv-d94u02vaqgkc73ed82gg`) |
+| Database | `lumina_creators_staging` / `dpg-d94tv7a8qa3s73d8doug` |
+
+Never point this app at `lumina_creators_staging`; never migrate/seed it.
+
+### How to deploy this app (guarded)
+```bash
+scripts/deploy.sh frontend   # deploys lumina-creators-app.vercel.app; prints the DB target first
+scripts/deploy.sh backend    # redeploys srv-d97tf1rtqb8s73dl744g (branch feat/social-verify-join-gate)
+```
+`scripts/deploy.sh` echoes the resolved database and **aborts if it sees Bill's
+`lumina_creators_staging`.** Always deploy through it. Before local migrations/seeds:
+`grep DATABASE_URL backend/.env` → must show `dpg-d92v6…/lumina_creators`.
+
+---
+
+# Deployment guide (runbook)
 
 The app is two deployables plus a database. Everything is verified locally; this
-is the runbook for going live. **Do not deploy the frontend until the Vercel
-account/API key is provided.**
+is the runbook for going live.
 
 ```
 Next.js frontend (Vercel)  ──HTTPS/JWT──►  FastAPI backend (Render)  ──►  Postgres (Render)
