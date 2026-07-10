@@ -7,10 +7,16 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_current_creator
 from app.db.session import get_db
 from app.models import Campaign, Creator
-from app.schemas.campaign import BonusMilestoneOut, CampaignPublicOut, ParticipationOut
+from app.schemas.campaign import BonusMilestoneOut, CampaignPublicOut, MyCampaignOut, ParticipationOut
 from app.services import campaign as svc
 
 router = APIRouter(prefix="/campaigns", tags=["creator-campaigns"])
+
+
+@router.get("/mine", response_model=list[MyCampaignOut])
+def mine(current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
+    """Campaigns the creator applied to / joined, with their application status."""
+    return [MyCampaignOut(**m) for m in svc.list_creator_campaigns(db, current.id)]
 
 
 def _public_out(c: Campaign, joined: bool, db: Session | None = None) -> CampaignPublicOut:

@@ -114,10 +114,14 @@ class CreatorRichDetail(BaseModel):
     awards: List[str] = []
     niches: List[str] = []
 
+    creator_type: Optional[str] = None
+
     # Aggregated stats.
     total_views: int = 0
     total_earned: Decimal = Decimal("0")
     total_posts: int = 0
+    total_likes: int = 0
+    engagement_rate: float = 0.0
 
     socials: List[RichSocialItem] = []
     recent_submissions: List[RecentSubmissionItem] = []

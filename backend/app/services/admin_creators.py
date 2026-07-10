@@ -234,11 +234,17 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
             func.coalesce(func.sum(Submission.views), 0),
             func.coalesce(func.sum(Submission.payable_amount), 0),
             func.count(Submission.id),
+            func.coalesce(func.sum(Submission.likes), 0),
+            func.coalesce(func.sum(Submission.comments), 0),
+            func.coalesce(func.sum(Submission.shares), 0),
         ).where(Submission.creator_id == c.id)
     ).first()
     total_views = int(agg_row[0]) if agg_row else 0
     total_earned = Decimal(agg_row[1]) if agg_row else Decimal("0")
     total_posts = int(agg_row[2]) if agg_row else 0
+    total_likes = int(agg_row[3]) if agg_row else 0
+    interactions = total_likes + int(agg_row[4] or 0) + int(agg_row[5] or 0) if agg_row else 0
+    engagement_rate = round(interactions / total_views * 100, 1) if total_views else 0.0
 
     # Show the creator's campaign uploads (verified + still-pending); exclude
     # only rejected. NB: the enum is pending/verified/rejected — an earlier
@@ -292,9 +298,12 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
         "streak_days": streak_days,
         "awards": awards,
         "niches": (prof.niches if prof else []) or [],
+        "creator_type": prof.creator_type if prof else None,
         "total_views": total_views,
         "total_earned": total_earned,
         "total_posts": total_posts,
+        "total_likes": total_likes,
+        "engagement_rate": engagement_rate,
         "socials": [
             {"platform": s.platform, "handle": s.handle, "profile_url": s.profile_url, "follower_count": s.follower_count}
             for s in socials

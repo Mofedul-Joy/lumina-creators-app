@@ -6,11 +6,11 @@ import uuid
 from decimal import Decimal
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.security import _now
-from app.models import Campaign, CampaignBonusMilestone, CampaignParticipation
+from app.models import Campaign, CampaignBonusMilestone, CampaignParticipation, Submission
 from app.services import audit
 
 _MODES = {"create_new", "copy_paste"}
@@ -241,3 +241,35 @@ def join_campaign(db: Session, creator_id: uuid.UUID, slug: str) -> CampaignPart
     db.commit()
     db.refresh(part)
     return part
+
+
+def list_creator_campaigns(db: Session, creator_id: uuid.UUID) -> list[dict]:
+    """Every campaign this creator applied to / joined, newest first, with their
+    application status and how many videos they've submitted to it."""
+    rows = db.execute(
+        select(CampaignParticipation, Campaign)
+        .join(Campaign, Campaign.id == CampaignParticipation.campaign_id)
+        .where(CampaignParticipation.creator_id == creator_id)
+        .order_by(CampaignParticipation.joined_at.desc())
+    ).all()
+    sub_counts = dict(
+        db.execute(
+            select(Submission.participation_id, func.count(Submission.id))
+            .where(Submission.creator_id == creator_id)
+            .group_by(Submission.participation_id)
+        ).all()
+    )
+    return [
+        {
+            "participation_id": str(p.id),
+            "campaign_id": str(c.id),
+            "slug": c.slug,
+            "name": c.name,
+            "brand_name": c.brand_name,
+            "mode": c.mode,
+            "cpm_rate": c.cpm_rate,
+            "status": p.status,
+            "submission_count": int(sub_counts.get(p.id, 0)),
+        }
+        for p, c in rows
+    ]

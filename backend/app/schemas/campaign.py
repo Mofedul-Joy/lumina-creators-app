@@ -222,3 +222,17 @@ class ParticipationOut(BaseModel):
     id: str
     campaign_id: str
     status: str
+
+
+class MyCampaignOut(BaseModel):
+    """A campaign the creator has applied to / joined, with their application
+    status — powers the 'My Campaigns' applications list."""
+    participation_id: str
+    campaign_id: str
+    slug: str
+    name: str
+    brand_name: Optional[str] = None
+    mode: str
+    cpm_rate: Decimal
+    status: str
+    submission_count: int = 0

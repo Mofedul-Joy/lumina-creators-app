@@ -461,14 +461,37 @@ export type CreatorRichDetail = {
   streak_days: number;
   awards: string[];
   niches: string[];
+  creator_type: string | null;
   total_views: number;
   total_earned: number | string;
   total_posts: number;
+  total_likes: number;
+  engagement_rate: number;
   socials: RichSocialItem[];
   recent_submissions: RecentSubmissionItem[];
   experiences: ExperienceItem[];
   portfolio: PortfolioItemOut[];
 };
+
+// The creator's own portfolio page data (same shape the admin sees).
+export const getMyPortfolio = (token: string) =>
+  apiFetch<CreatorRichDetail>("/api/creator/me/portfolio", { token });
+
+export type MyCampaign = {
+  participation_id: string;
+  campaign_id: string;
+  slug: string;
+  name: string;
+  brand_name: string | null;
+  mode: string;
+  cpm_rate: number | string;
+  status: string;
+  submission_count: number;
+};
+
+// Campaigns the creator applied to / joined, with application status.
+export const listMyCampaigns = (token: string) =>
+  apiFetch<MyCampaign[]>("/api/creator/campaigns/mine", { token });
 
 // ── Creator profile methods (creator bearer token) ────────────────────────────
 export const getProfile = (token: string) =>

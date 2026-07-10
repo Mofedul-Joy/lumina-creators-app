@@ -5,9 +5,29 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAuthToken } from "@/lib/auth";
 import { browseCampaigns, claimSubmission, listSubmissions, uploadProofVideo, type Submission } from "@/lib/campaigns";
-import { ApiError } from "@/lib/api";
+import { ApiError, listMyCampaigns } from "@/lib/api";
 import { fmtInt, fmtMoney } from "@/lib/format";
 import { SkeletonCardGrid } from "@/components/ui/Skeleton";
+
+// Map a raw participation status to a creator-facing application tag.
+function applicationTag(status: string): { label: string; cls: string } {
+  switch (status) {
+    case "approved":
+    case "accepted":
+      return { label: "Approved", cls: "bg-[var(--color-brand)]/15 text-[var(--color-brand)]" };
+    case "submitted":
+      return { label: "Submitted", cls: "bg-[var(--color-brand)]/15 text-[var(--color-brand)]" };
+    case "reviewed":
+    case "messaged":
+    case "bookmarked":
+      return { label: "Under review", cls: "bg-sky-500/15 text-sky-400" };
+    case "declined":
+    case "rejected":
+      return { label: "Not selected", cls: "bg-[var(--color-surface-2)] text-[var(--color-text-muted)]" };
+    default: // "joined"
+      return { label: "Applied", cls: "bg-amber-500/15 text-amber-400" };
+  }
+}
 
 // One row per campaign the creator has joined: total views generated and the
 // money earned from it, plus how the payout looks. Deliberately simple.
@@ -37,6 +57,7 @@ export default function MyCampaignsPage() {
 
   const subsQ = useQuery({ queryKey: ["submissions"], queryFn: listSubmissions, enabled, retry: false });
   const campaignsQ = useQuery({ queryKey: ["campaigns"], queryFn: browseCampaigns, enabled, retry: false });
+  const appsQ = useQuery({ queryKey: ["my-applications"], queryFn: () => listMyCampaigns(getAuthToken() ?? ""), enabled, retry: false });
 
   const cById = new Map((campaignsQ.data ?? []).map((c) => [c.id, c]));
 
@@ -193,6 +214,38 @@ export default function MyCampaignsPage() {
           </p>
         </div>
       )}
+
+      {/* Your applications — every campaign you applied to, with its status. */}
+      {appsQ.data && appsQ.data.length > 0 ? (
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold tracking-tight text-[var(--color-text)]">Your applications</h2>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Campaigns you&apos;ve applied to and where each stands.</p>
+          <div className="mt-4 space-y-3">
+            {appsQ.data.map((a) => {
+              const tag = applicationTag(a.status);
+              return (
+                <Link
+                  key={a.participation_id}
+                  href={`/campaigns/${a.slug}`}
+                  className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]/60 p-4 transition hover:border-[var(--color-brand)]"
+                >
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[var(--color-surface-2)] text-sm font-semibold text-[var(--color-text-muted)]">
+                    {(a.brand_name || a.name).charAt(0).toUpperCase()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-[var(--color-text)]">{a.name}</p>
+                    <p className="truncate text-xs text-[var(--color-text-muted)]">
+                      {a.brand_name ? `${a.brand_name} · ` : ""}${Number(a.cpm_rate).toFixed(2)} / 1k views
+                      {a.submission_count > 0 ? ` · ${a.submission_count} post${a.submission_count === 1 ? "" : "s"}` : ""}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${tag.cls}`}>{tag.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
       {/* payout-method gate: claim blocked because no method is on file */}
       {payoutGate ? (

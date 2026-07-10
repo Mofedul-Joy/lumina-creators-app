@@ -23,7 +23,7 @@ const NAV: NavItem[] = [
   { href: "/submissions", label: "My Campaigns", icon: CampaignsIcon },
   { href: "/onboarding", label: "Profile", icon: ProfileIcon },
   { href: "/account", label: "Account", icon: AccountIcon },
-  { href: "/onboarding?tab=portfolio", label: "Portfolio", icon: PortfolioIcon },
+  { href: "/portfolio", label: "Portfolio", icon: PortfolioIcon },
 ];
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
