@@ -11,6 +11,7 @@ import {
   downloadPayoutReportsCsv,
   getForecast,
   getLedger,
+  getSpendingSummary,
   getWallet,
   listCreators,
   listOwedV2,
@@ -20,6 +21,7 @@ import {
   type ForecastRow,
   type LedgerRow,
   type OwedRowV2,
+  type SpendingSummary,
 } from "@/lib/admin";
 import { isAuthError } from "@/lib/api";
 import { fmtInt, fmtMoney } from "@/lib/format";
@@ -55,6 +57,111 @@ function fmtDate(d: string | null | undefined) {
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
+/* ---- Agency tab: Spending Report (by date range) ---- */
+type Preset = "mtd" | "last_month" | "last_3m" | "all" | "custom";
+const PRESETS: { key: Preset; label: string }[] = [
+  { key: "mtd", label: "Month to Date" },
+  { key: "last_month", label: "Last Month" },
+  { key: "last_3m", label: "Last 3 Months" },
+  { key: "all", label: "All Time" },
+  { key: "custom", label: "Custom Range" },
+];
+// Local date parts (not toISOString, which shifts by timezone).
+const isoDay = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+function presetRange(p: Preset, from: string, to: string): { from?: string; to?: string } {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  if (p === "mtd") return { from: isoDay(new Date(y, m, 1)), to: isoDay(now) };
+  if (p === "last_month") return { from: isoDay(new Date(y, m - 1, 1)), to: isoDay(new Date(y, m, 0)) };
+  if (p === "last_3m") return { from: isoDay(new Date(y, m - 3, now.getDate())), to: isoDay(now) };
+  if (p === "custom") return { from: from || undefined, to: to || undefined };
+  return {}; // all time
+}
+
+function AgencyTab() {
+  const [preset, setPreset] = useState<Preset>("mtd");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const [summary, setSummary] = useState<SpendingSummary | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  const range = presetRange(preset, customFrom, customTo);
+  const generate = async () => {
+    setLoading(true); setErr(""); setSummary(null);
+    try { setSummary(await getSpendingSummary(range.from, range.to)); }
+    catch (e) { setErr((e as Error).message); }
+    finally { setLoading(false); }
+  };
+
+  const fieldCls = "min-h-10 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]";
+
+  return (
+    <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Transfer Balance — informational for a single-brand workspace */}
+      <div className="card-lumina rounded-[var(--radius-card)] p-5">
+        <h3 className="text-base font-semibold text-[var(--color-text)]">Transfer Balance</h3>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Move funds between companies in your agency.</p>
+        <div className="mt-6 rounded-[var(--radius-btn)] border border-dashed border-[var(--color-border)] p-6 text-center text-sm text-[var(--color-text-muted)]">
+          This is a single-brand workspace with one shared wallet — inter-company transfers apply to multi-brand agencies. Use <span className="text-[var(--color-text-secondary)]">Wallet → Add Funds</span> to top up.
+        </div>
+      </div>
+
+      {/* Spending Report */}
+      <div className="card-lumina rounded-[var(--radius-card)] p-5">
+        <h3 className="text-base font-semibold text-[var(--color-text)]">Spending Report</h3>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Generate a payout report by date range.</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {PRESETS.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => { setPreset(p.key); setSummary(null); }}
+              className={`cursor-pointer rounded-full px-3 py-1.5 text-xs transition ${
+                preset === p.key
+                  ? "bg-[var(--color-brand)] font-semibold text-[var(--color-on-brand)]"
+                  : "border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        {preset === "custom" ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className={fieldCls} />
+            <span className="text-[var(--color-text-muted)]">→</span>
+            <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className={fieldCls} />
+          </div>
+        ) : null}
+        <button
+          onClick={generate}
+          disabled={loading}
+          className="mt-4 w-full cursor-pointer rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] transition hover:opacity-90 disabled:opacity-50"
+        >
+          {loading ? "Generating…" : "Generate Report"}
+        </button>
+        {err ? <p className="mt-3 text-sm text-[var(--color-danger)]">{err}</p> : null}
+        {summary ? (
+          <div className="mt-4 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)]/50 p-4">
+            <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
+              Total spend{summary.from ? ` · ${summary.from} → ${summary.to}` : " · all time"}
+            </p>
+            <p className="tabular mt-1 text-2xl font-semibold text-[var(--color-brand-soft)]">{fmtMoney(summary.total)}</p>
+            <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{summary.count} payout{summary.count === 1 ? "" : "s"}</p>
+            <button
+              onClick={() => downloadPayoutReportsCsv(summary.from ?? undefined, summary.to ?? undefined)}
+              className="mt-3 cursor-pointer rounded-full border border-[var(--color-border)] px-4 py-1.5 text-sm text-[var(--color-text)] transition hover:border-[var(--color-brand)]"
+            >
+              Download CSV
+            </button>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPaymentsPage() {
   const router = useRouter();
   const qc = useQueryClient();
@@ -64,6 +171,7 @@ export default function AdminPaymentsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [hoverRow, setHoverRow] = useState<string | null>(null);
 
+  const [payMenuOpen, setPayMenuOpen] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
   const [showAddFunds, setShowAddFunds] = useState(false);
@@ -194,7 +302,34 @@ export default function AdminPaymentsPage() {
 
             <div className="relative">
               <button
-                onClick={() => { setWalletOpen((v) => !v); setReportsOpen(false); }}
+                onClick={() => { setPayMenuOpen((v) => !v); setWalletOpen(false); setReportsOpen(false); }}
+                className="cursor-pointer rounded-full border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)]"
+              >
+                Pay ▾
+              </button>
+              {payMenuOpen ? (
+                <div className="absolute right-0 z-50 mt-2 w-52 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface)] p-2 shadow-xl" onMouseLeave={() => setPayMenuOpen(false)}>
+                  <button
+                    disabled={owed.length === 0}
+                    onClick={() => { setPayAllScope("all"); setShowPayAllConfirm(true); setPayMenuOpen(false); }}
+                    className="w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-2)] disabled:opacity-40"
+                  >
+                    Pay all owed · {fmtMoney(totalOwed)}
+                  </button>
+                  <button
+                    disabled={selected.size === 0}
+                    onClick={() => { setPayAllScope("selected"); setShowPayAllConfirm(true); setPayMenuOpen(false); }}
+                    className="w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-2)] disabled:opacity-40"
+                  >
+                    Pay selected{selected.size > 0 ? ` (${selected.size})` : ""}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="relative">
+              <button
+                onClick={() => { setWalletOpen((v) => !v); setPayMenuOpen(false); setReportsOpen(false); }}
                 className="cursor-pointer rounded-full border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)]"
               >
                 Wallet {wallet ? `· ${fmtMoney(availableBalance)}` : ""} ▾
@@ -216,7 +351,7 @@ export default function AdminPaymentsPage() {
 
             <div className="relative">
               <button
-                onClick={() => { setReportsOpen((v) => !v); setWalletOpen(false); }}
+                onClick={() => { setReportsOpen((v) => !v); setPayMenuOpen(false); setWalletOpen(false); }}
                 className="cursor-pointer rounded-full border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)]"
               >
                 Reports ▾
@@ -501,9 +636,7 @@ export default function AdminPaymentsPage() {
             )}
           </div>
         ) : (
-          <div className="card-lumina mt-4 rounded-[var(--radius-card)] p-10 text-center text-sm text-[var(--color-text-secondary)]">
-            Agency payouts are coming soon.
-          </div>
+          <AgencyTab />
         )}
 
         {/* Add Funds modal */}

@@ -359,11 +359,23 @@ export const payOne = (creatorId: string) =>
 
 export const getForecast = () => apiFetch<ForecastRow[]>("/api/admin/payouts/forecast", auth());
 
-export const downloadPayoutReportsCsv = () => {
+const rangeQs = (from?: string, to?: string) => {
+  const qs = new URLSearchParams();
+  if (from) qs.set("from", from);
+  if (to) qs.set("to", to);
+  const s = qs.toString();
+  return s ? `?${s}` : "";
+};
+
+export const downloadPayoutReportsCsv = (from?: string, to?: string) => {
   const token = getAdminToken();
   if (!token) return Promise.reject(new Error("Not authenticated"));
-  return downloadCsv("/api/admin/payouts/reports.csv", token);
+  return downloadCsv(`/api/admin/payouts/reports.csv${rangeQs(from, to)}`, token);
 };
+
+export type SpendingSummary = { total: number | string; count: number; from: string | null; to: string | null };
+export const getSpendingSummary = (from?: string, to?: string) =>
+  apiFetch<SpendingSummary>(`/api/admin/payouts/spending-summary${rangeQs(from, to)}`, auth());
 
 export const editClient = (id: string, body: { name?: string; password?: string; campaign_ids?: string[] }) =>
   apiFetch<UserRow>(`/api/admin/users/clients/${id}`, { method: "PATCH", body: JSON.stringify(body), ...auth() });

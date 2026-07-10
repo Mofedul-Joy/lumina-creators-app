@@ -4,8 +4,10 @@ from __future__ import annotations
 import csv
 import io
 import uuid
+from datetime import date, datetime, time, timezone
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -122,9 +124,38 @@ def forecast(admin: Admin = Depends(get_current_admin), db: Session = Depends(ge
     return [ForecastRow(**row) for row in svc2.forecast_all(db)]
 
 
+def _date_range(from_: Optional[date], to: Optional[date]):
+    """Inclusive [start-of-from, end-of-to] as UTC datetimes (payout.created_at
+    is tz-aware)."""
+    df = datetime.combine(from_, time.min, tzinfo=timezone.utc) if from_ else None
+    dt = datetime.combine(to, time.max, tzinfo=timezone.utc) if to else None
+    return df, dt
+
+
+@router.get("/spending-summary")
+def spending_summary(
+    from_: Optional[date] = Query(None, alias="from"),
+    to: Optional[date] = Query(None, alias="to"),
+    admin: Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Total spend + payout count in a date range — Agency Spending Report preview."""
+    df, dt = _date_range(from_, to)
+    s = svc2.spending_summary(db, df, dt)
+    return {"total": s["total"], "count": s["count"],
+            "from": from_.isoformat() if from_ else None,
+            "to": to.isoformat() if to else None}
+
+
 @router.get("/reports.csv")
-def reports_csv(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    rows = list(svc2.payout_report_rows(db))
+def reports_csv(
+    from_: Optional[date] = Query(None, alias="from"),
+    to: Optional[date] = Query(None, alias="to"),
+    admin: Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    df, dt = _date_range(from_, to)
+    rows = list(svc2.payout_report_rows(db, date_from=df, date_to=dt))
 
     def _gen():
         buf = io.StringIO()

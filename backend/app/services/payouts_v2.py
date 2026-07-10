@@ -433,14 +433,33 @@ def forecast_all(db: Session) -> list[dict]:
 
 # ── reports ──────────────────────────────────────────────────────────────────
 
-def payout_report_rows(db: Session, limit: int = 1000):
+def _payouts_in_range(db: Session, date_from=None, date_to=None, limit: int = 5000):
+    stmt = select(Payout)
+    if date_from is not None:
+        stmt = stmt.where(Payout.created_at >= date_from)
+    if date_to is not None:
+        stmt = stmt.where(Payout.created_at <= date_to)
+    return db.scalars(stmt.order_by(Payout.created_at.desc()).limit(limit)).all()
+
+
+def spending_summary(db: Session, date_from=None, date_to=None) -> dict:
+    """Total spend + payout count in a date range — powers the Agency Spending
+    Report preview. SQL aggregates so it's correct at any volume."""
+    stmt = select(func.coalesce(func.sum(Payout.amount), 0), func.count(Payout.id))
+    if date_from is not None:
+        stmt = stmt.where(Payout.created_at >= date_from)
+    if date_to is not None:
+        stmt = stmt.where(Payout.created_at <= date_to)
+    total, count = db.execute(stmt).one()
+    return {"total": Decimal(total), "count": int(count)}
+
+
+def payout_report_rows(db: Session, limit: int = 1000, date_from=None, date_to=None):
     """Rows for the reports.csv export: creator, amount, campaign, paid_at,
-    method, external_ref."""
+    method, external_ref. Optionally bounded to a [date_from, date_to] range."""
     profiles = {p.creator_id: p for p in db.scalars(select(CreatorProfile)).all()}
     campaigns = {c.id: c for c in db.scalars(select(Campaign)).all()}
-    payouts = db.scalars(
-        select(Payout).order_by(Payout.created_at.desc()).limit(limit)
-    ).all()
+    payouts = _payouts_in_range(db, date_from, date_to, limit=limit)
     for p in payouts:
         prof = profiles.get(p.creator_id)
         campaign = campaigns.get(p.campaign_id) if p.campaign_id else None
