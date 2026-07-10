@@ -176,13 +176,18 @@ def add_portfolio(db: Session, creator_id: uuid.UUID, data: dict) -> PortfolioIt
         )
     canonical = urls.canonicalize_url(video_url)
     platform = data.get("platform") or urls.detect_platform(video_url)
-    # Scrape the real video thumbnail so the card shows the actual frame, not a
-    # "Watch on <platform>" placeholder. Best-effort — never blocks the add.
+    # Real video thumbnail so the card shows the actual frame, not a "Watch on
+    # <platform>" placeholder. Uses the FAST resolver (no Apify actor) so the
+    # add returns immediately — the actor path could take ~75s and time the
+    # request out ("Failed to fetch"). None → clean fallback card, never a
+    # broken image.
     thumb = data.get("thumbnail_url")
     if not thumb:
         from app.integrations import apify
         try:
-            thumb = apify.post_thumbnail(platform, canonical)
+            # Resolve from the ORIGINAL url — canonicalize_url strips query params
+            # (e.g. YouTube's ?v=ID) and can break oEmbed lookups.
+            thumb = apify.fast_thumbnail(platform, video_url)
         except Exception:  # noqa: BLE001
             thumb = None
     item = PortfolioItem(
@@ -228,13 +233,12 @@ def recompute_completion(db: Session, creator_id: uuid.UUID) -> tuple[bool, list
 
 
 # ---- apply-readiness (this IS a gate — join_campaign requires it) ----
-# The whole profile must be filled before a creator can apply to a campaign:
-# About, Socials (>=1 VERIFIED), Videos, Details, Payment. Order matters — the
-# "complete your profile" popup routes the creator to `next_section`.
-# Payment is NOT a join requirement — creators can set up "where to send earnings"
-# later. Required to apply: About, Socials (Instagram AND TikTok verified),
-# Videos (>=1), Details (birthday + real country + real city).
-SECTION_ORDER = ["about", "socials", "videos", "details"]
+# Mandatory before a creator can apply to a campaign, and mirrored by the
+# onboarding wizard's step-gating: About (creator type), Socials (Instagram AND
+# TikTok verified), Videos (>=1). Order matters — the "complete your profile"
+# popup routes the creator to `next_section`. Details (birthday/location) and
+# Payment are NOT required — creators can fill those in later.
+SECTION_ORDER = ["about", "socials", "videos"]
 
 
 def _verified(db: Session, creator_id: uuid.UUID, platform: str) -> bool:
@@ -248,10 +252,9 @@ def profile_completeness(db: Session, creator_id: uuid.UUID) -> dict:
     n_portfolio = db.scalar(select(func.count()).select_from(PortfolioItem).where(
         PortfolioItem.creator_id == creator_id))
     sections = {
-        "about": bool((prof.creator_type or "").strip() and (prof.display_name or "").strip()),
+        "about": bool((prof.creator_type or "").strip()),
         "socials": _verified(db, creator_id, "instagram") and _verified(db, creator_id, "tiktok"),
         "videos": bool(n_portfolio),
-        "details": bool(prof.date_of_birth and (prof.country or "").strip() and (prof.city or "").strip()),
     }
     next_section = next((s for s in SECTION_ORDER if not sections[s]), None)
     return {"complete": next_section is None, "sections": sections, "next_section": next_section}

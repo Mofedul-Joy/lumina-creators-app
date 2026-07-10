@@ -258,6 +258,49 @@ def post_thumbnail(platform: str, url: str) -> Optional[str]:
     return None
 
 
+def _og_image(url: str) -> Optional[str]:
+    """Fast best-effort thumbnail via the page's og:image meta tag. Short
+    timeout, returns None on any failure. For platforms without a native fast
+    thumbnail endpoint (Instagram, Facebook, X)."""
+    try:
+        # No redirect-following: the URL host is already validated as a public
+        # platform (is_video_url); a redirect could point at an internal address
+        # (SSRF). A platform that 30x-es to a login page just yields no og:image
+        # → clean fallback, which is fine.
+        r = httpx.get(
+            url,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; LuminaBot/1.0; +https://lumina-creators-app.vercel.app)"},
+            timeout=6,
+            follow_redirects=False,
+        )
+        if r.status_code != 200:
+            return None
+        html = r.text[:200_000]
+        m = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']', html, re.I) or \
+            re.search(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']', html, re.I)
+        return m.group(1) if m else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def fast_thumbnail(platform: str, url: str) -> Optional[str]:
+    """Real thumbnail WITHOUT a slow Apify actor run — safe to call inline in a
+    request (the actor path can take ~75s and time the request out). YouTube
+    image endpoint, TikTok oEmbed, else the page's og:image. Never raises."""
+    if platform == "youtube":
+        vid = urls.youtube_video_id(url)
+        return f"https://img.youtube.com/vi/{vid}/hqdefault.jpg" if vid else None
+    if platform == "tiktok":
+        try:
+            r = httpx.get("https://www.tiktok.com/oembed", params={"url": url},
+                          headers={"User-Agent": "Mozilla/5.0"}, timeout=8)
+            if r.status_code == 200 and r.json().get("thumbnail_url"):
+                return r.json()["thumbnail_url"]
+        except Exception:  # noqa: BLE001
+            pass
+    return _og_image(url)
+
+
 # ── Profile (bio) scraping — used for handle verification (bio-code method) ──
 # A separate actor per platform that returns account-level fields (bio text,
 # follower count, avatar) rather than per-post stats. Only the platforms we let

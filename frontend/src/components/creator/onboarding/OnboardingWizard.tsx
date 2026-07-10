@@ -153,7 +153,10 @@ export function OnboardingWizard() {
         <Link href="/login" className="text-[var(--color-brand)] underline">Go to sign in</Link>
       </main>
     );
-  if (!ready || profileQ.isLoading || !seeded.current)
+  // Wait for socials + portfolio too — REQUIRED/gating reads them, and treating
+  // a still-loading query as empty would briefly (or, on error, permanently)
+  // lock sections a completed creator has already finished.
+  if (!ready || profileQ.isLoading || socialsQ.isLoading || portfolioQ.isLoading || !seeded.current)
     return (
       <main className="mx-auto max-w-xl px-6 py-12 space-y-4">
         <Skeleton className="h-2 w-full" /><Skeleton className="mt-8 h-9 w-72" /><Skeleton className="h-64 w-full" />
@@ -167,21 +170,31 @@ export function OnboardingWizard() {
   // Required steps can't be skipped and gate the Continue button until valid.
   // Instagram + TikTok must be VERIFIED; YouTube/X/Facebook stay optional.
   const isVerifiedSocial = (p: Platform) => socials.some((s) => s.platform === p && s.is_verified);
-  // Required to move forward (no skip). Payment + gender are NOT required —
-  // creators can set payment up later, and IG/TikTok are the required socials.
+  // Mandatory to complete the profile (no skip), mirroring the backend
+  // apply-gate: creator type (About), Instagram + TikTok verified (Socials), and
+  // at least one video (Videos). Name, birthday, other details, and payment are
+  // all optional during onboarding.
   const REQUIRED: Partial<Record<StepKey, boolean>> = {
     type: !!creatorType,
-    name: !!details.display_name.trim(),
     soc_instagram: isVerifiedSocial("instagram"),
     soc_tiktok: isVerifiedSocial("tiktok"),
     portfolio: portfolio.length > 0,
-    birthday: !!audience.date_of_birth,
-    location: !!(audience.country.trim() && audience.city.trim()),
   };
   const stepRequired = cur.key in REQUIRED;
   const canContinue = !stepRequired || !!REQUIRED[cur.key];
   const isLast = step === STEPS.length - 1;
   const curSection = SECTION_STARTS.reduce((acc, start, i) => (step >= start ? i : acc), 0);
+
+  // Step-gating: you can't jump ahead past an unfinished required step. The
+  // furthest reachable step is the first incomplete required one (you can sit
+  // on it to finish it); everything after stays locked. Going back is allowed.
+  const stepOk = (key: StepKey) => !(key in REQUIRED) || !!REQUIRED[key];
+  const firstIncomplete = STEPS.findIndex((s) => s.key in REQUIRED && !REQUIRED[s.key]);
+  const maxReachable = firstIncomplete === -1 ? STEPS.length - 1 : firstIncomplete;
+  const sectionEnd = (i: number) => (i + 1 < SECTION_STARTS.length ? SECTION_STARTS[i + 1] : STEPS.length);
+  const sectionHasRequired = (i: number) => STEPS.slice(SECTION_STARTS[i], sectionEnd(i)).some((s) => s.key in REQUIRED);
+  const sectionComplete = (i: number) => STEPS.slice(SECTION_STARTS[i], sectionEnd(i)).every((s) => stepOk(s.key));
+  const sectionLocked = (i: number) => SECTION_STARTS[i] > maxReachable;
   const err = saveM.isError ? (saveM.error as Error).message : addSocialM.isError ? (addSocialM.error as Error).message : "";
   const committing = saveM.isPending || addSocialM.isPending;
 
@@ -225,12 +238,35 @@ export function OnboardingWizard() {
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1.5">
-            {SECTIONS.map((s, i) => (
-              <button key={s.label} onClick={() => goTo(SECTION_STARTS[i])}
-                className={`cursor-pointer rounded-full px-2.5 py-1 text-[11px] transition ${i === curSection ? "bg-[var(--color-brand)]/15 font-medium text-[var(--color-brand-soft)]" : i < curSection ? "text-[var(--color-text-secondary)] hover:text-[var(--color-text)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"}`}>
-                {i < curSection ? "✓ " : ""}{s.label}
-              </button>
-            ))}
+            {SECTIONS.map((s, i) => {
+              const locked = sectionLocked(i);
+              const done = sectionHasRequired(i) && sectionComplete(i);
+              return (
+                <button
+                  key={s.label}
+                  type="button"
+                  disabled={locked}
+                  onClick={() => { if (!locked) goTo(SECTION_STARTS[i]); }}
+                  title={locked ? "Finish the required steps first" : undefined}
+                  className={`rounded-full px-2.5 py-1 text-[11px] transition ${
+                    locked
+                      ? "cursor-not-allowed text-[var(--color-text-muted)] opacity-40"
+                      : i === curSection
+                        ? "cursor-pointer bg-[var(--color-brand)]/15 font-medium text-[var(--color-brand-soft)]"
+                        : "cursor-pointer text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+                  }`}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    {done ? (
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden><path d="m5 13 4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    ) : locked ? (
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden><rect x="4" y="10" width="16" height="11" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" strokeWidth="2" /></svg>
+                    ) : null}
+                    {s.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
           {!isLast ? <span className="text-[11px] text-[var(--color-text-muted)]">Step {step + 1} of {STEPS.length - 1}</span> : null}
         </div>
@@ -552,6 +588,40 @@ function AvatarPicker({ bearer, avatarUrl, onSaved }: { bearer: string; avatarUr
   );
 }
 
+// A linked video's thumbnail. Shows the real scraped frame; if there's no
+// thumbnail (or it fails to load — e.g. an expired IG CDN link), falls back to
+// a clean "Watch on <platform>" card instead of a broken/black box.
+function LinkThumb({ videoUrl, thumbnailUrl, platform }: { videoUrl: string | null; thumbnailUrl: string | null; platform: Platform | null }) {
+  const [failed, setFailed] = useState(false);
+  const showImg = !!thumbnailUrl && !failed;
+  return (
+    <a href={videoUrl ?? "#"} target="_blank" rel="noreferrer" className="group relative block aspect-video w-full overflow-hidden">
+      {showImg ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={thumbnailUrl!} alt="" onError={() => setFailed(true)} className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
+          <span className="pointer-events-none absolute inset-0 bg-black/25 transition group-hover:bg-black/10" />
+          <span className="absolute inset-0 grid place-items-center">
+            <span className="grid h-11 w-11 place-items-center rounded-full bg-black/55 text-white backdrop-blur">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M8 5v14l11-7L8 5Z" /></svg>
+            </span>
+          </span>
+          {platform ? (
+            <span className="absolute left-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/55 text-white backdrop-blur">
+              <PlatformIcon name={platform} className="h-4 w-4" />
+            </span>
+          ) : null}
+        </>
+      ) : (
+        <span className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-[var(--color-brand)]/20 to-[var(--color-bg-deep)] text-sm font-medium text-[var(--color-brand)]">
+          {platform ? <PlatformIcon name={platform} className="h-7 w-7" /> : null}
+          <span className="flex items-center gap-1">Watch on {platform ? platformLabel(platform) : "source"} <span className="transition group-hover:translate-x-0.5">↗</span></span>
+        </span>
+      )}
+    </a>
+  );
+}
+
 function PortfolioStep({ bearer, portfolio, onChanged }: { bearer: string; portfolio: { id: string; video_url: string | null; thumbnail_url: string | null; is_upload: boolean; brand_name: string | null; platform?: Platform | null }[]; onChanged: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pct, setPct] = useState(0);
@@ -586,31 +656,7 @@ function PortfolioStep({ bearer, portfolio, onChanged }: { bearer: string; portf
               {p.is_upload && p.video_url ? (
                 <video src={p.video_url} controls playsInline preload="metadata" poster={p.thumbnail_url ?? undefined} className="aspect-video w-full bg-black object-contain" />
               ) : (
-                // link video — real thumbnail if we scraped one, else a fallback card
-                <a href={p.video_url ?? "#"} target="_blank" rel="noreferrer" className="group relative block aspect-video w-full overflow-hidden">
-                  {p.thumbnail_url ? (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={p.thumbnail_url} alt="" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
-                      <span className="pointer-events-none absolute inset-0 bg-black/25 transition group-hover:bg-black/10" />
-                      <span className="absolute inset-0 grid place-items-center">
-                        <span className="grid h-11 w-11 place-items-center rounded-full bg-black/55 text-white backdrop-blur">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M8 5v14l11-7L8 5Z" /></svg>
-                        </span>
-                      </span>
-                      {p.platform ? (
-                        <span className="absolute left-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/55 text-white backdrop-blur">
-                          <PlatformIcon name={p.platform} className="h-4 w-4" />
-                        </span>
-                      ) : null}
-                    </>
-                  ) : (
-                    <span className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-[var(--color-brand)]/20 to-[var(--color-bg-deep)] text-sm font-medium text-[var(--color-brand)]">
-                      {p.platform ? <PlatformIcon name={p.platform} className="h-7 w-7" /> : null}
-                      <span className="flex items-center gap-1">Watch on {p.platform ? platformLabel(p.platform) : "source"} <span className="transition group-hover:translate-x-0.5">↗</span></span>
-                    </span>
-                  )}
-                </a>
+                <LinkThumb videoUrl={p.video_url} thumbnailUrl={p.thumbnail_url} platform={p.platform ?? null} />
               )}
               <div className="flex items-center justify-between gap-2 px-3 py-2">
                 <span className="min-w-0 truncate text-xs text-[var(--color-text-secondary)]">{p.brand_name || (p.is_upload ? "Uploaded video" : "Linked video")}</span>
