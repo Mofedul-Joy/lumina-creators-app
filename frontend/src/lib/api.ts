@@ -368,6 +368,8 @@ export type PortfolioItemOut = {
   brand_name: string | null;
   caption: string | null;
   platform: Platform | null;
+  video_url: string | null;
+  thumbnail_url: string | null;
 };
 
 export type CreatorDetail = {
@@ -425,6 +427,8 @@ export type RecentSubmissionItem = {
   comments: number;
   shares: number | null;
   thumbnail_url: string | null;
+  campaign_id: string | null;
+  campaign_name: string | null;
 };
 
 export type ExperienceItem = {

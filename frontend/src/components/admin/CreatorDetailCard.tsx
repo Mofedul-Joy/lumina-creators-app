@@ -48,6 +48,60 @@ const PLATFORM_GRADIENT: Record<string, string> = {
   twitter: "linear-gradient(135deg,#1DA1F255,#0d8ecf55)",
 };
 
+function VideoTile({
+  href,
+  thumbnail,
+  platform,
+  label,
+  stats,
+  highlight = false,
+}: {
+  href?: string;
+  thumbnail?: string | null;
+  platform?: string | null;
+  label: string;
+  stats?: string;
+  highlight?: boolean;
+}) {
+  const Wrap = href ? "a" : "div";
+  return (
+    <div className="w-28 shrink-0 sm:w-32">
+      <Wrap
+        {...(href ? { href, target: "_blank", rel: "noopener noreferrer", "aria-label": label } : {})}
+        className={`group relative block aspect-[9/16] overflow-hidden rounded-xl border bg-[var(--color-surface-2)] ${
+          highlight ? "border-[var(--color-brand)]" : "border-[var(--color-border)]"
+        }`}
+      >
+        {thumbnail ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={thumbnail} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div
+            className="h-full w-full"
+            style={{ background: PLATFORM_GRADIENT[platform ?? ""] ?? "linear-gradient(135deg,#22c55e33,#05261533)" }}
+          />
+        )}
+        {href ? (
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100" aria-hidden>
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-black/50 text-white">▶</span>
+          </div>
+        ) : null}
+        {stats ? (
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 py-1.5 text-[10px] text-white">
+            {stats}
+          </div>
+        ) : null}
+      </Wrap>
+      <p
+        className={`mt-1 truncate text-[11px] ${highlight ? "font-medium text-[var(--color-brand)]" : "text-[var(--color-text-secondary)]"}`}
+        title={label}
+      >
+        {label}
+      </p>
+    </div>
+  );
+}
+
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-3 text-center">
@@ -161,39 +215,41 @@ export function CreatorDetailCard({
         <StreakFlame days={c.streak_days} />
       </div>
 
-      {/* 3. Recent videos reel */}
+      {/* 3a. Top content — best videos uploaded during onboarding (portfolio) */}
+      {c.portfolio.length > 0 ? (
+        <section>
+          <h3 className="mb-2 text-sm font-semibold text-[var(--color-text)]">Top content · from onboarding</h3>
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {c.portfolio.map((p, i) => (
+              <VideoTile
+                key={p.id}
+                href={p.video_url ?? undefined}
+                thumbnail={p.thumbnail_url}
+                platform={p.platform}
+                label={i === 0 ? "⭐ Best video" : p.brand_name || (p.platform ?? "Video")}
+                highlight={i === 0}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* 3b. Campaign submissions — which video for which campaign */}
       <section>
-        <h3 className="mb-2 text-sm font-semibold text-[var(--color-text)]">Recent videos</h3>
+        <h3 className="mb-2 text-sm font-semibold text-[var(--color-text)]">Campaign videos</h3>
         {c.recent_submissions.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-muted)]">No videos submitted yet.</p>
+          <p className="text-sm text-[var(--color-text-muted)]">No videos submitted to campaigns yet.</p>
         ) : (
           <div className="flex gap-3 overflow-x-auto pb-2">
             {c.recent_submissions.map((v) => (
-              <a
+              <VideoTile
                 key={v.id}
                 href={v.post_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative aspect-[9/16] w-28 shrink-0 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] sm:w-32"
-              >
-                {v.thumbnail_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={v.thumbnail_url} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div
-                    className="h-full w-full"
-                    style={{ background: PLATFORM_GRADIENT[v.platform] ?? "linear-gradient(135deg,#22c55e33,#05261533)" }}
-                  />
-                )}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
-                  <span className="grid h-9 w-9 place-items-center rounded-full bg-black/50 text-white">▶</span>
-                </div>
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 py-1.5 text-[10px] text-white">
-                  <span>❤ {fmtNumber(v.likes)}</span>
-                  <span className="ml-2">💬 {fmtNumber(v.comments)}</span>
-                  <span className="ml-2">↗ {fmtNumber(v.shares ?? 0)}</span>
-                </div>
-              </a>
+                thumbnail={v.thumbnail_url}
+                platform={v.platform}
+                label={v.campaign_name ?? "Campaign"}
+                stats={`❤ ${fmtNumber(v.likes)}  ${fmtNumber(v.views)} views`}
+              />
             ))}
           </div>
         )}

@@ -36,6 +36,8 @@ class PortfolioItemOut(BaseModel):
     brand_name: Optional[str] = None
     caption: Optional[str] = None
     platform: Optional[str] = None
+    video_url: Optional[str] = None
+    thumbnail_url: Optional[str] = None
 
 
 class CreatorDetail(BaseModel):
@@ -75,6 +77,8 @@ class RecentSubmissionItem(BaseModel):
     comments: int = 0
     shares: Optional[int] = None
     thumbnail_url: Optional[str] = None
+    campaign_id: Optional[str] = None
+    campaign_name: Optional[str] = None
 
 
 class ExperienceItem(BaseModel):

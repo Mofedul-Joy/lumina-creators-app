@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.integrations import storage
 from app.models import (
+    Campaign,
     Creator,
     CreatorExperience,
     CreatorProfile,
@@ -185,7 +186,14 @@ def get_creator_detail(db: Session, creator_id: uuid.UUID) -> dict:
             for s in socials
         ],
         "portfolio": [
-            {"id": str(p.id), "brand_name": p.brand_name, "caption": p.caption, "platform": p.platform}
+            {
+                "id": str(p.id),
+                "brand_name": p.brand_name,
+                "caption": p.caption,
+                "platform": p.platform,
+                "video_url": p.video_url,
+                "thumbnail_url": p.thumbnail_url,
+            }
             for p in portfolio
         ],
     }
@@ -210,7 +218,11 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Creator not found")
     prof = db.scalar(select(CreatorProfile).where(CreatorProfile.creator_id == c.id))
     socials = db.scalars(select(SocialAccount).where(SocialAccount.creator_id == c.id)).all()
-    portfolio = db.scalars(select(PortfolioItem).where(PortfolioItem.creator_id == c.id)).all()
+    portfolio = db.scalars(
+        select(PortfolioItem)
+        .where(PortfolioItem.creator_id == c.id)
+        .order_by(PortfolioItem.created_at.asc())
+    ).all()
     experiences = db.scalars(
         select(CreatorExperience)
         .where(CreatorExperience.creator_id == c.id)
@@ -228,15 +240,31 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
     total_earned = Decimal(agg_row[1]) if agg_row else Decimal("0")
     total_posts = int(agg_row[2]) if agg_row else 0
 
+    # Show the creator's campaign uploads (verified + still-pending); exclude
+    # only rejected. NB: the enum is pending/verified/rejected — an earlier
+    # build filtered on non-existent "approved"/"reviewed" values, which made
+    # this query error out on Postgres.
     recent_subs = db.scalars(
         select(Submission)
         .where(
             Submission.creator_id == c.id,
-            Submission.verification_status.in_(("approved", "reviewed")),
+            Submission.verification_status.in_(("verified", "pending")),
         )
         .order_by(Submission.created_at.desc())
         .limit(12)
     ).all()
+
+    # Map each submission's campaign to its name so the admin can see which
+    # video was uploaded for which campaign.
+    camp_ids = {s.campaign_id for s in recent_subs}
+    camp_names: dict = {}
+    if camp_ids:
+        camp_names = {
+            cid: name
+            for cid, name in db.execute(
+                select(Campaign.id, Campaign.name).where(Campaign.id.in_(camp_ids))
+            ).all()
+        }
 
     streak_days = prof.streak_days if prof else 0
     xp = (prof.xp if prof and prof.xp else 0) or _xp_for(total_views, total_posts, streak_days)
@@ -281,6 +309,8 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
                 "comments": s.comments,
                 "shares": s.shares,
                 "thumbnail_url": s.thumbnail_url,
+                "campaign_id": str(s.campaign_id),
+                "campaign_name": camp_names.get(s.campaign_id),
             }
             for s in recent_subs
         ],
@@ -289,7 +319,14 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
             for e in experiences
         ],
         "portfolio": [
-            {"id": str(p.id), "brand_name": p.brand_name, "caption": p.caption, "platform": p.platform}
+            {
+                "id": str(p.id),
+                "brand_name": p.brand_name,
+                "caption": p.caption,
+                "platform": p.platform,
+                "video_url": p.video_url,
+                "thumbnail_url": p.thumbnail_url,
+            }
             for p in portfolio
         ],
     }
