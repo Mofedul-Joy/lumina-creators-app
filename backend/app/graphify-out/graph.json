@@ -100,7 +100,7 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "core_config_settings_validate_for_runtime",
-      "community": 24,
+      "community": 36,
       "norm_label": ".validate_for_runtime()"
     },
     {
@@ -130,7 +130,7 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "core_config_rationale_99",
-      "community": 24,
+      "community": 36,
       "norm_label": "fail fast on misconfiguration that is dangerous in production.          called o"
     },
     {
@@ -190,7 +190,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "core_security",
-      "community": 12,
+      "community": 60,
       "norm_label": "security.py"
     },
     {
@@ -230,7 +230,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "core_security_now",
-      "community": 12,
+      "community": 60,
       "norm_label": "_now()"
     },
     {
@@ -240,7 +240,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "core_security_py_datetime",
-      "community": 12,
+      "community": 60,
       "norm_label": "datetime"
     },
     {
@@ -250,7 +250,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "core_security_create_access_token",
-      "community": 12,
+      "community": 60,
       "norm_label": "create_access_token()"
     },
     {
@@ -260,7 +260,7 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "core_security_create_impersonation_token",
-      "community": 12,
+      "community": 60,
       "norm_label": "create_impersonation_token()"
     },
     {
@@ -270,7 +270,7 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "core_security_create_refresh_token",
-      "community": 12,
+      "community": 60,
       "norm_label": "create_refresh_token()"
     },
     {
@@ -280,7 +280,7 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "core_security_decode_token",
-      "community": 12,
+      "community": 60,
       "norm_label": "decode_token()"
     },
     {
@@ -290,7 +290,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "core_security_rationale_1",
-      "community": 12,
+      "community": 60,
       "norm_label": "password hashing + jwt (hs256) with realm-scoped audience and rotating refresh."
     },
     {
@@ -310,7 +310,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "core_security_rationale_45",
-      "community": 12,
+      "community": 60,
       "norm_label": "short-lived client-audience access token minted for an admin's 'view as     clie"
     },
     {
@@ -320,7 +320,7 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "core_security_rationale_59",
-      "community": 12,
+      "community": 60,
       "norm_label": "returns (token, jti, expires_at)."
     },
     {
@@ -330,7 +330,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "core_security_rationale_72",
-      "community": 12,
+      "community": 60,
       "norm_label": "raises jwt.pyjwterror on any failure (bad sig, expired, wrong audience)."
     },
     {
@@ -500,7 +500,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "runtimeerror",
-      "community": 24,
+      "community": 14,
       "norm_label": "runtimeerror"
     },
     {
@@ -884,6 +884,16 @@
       "norm_label": "send_campaign_invite()"
     },
     {
+      "label": "send_contract_ready()",
+      "file_type": "code",
+      "source_file": "integrations/email.py",
+      "source_location": "L119",
+      "_origin": "ast",
+      "id": "integrations_email_send_contract_ready",
+      "community": 48,
+      "norm_label": "send_contract_ready()"
+    },
+    {
       "label": "Transactional email. Prefers Resend (HTTP \u2014 works from cloud hosts that block ou",
       "file_type": "rationale",
       "source_file": "integrations/email.py",
@@ -912,6 +922,16 @@
       "id": "integrations_email_rationale_93",
       "community": 48,
       "norm_label": "invite to a specific campaign. `existing`=true \u2192 the link opens the     campaign"
+    },
+    {
+      "label": "Notify a creator their Campaign Participation Agreement is ready to review/sign.",
+      "file_type": "rationale",
+      "source_file": "integrations/email.py",
+      "source_location": "L120",
+      "_origin": "ast",
+      "id": "integrations_email_rationale_120",
+      "community": 48,
+      "norm_label": "notify a creator their campaign participation agreement is ready to review/sign."
     },
     {
       "label": "storage.py",
@@ -1244,6 +1264,66 @@
       "norm_label": "an admin invite to one campaign. `creator_id` set \u2192 existing creator     (delive"
     },
     {
+      "label": "contract.py",
+      "file_type": "code",
+      "source_file": "models/contract.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "models_contract",
+      "community": 0,
+      "norm_label": "contract.py"
+    },
+    {
+      "label": "CampaignContract",
+      "file_type": "code",
+      "source_file": "models/contract.py",
+      "source_location": "L16",
+      "_origin": "ast",
+      "id": "models_contract_campaigncontract",
+      "community": 0,
+      "norm_label": "campaigncontract"
+    },
+    {
+      "label": "CreatorContract",
+      "file_type": "code",
+      "source_file": "models/contract.py",
+      "source_location": "L40",
+      "_origin": "ast",
+      "id": "models_contract_creatorcontract",
+      "community": 0,
+      "norm_label": "creatorcontract"
+    },
+    {
+      "label": "Campaign Participation Agreement models \u2014 the editable template per campaign and",
+      "file_type": "rationale",
+      "source_file": "models/contract.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "models_contract_rationale_1",
+      "community": 0,
+      "norm_label": "campaign participation agreement models \u2014 the editable template per campaign and"
+    },
+    {
+      "label": "The editable agreement template for one campaign. `body` is full free-text     w",
+      "file_type": "rationale",
+      "source_file": "models/contract.py",
+      "source_location": "L17",
+      "_origin": "ast",
+      "id": "models_contract_rationale_17",
+      "community": 0,
+      "norm_label": "the editable agreement template for one campaign. `body` is full free-text     w"
+    },
+    {
+      "label": "A generated agreement for one creator on one campaign. `rendered_body` is a",
+      "file_type": "rationale",
+      "source_file": "models/contract.py",
+      "source_location": "L41",
+      "_origin": "ast",
+      "id": "models_contract_rationale_41",
+      "community": 0,
+      "norm_label": "a generated agreement for one creator on one campaign. `rendered_body` is a"
+    },
+    {
       "label": "enums.py",
       "file_type": "code",
       "source_file": "models/enums.py",
@@ -1360,7 +1440,7 @@
       "source_location": "L137",
       "_origin": "ast",
       "id": "models_payout_wallettransaction",
-      "community": 0,
+      "community": 2,
       "norm_label": "wallettransaction"
     },
     {
@@ -1390,7 +1470,7 @@
       "source_location": "L138",
       "_origin": "ast",
       "id": "models_payout_rationale_138",
-      "community": 0,
+      "community": 2,
       "norm_label": "the wallet ledger \u2014 one row per deposit/withdrawal/payout/refund/     adjustment"
     },
     {
@@ -1430,7 +1510,7 @@
       "source_location": "L114",
       "_origin": "ast",
       "id": "models_profile_socialaccount",
-      "community": 21,
+      "community": 0,
       "norm_label": "socialaccount"
     },
     {
@@ -2037,7 +2117,7 @@
       "label": "campaign_out()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L29",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "admin_campaigns_campaign_out",
       "community": 5,
@@ -2047,7 +2127,7 @@
       "label": "Campaign",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L29",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "routers_admin_campaigns_py_campaign",
       "community": 5,
@@ -2057,7 +2137,7 @@
       "label": "Session",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L29",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "routers_admin_campaigns_py_session",
       "community": 5,
@@ -2067,7 +2147,7 @@
       "label": "CampaignOut",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L29",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "campaignout",
       "community": 5,
@@ -2077,7 +2157,7 @@
       "label": "create()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L73",
+      "source_location": "L74",
       "_origin": "ast",
       "id": "admin_campaigns_create",
       "community": 5,
@@ -2087,7 +2167,7 @@
       "label": "CampaignCreateIn",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L73",
+      "source_location": "L74",
       "_origin": "ast",
       "id": "campaigncreatein",
       "community": 5,
@@ -2097,7 +2177,7 @@
       "label": "Admin",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L73",
+      "source_location": "L74",
       "_origin": "ast",
       "id": "routers_admin_campaigns_py_admin",
       "community": 5,
@@ -2107,7 +2187,7 @@
       "label": "list_all()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L78",
+      "source_location": "L79",
       "_origin": "ast",
       "id": "admin_campaigns_list_all",
       "community": 5,
@@ -2117,7 +2197,7 @@
       "label": "get_one()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L83",
+      "source_location": "L84",
       "_origin": "ast",
       "id": "admin_campaigns_get_one",
       "community": 5,
@@ -2127,7 +2207,7 @@
       "label": "UUID",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L83",
+      "source_location": "L84",
       "_origin": "ast",
       "id": "routers_admin_campaigns_py_uuid",
       "community": 5,
@@ -2137,7 +2217,7 @@
       "label": "update()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L88",
+      "source_location": "L89",
       "_origin": "ast",
       "id": "admin_campaigns_update",
       "community": 5,
@@ -2147,7 +2227,7 @@
       "label": "CampaignUpdateIn",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L88",
+      "source_location": "L89",
       "_origin": "ast",
       "id": "campaignupdatein",
       "community": 5,
@@ -2157,7 +2237,7 @@
       "label": "publish()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L93",
+      "source_location": "L94",
       "_origin": "ast",
       "id": "admin_campaigns_publish",
       "community": 5,
@@ -2167,7 +2247,7 @@
       "label": "close()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L98",
+      "source_location": "L99",
       "_origin": "ast",
       "id": "admin_campaigns_close",
       "community": 5,
@@ -2177,7 +2257,7 @@
       "label": "reopen()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L103",
+      "source_location": "L104",
       "_origin": "ast",
       "id": "admin_campaigns_reopen",
       "community": 5,
@@ -2187,7 +2267,7 @@
       "label": "archive()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L108",
+      "source_location": "L109",
       "_origin": "ast",
       "id": "admin_campaigns_archive",
       "community": 5,
@@ -2197,7 +2277,7 @@
       "label": "CampaignOverviewCreator",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L112",
+      "source_location": "L113",
       "_origin": "ast",
       "id": "admin_campaigns_campaignoverviewcreator",
       "community": 28,
@@ -2207,7 +2287,7 @@
       "label": "CampaignOverviewOut",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L123",
+      "source_location": "L124",
       "_origin": "ast",
       "id": "admin_campaigns_campaignoverviewout",
       "community": 28,
@@ -2217,7 +2297,7 @@
       "label": "campaign_overview()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L134",
+      "source_location": "L136",
       "_origin": "ast",
       "id": "admin_campaigns_campaign_overview",
       "community": 5,
@@ -2227,7 +2307,7 @@
       "label": "convert_to_advanced()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L141",
+      "source_location": "L143",
       "_origin": "ast",
       "id": "admin_campaigns_convert_to_advanced",
       "community": 5,
@@ -2237,7 +2317,7 @@
       "label": "impersonate_client()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L148",
+      "source_location": "L150",
       "_origin": "ast",
       "id": "admin_campaigns_impersonate_client",
       "community": 5,
@@ -2247,7 +2327,7 @@
       "label": "export_submissions_csv()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L163",
+      "source_location": "L165",
       "_origin": "ast",
       "id": "admin_campaigns_export_submissions_csv",
       "community": 5,
@@ -2257,7 +2337,7 @@
       "label": "_share_url()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L199",
+      "source_location": "L201",
       "_origin": "ast",
       "id": "admin_campaigns_share_url",
       "community": 5,
@@ -2267,7 +2347,7 @@
       "label": "enable_share()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L204",
+      "source_location": "L206",
       "_origin": "ast",
       "id": "admin_campaigns_enable_share",
       "community": 5,
@@ -2277,7 +2357,7 @@
       "label": "rotate_share()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L219",
+      "source_location": "L221",
       "_origin": "ast",
       "id": "admin_campaigns_rotate_share",
       "community": 5,
@@ -2287,7 +2367,7 @@
       "label": "disable_share()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L231",
+      "source_location": "L233",
       "_origin": "ast",
       "id": "admin_campaigns_disable_share",
       "community": 5,
@@ -2297,7 +2377,7 @@
       "label": "CampaignInviteIn",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L246",
+      "source_location": "L248",
       "_origin": "ast",
       "id": "admin_campaigns_campaigninvitein",
       "community": 5,
@@ -2307,7 +2387,7 @@
       "label": "CampaignInviteSummaryOut",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L251",
+      "source_location": "L253",
       "_origin": "ast",
       "id": "admin_campaigns_campaigninvitesummaryout",
       "community": 5,
@@ -2317,7 +2397,7 @@
       "label": "CampaignInviteRow",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L258",
+      "source_location": "L260",
       "_origin": "ast",
       "id": "admin_campaigns_campaigninviterow",
       "community": 5,
@@ -2327,7 +2407,7 @@
       "label": "CampaignInviteLinkOut",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L267",
+      "source_location": "L269",
       "_origin": "ast",
       "id": "admin_campaigns_campaigninvitelinkout",
       "community": 5,
@@ -2337,7 +2417,7 @@
       "label": "invite_to_campaign()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L272",
+      "source_location": "L274",
       "_origin": "ast",
       "id": "admin_campaigns_invite_to_campaign",
       "community": 5,
@@ -2347,7 +2427,7 @@
       "label": "list_campaign_invites()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L287",
+      "source_location": "L289",
       "_origin": "ast",
       "id": "admin_campaigns_list_campaign_invites",
       "community": 5,
@@ -2357,7 +2437,7 @@
       "label": "campaign_invite_link()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L292",
+      "source_location": "L294",
       "_origin": "ast",
       "id": "admin_campaigns_campaign_invite_link",
       "community": 5,
@@ -2367,11 +2447,81 @@
       "label": "revoke_campaign_invite()",
       "file_type": "code",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L297",
+      "source_location": "L299",
       "_origin": "ast",
       "id": "admin_campaigns_revoke_campaign_invite",
       "community": 5,
       "norm_label": "revoke_campaign_invite()"
+    },
+    {
+      "label": "ContractTemplateOut",
+      "file_type": "code",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L305",
+      "_origin": "ast",
+      "id": "admin_campaigns_contracttemplateout",
+      "community": 5,
+      "norm_label": "contracttemplateout"
+    },
+    {
+      "label": "ContractTemplateIn",
+      "file_type": "code",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L315",
+      "_origin": "ast",
+      "id": "admin_campaigns_contracttemplatein",
+      "community": 5,
+      "norm_label": "contracttemplatein"
+    },
+    {
+      "label": "ContractRow",
+      "file_type": "code",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L322",
+      "_origin": "ast",
+      "id": "admin_campaigns_contractrow",
+      "community": 5,
+      "norm_label": "contractrow"
+    },
+    {
+      "label": "_contract_template_out()",
+      "file_type": "code",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L332",
+      "_origin": "ast",
+      "id": "admin_campaigns_contract_template_out",
+      "community": 5,
+      "norm_label": "_contract_template_out()"
+    },
+    {
+      "label": "get_contract_template()",
+      "file_type": "code",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L340",
+      "_origin": "ast",
+      "id": "admin_campaigns_get_contract_template",
+      "community": 5,
+      "norm_label": "get_contract_template()"
+    },
+    {
+      "label": "update_contract_template()",
+      "file_type": "code",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L346",
+      "_origin": "ast",
+      "id": "admin_campaigns_update_contract_template",
+      "community": 5,
+      "norm_label": "update_contract_template()"
+    },
+    {
+      "label": "list_campaign_contracts()",
+      "file_type": "code",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L355",
+      "_origin": "ast",
+      "id": "admin_campaigns_list_campaign_contracts",
+      "community": 5,
+      "norm_label": "list_campaign_contracts()"
     },
     {
       "label": "Admin campaign builder: CRUD + publish + archive (soft-delete).",
@@ -2387,9 +2537,9 @@
       "label": "Stat tiles + active-creator list for the campaign detail page.",
       "file_type": "rationale",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L135",
+      "source_location": "L137",
       "_origin": "ast",
-      "id": "admin_campaigns_rationale_135",
+      "id": "admin_campaigns_rationale_137",
       "community": 5,
       "norm_label": "stat tiles + active-creator list for the campaign detail page."
     },
@@ -2397,9 +2547,9 @@
       "label": "One-way flip to the advanced setup \u2014 just exposes the extra options; it     neve",
       "file_type": "rationale",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L142",
+      "source_location": "L144",
       "_origin": "ast",
-      "id": "admin_campaigns_rationale_142",
+      "id": "admin_campaigns_rationale_144",
       "community": 5,
       "norm_label": "one-way flip to the advanced setup \u2014 just exposes the extra options; it     neve"
     },
@@ -2407,9 +2557,9 @@
       "label": "Mints a 15-minute client-scoped token so an admin can see this campaign's     cl",
       "file_type": "rationale",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L149",
+      "source_location": "L151",
       "_origin": "ast",
-      "id": "admin_campaigns_rationale_149",
+      "id": "admin_campaigns_rationale_151",
       "community": 5,
       "norm_label": "mints a 15-minute client-scoped token so an admin can see this campaign's     cl"
     },
@@ -2417,9 +2567,9 @@
       "label": "Every submission in the campaign, no pagination cap \u2014 the whole point     of a C",
       "file_type": "rationale",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L164",
+      "source_location": "L166",
       "_origin": "ast",
-      "id": "admin_campaigns_rationale_164",
+      "id": "admin_campaigns_rationale_166",
       "community": 5,
       "norm_label": "every submission in the campaign, no pagination cap \u2014 the whole point     of a c"
     },
@@ -2427,9 +2577,9 @@
       "label": "Enable the public share page. Generates a token if one doesn't exist yet;     re",
       "file_type": "rationale",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L205",
+      "source_location": "L207",
       "_origin": "ast",
-      "id": "admin_campaigns_rationale_205",
+      "id": "admin_campaigns_rationale_207",
       "community": 5,
       "norm_label": "enable the public share page. generates a token if one doesn't exist yet;     re"
     },
@@ -2437,9 +2587,9 @@
       "label": "Generate a NEW token, immediately invalidating the old link.",
       "file_type": "rationale",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L220",
+      "source_location": "L222",
       "_origin": "ast",
-      "id": "admin_campaigns_rationale_220",
+      "id": "admin_campaigns_rationale_222",
       "community": 5,
       "norm_label": "generate a new token, immediately invalidating the old link."
     },
@@ -2447,9 +2597,9 @@
       "label": "Turn off public access. Keeps the token stored (re-enable restores the     same",
       "file_type": "rationale",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L232",
+      "source_location": "L234",
       "_origin": "ast",
-      "id": "admin_campaigns_rationale_232",
+      "id": "admin_campaigns_rationale_234",
       "community": 5,
       "norm_label": "turn off public access. keeps the token stored (re-enable restores the     same"
     },
@@ -2457,9 +2607,9 @@
       "label": "Invite existing creators (\u2192 notification + email) and/or outsiders by email",
       "file_type": "rationale",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L274",
+      "source_location": "L276",
       "_origin": "ast",
-      "id": "admin_campaigns_rationale_274",
+      "id": "admin_campaigns_rationale_276",
       "community": 5,
       "norm_label": "invite existing creators (\u2192 notification + email) and/or outsiders by email"
     },
@@ -4544,6 +4694,126 @@
       "norm_label": "campaigns the creator applied to / joined, with their application status."
     },
     {
+      "label": "contracts.py",
+      "file_type": "code",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "creator_contracts",
+      "community": 59,
+      "norm_label": "contracts.py"
+    },
+    {
+      "label": "ContractSummary",
+      "file_type": "code",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L19",
+      "_origin": "ast",
+      "id": "creator_contracts_contractsummary",
+      "community": 59,
+      "norm_label": "contractsummary"
+    },
+    {
+      "label": "ContractDetail",
+      "file_type": "code",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L28",
+      "_origin": "ast",
+      "id": "creator_contracts_contractdetail",
+      "community": 59,
+      "norm_label": "contractdetail"
+    },
+    {
+      "label": "AcceptIn",
+      "file_type": "code",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L40",
+      "_origin": "ast",
+      "id": "creator_contracts_acceptin",
+      "community": 59,
+      "norm_label": "acceptin"
+    },
+    {
+      "label": "_detail()",
+      "file_type": "code",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L44",
+      "_origin": "ast",
+      "id": "creator_contracts_detail",
+      "community": 59,
+      "norm_label": "_detail()"
+    },
+    {
+      "label": "Session",
+      "file_type": "code",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L44",
+      "_origin": "ast",
+      "id": "routers_creator_contracts_py_session",
+      "community": 59,
+      "norm_label": "session"
+    },
+    {
+      "label": "list_my_contracts()",
+      "file_type": "code",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L55",
+      "_origin": "ast",
+      "id": "creator_contracts_list_my_contracts",
+      "community": 59,
+      "norm_label": "list_my_contracts()"
+    },
+    {
+      "label": "Creator",
+      "file_type": "code",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L55",
+      "_origin": "ast",
+      "id": "routers_creator_contracts_py_creator",
+      "community": 59,
+      "norm_label": "creator"
+    },
+    {
+      "label": "get_contract()",
+      "file_type": "code",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L68",
+      "_origin": "ast",
+      "id": "creator_contracts_get_contract",
+      "community": 59,
+      "norm_label": "get_contract()"
+    },
+    {
+      "label": "accept_contract()",
+      "file_type": "code",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L73",
+      "_origin": "ast",
+      "id": "creator_contracts_accept_contract",
+      "community": 59,
+      "norm_label": "accept_contract()"
+    },
+    {
+      "label": "Request",
+      "file_type": "code",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L73",
+      "_origin": "ast",
+      "id": "routers_creator_contracts_py_request",
+      "community": 59,
+      "norm_label": "request"
+    },
+    {
+      "label": "Creator-facing Campaign Participation Agreements: view + electronically sign.",
+      "file_type": "rationale",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "creator_contracts_rationale_1",
+      "community": 59,
+      "norm_label": "creator-facing campaign participation agreements: view + electronically sign."
+    },
+    {
       "label": "me.py",
       "file_type": "code",
       "source_file": "routers/creator/me.py",
@@ -5570,7 +5840,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "public_health",
-      "community": 51,
+      "community": 24,
       "norm_label": "health.py"
     },
     {
@@ -5580,7 +5850,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "public_health_health",
-      "community": 51,
+      "community": 24,
       "norm_label": "health()"
     },
     {
@@ -5590,7 +5860,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "public_health_health_db",
-      "community": 51,
+      "community": 24,
       "norm_label": "health_db()"
     },
     {
@@ -5600,7 +5870,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "public_health_rationale_1",
-      "community": 51,
+      "community": 24,
       "norm_label": "public health checks \u2014 the only public routes (closed marketplace)."
     },
     {
@@ -5610,7 +5880,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "public_health_rationale_19",
-      "community": 51,
+      "community": 24,
       "norm_label": "verifies db connectivity. returns 200 with status 'unconfigured' if no db set ye"
     },
     {
@@ -5759,7 +6029,7 @@
       "source_file": "routers/public/uploads_local.py",
       "source_location": "L35",
       "_origin": "ast",
-      "id": "request",
+      "id": "routers_public_uploads_local_py_request",
       "community": 29,
       "norm_label": "request"
     },
@@ -7567,7 +7837,7 @@
       "label": "_replace_bonus_milestones()",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L100",
+      "source_location": "L106",
       "_origin": "ast",
       "id": "services_campaign_replace_bonus_milestones",
       "community": 6,
@@ -7577,7 +7847,7 @@
       "label": "get_campaign()",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L119",
+      "source_location": "L125",
       "_origin": "ast",
       "id": "services_campaign_get_campaign",
       "community": 6,
@@ -7587,7 +7857,7 @@
       "label": "list_campaigns()",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L126",
+      "source_location": "L132",
       "_origin": "ast",
       "id": "services_campaign_list_campaigns",
       "community": 6,
@@ -7597,7 +7867,7 @@
       "label": "update_campaign()",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L133",
+      "source_location": "L139",
       "_origin": "ast",
       "id": "services_campaign_update_campaign",
       "community": 6,
@@ -7607,7 +7877,7 @@
       "label": "publish_campaign()",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L163",
+      "source_location": "L169",
       "_origin": "ast",
       "id": "services_campaign_publish_campaign",
       "community": 6,
@@ -7617,7 +7887,7 @@
       "label": "close_campaign()",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L180",
+      "source_location": "L186",
       "_origin": "ast",
       "id": "services_campaign_close_campaign",
       "community": 6,
@@ -7627,7 +7897,7 @@
       "label": "reopen_campaign()",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L193",
+      "source_location": "L199",
       "_origin": "ast",
       "id": "services_campaign_reopen_campaign",
       "community": 6,
@@ -7637,7 +7907,7 @@
       "label": "archive_campaign()",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L206",
+      "source_location": "L212",
       "_origin": "ast",
       "id": "services_campaign_archive_campaign",
       "community": 6,
@@ -7647,7 +7917,7 @@
       "label": "list_active_campaigns()",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L217",
+      "source_location": "L223",
       "_origin": "ast",
       "id": "services_campaign_list_active_campaigns",
       "community": 6,
@@ -7657,7 +7927,7 @@
       "label": "list_completed_campaigns()",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L223",
+      "source_location": "L229",
       "_origin": "ast",
       "id": "services_campaign_list_completed_campaigns",
       "community": 6,
@@ -7667,7 +7937,7 @@
       "label": "get_active_campaign()",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L230",
+      "source_location": "L236",
       "_origin": "ast",
       "id": "services_campaign_get_active_campaign",
       "community": 6,
@@ -7677,7 +7947,7 @@
       "label": "get_bonus_milestones()",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L237",
+      "source_location": "L243",
       "_origin": "ast",
       "id": "services_campaign_get_bonus_milestones",
       "community": 6,
@@ -7687,7 +7957,7 @@
       "label": "CampaignBonusMilestone",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L237",
+      "source_location": "L243",
       "_origin": "ast",
       "id": "campaignbonusmilestone",
       "community": 6,
@@ -7697,7 +7967,7 @@
       "label": "creator_has_joined()",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L247",
+      "source_location": "L253",
       "_origin": "ast",
       "id": "services_campaign_creator_has_joined",
       "community": 6,
@@ -7707,7 +7977,7 @@
       "label": "join_campaign()",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L256",
+      "source_location": "L262",
       "_origin": "ast",
       "id": "services_campaign_join_campaign",
       "community": 6,
@@ -7717,7 +7987,7 @@
       "label": "CampaignParticipation",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L256",
+      "source_location": "L262",
       "_origin": "ast",
       "id": "services_campaign_py_campaignparticipation",
       "community": 6,
@@ -7727,7 +7997,7 @@
       "label": "list_creator_campaigns()",
       "file_type": "code",
       "source_file": "services/campaign.py",
-      "source_location": "L304",
+      "source_location": "L316",
       "_origin": "ast",
       "id": "services_campaign_list_creator_campaigns",
       "community": 6,
@@ -7747,9 +8017,9 @@
       "label": "Step 3 of the wizard: bonus milestones are always fully replaced on write     (c",
       "file_type": "rationale",
       "source_file": "services/campaign.py",
-      "source_location": "L101",
+      "source_location": "L107",
       "_origin": "ast",
-      "id": "services_campaign_rationale_101",
+      "id": "services_campaign_rationale_107",
       "community": 6,
       "norm_label": "step 3 of the wizard: bonus milestones are always fully replaced on write     (c"
     },
@@ -7757,9 +8027,9 @@
       "label": "Bill's 'close/change state' action: campaign stops accepting entries but     sta",
       "file_type": "rationale",
       "source_file": "services/campaign.py",
-      "source_location": "L181",
+      "source_location": "L187",
       "_origin": "ast",
-      "id": "services_campaign_rationale_181",
+      "id": "services_campaign_rationale_187",
       "community": 6,
       "norm_label": "bill's 'close/change state' action: campaign stops accepting entries but     sta"
     },
@@ -7767,9 +8037,9 @@
       "label": "Reopen a closed (completed/paused) campaign so it accepts entries again.",
       "file_type": "rationale",
       "source_file": "services/campaign.py",
-      "source_location": "L194",
+      "source_location": "L200",
       "_origin": "ast",
-      "id": "services_campaign_rationale_194",
+      "id": "services_campaign_rationale_200",
       "community": 6,
       "norm_label": "reopen a closed (completed/paused) campaign so it accepts entries again."
     },
@@ -7777,9 +8047,9 @@
       "label": "Publicly browsable past campaigns (for the landing 'Completed' tab).",
       "file_type": "rationale",
       "source_file": "services/campaign.py",
-      "source_location": "L224",
+      "source_location": "L230",
       "_origin": "ast",
-      "id": "services_campaign_rationale_224",
+      "id": "services_campaign_rationale_230",
       "community": 6,
       "norm_label": "publicly browsable past campaigns (for the landing 'completed' tab)."
     },
@@ -7787,9 +8057,9 @@
       "label": "Feature 5: eager-fetch bonus milestones for the native brief page (creator +",
       "file_type": "rationale",
       "source_file": "services/campaign.py",
-      "source_location": "L238",
+      "source_location": "L244",
       "_origin": "ast",
-      "id": "services_campaign_rationale_238",
+      "id": "services_campaign_rationale_244",
       "community": 6,
       "norm_label": "feature 5: eager-fetch bonus milestones for the native brief page (creator +"
     },
@@ -7797,9 +8067,9 @@
       "label": "Every campaign this creator applied to / joined, newest first, with their     ap",
       "file_type": "rationale",
       "source_file": "services/campaign.py",
-      "source_location": "L305",
+      "source_location": "L317",
       "_origin": "ast",
-      "id": "services_campaign_rationale_305",
+      "id": "services_campaign_rationale_317",
       "community": 6,
       "norm_label": "every campaign this creator applied to / joined, newest first, with their     ap"
     },
@@ -7957,7 +8227,7 @@
       "label": "list_for_campaign()",
       "file_type": "code",
       "source_file": "services/campaign_invites.py",
-      "source_location": "L242",
+      "source_location": "L249",
       "_origin": "ast",
       "id": "services_campaign_invites_list_for_campaign",
       "community": 22,
@@ -7967,7 +8237,7 @@
       "label": "pending_count()",
       "file_type": "code",
       "source_file": "services/campaign_invites.py",
-      "source_location": "L266",
+      "source_location": "L273",
       "_origin": "ast",
       "id": "services_campaign_invites_pending_count",
       "community": 22,
@@ -7977,7 +8247,7 @@
       "label": "revoke()",
       "file_type": "code",
       "source_file": "services/campaign_invites.py",
-      "source_location": "L279",
+      "source_location": "L286",
       "_origin": "ast",
       "id": "services_campaign_invites_revoke",
       "community": 22,
@@ -7987,7 +8257,7 @@
       "label": "_status()",
       "file_type": "code",
       "source_file": "services/campaign_invites.py",
-      "source_location": "L287",
+      "source_location": "L294",
       "_origin": "ast",
       "id": "services_campaign_invites_status",
       "community": 22,
@@ -7997,7 +8267,7 @@
       "label": "CampaignInvite",
       "file_type": "code",
       "source_file": "services/campaign_invites.py",
-      "source_location": "L287",
+      "source_location": "L294",
       "_origin": "ast",
       "id": "campaigninvite",
       "community": 22,
@@ -8132,6 +8402,276 @@
       "id": "services_campaign_overview_rationale_1",
       "community": 49,
       "norm_label": "admin campaign overview: the stat tiles + active-creator list on the detail page"
+    },
+    {
+      "label": "contracts.py",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "services_contracts",
+      "community": 33,
+      "norm_label": "contracts.py"
+    },
+    {
+      "label": "_fmt_money()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L134",
+      "_origin": "ast",
+      "id": "services_contracts_fmt_money",
+      "community": 33,
+      "norm_label": "_fmt_money()"
+    },
+    {
+      "label": "Decimal",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L134",
+      "_origin": "ast",
+      "id": "services_contracts_py_decimal",
+      "community": 33,
+      "norm_label": "decimal"
+    },
+    {
+      "label": "_schedule_label()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L138",
+      "_origin": "ast",
+      "id": "services_contracts_schedule_label",
+      "community": 33,
+      "norm_label": "_schedule_label()"
+    },
+    {
+      "label": "_compensation_line()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L146",
+      "_origin": "ast",
+      "id": "services_contracts_compensation_line",
+      "community": 33,
+      "norm_label": "_compensation_line()"
+    },
+    {
+      "label": "Campaign",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L146",
+      "_origin": "ast",
+      "id": "services_contracts_py_campaign",
+      "community": 33,
+      "norm_label": "campaign"
+    },
+    {
+      "label": "company_name()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L160",
+      "_origin": "ast",
+      "id": "services_contracts_company_name",
+      "community": 33,
+      "norm_label": "company_name()"
+    },
+    {
+      "label": "Session",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L160",
+      "_origin": "ast",
+      "id": "services_contracts_py_session",
+      "community": 33,
+      "norm_label": "session"
+    },
+    {
+      "label": "CampaignContract",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L160",
+      "_origin": "ast",
+      "id": "campaigncontract",
+      "community": 33,
+      "norm_label": "campaigncontract"
+    },
+    {
+      "label": "_campaign_term()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L172",
+      "_origin": "ast",
+      "id": "services_contracts_campaign_term",
+      "community": 33,
+      "norm_label": "_campaign_term()"
+    },
+    {
+      "label": "_merge()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L179",
+      "_origin": "ast",
+      "id": "services_contracts_merge",
+      "community": 33,
+      "norm_label": "_merge()"
+    },
+    {
+      "label": "_context()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L186",
+      "_origin": "ast",
+      "id": "services_contracts_context",
+      "community": 33,
+      "norm_label": "_context()"
+    },
+    {
+      "label": "Creator",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L186",
+      "_origin": "ast",
+      "id": "services_contracts_py_creator",
+      "community": 33,
+      "norm_label": "creator"
+    },
+    {
+      "label": "get_or_create_template()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L213",
+      "_origin": "ast",
+      "id": "services_contracts_get_or_create_template",
+      "community": 33,
+      "norm_label": "get_or_create_template()"
+    },
+    {
+      "label": "UUID",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L213",
+      "_origin": "ast",
+      "id": "services_contracts_py_uuid",
+      "community": 33,
+      "norm_label": "uuid"
+    },
+    {
+      "label": "update_template()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L229",
+      "_origin": "ast",
+      "id": "services_contracts_update_template",
+      "community": 33,
+      "norm_label": "update_template()"
+    },
+    {
+      "label": "render_preview()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L241",
+      "_origin": "ast",
+      "id": "services_contracts_render_preview",
+      "community": 33,
+      "norm_label": "render_preview()"
+    },
+    {
+      "label": "generate_for_creator()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L251",
+      "_origin": "ast",
+      "id": "services_contracts_generate_for_creator",
+      "community": 33,
+      "norm_label": "generate_for_creator()"
+    },
+    {
+      "label": "CreatorContract",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L251",
+      "_origin": "ast",
+      "id": "creatorcontract",
+      "community": 33,
+      "norm_label": "creatorcontract"
+    },
+    {
+      "label": "list_for_campaign()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L299",
+      "_origin": "ast",
+      "id": "services_contracts_list_for_campaign",
+      "community": 33,
+      "norm_label": "list_for_campaign()"
+    },
+    {
+      "label": "active_count()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L319",
+      "_origin": "ast",
+      "id": "services_contracts_active_count",
+      "community": 33,
+      "norm_label": "active_count()"
+    },
+    {
+      "label": "get_for_creator()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L329",
+      "_origin": "ast",
+      "id": "services_contracts_get_for_creator",
+      "community": 33,
+      "norm_label": "get_for_creator()"
+    },
+    {
+      "label": "list_mine()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L342",
+      "_origin": "ast",
+      "id": "services_contracts_list_mine",
+      "community": 33,
+      "norm_label": "list_mine()"
+    },
+    {
+      "label": "accept()",
+      "file_type": "code",
+      "source_file": "services/contracts.py",
+      "source_location": "L349",
+      "_origin": "ast",
+      "id": "services_contracts_accept",
+      "community": 33,
+      "norm_label": "accept()"
+    },
+    {
+      "label": "Campaign Participation Agreements.  The admin edits one free-text template per c",
+      "file_type": "rationale",
+      "source_file": "services/contracts.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "services_contracts_rationale_1",
+      "community": 33,
+      "norm_label": "campaign participation agreements.  the admin edits one free-text template per c"
+    },
+    {
+      "label": "Admin preview \u2014 merged against a placeholder creator.",
+      "file_type": "rationale",
+      "source_file": "services/contracts.py",
+      "source_location": "L242",
+      "_origin": "ast",
+      "id": "services_contracts_rationale_242",
+      "community": 33,
+      "norm_label": "admin preview \u2014 merged against a placeholder creator."
+    },
+    {
+      "label": "Idempotent: one contract per (campaign, creator). Renders + freezes a     snapsh",
+      "file_type": "rationale",
+      "source_file": "services/contracts.py",
+      "source_location": "L253",
+      "_origin": "ast",
+      "id": "services_contracts_rationale_253",
+      "community": 33,
+      "norm_label": "idempotent: one contract per (campaign, creator). renders + freezes a     snapsh"
     },
     {
       "label": "creator_activity.py",
@@ -8900,7 +9440,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "services_invites",
-      "community": 33,
+      "community": 0,
       "norm_label": "invites.py"
     },
     {
@@ -8910,7 +9450,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "services_invites_link",
-      "community": 33,
+      "community": 0,
       "norm_label": "_link()"
     },
     {
@@ -8920,7 +9460,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "services_invites_create_invite",
-      "community": 33,
+      "community": 0,
       "norm_label": "create_invite()"
     },
     {
@@ -8930,7 +9470,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "services_invites_py_session",
-      "community": 33,
+      "community": 0,
       "norm_label": "session"
     },
     {
@@ -8940,7 +9480,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "services_invites_py_uuid",
-      "community": 33,
+      "community": 0,
       "norm_label": "uuid"
     },
     {
@@ -8950,7 +9490,7 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "services_invites_list_invites",
-      "community": 33,
+      "community": 0,
       "norm_label": "list_invites()"
     },
     {
@@ -8960,7 +9500,7 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "services_invites_revoke_invite",
-      "community": 33,
+      "community": 0,
       "norm_label": "revoke_invite()"
     },
     {
@@ -8970,7 +9510,7 @@
       "source_location": "L96",
       "_origin": "ast",
       "id": "services_invites_peek",
-      "community": 33,
+      "community": 0,
       "norm_label": "peek()"
     },
     {
@@ -8980,7 +9520,7 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "services_invites_accept",
-      "community": 33,
+      "community": 0,
       "norm_label": "accept()"
     },
     {
@@ -8990,7 +9530,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "services_invites_rationale_1",
-      "community": 33,
+      "community": 0,
       "norm_label": "creator invites: email an address and/or hand out a shareable join link.  both c"
     },
     {
@@ -9000,7 +9540,7 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "services_invites_rationale_97",
-      "community": 33,
+      "community": 0,
       "norm_label": "public: what the signup page shows when opened from an invite link."
     },
     {
@@ -9010,7 +9550,7 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "services_invites_rationale_107",
-      "community": 33,
+      "community": 0,
       "norm_label": "mark an invite used. best-effort: a bad/expired token must never fail a     sign"
     },
     {
@@ -9120,7 +9660,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "services_payouts",
-      "community": 0,
+      "community": 51,
       "norm_label": "payouts.py"
     },
     {
@@ -9130,7 +9670,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "services_payouts_active_items_subq",
-      "community": 0,
+      "community": 51,
       "norm_label": "_active_items_subq()"
     },
     {
@@ -9140,7 +9680,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "services_payouts_unpaid_verified",
-      "community": 0,
+      "community": 51,
       "norm_label": "_unpaid_verified()"
     },
     {
@@ -9150,7 +9690,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "services_payouts_py_session",
-      "community": 0,
+      "community": 51,
       "norm_label": "session"
     },
     {
@@ -9160,7 +9700,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "services_payouts_py_uuid",
-      "community": 0,
+      "community": 51,
       "norm_label": "uuid"
     },
     {
@@ -9170,7 +9710,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "services_payouts_amounts_owed",
-      "community": 0,
+      "community": 51,
       "norm_label": "amounts_owed()"
     },
     {
@@ -9180,7 +9720,7 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "services_payouts_list_payouts",
-      "community": 0,
+      "community": 51,
       "norm_label": "list_payouts()"
     },
     {
@@ -9190,7 +9730,7 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "services_payouts_log_manual_payment",
-      "community": 0,
+      "community": 51,
       "norm_label": "log_manual_payment()"
     },
     {
@@ -9200,7 +9740,7 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "services_payouts_py_decimal",
-      "community": 0,
+      "community": 51,
       "norm_label": "decimal"
     },
     {
@@ -9210,7 +9750,7 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "services_payouts_py_payout",
-      "community": 0,
+      "community": 51,
       "norm_label": "payout"
     },
     {
@@ -9220,7 +9760,7 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "services_payouts_record_payout_for_submission",
-      "community": 0,
+      "community": 51,
       "norm_label": "record_payout_for_submission()"
     },
     {
@@ -9230,7 +9770,7 @@
       "source_location": "L125",
       "_origin": "ast",
       "id": "services_payouts_record_payout",
-      "community": 0,
+      "community": 51,
       "norm_label": "record_payout()"
     },
     {
@@ -9240,7 +9780,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "services_payouts_rationale_1",
-      "community": 0,
+      "community": 51,
       "norm_label": "admin payouts. a submission is payable once its earning is verified and not alre"
     },
     {
@@ -9250,7 +9790,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "services_payouts_rationale_42",
-      "community": 0,
+      "community": 51,
       "norm_label": "per-creator outstanding verified earnings not yet in an active payout.     inclu"
     },
     {
@@ -9260,7 +9800,7 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "services_payouts_rationale_76",
-      "community": 0,
+      "community": 51,
       "norm_label": "clippers-style receipt: money moved in another app, admin logs it here.     no p"
     },
     {
@@ -9270,7 +9810,7 @@
       "source_location": "L95",
       "_origin": "ast",
       "id": "services_payouts_rationale_95",
-      "community": 0,
+      "community": 51,
       "norm_label": "per-submission payout ('log payout' on the admin submission modal).     pays exa"
     },
     {
@@ -11485,6 +12025,17 @@
       "context": "call",
       "confidence": "INFERRED",
       "confidence_score": 0.8,
+      "source_file": "services/contracts.py",
+      "source_location": "L292",
+      "weight": 1.0,
+      "source": "services_contracts_generate_for_creator",
+      "target": "core_config_get_settings"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
       "source_file": "services/invites.py",
       "source_location": "L27",
       "weight": 1.0,
@@ -12034,9 +12585,9 @@
       "source_file": "models/campaign.py",
       "source_location": "L25",
       "weight": 0.8,
+      "confidence_score": 0.5,
       "source": "models_campaign_campaigninvite",
-      "target": "db_base_base",
-      "confidence_score": 0.5
+      "target": "db_base_base"
     },
     {
       "relation": "uses",
@@ -12047,6 +12598,26 @@
       "confidence_score": 0.5,
       "source": "models_campaign_campaignparticipation",
       "target": "db_base_base"
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "models/contract.py",
+      "source_location": "L13",
+      "weight": 0.8,
+      "source": "models_contract_campaigncontract",
+      "target": "db_base_base",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "models/contract.py",
+      "source_location": "L13",
+      "weight": 0.8,
+      "source": "models_contract_creatorcontract",
+      "target": "db_base_base",
+      "confidence_score": 0.5
     },
     {
       "relation": "uses",
@@ -12234,9 +12805,9 @@
       "source_file": "models/system.py",
       "source_location": "L11",
       "weight": 0.8,
+      "confidence_score": 0.5,
       "source": "models_system_notification",
-      "target": "db_base_base",
-      "confidence_score": 0.5
+      "target": "db_base_base"
     },
     {
       "relation": "uses",
@@ -12274,9 +12845,9 @@
       "source_file": "models/campaign.py",
       "source_location": "L25",
       "weight": 0.8,
+      "confidence_score": 0.5,
       "source": "models_campaign_campaigninvite",
-      "target": "db_base_timestampmixin",
-      "confidence_score": 0.5
+      "target": "db_base_timestampmixin"
     },
     {
       "relation": "uses",
@@ -13337,8 +13908,18 @@
       "source_file": "integrations/email.py",
       "source_location": "L92",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "integrations_email",
-      "target": "integrations_email_send_campaign_invite",
+      "target": "integrations_email_send_campaign_invite"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "integrations/email.py",
+      "source_location": "L119",
+      "weight": 1.0,
+      "source": "integrations_email",
+      "target": "integrations_email_send_contract_ready",
       "confidence_score": 1.0
     },
     {
@@ -13420,7 +14001,18 @@
       "source_file": "integrations/email.py",
       "source_location": "L116",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "integrations_email_send_campaign_invite",
+      "target": "integrations_email_send"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "integrations/email.py",
+      "source_location": "L135",
+      "weight": 1.0,
+      "source": "integrations_email_send_contract_ready",
       "target": "integrations_email_send",
       "confidence_score": 1.0
     },
@@ -13452,8 +14044,18 @@
       "source_file": "integrations/email.py",
       "source_location": "L93",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "integrations_email_rationale_93",
-      "target": "integrations_email_send_campaign_invite",
+      "target": "integrations_email_send_campaign_invite"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "integrations/email.py",
+      "source_location": "L120",
+      "weight": 1.0,
+      "source": "integrations_email_rationale_120",
+      "target": "integrations_email_send_contract_ready",
       "confidence_score": 1.0
     },
     {
@@ -14087,6 +14689,17 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "creator_contracts",
+      "target": "fastapi",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "routers/creator/__init__.py",
       "source_location": "L2",
       "weight": 1.0,
@@ -14112,9 +14725,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications",
-      "target": "fastapi",
-      "confidence_score": 1.0
+      "target": "fastapi"
     },
     {
       "relation": "imports_from",
@@ -14266,9 +14879,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "fastapi",
-      "confidence_score": 1.0
+      "target": "fastapi"
     },
     {
       "relation": "imports_from",
@@ -14395,9 +15008,9 @@
       "source_file": "models/campaign.py",
       "source_location": "L228",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "models_campaign",
-      "target": "models_campaign_campaigninvite",
-      "confidence_score": 1.0
+      "target": "models_campaign_campaigninvite"
     },
     {
       "relation": "contains",
@@ -14425,8 +15038,58 @@
       "source_file": "models/campaign.py",
       "source_location": "L229",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "models_campaign_rationale_229",
-      "target": "models_campaign_campaigninvite",
+      "target": "models_campaign_campaigninvite"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "models/contract.py",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "models_contract",
+      "target": "models_contract_campaigncontract",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "models/contract.py",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "models_contract",
+      "target": "models_contract_creatorcontract",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "models/contract.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "models_contract_rationale_1",
+      "target": "models_contract",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "models/contract.py",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "models_contract_rationale_17",
+      "target": "models_contract_campaigncontract",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "models/contract.py",
+      "source_location": "L41",
+      "weight": 1.0,
+      "source": "models_contract_rationale_41",
+      "target": "models_contract_creatorcontract",
       "confidence_score": 1.0
     },
     {
@@ -14771,9 +15434,9 @@
       "source_file": "models/system.py",
       "source_location": "L37",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "models_system",
-      "target": "models_system_notification",
-      "confidence_score": 1.0
+      "target": "models_system_notification"
     },
     {
       "relation": "contains",
@@ -14802,9 +15465,9 @@
       "source_file": "models/system.py",
       "source_location": "L38",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "models_system_rationale_38",
-      "target": "models_system_notification",
-      "confidence_score": 1.0
+      "target": "models_system_notification"
     },
     {
       "relation": "calls",
@@ -14995,9 +15658,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L246",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_campaigninvitein",
-      "target": "basemodel",
-      "confidence_score": 1.0
+      "target": "basemodel"
     },
     {
       "relation": "inherits",
@@ -15005,9 +15668,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L267",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_campaigninvitelinkout",
-      "target": "basemodel",
-      "confidence_score": 1.0
+      "target": "basemodel"
     },
     {
       "relation": "inherits",
@@ -15015,9 +15678,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L258",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_campaigninviterow",
-      "target": "basemodel",
-      "confidence_score": 1.0
+      "target": "basemodel"
     },
     {
       "relation": "inherits",
@@ -15025,9 +15688,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L251",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_campaigninvitesummaryout",
-      "target": "basemodel",
-      "confidence_score": 1.0
+      "target": "basemodel"
     },
     {
       "relation": "inherits",
@@ -15048,6 +15711,36 @@
       "confidence_score": 1.0,
       "source": "admin_campaigns_campaignoverviewout",
       "target": "basemodel"
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L322",
+      "weight": 1.0,
+      "source": "admin_campaigns_contractrow",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L315",
+      "weight": 1.0,
+      "source": "admin_campaigns_contracttemplatein",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L305",
+      "weight": 1.0,
+      "source": "admin_campaigns_contracttemplateout",
+      "target": "basemodel",
+      "confidence_score": 1.0
     },
     {
       "relation": "inherits",
@@ -15312,12 +16005,42 @@
     {
       "relation": "inherits",
       "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "creator_contracts_acceptin",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "creator_contracts_contractdetail",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "creator_contracts_contractsummary",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
       "source_file": "routers/creator/notifications.py",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_markreadin",
-      "target": "basemodel",
-      "confidence_score": 1.0
+      "target": "basemodel"
     },
     {
       "relation": "inherits",
@@ -15325,9 +16048,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_notificationout",
-      "target": "basemodel",
-      "confidence_score": 1.0
+      "target": "basemodel"
     },
     {
       "relation": "inherits",
@@ -15335,9 +16058,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_unreadcountout",
-      "target": "basemodel",
-      "confidence_score": 1.0
+      "target": "basemodel"
     },
     {
       "relation": "inherits",
@@ -17730,9 +18453,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L292",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns",
-      "target": "admin_campaigns_campaign_invite_link",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_campaign_invite_link"
     },
     {
       "relation": "contains",
@@ -17760,9 +18483,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L246",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns",
-      "target": "admin_campaigns_campaigninvitein",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_campaigninvitein"
     },
     {
       "relation": "contains",
@@ -17770,9 +18493,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L267",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns",
-      "target": "admin_campaigns_campaigninvitelinkout",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_campaigninvitelinkout"
     },
     {
       "relation": "contains",
@@ -17780,9 +18503,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L258",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns",
-      "target": "admin_campaigns_campaigninviterow",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_campaigninviterow"
     },
     {
       "relation": "contains",
@@ -17790,9 +18513,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L251",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns",
-      "target": "admin_campaigns_campaigninvitesummaryout",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_campaigninvitesummaryout"
     },
     {
       "relation": "contains",
@@ -17823,6 +18546,46 @@
       "confidence_score": 1.0,
       "source": "admin_campaigns",
       "target": "admin_campaigns_close"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L332",
+      "weight": 1.0,
+      "source": "admin_campaigns",
+      "target": "admin_campaigns_contract_template_out",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L322",
+      "weight": 1.0,
+      "source": "admin_campaigns",
+      "target": "admin_campaigns_contractrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L315",
+      "weight": 1.0,
+      "source": "admin_campaigns",
+      "target": "admin_campaigns_contracttemplatein",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L305",
+      "weight": 1.0,
+      "source": "admin_campaigns",
+      "target": "admin_campaigns_contracttemplateout",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -17878,6 +18641,16 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/campaigns.py",
+      "source_location": "L340",
+      "weight": 1.0,
+      "source": "admin_campaigns",
+      "target": "admin_campaigns_get_contract_template",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
       "source_location": "L73",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -17900,9 +18673,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L272",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns",
-      "target": "admin_campaigns_invite_to_campaign",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_invite_to_campaign"
     },
     {
       "relation": "contains",
@@ -17918,11 +18691,21 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L287",
+      "source_location": "L355",
       "weight": 1.0,
       "source": "admin_campaigns",
-      "target": "admin_campaigns_list_campaign_invites",
+      "target": "admin_campaigns_list_campaign_contracts",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L287",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_campaigns",
+      "target": "admin_campaigns_list_campaign_invites"
     },
     {
       "relation": "contains",
@@ -17950,9 +18733,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L297",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns",
-      "target": "admin_campaigns_revoke_campaign_invite",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_revoke_campaign_invite"
     },
     {
       "relation": "contains",
@@ -17983,6 +18766,16 @@
       "confidence_score": 1.0,
       "source": "admin_campaigns",
       "target": "admin_campaigns_update"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L346",
+      "weight": 1.0,
+      "source": "admin_campaigns",
+      "target": "admin_campaigns_update_contract_template",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -18166,9 +18959,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L292",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_campaign_invite_link",
-      "target": "routers_admin_campaigns_py_session",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_session"
     },
     {
       "relation": "references",
@@ -18252,6 +19045,17 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/campaigns.py",
+      "source_location": "L340",
+      "weight": 1.0,
+      "source": "admin_campaigns_get_contract_template",
+      "target": "routers_admin_campaigns_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
       "source_location": "L73",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -18276,9 +19080,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L272",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_invite_to_campaign",
-      "target": "routers_admin_campaigns_py_session",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_session"
     },
     {
       "relation": "references",
@@ -18296,11 +19100,22 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L287",
+      "source_location": "L355",
       "weight": 1.0,
-      "source": "admin_campaigns_list_campaign_invites",
+      "source": "admin_campaigns_list_campaign_contracts",
       "target": "routers_admin_campaigns_py_session",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L287",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_campaigns_list_campaign_invites",
+      "target": "routers_admin_campaigns_py_session"
     },
     {
       "relation": "references",
@@ -18331,9 +19146,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L297",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_revoke_campaign_invite",
-      "target": "routers_admin_campaigns_py_session",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_session"
     },
     {
       "relation": "references",
@@ -18356,6 +19171,17 @@
       "confidence_score": 1.0,
       "source": "admin_campaigns_update",
       "target": "routers_admin_campaigns_py_session"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L346",
+      "weight": 1.0,
+      "source": "admin_campaigns_update_contract_template",
+      "target": "routers_admin_campaigns_py_session",
+      "confidence_score": 1.0
     },
     {
       "relation": "references",
@@ -18397,9 +19223,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L292",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_campaign_invite_link",
-      "target": "routers_admin_campaigns_py_admin",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_admin"
     },
     {
       "relation": "references",
@@ -18472,6 +19298,17 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/campaigns.py",
+      "source_location": "L340",
+      "weight": 1.0,
+      "source": "admin_campaigns_get_contract_template",
+      "target": "routers_admin_campaigns_py_admin",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
       "source_location": "L73",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -18496,9 +19333,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L272",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_invite_to_campaign",
-      "target": "routers_admin_campaigns_py_admin",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_admin"
     },
     {
       "relation": "references",
@@ -18516,11 +19353,22 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L287",
+      "source_location": "L355",
       "weight": 1.0,
-      "source": "admin_campaigns_list_campaign_invites",
+      "source": "admin_campaigns_list_campaign_contracts",
       "target": "routers_admin_campaigns_py_admin",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L287",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_campaigns_list_campaign_invites",
+      "target": "routers_admin_campaigns_py_admin"
     },
     {
       "relation": "references",
@@ -18551,9 +19399,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L297",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_revoke_campaign_invite",
-      "target": "routers_admin_campaigns_py_admin",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_admin"
     },
     {
       "relation": "references",
@@ -18576,6 +19424,17 @@
       "confidence_score": 1.0,
       "source": "admin_campaigns_update",
       "target": "routers_admin_campaigns_py_admin"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L346",
+      "weight": 1.0,
+      "source": "admin_campaigns_update_contract_template",
+      "target": "routers_admin_campaigns_py_admin",
+      "confidence_score": 1.0
     },
     {
       "relation": "references",
@@ -18606,9 +19465,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L292",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_campaign_invite_link",
-      "target": "routers_admin_campaigns_py_uuid",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_uuid"
     },
     {
       "relation": "references",
@@ -18681,6 +19540,17 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/campaigns.py",
+      "source_location": "L340",
+      "weight": 1.0,
+      "source": "admin_campaigns_get_contract_template",
+      "target": "routers_admin_campaigns_py_uuid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
       "source_location": "L103",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -18694,7 +19564,18 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L272",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_invite_to_campaign",
+      "target": "routers_admin_campaigns_py_uuid"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L355",
+      "weight": 1.0,
+      "source": "admin_campaigns_list_campaign_contracts",
       "target": "routers_admin_campaigns_py_uuid",
       "confidence_score": 1.0
     },
@@ -18705,9 +19586,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L287",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_list_campaign_invites",
-      "target": "routers_admin_campaigns_py_uuid",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_uuid"
     },
     {
       "relation": "references",
@@ -18738,9 +19619,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L297",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_revoke_campaign_invite",
-      "target": "routers_admin_campaigns_py_uuid",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_uuid"
     },
     {
       "relation": "references",
@@ -18763,6 +19644,17 @@
       "confidence_score": 1.0,
       "source": "admin_campaigns_update",
       "target": "routers_admin_campaigns_py_uuid"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L346",
+      "weight": 1.0,
+      "source": "admin_campaigns_update_contract_template",
+      "target": "routers_admin_campaigns_py_uuid",
+      "confidence_score": 1.0
     },
     {
       "relation": "references",
@@ -18812,9 +19704,9 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L135",
+      "source_location": "L137",
       "weight": 1.0,
-      "source": "admin_campaigns_rationale_135",
+      "source": "admin_campaigns_rationale_137",
       "target": "admin_campaigns_campaign_overview",
       "confidence_score": 1.0
     },
@@ -18822,9 +19714,9 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L142",
+      "source_location": "L144",
       "weight": 1.0,
-      "source": "admin_campaigns_rationale_142",
+      "source": "admin_campaigns_rationale_144",
       "target": "admin_campaigns_convert_to_advanced",
       "confidence_score": 1.0
     },
@@ -18832,9 +19724,9 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L149",
+      "source_location": "L151",
       "weight": 1.0,
-      "source": "admin_campaigns_rationale_149",
+      "source": "admin_campaigns_rationale_151",
       "target": "admin_campaigns_impersonate_client",
       "confidence_score": 1.0
     },
@@ -18853,9 +19745,9 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L164",
+      "source_location": "L166",
       "weight": 1.0,
-      "source": "admin_campaigns_rationale_164",
+      "source": "admin_campaigns_rationale_166",
       "target": "admin_campaigns_export_submissions_csv",
       "confidence_score": 1.0
     },
@@ -18907,9 +19799,9 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L205",
+      "source_location": "L207",
       "weight": 1.0,
-      "source": "admin_campaigns_rationale_205",
+      "source": "admin_campaigns_rationale_207",
       "target": "admin_campaigns_enable_share",
       "confidence_score": 1.0
     },
@@ -18917,9 +19809,9 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L220",
+      "source_location": "L222",
       "weight": 1.0,
-      "source": "admin_campaigns_rationale_220",
+      "source": "admin_campaigns_rationale_222",
       "target": "admin_campaigns_rotate_share",
       "confidence_score": 1.0
     },
@@ -18949,9 +19841,9 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L232",
+      "source_location": "L234",
       "weight": 1.0,
-      "source": "admin_campaigns_rationale_232",
+      "source": "admin_campaigns_rationale_234",
       "target": "admin_campaigns_disable_share",
       "confidence_score": 1.0
     },
@@ -18962,9 +19854,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L272",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_invite_to_campaign",
-      "target": "admin_campaigns_campaigninvitein",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_campaigninvitein"
     },
     {
       "relation": "calls",
@@ -18973,9 +19865,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L283",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_invite_to_campaign",
-      "target": "admin_campaigns_campaigninvitesummaryout",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_campaigninvitesummaryout"
     },
     {
       "relation": "calls",
@@ -18984,9 +19876,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L288",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_list_campaign_invites",
-      "target": "admin_campaigns_campaigninviterow",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_campaigninviterow"
     },
     {
       "relation": "calls",
@@ -18995,18 +19887,73 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L293",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_campaign_invite_link",
-      "target": "admin_campaigns_campaigninvitelinkout",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_campaigninvitelinkout"
     },
     {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/campaigns.py",
-      "source_location": "L274",
+      "source_location": "L276",
       "weight": 1.0,
-      "source": "admin_campaigns_rationale_274",
+      "source": "admin_campaigns_rationale_276",
       "target": "admin_campaigns_invite_to_campaign",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L332",
+      "weight": 1.0,
+      "source": "admin_campaigns_contract_template_out",
+      "target": "admin_campaigns_contracttemplateout",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L346",
+      "weight": 1.0,
+      "source": "admin_campaigns_update_contract_template",
+      "target": "admin_campaigns_contracttemplatein",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L356",
+      "weight": 1.0,
+      "source": "admin_campaigns_list_campaign_contracts",
+      "target": "admin_campaigns_contractrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L342",
+      "weight": 1.0,
+      "source": "admin_campaigns_get_contract_template",
+      "target": "admin_campaigns_contract_template_out",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/campaigns.py",
+      "source_location": "L351",
+      "weight": 1.0,
+      "source": "admin_campaigns_update_contract_template",
+      "target": "admin_campaigns_contract_template_out",
       "confidence_score": 1.0
     },
     {
@@ -24306,6 +25253,229 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "creator_contracts",
+      "target": "creator_contracts_accept_contract",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "creator_contracts",
+      "target": "creator_contracts_acceptin",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "creator_contracts",
+      "target": "creator_contracts_contractdetail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "creator_contracts",
+      "target": "creator_contracts_contractsummary",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "creator_contracts",
+      "target": "creator_contracts_detail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "creator_contracts",
+      "target": "creator_contracts_get_contract",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "creator_contracts",
+      "target": "creator_contracts_list_my_contracts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "creator_contracts_rationale_1",
+      "target": "creator_contracts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "creator_contracts_list_my_contracts",
+      "target": "creator_contracts_contractsummary",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "creator_contracts_detail",
+      "target": "creator_contracts_contractdetail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "creator_contracts_accept_contract",
+      "target": "creator_contracts_acceptin",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L76",
+      "weight": 1.0,
+      "source": "creator_contracts_accept_contract",
+      "target": "creator_contracts_detail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "creator_contracts_detail",
+      "target": "routers_creator_contracts_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L69",
+      "weight": 1.0,
+      "source": "creator_contracts_get_contract",
+      "target": "creator_contracts_detail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "creator_contracts_accept_contract",
+      "target": "routers_creator_contracts_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "creator_contracts_get_contract",
+      "target": "routers_creator_contracts_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "creator_contracts_list_my_contracts",
+      "target": "routers_creator_contracts_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "creator_contracts_list_my_contracts",
+      "target": "routers_creator_contracts_py_creator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "creator_contracts_accept_contract",
+      "target": "routers_creator_contracts_py_creator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "creator_contracts_get_contract",
+      "target": "routers_creator_contracts_py_creator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/creator/contracts.py",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "creator_contracts_accept_contract",
+      "target": "routers_creator_contracts_py_request",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "routers/creator/me.py",
       "source_location": "L21",
       "weight": 1.0,
@@ -24476,9 +25646,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L46",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications",
-      "target": "creator_notifications_list_notifications",
-      "confidence_score": 1.0
+      "target": "creator_notifications_list_notifications"
     },
     {
       "relation": "contains",
@@ -24486,9 +25656,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L56",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications",
-      "target": "creator_notifications_mark_read",
-      "confidence_score": 1.0
+      "target": "creator_notifications_mark_read"
     },
     {
       "relation": "contains",
@@ -24496,9 +25666,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications",
-      "target": "creator_notifications_markreadin",
-      "confidence_score": 1.0
+      "target": "creator_notifications_markreadin"
     },
     {
       "relation": "contains",
@@ -24506,9 +25676,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications",
-      "target": "creator_notifications_notificationout",
-      "confidence_score": 1.0
+      "target": "creator_notifications_notificationout"
     },
     {
       "relation": "contains",
@@ -24516,9 +25686,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L38",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications",
-      "target": "creator_notifications_out",
-      "confidence_score": 1.0
+      "target": "creator_notifications_out"
     },
     {
       "relation": "contains",
@@ -24526,9 +25696,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L51",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications",
-      "target": "creator_notifications_unread_count",
-      "confidence_score": 1.0
+      "target": "creator_notifications_unread_count"
     },
     {
       "relation": "contains",
@@ -24536,9 +25706,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications",
-      "target": "creator_notifications_unreadcountout",
-      "confidence_score": 1.0
+      "target": "creator_notifications_unreadcountout"
     },
     {
       "relation": "rationale_for",
@@ -24546,9 +25716,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_rationale_1",
-      "target": "creator_notifications",
-      "confidence_score": 1.0
+      "target": "creator_notifications"
     },
     {
       "relation": "references",
@@ -24557,9 +25727,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L38",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_out",
-      "target": "creator_notifications_notificationout",
-      "confidence_score": 1.0
+      "target": "creator_notifications_notificationout"
     },
     {
       "relation": "calls",
@@ -24568,9 +25738,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L58",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_mark_read",
-      "target": "creator_notifications_unreadcountout",
-      "confidence_score": 1.0
+      "target": "creator_notifications_unreadcountout"
     },
     {
       "relation": "calls",
@@ -24579,9 +25749,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L52",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_unread_count",
-      "target": "creator_notifications_unreadcountout",
-      "confidence_score": 1.0
+      "target": "creator_notifications_unreadcountout"
     },
     {
       "relation": "references",
@@ -24590,9 +25760,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L56",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_mark_read",
-      "target": "creator_notifications_markreadin",
-      "confidence_score": 1.0
+      "target": "creator_notifications_markreadin"
     },
     {
       "relation": "calls",
@@ -24601,9 +25771,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L47",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_list_notifications",
-      "target": "creator_notifications_out",
-      "confidence_score": 1.0
+      "target": "creator_notifications_out"
     },
     {
       "relation": "references",
@@ -24612,9 +25782,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L46",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_list_notifications",
-      "target": "routers_creator_notifications_py_creator",
-      "confidence_score": 1.0
+      "target": "routers_creator_notifications_py_creator"
     },
     {
       "relation": "references",
@@ -24623,9 +25793,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L46",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_list_notifications",
-      "target": "routers_creator_notifications_py_session",
-      "confidence_score": 1.0
+      "target": "routers_creator_notifications_py_session"
     },
     {
       "relation": "references",
@@ -24634,9 +25804,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L56",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_mark_read",
-      "target": "routers_creator_notifications_py_creator",
-      "confidence_score": 1.0
+      "target": "routers_creator_notifications_py_creator"
     },
     {
       "relation": "references",
@@ -24645,9 +25815,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L51",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_unread_count",
-      "target": "routers_creator_notifications_py_creator",
-      "confidence_score": 1.0
+      "target": "routers_creator_notifications_py_creator"
     },
     {
       "relation": "references",
@@ -24656,9 +25826,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L56",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_mark_read",
-      "target": "routers_creator_notifications_py_session",
-      "confidence_score": 1.0
+      "target": "routers_creator_notifications_py_session"
     },
     {
       "relation": "references",
@@ -24667,9 +25837,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L51",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_unread_count",
-      "target": "routers_creator_notifications_py_session",
-      "confidence_score": 1.0
+      "target": "routers_creator_notifications_py_session"
     },
     {
       "relation": "calls",
@@ -24678,9 +25848,9 @@
       "source_file": "routers/creator/notifications.py",
       "source_location": "L58",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_notifications_mark_read",
-      "target": "creator_notifications_unread_count",
-      "confidence_score": 1.0
+      "target": "creator_notifications_unread_count"
     },
     {
       "relation": "contains",
@@ -26837,17 +28007,6 @@
     },
     {
       "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/public/uploads_local.py",
-      "source_location": "L35",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "public_uploads_local_put_local",
-      "target": "request"
-    },
-    {
-      "relation": "references",
       "context": "return_type",
       "confidence": "EXTRACTED",
       "source_file": "routers/public/uploads_local.py",
@@ -26862,11 +28021,22 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "routers/public/uploads_local.py",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "public_uploads_local_put_local",
+      "target": "routers_public_uploads_local_py_request",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/public/uploads_local.py",
       "source_location": "L62",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "public_uploads_local_put_r2",
-      "target": "request"
+      "target": "routers_public_uploads_local_py_request",
+      "confidence_score": 1.0
     },
     {
       "relation": "references",
@@ -29967,11 +31137,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "services/campaign.py",
-      "source_location": "L101",
+      "source_location": "L107",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_campaign_rationale_101",
-      "target": "services_campaign_replace_bonus_milestones"
+      "source": "services_campaign_rationale_107",
+      "target": "services_campaign_replace_bonus_milestones",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -30054,31 +31224,31 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "services/campaign.py",
-      "source_location": "L181",
+      "source_location": "L187",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_campaign_rationale_181",
-      "target": "services_campaign_close_campaign"
+      "source": "services_campaign_rationale_187",
+      "target": "services_campaign_close_campaign",
+      "confidence_score": 1.0
     },
     {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "services/campaign.py",
-      "source_location": "L194",
+      "source_location": "L200",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_campaign_rationale_194",
-      "target": "services_campaign_reopen_campaign"
+      "source": "services_campaign_rationale_200",
+      "target": "services_campaign_reopen_campaign",
+      "confidence_score": 1.0
     },
     {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "services/campaign.py",
-      "source_location": "L224",
+      "source_location": "L230",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_campaign_rationale_224",
-      "target": "services_campaign_list_completed_campaigns"
+      "source": "services_campaign_rationale_230",
+      "target": "services_campaign_list_completed_campaigns",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -30106,11 +31276,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "services/campaign.py",
-      "source_location": "L238",
+      "source_location": "L244",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_campaign_rationale_238",
-      "target": "services_campaign_get_bonus_milestones"
+      "source": "services_campaign_rationale_244",
+      "target": "services_campaign_get_bonus_milestones",
+      "confidence_score": 1.0
     },
     {
       "relation": "references",
@@ -30127,9 +31297,9 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "services/campaign.py",
-      "source_location": "L305",
+      "source_location": "L317",
       "weight": 1.0,
-      "source": "services_campaign_rationale_305",
+      "source": "services_campaign_rationale_317",
       "target": "services_campaign_list_creator_campaigns",
       "confidence_score": 1.0
     },
@@ -30139,9 +31309,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L189",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_accept_external",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_accept_external"
     },
     {
       "relation": "contains",
@@ -30149,9 +31319,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L69",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_already_active",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_already_active"
     },
     {
       "relation": "contains",
@@ -30159,9 +31329,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L39",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_campaign_path",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_campaign_path"
     },
     {
       "relation": "contains",
@@ -30169,9 +31339,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L45",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_campaign_url",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_campaign_url"
     },
     {
       "relation": "contains",
@@ -30179,9 +31349,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L225",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_direct_join",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_direct_join"
     },
     {
       "relation": "contains",
@@ -30189,9 +31359,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L50",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_get_campaign",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_get_campaign"
     },
     {
       "relation": "contains",
@@ -30199,9 +31369,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L79",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_invite",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_invite"
     },
     {
       "relation": "contains",
@@ -30209,9 +31379,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L166",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_invite_link",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_invite_link"
     },
     {
       "relation": "contains",
@@ -30219,9 +31389,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L242",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_list_for_campaign",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_list_for_campaign"
     },
     {
       "relation": "contains",
@@ -30229,9 +31399,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L206",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_mark_accepted_on_join",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_mark_accepted_on_join"
     },
     {
       "relation": "contains",
@@ -30239,9 +31409,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L57",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_open_invite_exists",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_open_invite_exists"
     },
     {
       "relation": "contains",
@@ -30249,9 +31419,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L266",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_pending_count",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_pending_count"
     },
     {
       "relation": "imports",
@@ -30260,9 +31430,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_uuid"
     },
     {
       "relation": "contains",
@@ -30270,9 +31440,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L279",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_revoke",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_revoke"
     },
     {
       "relation": "contains",
@@ -30280,9 +31450,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_signup_link",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_signup_link"
     },
     {
       "relation": "contains",
@@ -30290,9 +31460,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L287",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites",
-      "target": "services_campaign_invites_status",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_status"
     },
     {
       "relation": "rationale_for",
@@ -30300,9 +31470,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_rationale_1",
-      "target": "services_campaign_invites",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites"
     },
     {
       "relation": "calls",
@@ -30311,9 +31481,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L149",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_invite",
-      "target": "services_campaign_invites_signup_link",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_signup_link"
     },
     {
       "relation": "calls",
@@ -30322,9 +31492,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L186",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_invite_link",
-      "target": "services_campaign_invites_signup_link",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_signup_link"
     },
     {
       "relation": "calls",
@@ -30333,9 +31503,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L47",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_campaign_url",
-      "target": "services_campaign_invites_campaign_path",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_campaign_path"
     },
     {
       "relation": "calls",
@@ -30344,9 +31514,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L113",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_invite",
-      "target": "services_campaign_invites_campaign_path",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_campaign_path"
     },
     {
       "relation": "calls",
@@ -30355,9 +31525,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L120",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_invite",
-      "target": "services_campaign_invites_campaign_url",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_campaign_url"
     },
     {
       "relation": "references",
@@ -30366,9 +31536,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L50",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_get_campaign",
-      "target": "services_campaign_invites_py_campaign",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_campaign"
     },
     {
       "relation": "references",
@@ -30377,9 +31547,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L50",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_get_campaign",
-      "target": "services_campaign_invites_py_session",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_session"
     },
     {
       "relation": "references",
@@ -30388,9 +31558,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L50",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_get_campaign",
-      "target": "services_campaign_invites_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_uuid"
     },
     {
       "relation": "calls",
@@ -30399,9 +31569,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L84",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_invite",
-      "target": "services_campaign_invites_get_campaign",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_get_campaign"
     },
     {
       "relation": "calls",
@@ -30410,9 +31580,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L169",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_invite_link",
-      "target": "services_campaign_invites_get_campaign",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_get_campaign"
     },
     {
       "relation": "references",
@@ -30421,9 +31591,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L189",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_accept_external",
-      "target": "services_campaign_invites_py_session",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_session"
     },
     {
       "relation": "references",
@@ -30432,9 +31602,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L69",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_already_active",
-      "target": "services_campaign_invites_py_session",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_session"
     },
     {
       "relation": "references",
@@ -30443,9 +31613,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L225",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_direct_join",
-      "target": "services_campaign_invites_py_session",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_session"
     },
     {
       "relation": "references",
@@ -30454,9 +31624,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L79",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_invite",
-      "target": "services_campaign_invites_py_session",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_session"
     },
     {
       "relation": "references",
@@ -30465,9 +31635,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L166",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_invite_link",
-      "target": "services_campaign_invites_py_session",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_session"
     },
     {
       "relation": "references",
@@ -30476,9 +31646,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L242",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_list_for_campaign",
-      "target": "services_campaign_invites_py_session",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_session"
     },
     {
       "relation": "references",
@@ -30487,9 +31657,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L206",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_mark_accepted_on_join",
-      "target": "services_campaign_invites_py_session",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_session"
     },
     {
       "relation": "references",
@@ -30498,9 +31668,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L57",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_open_invite_exists",
-      "target": "services_campaign_invites_py_session",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_session"
     },
     {
       "relation": "references",
@@ -30509,9 +31679,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L266",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_pending_count",
-      "target": "services_campaign_invites_py_session",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_session"
     },
     {
       "relation": "references",
@@ -30520,9 +31690,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L279",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_revoke",
-      "target": "services_campaign_invites_py_session",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_session"
     },
     {
       "relation": "references",
@@ -30531,9 +31701,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L189",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_accept_external",
-      "target": "services_campaign_invites_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_uuid"
     },
     {
       "relation": "references",
@@ -30542,9 +31712,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L69",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_already_active",
-      "target": "services_campaign_invites_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_uuid"
     },
     {
       "relation": "references",
@@ -30553,9 +31723,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L225",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_direct_join",
-      "target": "services_campaign_invites_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_uuid"
     },
     {
       "relation": "references",
@@ -30564,9 +31734,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L79",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_invite",
-      "target": "services_campaign_invites_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_uuid"
     },
     {
       "relation": "references",
@@ -30575,9 +31745,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L166",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_invite_link",
-      "target": "services_campaign_invites_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_uuid"
     },
     {
       "relation": "references",
@@ -30586,9 +31756,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L242",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_list_for_campaign",
-      "target": "services_campaign_invites_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_uuid"
     },
     {
       "relation": "references",
@@ -30597,9 +31767,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L206",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_mark_accepted_on_join",
-      "target": "services_campaign_invites_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_uuid"
     },
     {
       "relation": "references",
@@ -30608,9 +31778,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L57",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_open_invite_exists",
-      "target": "services_campaign_invites_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_uuid"
     },
     {
       "relation": "references",
@@ -30619,9 +31789,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L266",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_pending_count",
-      "target": "services_campaign_invites_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_uuid"
     },
     {
       "relation": "references",
@@ -30630,9 +31800,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L279",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_revoke",
-      "target": "services_campaign_invites_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_py_uuid"
     },
     {
       "relation": "calls",
@@ -30641,9 +31811,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L98",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_invite",
-      "target": "services_campaign_invites_open_invite_exists",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_open_invite_exists"
     },
     {
       "relation": "calls",
@@ -30652,9 +31822,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L229",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_direct_join",
-      "target": "services_campaign_invites_already_active",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_already_active"
     },
     {
       "relation": "calls",
@@ -30663,9 +31833,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L95",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_invite",
-      "target": "services_campaign_invites_already_active",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_already_active"
     },
     {
       "relation": "calls",
@@ -30674,9 +31844,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L101",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_invite",
-      "target": "campaigninvite",
-      "confidence_score": 1.0
+      "target": "campaigninvite"
     },
     {
       "relation": "rationale_for",
@@ -30684,9 +31854,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L82",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_rationale_82",
-      "target": "services_campaign_invites_invite",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_invite"
     },
     {
       "relation": "calls",
@@ -30695,9 +31865,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L179",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_invite_link",
-      "target": "campaigninvite",
-      "confidence_score": 1.0
+      "target": "campaigninvite"
     },
     {
       "relation": "rationale_for",
@@ -30705,9 +31875,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L167",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_rationale_167",
-      "target": "services_campaign_invites_invite_link",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_invite_link"
     },
     {
       "relation": "calls",
@@ -30716,9 +31886,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L198",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_accept_external",
-      "target": "services_campaign_invites_direct_join",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_direct_join"
     },
     {
       "relation": "rationale_for",
@@ -30726,9 +31896,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L190",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_rationale_190",
-      "target": "services_campaign_invites_accept_external",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_accept_external"
     },
     {
       "relation": "rationale_for",
@@ -30736,9 +31906,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L207",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_rationale_207",
-      "target": "services_campaign_invites_mark_accepted_on_join",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_mark_accepted_on_join"
     },
     {
       "relation": "rationale_for",
@@ -30746,9 +31916,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L226",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_rationale_226",
-      "target": "services_campaign_invites_direct_join",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_direct_join"
     },
     {
       "relation": "calls",
@@ -30757,9 +31927,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L259",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_list_for_campaign",
-      "target": "services_campaign_invites_status",
-      "confidence_score": 1.0
+      "target": "services_campaign_invites_status"
     },
     {
       "relation": "references",
@@ -30768,9 +31938,9 @@
       "source_file": "services/campaign_invites.py",
       "source_location": "L287",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_invites_status",
-      "target": "campaigninvite",
-      "confidence_score": 1.0
+      "target": "campaigninvite"
     },
     {
       "relation": "contains",
@@ -30867,6 +32037,735 @@
       "confidence_score": 1.0,
       "source": "services_campaign_overview_overview",
       "target": "services_campaign_overview_py_uuid"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L349",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_accept",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L319",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_active_count",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L172",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_campaign_term",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L160",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_company_name",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L146",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_compensation_line",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L186",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_context",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L134",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_fmt_money",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L251",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_generate_for_creator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L329",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_get_for_creator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L213",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_get_or_create_template",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L299",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_list_for_campaign",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L342",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_list_mine",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L179",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_merge",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_py_decimal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_py_uuid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L241",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_render_preview",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L138",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_schedule_label",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L229",
+      "weight": 1.0,
+      "source": "services_contracts",
+      "target": "services_contracts_update_template",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "services_contracts_rationale_1",
+      "target": "services_contracts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L149",
+      "weight": 1.0,
+      "source": "services_contracts_compensation_line",
+      "target": "services_contracts_fmt_money",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L134",
+      "weight": 1.0,
+      "source": "services_contracts_fmt_money",
+      "target": "services_contracts_py_decimal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L204",
+      "weight": 1.0,
+      "source": "services_contracts_context",
+      "target": "services_contracts_schedule_label",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L146",
+      "weight": 1.0,
+      "source": "services_contracts_compensation_line",
+      "target": "services_contracts_py_campaign",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L203",
+      "weight": 1.0,
+      "source": "services_contracts_context",
+      "target": "services_contracts_compensation_line",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L172",
+      "weight": 1.0,
+      "source": "services_contracts_campaign_term",
+      "target": "services_contracts_py_campaign",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L160",
+      "weight": 1.0,
+      "source": "services_contracts_company_name",
+      "target": "services_contracts_py_campaign",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L186",
+      "weight": 1.0,
+      "source": "services_contracts_context",
+      "target": "services_contracts_py_campaign",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L160",
+      "weight": 1.0,
+      "source": "services_contracts_company_name",
+      "target": "campaigncontract",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L160",
+      "weight": 1.0,
+      "source": "services_contracts_company_name",
+      "target": "services_contracts_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L196",
+      "weight": 1.0,
+      "source": "services_contracts_context",
+      "target": "services_contracts_company_name",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L273",
+      "weight": 1.0,
+      "source": "services_contracts_generate_for_creator",
+      "target": "services_contracts_company_name",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L349",
+      "weight": 1.0,
+      "source": "services_contracts_accept",
+      "target": "services_contracts_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L319",
+      "weight": 1.0,
+      "source": "services_contracts_active_count",
+      "target": "services_contracts_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L186",
+      "weight": 1.0,
+      "source": "services_contracts_context",
+      "target": "services_contracts_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L251",
+      "weight": 1.0,
+      "source": "services_contracts_generate_for_creator",
+      "target": "services_contracts_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L329",
+      "weight": 1.0,
+      "source": "services_contracts_get_for_creator",
+      "target": "services_contracts_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L213",
+      "weight": 1.0,
+      "source": "services_contracts_get_or_create_template",
+      "target": "services_contracts_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L299",
+      "weight": 1.0,
+      "source": "services_contracts_list_for_campaign",
+      "target": "services_contracts_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L342",
+      "weight": 1.0,
+      "source": "services_contracts_list_mine",
+      "target": "services_contracts_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L241",
+      "weight": 1.0,
+      "source": "services_contracts_render_preview",
+      "target": "services_contracts_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L229",
+      "weight": 1.0,
+      "source": "services_contracts_update_template",
+      "target": "services_contracts_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L186",
+      "weight": 1.0,
+      "source": "services_contracts_context",
+      "target": "campaigncontract",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L213",
+      "weight": 1.0,
+      "source": "services_contracts_get_or_create_template",
+      "target": "campaigncontract",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L229",
+      "weight": 1.0,
+      "source": "services_contracts_update_template",
+      "target": "campaigncontract",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L202",
+      "weight": 1.0,
+      "source": "services_contracts_context",
+      "target": "services_contracts_campaign_term",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L274",
+      "weight": 1.0,
+      "source": "services_contracts_generate_for_creator",
+      "target": "services_contracts_merge",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L247",
+      "weight": 1.0,
+      "source": "services_contracts_render_preview",
+      "target": "services_contracts_merge",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L186",
+      "weight": 1.0,
+      "source": "services_contracts_context",
+      "target": "services_contracts_py_creator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L269",
+      "weight": 1.0,
+      "source": "services_contracts_generate_for_creator",
+      "target": "services_contracts_context",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L245",
+      "weight": 1.0,
+      "source": "services_contracts_render_preview",
+      "target": "services_contracts_context",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L267",
+      "weight": 1.0,
+      "source": "services_contracts_generate_for_creator",
+      "target": "services_contracts_get_or_create_template",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L213",
+      "weight": 1.0,
+      "source": "services_contracts_get_or_create_template",
+      "target": "services_contracts_py_uuid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L244",
+      "weight": 1.0,
+      "source": "services_contracts_render_preview",
+      "target": "services_contracts_get_or_create_template",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L230",
+      "weight": 1.0,
+      "source": "services_contracts_update_template",
+      "target": "services_contracts_get_or_create_template",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L349",
+      "weight": 1.0,
+      "source": "services_contracts_accept",
+      "target": "services_contracts_py_uuid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L319",
+      "weight": 1.0,
+      "source": "services_contracts_active_count",
+      "target": "services_contracts_py_uuid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L251",
+      "weight": 1.0,
+      "source": "services_contracts_generate_for_creator",
+      "target": "services_contracts_py_uuid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L329",
+      "weight": 1.0,
+      "source": "services_contracts_get_for_creator",
+      "target": "services_contracts_py_uuid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L299",
+      "weight": 1.0,
+      "source": "services_contracts_list_for_campaign",
+      "target": "services_contracts_py_uuid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L342",
+      "weight": 1.0,
+      "source": "services_contracts_list_mine",
+      "target": "services_contracts_py_uuid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L241",
+      "weight": 1.0,
+      "source": "services_contracts_render_preview",
+      "target": "services_contracts_py_uuid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L229",
+      "weight": 1.0,
+      "source": "services_contracts_update_template",
+      "target": "services_contracts_py_uuid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L242",
+      "weight": 1.0,
+      "source": "services_contracts_rationale_242",
+      "target": "services_contracts_render_preview",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L251",
+      "weight": 1.0,
+      "source": "services_contracts_generate_for_creator",
+      "target": "creatorcontract",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L253",
+      "weight": 1.0,
+      "source": "services_contracts_rationale_253",
+      "target": "services_contracts_generate_for_creator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L349",
+      "weight": 1.0,
+      "source": "services_contracts_accept",
+      "target": "creatorcontract",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L329",
+      "weight": 1.0,
+      "source": "services_contracts_get_for_creator",
+      "target": "creatorcontract",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "services/contracts.py",
+      "source_location": "L342",
+      "weight": 1.0,
+      "source": "services_contracts_list_mine",
+      "target": "creatorcontract",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -32438,9 +34337,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L35",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications",
-      "target": "services_notifications_list_for",
-      "confidence_score": 1.0
+      "target": "services_notifications_list_for"
     },
     {
       "relation": "contains",
@@ -32448,9 +34347,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L51",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications",
-      "target": "services_notifications_mark_read",
-      "confidence_score": 1.0
+      "target": "services_notifications_mark_read"
     },
     {
       "relation": "contains",
@@ -32458,9 +34357,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications",
-      "target": "services_notifications_push",
-      "confidence_score": 1.0
+      "target": "services_notifications_push"
     },
     {
       "relation": "imports",
@@ -32469,9 +34368,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications",
-      "target": "services_notifications_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_notifications_py_uuid"
     },
     {
       "relation": "contains",
@@ -32479,9 +34378,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L44",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications",
-      "target": "services_notifications_unread_count",
-      "confidence_score": 1.0
+      "target": "services_notifications_unread_count"
     },
     {
       "relation": "rationale_for",
@@ -32489,9 +34388,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications_rationale_1",
-      "target": "services_notifications",
-      "confidence_score": 1.0
+      "target": "services_notifications"
     },
     {
       "relation": "references",
@@ -32500,9 +34399,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications_push",
-      "target": "notification",
-      "confidence_score": 1.0
+      "target": "notification"
     },
     {
       "relation": "references",
@@ -32511,9 +34410,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications_push",
-      "target": "services_notifications_py_session",
-      "confidence_score": 1.0
+      "target": "services_notifications_py_session"
     },
     {
       "relation": "references",
@@ -32522,9 +34421,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications_push",
-      "target": "services_notifications_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_notifications_py_uuid"
     },
     {
       "relation": "references",
@@ -32533,9 +34432,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L35",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications_list_for",
-      "target": "services_notifications_py_session",
-      "confidence_score": 1.0
+      "target": "services_notifications_py_session"
     },
     {
       "relation": "references",
@@ -32544,9 +34443,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L51",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications_mark_read",
-      "target": "services_notifications_py_session",
-      "confidence_score": 1.0
+      "target": "services_notifications_py_session"
     },
     {
       "relation": "references",
@@ -32555,9 +34454,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L44",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications_unread_count",
-      "target": "services_notifications_py_session",
-      "confidence_score": 1.0
+      "target": "services_notifications_py_session"
     },
     {
       "relation": "references",
@@ -32566,9 +34465,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L35",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications_list_for",
-      "target": "services_notifications_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_notifications_py_uuid"
     },
     {
       "relation": "references",
@@ -32577,9 +34476,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L51",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications_mark_read",
-      "target": "services_notifications_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_notifications_py_uuid"
     },
     {
       "relation": "references",
@@ -32588,9 +34487,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L44",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications_unread_count",
-      "target": "services_notifications_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_notifications_py_uuid"
     },
     {
       "relation": "references",
@@ -32599,9 +34498,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L35",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications_list_for",
-      "target": "notification",
-      "confidence_score": 1.0
+      "target": "notification"
     },
     {
       "relation": "rationale_for",
@@ -32609,9 +34508,9 @@
       "source_file": "services/notifications.py",
       "source_location": "L52",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_notifications_rationale_52",
-      "target": "services_notifications_mark_read",
-      "confidence_score": 1.0
+      "target": "services_notifications_mark_read"
     },
     {
       "relation": "contains",
@@ -36867,5 +38766,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "bae95939adeed01fc5b06a0b2f25c5d44bc976f8"
+  "built_at_commit": "b6224e8e80a7f7eeba706a7ea79108a47c123d22"
 }

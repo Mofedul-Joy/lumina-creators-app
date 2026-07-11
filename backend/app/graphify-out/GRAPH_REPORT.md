@@ -1,16 +1,16 @@
 # Graph Report - backend/app  (2026-07-11)
 
 ## Corpus Check
-- 86 files · ~38,581 words
+- 89 files · ~41,247 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1097 nodes · 2458 edges · 59 communities
-- Extraction: 86% EXTRACTED · 14% INFERRED · 0% AMBIGUOUS · INFERRED: 348 edges (avg confidence: 0.61)
+- 1151 nodes · 2586 edges · 61 communities
+- Extraction: 86% EXTRACTED · 14% INFERRED · 0% AMBIGUOUS · INFERRED: 351 edges (avg confidence: 0.61)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `bae95939`
+- Built from commit: `b6224e8e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -72,18 +72,20 @@
 - [[_COMMUNITY_Community 56|Community 56]]
 - [[_COMMUNITY_Community 57|Community 57]]
 - [[_COMMUNITY_Community 58|Community 58]]
+- [[_COMMUNITY_Community 59|Community 59]]
+- [[_COMMUNITY_Community 60|Community 60]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `FastAPI` - 49 edges
-2. `get_settings()` - 41 edges
-3. `Base` - 27 edges
-4. `TimestampMixin` - 22 edges
-5. `Session` - 21 edges
-6. `Session` - 20 edges
-7. `Admin` - 19 edges
-8. `UUID` - 19 edges
-9. `LoginIn` - 18 edges
-10. `RefreshIn` - 18 edges
+1. `FastAPI` - 50 edges
+2. `get_settings()` - 42 edges
+3. `Base` - 29 edges
+4. `Session` - 23 edges
+5. `TimestampMixin` - 22 edges
+6. `Admin` - 22 edges
+7. `UUID` - 21 edges
+8. `Session` - 21 edges
+9. `UUID` - 19 edges
+10. `LoginIn` - 18 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `health()` --calls--> `get_settings()`  [INFERRED]
@@ -104,14 +106,15 @@
 - 1-file cycle: `services/payouts.py -> services/payouts.py`
 - 1-file cycle: `services/payouts_v2.py -> services/payouts_v2.py`
 - 1-file cycle: `services/socials_verify.py -> services/socials_verify.py`
+- 1-file cycle: `services/contracts.py -> services/contracts.py`
 - 1-file cycle: `services/creators_export.py -> services/creators_export.py`
 - 1-file cycle: `services/gamification.py -> services/gamification.py`
 - 1-file cycle: `services/scrape_worker.py -> services/scrape_worker.py`
 
-## Communities (59 total, 0 thin omitted)
+## Communities (61 total, 0 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.06
+Cohesion: 0.05
 Nodes (55): Base, SQLAlchemy declarative base + shared column mixins., Base class for all ORM models., TimestampMixin, DeclarativeBase, Campaign, CampaignBonusMilestone, CampaignInvite (+47 more)
 
 ### Community 1 - "Community 1"
@@ -120,7 +123,7 @@ Nodes (17): attach_proof(), claim(), detail(), list_mine(), _out(), _out_one(), 
 
 ### Community 2 - "Community 2"
 Cohesion: 0.12
-Nodes (40): _already_paid_for_participation(), _approved_submission_count(), _avatar_url(), compute_owed_all(), compute_owed_for_creator(), compute_owed_for_participation(), _default_payment_method(), forecast_all() (+32 more)
+Nodes (42): The wallet ledger — one row per deposit/withdrawal/payout/refund/     adjustment, WalletTransaction, _already_paid_for_participation(), _approved_submission_count(), _avatar_url(), compute_owed_all(), compute_owed_for_creator(), compute_owed_for_participation() (+34 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.12
@@ -131,8 +134,8 @@ Cohesion: 0.12
 Nodes (34): _aggregate_stats(), bump_streak_on_submission(), compute_awards(), compute_rank(), compute_xp(), get_creator_gamification(), next_rank_info(), CreatorProfile (+26 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.11
-Nodes (46): archive(), campaign_invite_link(), campaign_out(), campaign_overview(), CampaignInviteIn, CampaignInviteLinkOut, CampaignInviteRow, CampaignInviteSummaryOut (+38 more)
+Cohesion: 0.09
+Nodes (53): archive(), campaign_invite_link(), campaign_out(), campaign_overview(), CampaignInviteIn, CampaignInviteLinkOut, CampaignInviteRow, CampaignInviteSummaryOut (+45 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.15
@@ -159,8 +162,8 @@ Cohesion: 0.20
 Nodes (32): AddFundsIn, _date_range(), forecast(), history(), ledger(), manual(), owed(), owed_v2() (+24 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.13
-Nodes (36): create_access_token(), create_impersonation_token(), create_refresh_token(), decode_token(), hash_token(), _now(), datetime, Password hashing + JWT (HS256) with realm-scoped audience and rotating refresh. (+28 more)
+Cohesion: 0.19
+Nodes (26): hash_token(), Refresh tokens are stored as a sha256 hash, never in the clear., verify_password(), admin_login(), client_login(), _code_recently_sent(), creator_check_email(), creator_login() (+18 more)
 
 ### Community 13 - "Community 13"
 Cohesion: 0.16
@@ -168,7 +171,7 @@ Nodes (34): counts(), delete(), flag_suspicious(), list_submissions(), log_payou
 
 ### Community 14 - "Community 14"
 Cohesion: 0.19
-Nodes (20): get_settings(), _client(), get_r2_object(), head_object(), is_local_mode(), is_proxy_mode(), local_path(), object_public_url() (+12 more)
+Nodes (21): get_settings(), _client(), get_r2_object(), head_object(), is_local_mode(), is_proxy_mode(), local_path(), object_public_url() (+13 more)
 
 ### Community 15 - "Community 15"
 Cohesion: 0.09
@@ -196,7 +199,7 @@ Nodes (18): counts_by_status(), delete_submission(), _get(), _has_active_payout(
 
 ### Community 21 - "Community 21"
 Cohesion: 0.26
-Nodes (17): SocialAccount, apply_eligibility(), _clean_handle(), confirm_verification(), _gen_code(), _mark_verified(), _norm(), _now() (+9 more)
+Nodes (16): apply_eligibility(), _clean_handle(), confirm_verification(), _gen_code(), _mark_verified(), _norm(), _now(), datetime (+8 more)
 
 ### Community 22 - "Community 22"
 Cohesion: 0.18
@@ -207,8 +210,8 @@ Cohesion: 0.15
 Nodes (13): AddFundsIn, ForecastRow, LedgerRow, ManualPaymentIn, OwedBreakdown, OwedRow, OwedRowV2, PayAllIn (+5 more)
 
 ### Community 24 - "Community 24"
-Cohesion: 0.22
-Nodes (8): Fail fast on misconfiguration that is dangerous in production.          Called o, get_db(), get_engine(), Session, Database engine + session dependency.  The engine is created lazily so the app c, FastAPI dependency yielding a DB session., Engine, RuntimeError
+Cohesion: 0.18
+Nodes (10): get_db(), get_engine(), Session, Database engine + session dependency.  The engine is created lazily so the app c, FastAPI dependency yielding a DB session., Engine, health(), health_db() (+2 more)
 
 ### Community 25 - "Community 25"
 Cohesion: 0.25
@@ -243,8 +246,8 @@ Cohesion: 0.29
 Nodes (13): activity(), headline(), date, Session, UUID, Charts + headline numbers for the admin creator profile.  Weekly Post Overview —, Total posts / views / owed / avg CPM — the stat tiles above the Posts tab., Monday of the week `d` falls in. (+5 more)
 
 ### Community 33 - "Community 33"
-Cohesion: 0.30
-Nodes (11): accept(), create_invite(), _link(), list_invites(), peek(), Session, UUID, Creator invites: email an address and/or hand out a shareable join link.  Both c (+3 more)
+Cohesion: 0.19
+Nodes (26): CampaignContract, CreatorContract, accept(), active_count(), _campaign_term(), company_name(), _compensation_line(), _context() (+18 more)
 
 ### Community 34 - "Community 34"
 Cohesion: 0.25
@@ -255,8 +258,8 @@ Cohesion: 0.33
 Nodes (9): finalize(), ImagePresignIn, ImagePresignOut, ImageUploadOut, presign(), Admin image uploads (campaign banners/thumbnails). presign -> PUT -> finalize, r, Admin, Session (+1 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.20
-Nodes (3): BaseSettings, Application settings, loaded from environment / .env., Settings
+Cohesion: 0.17
+Nodes (4): BaseSettings, Application settings, loaded from environment / .env., Fail fast on misconfiguration that is dangerous in production.          Called o, Settings
 
 ### Community 37 - "Community 37"
 Cohesion: 0.33
@@ -295,8 +298,8 @@ Cohesion: 0.33
 Nodes (8): export_rows(), _money(), _profile_details(), CreatorProfile, Decimal, Session, Creator-database CSV export (admin).  Column set mirrors the reference platform', (header, rows) for every creator. Aggregates are pre-computed in grouped     que
 
 ### Community 48 - "Community 48"
-Cohesion: 0.36
-Nodes (8): Transactional email. Prefers Resend (HTTP — works from cloud hosts that block ou, True if the mail was handed to a transport. False when nothing is     configured, Invite to a specific campaign. `existing`=True → the link opens the     campaign, _send(), send_campaign_invite(), send_creator_invite(), _send_resend(), send_verification_code()
+Cohesion: 0.29
+Nodes (10): Transactional email. Prefers Resend (HTTP — works from cloud hosts that block ou, Notify a creator their Campaign Participation Agreement is ready to review/sign., True if the mail was handed to a transport. False when nothing is     configured, Invite to a specific campaign. `existing`=True → the link opens the     campaign, _send(), send_campaign_invite(), send_contract_ready(), send_creator_invite() (+2 more)
 
 ### Community 49 - "Community 49"
 Cohesion: 0.43
@@ -307,8 +310,8 @@ Cohesion: 0.40
 Nodes (5): is_self_hosted(), Re-host remote post thumbnails on our own storage.  Storing the platform's CDN U, True only if `url` is served by THIS deployment's storage.      Deliberately not, Download `url` and store it on our own storage; return our public URL.      Retu, rehost()
 
 ### Community 51 - "Community 51"
-Cohesion: 0.40
-Nodes (4): health(), health_db(), Public health checks — the ONLY public routes (closed marketplace)., Verifies DB connectivity. Returns 200 with status 'unconfigured' if no DB set ye
+Cohesion: 0.27
+Nodes (15): _active_items_subq(), amounts_owed(), list_payouts(), log_manual_payment(), Decimal, Payout, Session, UUID (+7 more)
 
 ### Community 52 - "Community 52"
 Cohesion: 0.36
@@ -338,24 +341,32 @@ Nodes (3): _is_disabled(), Auth dependencies — the security boundary. One per 
 Cohesion: 0.40
 Nodes (4): InvitePeekOut, peek_invite(), Public invite lookup — lets the signup page validate an invite link and prefill, Session
 
+### Community 59 - "Community 59"
+Cohesion: 0.32
+Nodes (11): accept_contract(), AcceptIn, ContractDetail, ContractSummary, _detail(), get_contract(), list_my_contracts(), Creator-facing Campaign Participation Agreements: view + electronically sign. (+3 more)
+
+### Community 60 - "Community 60"
+Cohesion: 0.27
+Nodes (10): create_access_token(), create_impersonation_token(), create_refresh_token(), decode_token(), _now(), datetime, Password hashing + JWT (HS256) with realm-scoped audience and rotating refresh., Short-lived client-audience access token minted for an admin's 'View as     Clie (+2 more)
+
 ## Knowledge Gaps
-- **53 isolated node(s):** `Engine`, `Session`, `Path`, `Admin`, `Session` (+48 more)
+- **55 isolated node(s):** `Engine`, `Session`, `Path`, `Admin`, `Session` (+50 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `FastAPI` connect `Community 30` to `Community 0`, `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 11`, `Community 12`, `Community 13`, `Community 15`, `Community 17`, `Community 18`, `Community 20`, `Community 21`, `Community 22`, `Community 25`, `Community 26`, `Community 27`, `Community 29`, `Community 31`, `Community 33`, `Community 34`, `Community 35`, `Community 37`, `Community 39`, `Community 45`, `Community 46`, `Community 51`, `Community 52`, `Community 54`, `Community 55`, `Community 56`, `Community 57`, `Community 58`?**
-  _High betweenness centrality (0.635) - this node is a cross-community bridge._
-- **Why does `get_settings()` connect `Community 14` to `Community 33`, `Community 36`, `Community 5`, `Community 10`, `Community 12`, `Community 45`, `Community 48`, `Community 16`, `Community 50`, `Community 51`, `Community 21`, `Community 22`, `Community 56`, `Community 24`, `Community 29`, `Community 30`?**
-  _High betweenness centrality (0.189) - this node is a cross-community bridge._
+- **Why does `FastAPI` connect `Community 30` to `Community 0`, `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 11`, `Community 12`, `Community 13`, `Community 15`, `Community 17`, `Community 18`, `Community 20`, `Community 21`, `Community 22`, `Community 24`, `Community 25`, `Community 26`, `Community 27`, `Community 29`, `Community 31`, `Community 34`, `Community 35`, `Community 37`, `Community 39`, `Community 45`, `Community 46`, `Community 51`, `Community 52`, `Community 54`, `Community 55`, `Community 56`, `Community 57`, `Community 58`, `Community 59`?**
+  _High betweenness centrality (0.648) - this node is a cross-community bridge._
+- **Why does `get_settings()` connect `Community 14` to `Community 0`, `Community 33`, `Community 36`, `Community 5`, `Community 10`, `Community 12`, `Community 45`, `Community 48`, `Community 16`, `Community 50`, `Community 21`, `Community 22`, `Community 56`, `Community 24`, `Community 60`, `Community 29`, `Community 30`?**
+  _High betweenness centrality (0.217) - this node is a cross-community bridge._
 - **Why does `create_app()` connect `Community 30` to `Community 14`?**
-  _High betweenness centrality (0.111) - this node is a cross-community bridge._
-- **Are the 39 inferred relationships involving `get_settings()` (e.g. with `_share_url()` and `settings()`) actually correct?**
-  _`get_settings()` has 39 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 24 inferred relationships involving `Base` (e.g. with `Campaign` and `CampaignBonusMilestone`) actually correct?**
-  _`Base` has 24 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 21 inferred relationships involving `TimestampMixin` (e.g. with `Campaign` and `CampaignBonusMilestone`) actually correct?**
-  _`TimestampMixin` has 21 INFERRED edges - model-reasoned connections that need verification._
+  _High betweenness centrality (0.124) - this node is a cross-community bridge._
+- **Are the 40 inferred relationships involving `get_settings()` (e.g. with `_share_url()` and `settings()`) actually correct?**
+  _`get_settings()` has 40 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 26 inferred relationships involving `Base` (e.g. with `Campaign` and `CampaignBonusMilestone`) actually correct?**
+  _`Base` has 26 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `Application settings, loaded from environment / .env.`, `Fail fast on misconfiguration that is dangerous in production.          Called o`, `Auth dependencies — the security boundary. One per realm; aud claim keeps them s` to the rest of the system?**
-  _275 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _285 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Community 0` be split into smaller, more focused modules?**
+  _Cohesion score 0.05384615384615385 - nodes in this community are weakly interconnected._
