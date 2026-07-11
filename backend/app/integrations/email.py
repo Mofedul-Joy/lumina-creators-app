@@ -87,3 +87,30 @@ def send_creator_invite(to_email: str, link: str) -> bool:
         '<p style="color:#666;font-size:13px">Weren\'t expecting this? You can ignore this email.</p></div>'
     )
     return _send(to_email, "You're invited to join Lumina Creators", text, html)
+
+
+def send_campaign_invite(to_email: str, campaign_name: str, link: str, *, existing: bool) -> bool:
+    """Invite to a specific campaign. `existing`=True → the link opens the
+    campaign for an account they already have; False → a signup link that
+    auto-joins the campaign once they create an account."""
+    cta = "View campaign" if existing else "Join the campaign"
+    lede = (
+        "An admin invited you to a campaign on Lumina Creators."
+        if existing
+        else "You've been invited to a campaign on Lumina Creators. Create your account to join."
+    )
+    text = (
+        f"{lede}\n\nCampaign: {campaign_name}\n\n{cta}:\n{link}\n\n"
+        "If you weren't expecting this, you can ignore this email."
+    )
+    html = (
+        '<div style="font-family:system-ui,sans-serif;max-width:440px;margin:auto">'
+        f'<h2 style="color:#16a34a">You\'re invited to “{campaign_name}”</h2>'
+        f"<p>{lede}</p>"
+        f'<p><a href="{link}" style="display:inline-block;background:#16a34a;color:#fff;'
+        'text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600">'
+        f"{cta}</a></p>"
+        f'<p style="color:#666;font-size:13px">Or paste this link into your browser:<br>{link}</p>'
+        '<p style="color:#666;font-size:13px">Weren\'t expecting this? You can ignore this email.</p></div>'
+    )
+    return _send(to_email, f"You're invited to “{campaign_name}” on Lumina Creators", text, html)

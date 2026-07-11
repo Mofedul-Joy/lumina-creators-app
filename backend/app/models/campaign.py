@@ -223,3 +223,47 @@ class CampaignParticipation(Base):
     payout_awarded_bonus_ids: Mapped[List[uuid.UUID]] = mapped_column(
         ARRAY(UUID(as_uuid=True)), nullable=False, server_default=text("'{}'")
     )
+
+
+class CampaignInvite(Base):
+    """An admin invite to ONE campaign. `creator_id` set → existing creator
+    (delivered as a notification + email); `email`+`token` set → outsider
+    (emailed a /signup?invite=<token> link that auto-joins on signup); both null
+    → the reusable link-only invite behind "Copy invite link". An invite is
+    "open" until accepted/declined/revoked."""
+    __tablename__ = "campaign_invites"
+    __table_args__ = (
+        Index("idx_cinvite_campaign", "campaign_id"),
+        Index("idx_cinvite_creator", "creator_id"),
+        Index(
+            "uq_cinvite_open_creator", "campaign_id", "creator_id", unique=True,
+            postgresql_where=text("creator_id IS NOT NULL AND accepted_at IS NULL "
+                                  "AND declined_at IS NULL AND revoked_at IS NULL"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    campaign_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False
+    )
+    creator_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("creators.id", ondelete="CASCADE")
+    )
+    email: Mapped[Optional[str]] = mapped_column(Text)
+    token: Mapped[Optional[str]] = mapped_column(Text, unique=True)
+    created_by_admin_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("admins.id", ondelete="SET NULL")
+    )
+    email_sent: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    accepted_creator_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("creators.id", ondelete="SET NULL")
+    )
+    declined_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

@@ -603,6 +603,31 @@ export const refreshTopVideo = (token: string, id: string) =>
 export const deleteTopVideo = (token: string, id: string) =>
   apiFetch<void>(`/api/creator/profile/top-videos/${id}`, { method: "DELETE", token });
 
+// ── Notifications (top-bar bell) ──────────────────────────────────────────────
+export type NotificationOut = {
+  id: string;
+  kind: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  read: boolean;
+  created_at: string;
+};
+
+export const listNotifications = (token: string) =>
+  apiFetch<NotificationOut[]>("/api/creator/notifications", { token });
+
+export const getUnreadCount = (token: string) =>
+  apiFetch<{ unread: number }>("/api/creator/notifications/unread-count", { token });
+
+/** Mark specific notifications read, or ALL unread when `ids` is omitted. */
+export const markNotificationsRead = (token: string, ids?: string[]) =>
+  apiFetch<{ unread: number }>("/api/creator/notifications/read", {
+    method: "POST",
+    body: JSON.stringify({ ids: ids ?? null }),
+    token,
+  });
+
 // ── Experiences ───────────────────────────────────────────────────────────────
 export type ExperienceKind = "organic_ugc" | "ugc_paid_ad" | "professional_role";
 

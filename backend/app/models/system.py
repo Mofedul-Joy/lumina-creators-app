@@ -34,6 +34,29 @@ class RefreshToken(Base):
     )
 
 
+class Notification(Base):
+    """A creator-facing bell entry. `link` is a relative app path the client
+    routes to on click (e.g. '/campaigns/summer-ugc'); `read_at` drives the
+    unread badge."""
+    __tablename__ = "notifications"
+    __table_args__ = (Index("idx_notif_creator_created", "creator_id", "created_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    creator_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("creators.id", ondelete="CASCADE"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'general'"))
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    body: Mapped[Optional[str]] = mapped_column(Text)
+    link: Mapped[Optional[str]] = mapped_column(Text)
+    read_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 class AuditLog(Base):
     __tablename__ = "audit_log"
     __table_args__ = (

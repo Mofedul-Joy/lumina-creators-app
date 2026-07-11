@@ -1,13 +1,31 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getAuthToken } from "@/lib/auth";
+import { listNotifications, markNotificationsRead, type NotificationOut } from "@/lib/api";
 
 /**
  * Right-side notification panel — mirrors the left sidebar but on the right.
- * The top-bar bell toggles it open/closed (it never routes anywhere). Clicking
- * the bell again, the backdrop, the ✕, or Escape slides it back to the right.
+ * The top-bar bell toggles it open/closed. Opening it marks everything read
+ * (clears the badge); clicking a row routes to its `link` and closes the panel.
  */
+function timeAgo(iso: string): string {
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return "just now";
+  const m = s / 60;
+  if (m < 60) return `${Math.floor(m)}m ago`;
+  const h = m / 60;
+  if (h < 24) return `${Math.floor(h)}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
 export function NotificationDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const router = useRouter();
+  const qc = useQueryClient();
+  const token = getAuthToken() ?? "";
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -15,8 +33,31 @@ export function NotificationDrawer({ open, onClose }: { open: boolean; onClose: 
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  // Placeholder — no notifications backend yet; the panel/behavior is the ask.
-  const notifications: { id: string; title: string; body: string; when: string; unread?: boolean }[] = [];
+  const q = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => listNotifications(token),
+    enabled: !!token && open,
+    retry: false,
+  });
+  const notifications: NotificationOut[] = q.data ?? [];
+
+  // Opening the panel = the creator has seen them → clear the unread badge.
+  useEffect(() => {
+    if (!open || !token) return;
+    const hasUnread = (q.data ?? []).some((n) => !n.read);
+    if (!hasUnread) return;
+    markNotificationsRead(token)
+      .then(() => {
+        qc.invalidateQueries({ queryKey: ["notif-unread"] });
+        qc.invalidateQueries({ queryKey: ["notifications"] });
+      })
+      .catch(() => {});
+  }, [open, token, q.data, qc]);
+
+  function openNotification(n: NotificationOut) {
+    onClose();
+    if (n.link) router.push(n.link);
+  }
 
   return (
     <>
@@ -43,26 +84,44 @@ export function NotificationDrawer({ open, onClose }: { open: boolean; onClose: 
         </div>
 
         <div className="flex-1 overflow-y-auto px-3 py-3">
-          {notifications.length === 0 ? (
+          {q.isLoading ? (
+            <div className="space-y-2 px-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-16 animate-pulse rounded-lg bg-[var(--color-surface)]/60" />
+              ))}
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
               <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-surface)] text-[var(--color-text-muted)]">
                 <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6ZM10 20a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </span>
               <p className="text-sm font-medium text-[var(--color-text)]">You&apos;re all caught up</p>
-              <p className="text-xs text-[var(--color-text-muted)]">Updates on your submissions, views and payouts will show up here.</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Invites, updates on your submissions, views and payouts will show up here.</p>
             </div>
           ) : (
             <ul className="space-y-1">
-              {notifications.map((n) => (
-                <li key={n.id} className="flex gap-3 rounded-lg px-3 py-3 transition hover:bg-[var(--color-surface)]/60">
-                  <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.unread ? "bg-[var(--color-brand)]" : "bg-transparent"}`} />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-[var(--color-text)]">{n.title}</p>
-                    <p className="text-sm text-[var(--color-text-secondary)]">{n.body}</p>
-                    <p className="mt-0.5 text-[11px] text-[var(--color-text-muted)]">{n.when}</p>
-                  </div>
-                </li>
-              ))}
+              {notifications.map((n) => {
+                const clickable = !!n.link;
+                return (
+                  <li key={n.id}>
+                    <button
+                      onClick={() => openNotification(n)}
+                      disabled={!clickable}
+                      className={`flex w-full gap-3 rounded-lg px-3 py-3 text-left transition ${clickable ? "cursor-pointer hover:bg-[var(--color-surface)]/60" : "cursor-default"}`}
+                    >
+                      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-[var(--color-brand)]"}`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-[var(--color-text)]">{n.title}</p>
+                        {n.body ? <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">{n.body}</p> : null}
+                        <p className="mt-1 flex items-center gap-1.5 text-[11px] text-[var(--color-text-muted)]">
+                          <span>{timeAgo(n.created_at)}</span>
+                          {clickable ? <span className="text-[var(--color-brand-soft)]">· Tap to open</span> : null}
+                        </p>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

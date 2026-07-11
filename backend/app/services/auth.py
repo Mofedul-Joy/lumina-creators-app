@@ -100,8 +100,15 @@ def creator_signup(db: Session, email: str, password: str, invite: str | None = 
         # Invited creators run the exact same signup + onboarding — the invite is
         # only recorded as used. Best-effort: a stale token must never fail a
         # signup that has already succeeded.
+        from app.services import campaign_invites as campaign_invites_svc
         from app.services import invites as invites_svc
         invites_svc.accept(db, invite, creator.id)
+        # The same ?invite= param also carries a campaign invite token — accepting
+        # it auto-joins the new creator to that campaign. Non-campaign tokens no-op.
+        try:
+            campaign_invites_svc.accept_external(db, invite, creator.id)
+        except Exception:  # noqa: BLE001 - never fail a completed signup
+            pass
     if not verify_on:
         # Email verification disabled (no email provider configured) — issue a token.
         access, refresh = _issue(db, creator.id, "creator")

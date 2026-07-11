@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { getMyGamification } from "@/lib/gamification";
+import { getUnreadCount } from "@/lib/api";
+import { getAuthToken } from "@/lib/auth";
 import { RankBadge } from "@/components/gamification/RankBadge";
 import { LuminaMark } from "@/components/ui/LuminaMark";
 
@@ -18,6 +20,15 @@ export function CreatorTopbar({
   notifOpen: boolean;
 }) {
   const g = useQuery({ queryKey: ["my-gamification"], queryFn: getMyGamification, retry: false }).data;
+  const token = getAuthToken() ?? "";
+  const unread = useQuery({
+    queryKey: ["notif-unread"],
+    queryFn: () => getUnreadCount(token),
+    enabled: !!token,
+    retry: false,
+    refetchInterval: 60_000,       // pick up new invites without a reload
+    refetchOnWindowFocus: true,
+  }).data?.unread ?? 0;
 
   return (
     <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-[var(--color-border)]/60 bg-[var(--color-bg-deep)]/80 px-4 py-3 backdrop-blur-xl lg:px-6">
@@ -58,7 +69,11 @@ export function CreatorTopbar({
           }`}
         >
           <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6ZM10 20a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[var(--color-brand)] ring-2 ring-[var(--color-bg-deep)]" />
+          {unread > 0 ? (
+            <span className="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[var(--color-brand)] px-1 text-[10px] font-bold leading-none text-[var(--color-on-brand)] ring-2 ring-[var(--color-bg-deep)]">
+              {unread > 9 ? "9+" : unread}
+            </span>
+          ) : null}
         </button>
       </div>
     </header>

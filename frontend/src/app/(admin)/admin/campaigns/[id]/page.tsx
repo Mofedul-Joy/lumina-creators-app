@@ -7,10 +7,12 @@ import { useParams, useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { AddCreatorsToCampaignModal } from "@/components/admin/AddCreatorsToCampaignModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
   convertCampaignToAdvanced,
   getAdminCampaign,
+  getCampaignInviteLink,
   getCampaignOverview,
   type CampaignOverviewCreator,
 } from "@/lib/admin";
@@ -84,6 +86,7 @@ export default function CampaignDetailPage() {
   const [ready, setReady] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   useEffect(() => {
     setToken(getAdminToken());
     setReady(true);
@@ -117,8 +120,9 @@ export default function CampaignDetailPage() {
 
   async function copyInviteLink() {
     if (!c) return;
-    // The public campaign-entry URL creators use to join — that's the invite link.
-    await navigator.clipboard.writeText(`${window.location.origin}/c/${c.slug}`);
+    // Backend-minted reusable link — a signup URL that auto-joins this campaign.
+    const { link } = await getCampaignInviteLink(id);
+    await navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
   }
@@ -189,7 +193,7 @@ export default function CampaignDetailPage() {
             </ToolbarButton>
           ) : null}
           <ToolbarButton onClick={copyInviteLink}>{copied ? "Copied" : "Copy invite link"}</ToolbarButton>
-          <ToolbarButton href="/admin/creators">Add creators</ToolbarButton>
+          <ToolbarButton onClick={() => setAddOpen(true)} primary>Add creators</ToolbarButton>
           <ToolbarButton href="/admin/analytics">View analytics</ToolbarButton>
         </div>
 
@@ -219,8 +223,9 @@ export default function CampaignDetailPage() {
         </div>
 
         {/* stat tiles */}
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
           <StatTile label="Active creators" value={fmtInt(ov?.active_creators ?? 0)} sub={`${fmtInt(ov?.delivered_creators ?? 0)} delivered`} />
+          <StatTile label="Pending invites" value={fmtInt(ov?.pending_invites ?? 0)} sub="Awaiting response" />
           <StatTile label="Total posts" value={fmtInt(ov?.total_posts ?? 0)} />
           <StatTile label="Total views" value={fmtInt(ov?.total_views ?? 0)} />
           <StatTile label="Total spend" value={fmtMoney(ov?.total_spend ?? 0)} sub="Paid to date" />
@@ -281,9 +286,9 @@ export default function CampaignDetailPage() {
               ) : (ov?.creators ?? []).length === 0 ? (
                 <div className="rounded-xl border border-dashed border-[var(--color-border)] p-6 text-center text-sm text-[var(--color-text-secondary)]">
                   No active creators yet.
-                  <Link href="/admin/creators" className="mt-1 block text-[var(--color-brand)] underline">
+                  <button onClick={() => setAddOpen(true)} className="mt-1 block w-full cursor-pointer text-[var(--color-brand)] underline">
                     Add creators
-                  </Link>
+                  </button>
                 </div>
               ) : (
                 (ov?.creators ?? []).map((cr) => <CreatorRow key={cr.creator_id} c={cr} />)
@@ -292,6 +297,13 @@ export default function CampaignDetailPage() {
           </section>
         </div>
       </main>
+
+      <AddCreatorsToCampaignModal
+        open={addOpen}
+        campaignId={id}
+        onClose={() => setAddOpen(false)}
+        onInvited={() => ovQ.refetch()}
+      />
     </div>
   );
 }

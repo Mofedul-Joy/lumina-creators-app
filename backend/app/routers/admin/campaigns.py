@@ -19,6 +19,7 @@ from app.db.session import get_db
 from app.models import Admin, Campaign, CampaignBonusMilestone, CreatorProfile, Submission
 from app.schemas.campaign import BonusMilestoneOut, CampaignCreateIn, CampaignOut, CampaignUpdateIn, ShareTokenOut
 from app.services import audit, campaign as svc
+from app.services import campaign_invites as invites_svc
 from app.services import campaign_overview as overview_svc
 from app.services.csv_export import csv_response
 
@@ -122,6 +123,7 @@ class CampaignOverviewCreator(BaseModel):
 class CampaignOverviewOut(BaseModel):
     active_creators: int
     delivered_creators: int
+    pending_invites: int = 0
     total_posts: int
     total_views: int
     total_spend: Decimal
@@ -238,3 +240,60 @@ def disable_share(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_adm
         share_token=campaign.share_token or "", share_enabled=campaign.share_enabled,
         share_url=_share_url(campaign.share_token) if campaign.share_token else "",
     )
+
+
+# ---- campaign invites (the "Add creators" flow) ----
+class CampaignInviteIn(BaseModel):
+    creator_ids: List[uuid.UUID] = []
+    emails: List[str] = []
+
+
+class CampaignInviteSummaryOut(BaseModel):
+    invited_existing: int
+    invited_external: int
+    emailed: int
+    skipped: List[str]
+
+
+class CampaignInviteRow(BaseModel):
+    id: str
+    target: Optional[str]
+    kind: str
+    status: str
+    email_sent: bool
+    created_at: datetime
+
+
+class CampaignInviteLinkOut(BaseModel):
+    link: str
+
+
+@router.post("/{campaign_id}/invite", response_model=CampaignInviteSummaryOut)
+def invite_to_campaign(campaign_id: uuid.UUID, body: CampaignInviteIn,
+                       admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Invite existing creators (→ notification + email) and/or outsiders by email
+    (→ signup link that auto-joins) to this campaign."""
+    if not body.creator_ids and not body.emails:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Select creators or enter at least one email.")
+    summary = invites_svc.invite(db, admin.id, campaign_id, body.creator_ids, body.emails)
+    audit.log(db, actor_admin_id=admin.id, action="campaign.invite", entity_type="campaign",
+              entity_id=campaign_id, invited_existing=summary["invited_existing"],
+              invited_external=summary["invited_external"], skipped=summary["skipped"])
+    db.commit()
+    return CampaignInviteSummaryOut(**summary)
+
+
+@router.get("/{campaign_id}/invites", response_model=List[CampaignInviteRow])
+def list_campaign_invites(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    return [CampaignInviteRow(**r) for r in invites_svc.list_for_campaign(db, campaign_id)]
+
+
+@router.get("/{campaign_id}/invite-link", response_model=CampaignInviteLinkOut)
+def campaign_invite_link(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    return CampaignInviteLinkOut(**invites_svc.invite_link(db, admin.id, campaign_id))
+
+
+@router.delete("/{campaign_id}/invites/{invite_id}", status_code=204)
+def revoke_campaign_invite(campaign_id: uuid.UUID, invite_id: uuid.UUID,
+                           admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    invites_svc.revoke(db, campaign_id, invite_id)

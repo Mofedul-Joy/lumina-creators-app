@@ -177,6 +177,7 @@ export type CampaignOverviewCreator = {
 export type CampaignOverview = {
   active_creators: number;
   delivered_creators: number;
+  pending_invites: number;
   total_posts: number;
   total_views: number;
   total_spend: number | string;
@@ -185,6 +186,39 @@ export type CampaignOverview = {
 
 export const getCampaignOverview = (id: string) =>
   apiFetch<CampaignOverview>(`/api/admin/campaigns/${id}/overview`, auth());
+
+// ── Campaign invites (the "Add creators" flow) ────────────────────────────────
+export type CampaignInviteSummary = {
+  invited_existing: number;
+  invited_external: number;
+  emailed: number;
+  skipped: string[];
+};
+
+export type CampaignInviteRow = {
+  id: string;
+  target: string | null;
+  kind: "existing" | "external";
+  status: "pending" | "accepted" | "declined" | "revoked";
+  email_sent: boolean;
+  created_at: string;
+};
+
+export const inviteToCampaign = (campaignId: string, body: { creator_ids?: string[]; emails?: string[] }) =>
+  apiFetch<CampaignInviteSummary>(`/api/admin/campaigns/${campaignId}/invite`, {
+    method: "POST",
+    body: JSON.stringify({ creator_ids: body.creator_ids ?? [], emails: body.emails ?? [] }),
+    ...auth(),
+  });
+
+export const getCampaignInvites = (campaignId: string) =>
+  apiFetch<CampaignInviteRow[]>(`/api/admin/campaigns/${campaignId}/invites`, auth());
+
+export const getCampaignInviteLink = (campaignId: string) =>
+  apiFetch<{ link: string }>(`/api/admin/campaigns/${campaignId}/invite-link`, auth());
+
+export const revokeCampaignInvite = (campaignId: string, inviteId: string) =>
+  apiFetch<void>(`/api/admin/campaigns/${campaignId}/invites/${inviteId}`, { method: "DELETE", ...auth() });
 
 export const convertCampaignToAdvanced = (id: string) =>
   apiFetch<AdminCampaign>(`/api/admin/campaigns/${id}/convert-to-advanced`, { method: "POST", ...auth() });

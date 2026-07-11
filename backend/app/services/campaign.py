@@ -292,6 +292,12 @@ def join_campaign(db: Session, creator_id: uuid.UUID, slug: str) -> CampaignPart
     db.add(part)
     db.commit()
     db.refresh(part)
+    # If an admin had invited this creator, close the open invite now.
+    try:
+        from app.services import campaign_invites
+        campaign_invites.mark_accepted_on_join(db, campaign.id, creator_id)
+    except Exception:  # noqa: BLE001 - the join succeeded; invite bookkeeping is best-effort
+        pass
     return part
 
 
