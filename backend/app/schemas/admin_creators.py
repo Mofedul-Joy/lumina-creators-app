@@ -38,6 +38,9 @@ class PortfolioItemOut(BaseModel):
     platform: Optional[str] = None
     video_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
+    is_top_content: bool = False
+    views: int = 0
+    likes: int = 0
 
 
 class CreatorDetail(BaseModel):

@@ -161,6 +161,10 @@ class PortfolioItem(Base):
     brand_name: Mapped[Optional[str]] = mapped_column(Text)
     caption: Mapped[Optional[str]] = mapped_column(Text)
     platform: Mapped[Optional[str]] = mapped_column(PLATFORM)
+    # "Top Videos" (link entries the creator curates, max 3) vs uploaded videos.
+    is_top_content: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    views: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    likes: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

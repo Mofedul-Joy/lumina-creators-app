@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { getAuthToken } from "@/lib/auth";
 import { deleteExperience, getProfile, isAuthError, listExperiences, type ExperienceOut } from "@/lib/api";
 import { AddExperienceModal } from "@/components/creator/AddExperienceModal";
+import { TopVideosTab } from "@/components/creator/TopVideosTab";
 import { listSubmissions } from "@/lib/campaigns";
 import { getMyGamification } from "@/lib/gamification";
 import { fmtInt, fmtMoney } from "@/lib/format";
@@ -72,6 +73,7 @@ function ExperienceCard({ e, onDelete }: { e: ExperienceOut; onDelete: (id: stri
 const TABS = [
   { key: "overview", label: "Overview" },
   { key: "experiences", label: "Experiences" },
+  { key: "top-videos", label: "Top Videos" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 
@@ -200,6 +202,8 @@ export default function AccountPage() {
           />
         </section>
       ) : null}
+
+      {tab === "top-videos" ? <TopVideosTab /> : null}
 
       {tab !== "overview" ? null : (
         <>

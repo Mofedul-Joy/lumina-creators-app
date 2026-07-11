@@ -193,6 +193,9 @@ def get_creator_detail(db: Session, creator_id: uuid.UUID) -> dict:
                 "platform": p.platform,
                 "video_url": p.video_url,
                 "thumbnail_url": p.thumbnail_url,
+                "is_top_content": p.is_top_content,
+                "views": p.views,
+                "likes": p.likes,
             }
             for p in portfolio
         ],
@@ -335,6 +338,9 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
                 "platform": p.platform,
                 "video_url": p.video_url,
                 "thumbnail_url": p.thumbnail_url,
+                "is_top_content": p.is_top_content,
+                "views": p.views,
+                "likes": p.likes,
             }
             for p in portfolio
         ],

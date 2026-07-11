@@ -370,6 +370,9 @@ export type PortfolioItemOut = {
   platform: Platform | null;
   video_url: string | null;
   thumbnail_url: string | null;
+  is_top_content: boolean;
+  views: number;
+  likes: number;
 };
 
 export type CreatorDetail = {
@@ -571,6 +574,34 @@ export type InvitePeek = {
 
 export const peekInvite = (token: string) =>
   apiFetch<InvitePeek>(`/api/invites/${encodeURIComponent(token)}`);
+
+// ── Top videos (Portfolio "Top Content") ──────────────────────────────────────
+export type TopVideoPlatform = "tiktok" | "instagram";
+
+export type TopVideoOut = {
+  id: string;
+  platform: string | null;
+  video_url: string | null;
+  thumbnail_url: string | null;
+  views: number;
+  likes: number;
+};
+
+export const listTopVideos = (token: string) =>
+  apiFetch<TopVideoOut[]>("/api/creator/profile/top-videos", { token });
+
+export const addTopVideo = (token: string, platform: TopVideoPlatform, video_url: string) =>
+  apiFetch<TopVideoOut>("/api/creator/profile/top-videos", {
+    method: "POST",
+    body: JSON.stringify({ platform, video_url }),
+    token,
+  });
+
+export const refreshTopVideo = (token: string, id: string) =>
+  apiFetch<TopVideoOut>(`/api/creator/profile/top-videos/${id}/refresh`, { method: "POST", token });
+
+export const deleteTopVideo = (token: string, id: string) =>
+  apiFetch<void>(`/api/creator/profile/top-videos/${id}`, { method: "DELETE", token });
 
 // ── Experiences ───────────────────────────────────────────────────────────────
 export type ExperienceKind = "organic_ugc" | "ugc_paid_ad" | "professional_role";

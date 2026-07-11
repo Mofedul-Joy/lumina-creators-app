@@ -22,6 +22,8 @@ from app.schemas.profile import (
     SocialOut,
     SocialVerifyIn,
     SocialVerifyStartOut,
+    TopVideoIn,
+    TopVideoOut,
 )
 from app.services import profile as svc
 from app.services import socials_verify as verify_svc
@@ -120,7 +122,8 @@ def _portfolio_out(db: Session, p) -> PortfolioOut:
         video_url = storage.object_public_url(obj.object_key) if obj else None
     return PortfolioOut(id=str(p.id), video_url=video_url, is_upload=is_upload,
                         thumbnail_url=p.thumbnail_url, brand_name=p.brand_name,
-                        caption=p.caption, platform=p.platform)
+                        caption=p.caption, platform=p.platform,
+                        is_top_content=p.is_top_content, views=p.views, likes=p.likes)
 
 
 @router.get("/portfolio", response_model=list[PortfolioOut])
@@ -135,6 +138,35 @@ def add_portfolio(body: PortfolioIn, current: Creator = Depends(get_current_crea
 
 @router.delete("/portfolio/{item_id}", status_code=204)
 def delete_portfolio(item_id: uuid.UUID, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
+    svc.delete_portfolio(db, current.id, item_id)
+
+
+# ---- top videos (Portfolio "Top Content") ----
+def _top_video_out(p) -> TopVideoOut:
+    return TopVideoOut(
+        id=str(p.id), platform=p.platform, video_url=p.video_url,
+        thumbnail_url=p.thumbnail_url, views=p.views, likes=p.likes,
+    )
+
+
+@router.get("/top-videos", response_model=list[TopVideoOut])
+def list_top_videos(current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
+    return [_top_video_out(p) for p in svc.list_top_videos(db, current.id)]
+
+
+@router.post("/top-videos", response_model=TopVideoOut)
+def add_top_video(body: TopVideoIn, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
+    return _top_video_out(svc.add_top_video(db, current.id, body.platform, body.video_url))
+
+
+@router.post("/top-videos/{item_id}/refresh", response_model=TopVideoOut)
+def refresh_top_video(item_id: uuid.UUID, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
+    """Best-effort scrape of view/like counts (may take a few seconds)."""
+    return _top_video_out(svc.refresh_top_video_stats(db, current.id, item_id))
+
+
+@router.delete("/top-videos/{item_id}", status_code=204)
+def delete_top_video(item_id: uuid.UUID, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
     svc.delete_portfolio(db, current.id, item_id)
 
 

@@ -216,6 +216,85 @@ def delete_portfolio(db: Session, creator_id: uuid.UUID, item_id: uuid.UUID) -> 
     recompute_completion(db, creator_id)
 
 
+# ---- top videos (Portfolio "Top Content") ----
+# Link-based, up to 3, NO ownership verification (Bill: pasting the link is
+# enough). Only TikTok and Instagram, per the two platform toggles.
+TOP_VIDEO_PLATFORMS = {"tiktok", "instagram"}
+MAX_TOP_VIDEOS = 3
+
+
+def list_top_videos(db: Session, creator_id: uuid.UUID):
+    return db.scalars(
+        select(PortfolioItem)
+        .where(PortfolioItem.creator_id == creator_id, PortfolioItem.is_top_content.is_(True))
+        .order_by(PortfolioItem.created_at.asc())
+    ).all()
+
+
+def add_top_video(db: Session, creator_id: uuid.UUID, platform: str, video_url: str) -> PortfolioItem:
+    from app.integrations import apify
+    from app.services import thumbnails
+
+    platform = (platform or "").strip().lower()
+    if platform not in TOP_VIDEO_PLATFORMS:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Pick TikTok or Instagram")
+
+    raw = (video_url or "").strip()
+    if not raw or not urls.is_video_url(raw):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Paste a valid TikTok or Instagram video link")
+    detected = urls.detect_platform(raw)
+    if detected and detected != platform:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"That looks like a {detected} link, not {platform}")
+
+    existing = list_top_videos(db, creator_id)
+    if len(existing) >= MAX_TOP_VIDEOS:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"You can add up to {MAX_TOP_VIDEOS} top videos")
+
+    canonical = urls.canonicalize_url(raw)
+    if any(p.video_url == canonical for p in existing):
+        raise HTTPException(status.HTTP_409_CONFLICT, "That video is already in your top content")
+
+    # Real thumbnail now (fast, re-hosted so it can't rot/hotlink-block); view
+    # and like counts fill in via a separate refresh so the add stays snappy.
+    try:
+        thumb = thumbnails.rehost(apify.fast_thumbnail(platform, raw), "portfolio_thumb", creator_id)
+    except Exception:  # noqa: BLE001
+        thumb = None
+
+    item = PortfolioItem(
+        creator_id=creator_id, video_url=canonical, thumbnail_url=thumb,
+        platform=platform, is_top_content=True,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+def refresh_top_video_stats(db: Session, creator_id: uuid.UUID, item_id: uuid.UUID) -> PortfolioItem:
+    """Best-effort scrape of view/like counts. Raise-only: a failed/empty scrape
+    never lowers a previously-seen count. Kept off the add path because the actor
+    run can take up to ~90s."""
+    from app.integrations import apify
+    from app.services import thumbnails
+
+    item = db.get(PortfolioItem, item_id)
+    if item is None or item.creator_id != creator_id or not item.is_top_content:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Top video not found")
+
+    stats = apify.post_stats(item.platform, item.video_url)
+    if stats is not None:
+        item.views = max(item.views, stats.views)
+        item.likes = max(item.likes, stats.likes)
+        if stats.thumbnail_url:
+            hosted = thumbnails.rehost(stats.thumbnail_url, "portfolio_thumb", creator_id)
+            if hosted:
+                item.thumbnail_url = hosted
+        db.commit()
+        db.refresh(item)
+    return item
+
+
 # ---- experiences ----
 # Auto-verified on add (Bill: no manual review). `kind` drives what the entry
 # means; `title` carries the job title for a professional role and the type's

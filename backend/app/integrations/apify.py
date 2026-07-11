@@ -230,6 +230,24 @@ def scrape_batch(platform: str, post_urls: list[str]) -> tuple[dict[str, Scraped
     return match_dataset(platform, dataset), cost
 
 
+def post_stats(platform: str, url: str, timeout_sec: int = 90) -> Optional["ScrapedStats"]:
+    """View/like/comment counts for a single post (portfolio Top Videos). Bounded
+    Apify actor run. Returns None (never raises) if unconfigured, slow, or the
+    post can't be read — the caller keeps the last-known stats."""
+    try:
+        run_id = start_run(platform, [url])
+        run = poll_run(run_id, timeout_sec=timeout_sec)
+        if run["status"] != "SUCCEEDED":
+            return None
+        for stats in match_dataset(platform, fetch_dataset(run["defaultDatasetId"])).values():
+            return stats
+    except ApifyNotConfigured:
+        return None
+    except Exception:  # noqa: BLE001 - best-effort, never block the caller
+        return None
+    return None
+
+
 def post_thumbnail(platform: str, url: str) -> Optional[str]:
     """Best-effort real thumbnail for a single post/video link (portfolio "Top
     Videos"). Fast, no-actor paths first (YouTube image endpoint, TikTok oEmbed);
