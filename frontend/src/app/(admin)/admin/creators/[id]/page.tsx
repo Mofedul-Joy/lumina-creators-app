@@ -8,11 +8,26 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { CreatorDetailCard } from "@/components/admin/CreatorDetailCard";
 import { RemoveCreatorModal } from "@/components/admin/RemoveCreatorModal";
+import { WeeklyPostChart } from "@/components/admin/charts/WeeklyPostChart";
+import { ViewsGrowthChart } from "@/components/admin/charts/ViewsGrowthChart";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { getAdminToken } from "@/lib/auth";
+import { getCreatorActivity } from "@/lib/admin";
+import { fmtInt, fmtMoney } from "@/lib/format";
 import { flagCreatorSuspicious, getCreatorDetail, isAuthError, unflagCreatorSuspicious } from "@/lib/api";
 
 const cardCls =
   "card-grad rounded-[var(--radius-card)] p-5 space-y-4";
+
+function StatTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="card-grad rounded-[var(--radius-card)] p-4">
+      <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">{label}</p>
+      <p className="tabular mt-1.5 text-2xl font-semibold text-[var(--color-text)]">{value}</p>
+      {sub ? <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">{sub}</p> : null}
+    </div>
+  );
+}
 
 export default function AdminCreatorDetailPage() {
   const router = useRouter();
@@ -36,6 +51,13 @@ export default function AdminCreatorDetailPage() {
   const detailQ = useQuery({
     queryKey: ["admin-creator", id],
     queryFn: () => getCreatorDetail(token ?? "", id),
+    enabled: ready && !!token && !!id,
+    retry: false,
+  });
+
+  const activityQ = useQuery({
+    queryKey: ["admin-creator-activity", id],
+    queryFn: () => getCreatorActivity(id),
     enabled: ready && !!token && !!id,
     retry: false,
   });
@@ -72,7 +94,7 @@ export default function AdminCreatorDetailPage() {
   return (
     <div className="min-h-[100dvh]">
       <AdminShell />
-      <main className="mx-auto max-w-3xl px-6 py-10 space-y-6">
+      <main className="mx-auto max-w-6xl px-6 py-10 space-y-6">
       <Link href="/admin/creators" className="text-sm text-[var(--color-brand)] underline">
         ← Back to database
       </Link>
@@ -140,6 +162,37 @@ export default function AdminCreatorDetailPage() {
           )}
         </div>
       </header>
+
+      {/* Performance charts (SideShift-style): posts this week vs last, and
+          views over time. Both have cursor-following hover tooltips. */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section className={cardCls}>
+          {activityQ.data ? (
+            <WeeklyPostChart data={activityQ.data.weekly_posts} />
+          ) : (
+            <Skeleton className="h-56 w-full" />
+          )}
+        </section>
+        <section className={cardCls}>
+          {activityQ.data ? (
+            <ViewsGrowthChart data={activityQ.data.views_growth} />
+          ) : (
+            <Skeleton className="h-56 w-full" />
+          )}
+        </section>
+      </div>
+
+      {/* Headline numbers */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatTile label="Total posts" value={fmtInt(activityQ.data?.total_posts ?? 0)} />
+        <StatTile label="Total views" value={fmtInt(activityQ.data?.total_views ?? 0)} />
+        <StatTile
+          label="Total owed"
+          value={fmtMoney(activityQ.data?.total_owed ?? 0)}
+          sub={`Paid so far: ${fmtMoney(activityQ.data?.total_paid ?? 0)}`}
+        />
+        <StatTile label="Avg CPM" value={fmtMoney(activityQ.data?.avg_cpm ?? 0)} />
+      </div>
 
       <section className={cardCls}>
         <CreatorDetailCard creatorId={id} />

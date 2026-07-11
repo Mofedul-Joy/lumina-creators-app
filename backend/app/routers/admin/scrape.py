@@ -11,16 +11,57 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_admin
 from app.db.session import get_db
 from app.models import Admin, Submission
-from app.services import embed_health
+from app.integrations import apify
+from app.services import embed_health, thumbnails
 
 router = APIRouter(prefix="/scrape", tags=["admin-scrape"])
 
 _MAX_BATCH = 200
+
+
+class RehostResult(BaseModel):
+    checked: int
+    rehosted: int
+    failed: int
+
+
+def _needs_rehost(url: Optional[str]) -> bool:
+    """Missing, or still a platform CDN link. Those are signed, short-lived and
+    hotlink-blocked, so they render for nobody and must be re-hosted."""
+    return not url or "/uploads/" not in url
+
+
+@router.post("/rehost-thumbnails", response_model=RehostResult)
+def rehost_thumbnails(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Re-resolve + self-host any submission thumbnail that isn't already ours.
+
+    Must run where storage is configured (i.e. on the server), not from a dev
+    box — a local run would write local-disk URLs into the shared database.
+    """
+    rows = [
+        s for s in db.scalars(select(Submission)).all() if _needs_rehost(s.thumbnail_url)
+    ][:_MAX_BATCH]
+
+    rehosted = failed = 0
+    for sub in rows:
+        try:
+            fresh = apify.fast_thumbnail(sub.platform, sub.post_url)
+            hosted = thumbnails.rehost(fresh, "submission_thumb", sub.creator_id)
+        except Exception:  # noqa: BLE001
+            hosted = None
+        if hosted:
+            sub.thumbnail_url = hosted
+            rehosted += 1
+        else:
+            failed += 1
+    db.commit()
+    return RehostResult(checked=len(rows), rehosted=rehosted, failed=failed)
 
 
 class EmbedCheckResult(BaseModel):

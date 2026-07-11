@@ -8,6 +8,7 @@ UGC content, and a lot of infrastructure to take on speculatively.
 """
 from __future__ import annotations
 
+import html
 import re
 import time
 from dataclasses import dataclass
@@ -275,10 +276,16 @@ def _og_image(url: str) -> Optional[str]:
         )
         if r.status_code != 200:
             return None
-        html = r.text[:200_000]
-        m = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']', html, re.I) or \
-            re.search(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']', html, re.I)
-        return m.group(1) if m else None
+        page = r.text[:200_000]
+        m = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']', page, re.I) or \
+            re.search(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']', page, re.I)
+        if not m:
+            return None
+        # The attribute is HTML-escaped ("&amp;" for "&"). Leaving it escaped
+        # corrupts the query string, and a signed CDN URL then 403s with
+        # "Bad URL hash" — which is exactly how this silently returned a
+        # thumbnail that could never be fetched.
+        return html.unescape(m.group(1))
     except Exception:  # noqa: BLE001
         return None
 

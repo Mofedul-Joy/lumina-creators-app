@@ -14,6 +14,7 @@ from app.models import (
     CampaignParticipation, Creator, CreatorProfile, PayoutItem, ScrapeJob, StorageObject, Submission,
 )
 from app.services import campaign as campaign_svc
+from app.services import thumbnails
 from app.services import urls
 from app.services.gamification import bump_streak_on_submission, refresh_creator_gamification
 
@@ -54,10 +55,14 @@ def create_submission(db: Session, creator_id: uuid.UUID, campaign_slug: str, po
     # Resolve the post's real thumbnail NOW rather than waiting on the scrape
     # worker — an unscraped submission would otherwise show an empty card in the
     # admin dashboard for as long as the job sits queued. Uses the FAST resolver
-    # (oEmbed/og:image, no Apify actor) so the request can't hang; the worker
-    # later overwrites it with the scraped one. None → clean fallback card.
+    # (oEmbed/og:image, no Apify actor) so the request can't hang, then re-hosts
+    # the image: platform CDN links are signed, short-lived and hotlink-blocked,
+    # so storing one gives a thumbnail that renders for nobody.
+    # None → clean fallback card.
     try:
-        thumbnail = apify.fast_thumbnail(platform, post_url)
+        thumbnail = thumbnails.rehost(
+            apify.fast_thumbnail(platform, post_url), "submission_thumb", creator_id
+        )
     except Exception:  # noqa: BLE001 - thumbnail is best-effort, never block a submit
         thumbnail = None
 

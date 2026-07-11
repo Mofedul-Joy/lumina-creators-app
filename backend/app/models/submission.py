@@ -6,6 +6,7 @@ from decimal import Decimal
 from typing import Optional
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -122,3 +123,30 @@ class ScrapeJob(TimestampMixin, Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     last_run_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
+
+class SubmissionViewSnapshot(Base):
+    """One row per successful scrape — the history behind the Views Growth chart.
+
+    `submissions.views` is overwritten on every scrape, so without this there is
+    no way to plot views over time. `creator_id` is denormalised so the
+    per-creator chart is a single indexed scan rather than a join."""
+
+    __tablename__ = "submission_view_snapshots"
+    __table_args__ = (Index("idx_snapshot_creator_time", "creator_id", "captured_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    submission_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("submissions.id", ondelete="CASCADE"), nullable=False
+    )
+    creator_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("creators.id", ondelete="CASCADE"), nullable=False
+    )
+    views: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    likes: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    comments: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    captured_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

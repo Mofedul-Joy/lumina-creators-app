@@ -12,10 +12,14 @@ from app.db.session import get_db
 from app.models import Admin
 from app.schemas.admin_creators import CreatorDetail, CreatorListItem, CreatorRichDetail
 from app.schemas.gamification import CreatorGamificationOut
+from decimal import Decimal
+from typing import List
+
 from pydantic import BaseModel
 
 from app.services import admin_creators as svc
 from app.services import audit
+from app.services import creator_activity as activity_svc
 from app.services import creator_removal as removal_svc
 from app.services import creators_export
 from app.services import gamification as gam_svc
@@ -69,6 +73,39 @@ def creator_rich_detail(creator_id: uuid.UUID, admin: Admin = Depends(get_curren
     with gamification (rank/xp/streak/awards), niches, experiences, and a
     recent-submissions video reel. Keeps the plain endpoint above intact."""
     return CreatorRichDetail(**svc.get_creator_rich_detail(db, creator_id))
+
+
+class WeeklyPostPoint(BaseModel):
+    day: str          # Mon..Sun
+    date: str
+    this_week: int
+    last_week: int
+
+
+class ViewsPoint(BaseModel):
+    date: str
+    views: int
+
+
+class CreatorActivityOut(BaseModel):
+    weekly_posts: List[WeeklyPostPoint]
+    views_growth: List[ViewsPoint]
+    total_posts: int
+    total_views: int
+    total_earned: Decimal
+    total_paid: Decimal
+    total_owed: Decimal
+    avg_cpm: Decimal
+
+
+@router.get("/{creator_id}/activity", response_model=CreatorActivityOut)
+def creator_activity(
+    creator_id: uuid.UUID,
+    admin: Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Charts + headline numbers for the creator profile (weekly posts, views growth)."""
+    return activity_svc.activity(db, creator_id)
 
 
 class RemoveCreatorIn(BaseModel):

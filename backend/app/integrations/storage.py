@@ -83,6 +83,21 @@ def presign_put(object_key: str, content_type: str | None) -> str:
     return _client().generate_presigned_url("put_object", Params=params, ExpiresIn=settings.upload_url_ttl_sec)
 
 
+def put_object_bytes(object_key: str, data: bytes, content_type: str | None) -> None:
+    """Store raw bytes, whichever backend is active (R2 in prod, disk in dev).
+    Used to re-host remote images we can't hotlink."""
+    if is_local_mode():
+        path = local_path(object_key)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        return
+    settings = get_settings()
+    _client().put_object(
+        Bucket=settings.r2_bucket, Key=object_key, Body=data,
+        **({"ContentType": content_type} if content_type else {}),
+    )
+
+
 def put_r2_fileobj(object_key: str, fileobj, content_type: str | None) -> None:
     """Stream a file-like object into R2 (used by the upload proxy). boto3
     upload_fileobj streams in parts, so large files never fully hit memory."""

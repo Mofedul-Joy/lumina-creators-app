@@ -184,10 +184,15 @@ def add_portfolio(db: Session, creator_id: uuid.UUID, data: dict) -> PortfolioIt
     thumb = data.get("thumbnail_url")
     if not thumb:
         from app.integrations import apify
+        from app.services import thumbnails
         try:
             # Resolve from the ORIGINAL url — canonicalize_url strips query params
-            # (e.g. YouTube's ?v=ID) and can break oEmbed lookups.
-            thumb = apify.fast_thumbnail(platform, video_url)
+            # (e.g. YouTube's ?v=ID) and can break oEmbed lookups. Then re-host:
+            # platform CDN images are signed, short-lived and hotlink-blocked, so
+            # a stored CDN link renders for nobody.
+            thumb = thumbnails.rehost(
+                apify.fast_thumbnail(platform, video_url), "portfolio_thumb", creator_id
+            )
         except Exception:  # noqa: BLE001
             thumb = None
     item = PortfolioItem(

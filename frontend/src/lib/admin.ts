@@ -379,6 +379,21 @@ export const downloadCreatorsCsv = () => {
   return downloadCsv("/api/admin/creators/export.csv", token);
 };
 
+// ── Creator activity (profile charts) ─────────────────────────────────────────
+export type CreatorActivity = {
+  weekly_posts: { day: string; date: string; this_week: number; last_week: number }[];
+  views_growth: { date: string; views: number }[];
+  total_posts: number;
+  total_views: number;
+  total_earned: number | string;
+  total_paid: number | string;
+  total_owed: number | string;
+  avg_cpm: number | string;
+};
+
+export const getCreatorActivity = (id: string) =>
+  apiFetch<CreatorActivity>(`/api/admin/creators/${id}/activity`, auth());
+
 // ── Creator removal ───────────────────────────────────────────────────────────
 export type RemovalMode = "delete_all" | "keep_analytics" | "keep_posts";
 export type RemovalScope = "campaigns_only" | "entire";

@@ -4,7 +4,7 @@ from app.models.campaign import Campaign, CampaignBonusMilestone, CampaignPartic
 from app.models.identity import Admin, Client, Creator, CreatorInvite
 from app.models.payout import PaymentMethod, Payout, PayoutItem, Wallet, WalletTransaction
 from app.models.profile import CreatorExperience, CreatorProfile, PortfolioItem, SocialAccount, StorageObject
-from app.models.submission import ScrapeJob, Submission
+from app.models.submission import ScrapeJob, Submission, SubmissionViewSnapshot
 from app.models.system import AuditLog, RefreshToken
 
 __all__ = [
@@ -27,6 +27,7 @@ __all__ = [
     "SocialAccount",
     "StorageObject",
     "Submission",
+    "SubmissionViewSnapshot",
     "Wallet",
     "WalletTransaction",
 ]
