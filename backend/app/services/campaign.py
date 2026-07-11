@@ -94,6 +94,12 @@ def create_campaign(db: Session, admin_id: uuid.UUID, data: dict) -> Campaign:
     _replace_bonus_milestones(db, campaign.id, bonus_milestones)
     db.commit()
     db.refresh(campaign)
+    # Auto-generate the editable Campaign Participation Agreement template.
+    try:
+        from app.services import contracts
+        contracts.get_or_create_template(db, campaign.id)
+    except Exception:  # noqa: BLE001 - never fail campaign creation on the contract seed
+        pass
     return campaign
 
 
@@ -297,6 +303,12 @@ def join_campaign(db: Session, creator_id: uuid.UUID, slug: str) -> CampaignPart
         from app.services import campaign_invites
         campaign_invites.mark_accepted_on_join(db, campaign.id, creator_id)
     except Exception:  # noqa: BLE001 - the join succeeded; invite bookkeeping is best-effort
+        pass
+    # Generate + send their Campaign Participation Agreement.
+    try:
+        from app.services import contracts
+        contracts.generate_for_creator(db, campaign.id, creator_id)
+    except Exception:  # noqa: BLE001 - the join succeeded; contract is best-effort
         pass
     return part
 

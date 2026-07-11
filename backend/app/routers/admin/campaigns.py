@@ -21,6 +21,7 @@ from app.schemas.campaign import BonusMilestoneOut, CampaignCreateIn, CampaignOu
 from app.services import audit, campaign as svc
 from app.services import campaign_invites as invites_svc
 from app.services import campaign_overview as overview_svc
+from app.services import contracts as contracts_svc
 from app.services.csv_export import csv_response
 
 router = APIRouter(prefix="/campaigns", tags=["admin-campaigns"])
@@ -124,6 +125,7 @@ class CampaignOverviewOut(BaseModel):
     active_creators: int
     delivered_creators: int
     pending_invites: int = 0
+    active_contracts: int = 0
     total_posts: int
     total_views: int
     total_spend: Decimal
@@ -297,3 +299,58 @@ def campaign_invite_link(campaign_id: uuid.UUID, admin: Admin = Depends(get_curr
 def revoke_campaign_invite(campaign_id: uuid.UUID, invite_id: uuid.UUID,
                            admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     invites_svc.revoke(db, campaign_id, invite_id)
+
+
+# ---- campaign contract (Campaign Participation Agreement) ----
+class ContractTemplateOut(BaseModel):
+    title: str
+    subtitle: str
+    company_name: Optional[str]
+    body: str
+    merge_tokens: List[str]
+    preview: str
+    updated_at: datetime
+
+
+class ContractTemplateIn(BaseModel):
+    title: Optional[str] = None
+    subtitle: Optional[str] = None
+    company_name: Optional[str] = None
+    body: Optional[str] = None
+
+
+class ContractRow(BaseModel):
+    id: str
+    document_id: str
+    creator_email: Optional[str]
+    status: str
+    sent_at: Optional[datetime]
+    accepted_at: Optional[datetime]
+    accepted_name: Optional[str]
+
+
+def _contract_template_out(t, preview: str) -> ContractTemplateOut:
+    return ContractTemplateOut(
+        title=t.title, subtitle=t.subtitle, company_name=t.company_name, body=t.body,
+        merge_tokens=contracts_svc.MERGE_TOKENS, preview=preview, updated_at=t.updated_at,
+    )
+
+
+@router.get("/{campaign_id}/contract", response_model=ContractTemplateOut)
+def get_contract_template(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    t = contracts_svc.get_or_create_template(db, campaign_id)
+    return _contract_template_out(t, contracts_svc.render_preview(db, campaign_id))
+
+
+@router.put("/{campaign_id}/contract", response_model=ContractTemplateOut)
+def update_contract_template(campaign_id: uuid.UUID, body: ContractTemplateIn,
+                             admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    t = contracts_svc.update_template(db, campaign_id, admin.id, body.model_dump(exclude_unset=True))
+    audit.log(db, actor_admin_id=admin.id, action="campaign.contract_edit", entity_type="campaign", entity_id=campaign_id)
+    db.commit()
+    return _contract_template_out(t, contracts_svc.render_preview(db, campaign_id))
+
+
+@router.get("/{campaign_id}/contracts", response_model=List[ContractRow])
+def list_campaign_contracts(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    return [ContractRow(**r) for r in contracts_svc.list_for_campaign(db, campaign_id)]

@@ -89,11 +89,12 @@ def overview(db: Session, campaign_id: uuid.UUID) -> dict:
         })
     creators.sort(key=lambda c: (-c["posts"], -c["views"]))
 
-    from app.services import campaign_invites
+    from app.services import campaign_invites, contracts
     return {
         "active_creators": len(parts),
         "delivered_creators": delivered,     # have posted at least once
         "pending_invites": campaign_invites.pending_count(db, campaign_id),
+        "active_contracts": contracts.active_count(db, campaign_id),
         "total_posts": sum(c["posts"] for c in creators),
         "total_views": sum(c["views"] for c in creators),
         "total_spend": Decimal(spend),

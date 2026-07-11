@@ -187,6 +187,7 @@ export default function CampaignDetailPage() {
           <ToolbarButton href="/admin/campaigns">← All campaigns</ToolbarButton>
           <div className="flex-1" />
           <ToolbarButton href={`/admin/campaigns/${id}/edit`}>Edit campaign</ToolbarButton>
+          <ToolbarButton href={`/admin/campaigns/${id}/contract`}>Edit contract</ToolbarButton>
           {level !== "advanced" ? (
             <ToolbarButton onClick={() => convert.mutate()}>
               {convert.isPending ? "Converting…" : "Convert to Advanced"}
@@ -223,9 +224,10 @@ export default function CampaignDetailPage() {
         </div>
 
         {/* stat tiles */}
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-7">
           <StatTile label="Active creators" value={fmtInt(ov?.active_creators ?? 0)} sub={`${fmtInt(ov?.delivered_creators ?? 0)} delivered`} />
           <StatTile label="Pending invites" value={fmtInt(ov?.pending_invites ?? 0)} sub="Awaiting response" />
+          <StatTile label="Active contracts" value={fmtInt(ov?.active_contracts ?? 0)} sub="Signed agreements" />
           <StatTile label="Total posts" value={fmtInt(ov?.total_posts ?? 0)} />
           <StatTile label="Total views" value={fmtInt(ov?.total_views ?? 0)} />
           <StatTile label="Total spend" value={fmtMoney(ov?.total_spend ?? 0)} sub="Paid to date" />

@@ -237,6 +237,13 @@ def _direct_join(db: Session, campaign_id: uuid.UUID, creator_id: uuid.UUID) -> 
     if existing is not None:  # removed row — don't silently re-add
         return
     db.add(CampaignParticipation(campaign_id=campaign_id, creator_id=creator_id))
+    db.flush()
+    # Send their agreement too (best-effort — the join is what matters).
+    try:
+        from app.services import contracts
+        contracts.generate_for_creator(db, campaign_id, creator_id)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def list_for_campaign(db: Session, campaign_id: uuid.UUID) -> list[dict]:

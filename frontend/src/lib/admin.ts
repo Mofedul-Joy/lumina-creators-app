@@ -178,6 +178,7 @@ export type CampaignOverview = {
   active_creators: number;
   delivered_creators: number;
   pending_invites: number;
+  active_contracts: number;
   total_posts: number;
   total_views: number;
   total_spend: number | string;
@@ -219,6 +220,43 @@ export const getCampaignInviteLink = (campaignId: string) =>
 
 export const revokeCampaignInvite = (campaignId: string, inviteId: string) =>
   apiFetch<void>(`/api/admin/campaigns/${campaignId}/invites/${inviteId}`, { method: "DELETE", ...auth() });
+
+// ── Campaign contract (the editable Campaign Participation Agreement) ──────────
+export type ContractTemplate = {
+  title: string;
+  subtitle: string;
+  company_name: string | null;
+  body: string;
+  merge_tokens: string[];
+  preview: string;
+  updated_at: string;
+};
+
+export type ContractInstanceRow = {
+  id: string;
+  document_id: string;
+  creator_email: string | null;
+  status: "sent" | "viewed" | "accepted" | "declined";
+  sent_at: string | null;
+  accepted_at: string | null;
+  accepted_name: string | null;
+};
+
+export const getCampaignContract = (campaignId: string) =>
+  apiFetch<ContractTemplate>(`/api/admin/campaigns/${campaignId}/contract`, auth());
+
+export const updateCampaignContract = (
+  campaignId: string,
+  body: { title?: string; subtitle?: string; company_name?: string; body?: string },
+) =>
+  apiFetch<ContractTemplate>(`/api/admin/campaigns/${campaignId}/contract`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+    ...auth(),
+  });
+
+export const listCampaignContracts = (campaignId: string) =>
+  apiFetch<ContractInstanceRow[]>(`/api/admin/campaigns/${campaignId}/contracts`, auth());
 
 export const convertCampaignToAdvanced = (id: string) =>
   apiFetch<AdminCampaign>(`/api/admin/campaigns/${id}/convert-to-advanced`, { method: "POST", ...auth() });

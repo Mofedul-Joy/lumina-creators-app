@@ -628,6 +628,43 @@ export const markNotificationsRead = (token: string, ids?: string[]) =>
     token,
   });
 
+// ── Contracts (Campaign Participation Agreement) ──────────────────────────────
+export type ContractStatus = "sent" | "viewed" | "accepted" | "declined";
+
+export type ContractSummary = {
+  document_id: string;
+  campaign_name: string;
+  company_name: string;
+  status: ContractStatus;
+  created_at: string;
+  accepted_at: string | null;
+};
+
+export type ContractDetail = {
+  document_id: string;
+  title: string;
+  subtitle: string;
+  company_name: string;
+  campaign_name: string;
+  body: string;
+  status: ContractStatus;
+  accepted_at: string | null;
+  accepted_name: string | null;
+};
+
+export const listMyContracts = (token: string) =>
+  apiFetch<ContractSummary[]>("/api/creator/contracts", { token });
+
+export const getContract = (token: string, documentId: string) =>
+  apiFetch<ContractDetail>(`/api/creator/contracts/${documentId}`, { token });
+
+export const acceptContract = (token: string, documentId: string, name: string) =>
+  apiFetch<ContractDetail>(`/api/creator/contracts/${documentId}/accept`, {
+    method: "POST",
+    body: JSON.stringify({ name }),
+    token,
+  });
+
 // ── Experiences ───────────────────────────────────────────────────────────────
 export type ExperienceKind = "organic_ugc" | "ugc_paid_ad" | "professional_role";
 

@@ -114,3 +114,22 @@ def send_campaign_invite(to_email: str, campaign_name: str, link: str, *, existi
         '<p style="color:#666;font-size:13px">Weren\'t expecting this? You can ignore this email.</p></div>'
     )
     return _send(to_email, f"You're invited to “{campaign_name}” on Lumina Creators", text, html)
+
+
+def send_contract_ready(to_email: str, campaign_name: str, link: str) -> bool:
+    """Notify a creator their Campaign Participation Agreement is ready to review/sign."""
+    text = (
+        f"Your Campaign Participation Agreement for “{campaign_name}” is ready.\n\n"
+        f"Review and sign it here:\n{link}\n\n"
+        "If you weren't expecting this, you can ignore this email."
+    )
+    html = (
+        '<div style="font-family:system-ui,sans-serif;max-width:440px;margin:auto">'
+        '<h2 style="color:#16a34a">Your campaign agreement is ready</h2>'
+        f'<p>Review and sign your Campaign Participation Agreement for “{campaign_name}”.</p>'
+        f'<p><a href="{link}" style="display:inline-block;background:#16a34a;color:#fff;'
+        'text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600">'
+        "Review &amp; sign</a></p>"
+        f'<p style="color:#666;font-size:13px">Or paste this link into your browser:<br>{link}</p></div>'
+    )
+    return _send(to_email, f"Your agreement for “{campaign_name}” is ready", text, html)
