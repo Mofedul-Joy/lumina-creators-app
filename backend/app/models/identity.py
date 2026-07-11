@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Integer, Text, func, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, Text, func, text
 from sqlalchemy.dialects.postgresql import CITEXT, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -70,4 +70,29 @@ class Client(TimestampMixin, Base):
     name: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[str] = mapped_column(
         CLIENT_STATUS, nullable=False, server_default=text("'active'")
+    )
+
+
+class CreatorInvite(Base):
+    """An invitation to join as a creator. `email` is NULL for a generic
+    shareable link; set when the admin invited one specific address."""
+
+    __tablename__ = "creator_invites"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    token: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
+    email: Mapped[Optional[str]] = mapped_column(Text)
+    created_by_admin_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("admins.id", ondelete="SET NULL")
+    )
+    email_sent: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    accepted_creator_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("creators.id", ondelete="SET NULL")
+    )
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )

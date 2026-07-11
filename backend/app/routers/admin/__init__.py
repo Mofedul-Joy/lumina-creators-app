@@ -7,6 +7,7 @@ from app.routers.admin.auth import router as auth_router
 from app.routers.admin.campaigns import router as campaigns_router
 from app.routers.admin.clients import router as clients_router
 from app.routers.admin.creators import router as creators_router
+from app.routers.admin.invites import router as invites_router
 from app.routers.admin.payouts import router as payouts_router
 from app.routers.admin.scrape import router as scrape_router
 from app.routers.admin.settings import router as settings_router
@@ -28,6 +29,7 @@ router.include_router(scrape_router)
 router.include_router(payouts_router)
 router.include_router(settings_router)
 router.include_router(users_router)
+router.include_router(invites_router)
 router.include_router(uploads_router)
 
 # submissions-verify, payouts, audit mount here as built.

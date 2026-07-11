@@ -89,6 +89,7 @@ class CreatorProfile(TimestampMixin, Base):
     )
     country: Mapped[Optional[str]] = mapped_column(Text)
     city: Mapped[Optional[str]] = mapped_column(Text)
+    phone: Mapped[Optional[str]] = mapped_column(Text)
     payout_method: Mapped[Optional[str]] = mapped_column(Text)   # preferred: paypal|solana|whop
     payout_address: Mapped[Optional[str]] = mapped_column(Text)  # resolved address for payout_method
     # Per-method addresses so switching method keeps each one's own value.

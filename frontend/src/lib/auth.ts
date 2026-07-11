@@ -27,10 +27,16 @@ export const setClientToken = (access: string, refresh?: string) => saveSession(
 export const getClientToken = () => getAccess("client");
 export const clearClientToken = () => clearSession("client");
 
-export function creatorSignup(email: string, password: string, displayName?: string) {
+export function creatorSignup(email: string, password: string, displayName?: string, invite?: string) {
   return apiFetch<SignupResult>("/api/creator/auth/signup", {
     method: "POST",
-    body: JSON.stringify({ email, password, display_name: displayName || undefined }),
+    body: JSON.stringify({
+      email,
+      password,
+      display_name: displayName || undefined,
+      // Set when they arrived from an admin invite link (/signup?invite=…).
+      invite: invite || undefined,
+    }),
   });
 }
 

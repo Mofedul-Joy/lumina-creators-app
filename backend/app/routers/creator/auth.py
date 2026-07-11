@@ -28,7 +28,7 @@ router = APIRouter(prefix="/auth", tags=["creator-auth"])
 
 @router.post("/signup", response_model=SignupOut)
 def signup(body: SignupIn, db: Session = Depends(get_db)):
-    return SignupOut(**svc.creator_signup(db, body.email, body.password))
+    return SignupOut(**svc.creator_signup(db, body.email, body.password, invite=body.invite))
 
 
 @router.post("/verify-email", response_model=TokenOut)

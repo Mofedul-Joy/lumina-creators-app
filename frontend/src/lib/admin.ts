@@ -373,6 +373,35 @@ export const downloadPayoutReportsCsv = (from?: string, to?: string) => {
   return downloadCsv(`/api/admin/payouts/reports.csv${rangeQs(from, to)}`, token);
 };
 
+export const downloadCreatorsCsv = () => {
+  const token = getAdminToken();
+  if (!token) return Promise.reject(new Error("Not authenticated"));
+  return downloadCsv("/api/admin/creators/export.csv", token);
+};
+
+// ── Creator invites ───────────────────────────────────────────────────────────
+export type CreatorInvite = {
+  id: string;
+  email: string | null;   // null = a generic shareable link
+  link: string;
+  email_sent: boolean;
+  accepted: boolean;
+  created_at: string;
+};
+
+export const listInvites = () => apiFetch<CreatorInvite[]>("/api/admin/invites", auth());
+
+/** Omit `email` to mint a shareable link instead of emailing one address. */
+export const createInvite = (email?: string) =>
+  apiFetch<CreatorInvite>("/api/admin/invites", {
+    method: "POST",
+    body: JSON.stringify({ email: email || null }),
+    ...auth(),
+  });
+
+export const revokeInvite = (id: string) =>
+  apiFetch<void>(`/api/admin/invites/${id}`, { method: "DELETE", ...auth() });
+
 export type SpendingSummary = { total: number | string; count: number; from: string | null; to: string | null };
 export const getSpendingSummary = (from?: string, to?: string) =>
   apiFetch<SpendingSummary>(`/api/admin/payouts/spending-summary${rangeQs(from, to)}`, auth());

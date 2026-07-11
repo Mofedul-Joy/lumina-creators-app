@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { Avatar } from "@/components/admin/Avatar";
+import { ExportCreatorsModal } from "@/components/admin/ExportCreatorsModal";
+import { InviteCreatorModal } from "@/components/admin/InviteCreatorModal";
 import { Pager } from "@/components/admin/Pager";
 import { getAdminToken } from "@/lib/auth";
 import { GENDERS, PLATFORMS, isAuthError, listCreators, type CreatorFilters, type Gender, type Platform } from "@/lib/api";
@@ -91,6 +93,8 @@ export default function AdminCreatorsPage() {
   }, [dSearch, dSocial, dPrefs]);
 
   useEffect(() => setPage(1), [filters]);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const q = useQuery({
     queryKey: ["admin-creators", filters],
@@ -121,9 +125,48 @@ export default function AdminCreatorsPage() {
     <div className="min-h-[100dvh]">
       <AdminShell />
       <main className="mx-auto max-w-6xl px-6 py-10">
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Creator database</h1>
-        <p className="mt-2 text-[var(--color-text-secondary)]">Search the full roster by name, email, or social link.</p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Creator database</h1>
+            <p className="mt-2 text-[var(--color-text-secondary)]">Search the full roster by name, email, or social link.</p>
+          </div>
+          <div className="mt-2 flex shrink-0 items-center gap-2">
+            <button
+              onClick={() => q.refetch()}
+              disabled={q.isFetching}
+              className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-brand)] disabled:opacity-60"
+            >
+              <svg
+                width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden
+                className={q.isFetching ? "animate-spin" : undefined}
+              >
+                <path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Refresh
+            </button>
+            <button
+              onClick={() => setExportOpen(true)}
+              className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-brand)]"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Export
+            </button>
+            <button
+              onClick={() => setInviteOpen(true)}
+              className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full bg-[var(--color-brand)] px-4 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              </svg>
+              Invite creator
+            </button>
+          </div>
+        </div>
         <AdminTabs />
+        <ExportCreatorsModal open={exportOpen} onClose={() => setExportOpen(false)} total={rows.length} />
+        <InviteCreatorModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
 
         {/* search row */}
         <div className="mt-6 flex flex-wrap items-center gap-3">

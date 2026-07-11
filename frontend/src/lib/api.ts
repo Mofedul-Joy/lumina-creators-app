@@ -563,6 +563,15 @@ export const deletePortfolio = (token: string, id: string) =>
     token,
   });
 
+// ── Invites (public: holding the token IS the credential) ─────────────────────
+export type InvitePeek = {
+  email: string | null;   // null = a generic shareable link
+  accepted: boolean;
+};
+
+export const peekInvite = (token: string) =>
+  apiFetch<InvitePeek>(`/api/invites/${encodeURIComponent(token)}`);
+
 // ── Experiences ───────────────────────────────────────────────────────────────
 export type ExperienceKind = "organic_ugc" | "ugc_paid_ad" | "professional_role";
 

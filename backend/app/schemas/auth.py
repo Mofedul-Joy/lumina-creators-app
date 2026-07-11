@@ -12,6 +12,8 @@ class LoginIn(BaseModel):
 class SignupIn(BaseModel):
     email: str
     password: str
+    # Present when the creator arrived from an admin invite link.
+    invite: Optional[str] = None
 
 
 class SetPasswordIn(BaseModel):

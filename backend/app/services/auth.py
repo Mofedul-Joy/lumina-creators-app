@@ -84,7 +84,7 @@ def _require_strong(password: str) -> None:
 
 
 # ---- creator ----
-def creator_signup(db: Session, email: str, password: str) -> dict:
+def creator_signup(db: Session, email: str, password: str, invite: str | None = None) -> dict:
     """Create the account UNVERIFIED and email a code. No token until verified."""
     email = _norm(email)
     _require_strong(password)
@@ -96,6 +96,12 @@ def creator_signup(db: Session, email: str, password: str) -> dict:
     db.add(creator)
     db.commit()
     db.refresh(creator)
+    if invite:
+        # Invited creators run the exact same signup + onboarding — the invite is
+        # only recorded as used. Best-effort: a stale token must never fail a
+        # signup that has already succeeded.
+        from app.services import invites as invites_svc
+        invites_svc.accept(db, invite, creator.id)
     if not verify_on:
         # Email verification disabled (no email provider configured) — issue a token.
         access, refresh = _issue(db, creator.id, "creator")

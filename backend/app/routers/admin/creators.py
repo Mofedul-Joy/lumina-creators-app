@@ -13,9 +13,18 @@ from app.models import Admin
 from app.schemas.admin_creators import CreatorDetail, CreatorListItem, CreatorRichDetail
 from app.schemas.gamification import CreatorGamificationOut
 from app.services import admin_creators as svc
+from app.services import creators_export
 from app.services import gamification as gam_svc
+from app.services.csv_export import csv_response
 
 router = APIRouter(prefix="/creators", tags=["admin-creators"])
+
+
+@router.get("/export.csv")
+def export_creators_csv(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Full creator database as CSV — every creator, not just the loaded page."""
+    header, rows = creators_export.export_rows(db)
+    return csv_response("creators_export.csv", header, rows)
 
 
 @router.get("", response_model=list[CreatorListItem])

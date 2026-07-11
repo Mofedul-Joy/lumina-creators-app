@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 class ProfileIn(BaseModel):
     display_name: Optional[str] = None
+    phone: Optional[str] = None
     creator_type: Optional[str] = None   # ugc | influencer | both
     bio: Optional[str] = None
     date_of_birth: Optional[date] = None
@@ -27,6 +28,7 @@ class ProfileIn(BaseModel):
 
 class ProfileOut(BaseModel):
     display_name: Optional[str] = None
+    phone: Optional[str] = None
     creator_type: Optional[str] = None
     bio: Optional[str] = None
     date_of_birth: Optional[date] = None
