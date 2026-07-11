@@ -55,6 +55,11 @@ def campaign_out(c: Campaign, db: Session | None = None) -> CampaignOut:
         posting_frequency=c.posting_frequency, video_length=c.video_length, account_type=c.account_type,
         is_app=c.is_app, physical_product=c.physical_product, banner_url=c.banner_url,
         bonus_milestones=milestones,
+        # ---- campaign creation flow (0024) ----
+        campaign_kind=c.campaign_kind, experience_level=c.experience_level,
+        no_platform_tracking=c.no_platform_tracking, payment_schedule=c.payment_schedule,
+        payment_cycle_trigger=c.payment_cycle_trigger, pro_rata=c.pro_rata,
+        min_views=c.min_views, posts_per_payment=c.posts_per_payment,
         share_token=c.share_token, share_enabled=c.share_enabled,
     )
 

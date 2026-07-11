@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CAMPAIGN_TEMPLATES, type CampaignTemplateKey } from "@/lib/campaignTemplates";
+import {
+  CAMPAIGN_KINDS,
+  EXPERIENCE_LEVELS,
+  type CampaignKind,
+  type ExperienceLevel,
+} from "@/lib/campaignFlow";
 
 /**
  * "Create a New Campaign" chooser.
@@ -30,13 +36,28 @@ function TemplateIcon() {
   );
 }
 
+/**
+ * Three stages, one popup:
+ *   start  → Start from Scratch | Use a Template (+ the template grid)
+ *   kind   → what KIND of campaign this is
+ *   level  → how much setup the admin wants (Essentials vs Advanced)
+ * Then it opens the builder with everything chosen so far in the query string.
+ */
+type Stage = "start" | "kind" | "level";
+
 export function NewCampaignModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
   const [showTemplates, setShowTemplates] = useState(false);
+  const [stage, setStage] = useState<Stage>("start");
+  const [template, setTemplate] = useState<CampaignTemplateKey | null>(null);
+  const [kind, setKind] = useState<CampaignKind | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setShowTemplates(false);
+    setStage("start");
+    setTemplate(null);
+    setKind(null);
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -44,22 +65,56 @@ export function NewCampaignModal({ open, onClose }: { open: boolean; onClose: ()
 
   if (!open) return null;
 
-  const goScratch = () => router.push("/admin/campaigns/new");
-  const goTemplate = (key: CampaignTemplateKey) =>
-    router.push(`/admin/campaigns/new?template=${key}`);
+  function start(t: CampaignTemplateKey | null) {
+    setTemplate(t);
+    setStage("kind");
+  }
+
+  function chooseKind(k: CampaignKind) {
+    setKind(k);
+    // Analytics-only launches no creator program, so there's nothing to set up
+    // and no experience level to ask about.
+    if (k === "analytics_only") return finish(k, "essentials");
+    setStage("level");
+  }
+
+  function finish(k: CampaignKind, level: ExperienceLevel) {
+    const qs = new URLSearchParams({ kind: k, level });
+    if (template) qs.set("template", template);
+    router.push(`/admin/campaigns/new?${qs.toString()}`);
+  }
+
+  const back = () => setStage(stage === "level" ? "kind" : "start");
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto p-4" role="dialog" aria-modal="true" aria-labelledby="new-campaign-title">
       <button aria-label="Close" onClick={onClose} className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
       <div className="card-lumina relative my-auto w-full max-w-2xl rounded-[var(--radius-card)] p-7">
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 id="new-campaign-title" className="text-xl font-semibold text-[var(--color-text)]">
-              Create a New Campaign
-            </h2>
-            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-              Choose how you want to create your campaign
-            </p>
+          <div className="flex items-start gap-3">
+            {stage !== "start" ? (
+              <button
+                onClick={back}
+                aria-label="Back"
+                className="mt-0.5 grid h-7 w-7 shrink-0 cursor-pointer place-items-center rounded-full border border-[var(--color-border)] text-[var(--color-text-secondary)] transition hover:border-[var(--color-brand)] hover:text-[var(--color-text)]"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            ) : null}
+            <div>
+              <h2 id="new-campaign-title" className="text-xl font-semibold text-[var(--color-text)]">
+                {stage === "level"
+                  ? "What's your experience running a UGC campaign?"
+                  : "Create a New Campaign"}
+              </h2>
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                {stage === "start" && "Choose how you want to create your campaign"}
+                {stage === "kind" && "Choose how creators will produce content and how payments will be structured"}
+                {stage === "level" && "We'll customize your setup based on your answer"}
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -72,9 +127,50 @@ export function NewCampaignModal({ open, onClose }: { open: boolean; onClose: ()
           </button>
         </div>
 
+        {/* ── stage: campaign kind ── */}
+        {stage === "kind" ? (
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            {CAMPAIGN_KINDS.map((k) => (
+              <button
+                key={k.key}
+                onClick={() => chooseKind(k.key)}
+                className="cursor-pointer rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-5 text-left transition hover:border-[var(--color-brand)]"
+              >
+                <p className="text-sm font-semibold text-[var(--color-text)]">{k.title}</p>
+                <p className="mt-1.5 text-xs leading-5 text-[var(--color-text-secondary)]">{k.blurb}</p>
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {/* ── stage: experience level ── */}
+        {stage === "level" && kind ? (
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            {EXPERIENCE_LEVELS.map((l) => (
+              <button
+                key={l.key}
+                onClick={() => finish(kind, l.key)}
+                className="cursor-pointer rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-5 text-left transition hover:border-[var(--color-brand)]"
+              >
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-[var(--color-text)]">{l.title}</p>
+                  {l.recommended ? (
+                    <span className="rounded-full bg-[var(--color-brand)]/15 px-2 py-0.5 text-[10px] font-medium text-[var(--color-brand)]">
+                      Recommended
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-1.5 text-xs leading-5 text-[var(--color-text-secondary)]">{l.blurb}</p>
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {stage !== "start" ? null : (
+        <>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <button
-            onClick={goScratch}
+            onClick={() => start(null)}
             className="cursor-pointer rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-5 text-left transition hover:border-[var(--color-brand)]"
           >
             <span className="grid h-9 w-9 place-items-center rounded-lg bg-[var(--color-brand)]/15 text-[var(--color-brand)]">
@@ -118,7 +214,7 @@ export function NewCampaignModal({ open, onClose }: { open: boolean; onClose: ()
               {CAMPAIGN_TEMPLATES.map((t) => (
                 <button
                   key={t.key}
-                  onClick={() => goTemplate(t.key)}
+                  onClick={() => start(t.key)}
                   className="cursor-pointer rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 text-left transition hover:border-[var(--color-brand)]"
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -134,6 +230,8 @@ export function NewCampaignModal({ open, onClose }: { open: boolean; onClose: ()
             </div>
           </>
         ) : null}
+        </>
+        )}
       </div>
     </div>
   );

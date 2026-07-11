@@ -137,6 +137,28 @@ class Campaign(TimestampMixin, Base):
     )
     banner_url: Mapped[Optional[str]] = mapped_column(Text)
 
+    # ── Campaign creation flow (0024) ─────────────────────────────────────────
+    # high_volume_ugc|influencer|paid_ads|campaign_manager|analytics_only
+    campaign_kind: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'high_volume_ugc'")
+    )
+    # essentials = the short path; advanced = every option exposed.
+    experience_level: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'essentials'")
+    )
+    # Pay without tracking platform stats at all — a fixed/per-post campaign
+    # doesn't need view counts.
+    no_platform_tracking: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+    payment_schedule: Mapped[Optional[str]] = mapped_column(Text)  # every_7_days|every_14_days|every_30_days
+    payment_cycle_trigger: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'post_delivery'")
+    )  # post_delivery|schedule
+    pro_rata: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    min_views: Mapped[Optional[int]] = mapped_column(Integer)   # NULL = no minimum
+    posts_per_payment: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
+
     # ── Client read-only report + share_token (Feature 6, BUILD_SPEC.md §3.7) ──
     share_token: Mapped[Optional[str]] = mapped_column(Text, unique=True)
     share_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))

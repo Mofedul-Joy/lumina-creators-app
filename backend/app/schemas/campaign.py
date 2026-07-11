@@ -64,6 +64,15 @@ class CampaignCreateIn(BaseModel):
     is_app: bool = False
     physical_product: bool = False
     banner_url: Optional[str] = None
+    # ---- campaign creation flow (0024) ----
+    campaign_kind: Optional[str] = None        # high_volume_ugc|influencer|paid_ads|campaign_manager|analytics_only
+    experience_level: Optional[str] = None     # essentials|advanced
+    no_platform_tracking: Optional[bool] = None
+    payment_schedule: Optional[str] = None     # every_7_days|every_14_days|every_30_days
+    payment_cycle_trigger: Optional[str] = None  # post_delivery|schedule
+    pro_rata: Optional[bool] = None
+    min_views: Optional[int] = None
+    posts_per_payment: Optional[int] = None
     bonus_milestones: List[BonusMilestoneIn] = []
 
 
@@ -108,6 +117,15 @@ class CampaignUpdateIn(BaseModel):
     is_app: Optional[bool] = None
     physical_product: Optional[bool] = None
     banner_url: Optional[str] = None
+    # ---- campaign creation flow (0024) ----
+    campaign_kind: Optional[str] = None        # high_volume_ugc|influencer|paid_ads|campaign_manager|analytics_only
+    experience_level: Optional[str] = None     # essentials|advanced
+    no_platform_tracking: Optional[bool] = None
+    payment_schedule: Optional[str] = None     # every_7_days|every_14_days|every_30_days
+    payment_cycle_trigger: Optional[str] = None  # post_delivery|schedule
+    pro_rata: Optional[bool] = None
+    min_views: Optional[int] = None
+    posts_per_payment: Optional[int] = None
     bonus_milestones: Optional[List[BonusMilestoneIn]] = None
 
 
@@ -159,6 +177,14 @@ class CampaignOut(BaseModel):
     is_app: bool = False
     physical_product: bool = False
     banner_url: Optional[str] = None
+    campaign_kind: str = "high_volume_ugc"
+    experience_level: str = "essentials"
+    no_platform_tracking: bool = False
+    payment_schedule: Optional[str] = None
+    payment_cycle_trigger: str = "post_delivery"
+    pro_rata: bool = True
+    min_views: Optional[int] = None
+    posts_per_payment: int = 1
     bonus_milestones: List[BonusMilestoneOut] = []
 
     # ── Client read-only report + share_token (Feature 6) ──

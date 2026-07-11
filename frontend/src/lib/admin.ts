@@ -138,6 +138,17 @@ export type CampaignCreate = {
   physical_product?: boolean;
   banner_url?: string;
   bonus_milestones?: BonusMilestone[];
+  // ---- campaign creation flow (0024) ----
+  campaign_kind?: string;
+  experience_level?: string;
+  no_platform_tracking?: boolean;
+  payment_schedule?: string;
+  payment_cycle_trigger?: string;
+  pro_rata?: boolean;
+  min_views?: number;
+  posts_per_payment?: number;
+  starts_at?: string;
+  ends_at?: string;
 };
 
 export type AdminClient = { id: string; email: string; name: string | null; status: string };

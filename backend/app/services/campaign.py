@@ -15,6 +15,30 @@ from app.services import audit
 
 _MODES = {"create_new", "copy_paste"}
 
+# Mirrors the CHECK constraints in 0024 — validated here so a bad value comes
+# back as a 400 rather than a 500 from the database.
+_KINDS = {"high_volume_ugc", "influencer", "paid_ads", "campaign_manager", "analytics_only"}
+_LEVELS = {"essentials", "advanced"}
+_SCHEDULES = {"every_7_days", "every_14_days", "every_30_days"}
+_TRIGGERS = {"post_delivery", "schedule"}
+
+
+def _validate_flow_fields(data: dict) -> None:
+    checks = (
+        ("campaign_kind", _KINDS), ("experience_level", _LEVELS),
+        ("payment_schedule", _SCHEDULES), ("payment_cycle_trigger", _TRIGGERS),
+    )
+    for field, allowed in checks:
+        v = data.get(field)
+        if v is not None and v not in allowed:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Invalid {field}")
+    ppp = data.get("posts_per_payment")
+    if ppp is not None and ppp < 1:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "posts_per_payment must be at least 1")
+    mv = data.get("min_views")
+    if mv is not None and mv < 0:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "min_views cannot be negative")
+
 
 def _slugify(name: str) -> str:
     base = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "campaign"
@@ -38,8 +62,21 @@ def _check_mode_content(mode: str, brief_script, content_drive_url) -> None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "copy_paste campaigns need a content_drive_url")
 
 
+# NOT NULL columns with a server default: an unsent optional field arrives as
+# None, and passing that through would try to INSERT NULL over the default.
+_DEFAULTED_COLUMNS = (
+    "campaign_kind", "experience_level", "no_platform_tracking",
+    "payment_cycle_trigger", "pro_rata", "posts_per_payment",
+)
+
+
+def _drop_unset_defaults(data: dict) -> dict:
+    return {k: v for k, v in data.items() if not (k in _DEFAULTED_COLUMNS and v is None)}
+
+
 def create_campaign(db: Session, admin_id: uuid.UUID, data: dict) -> Campaign:
-    data = dict(data)
+    data = _drop_unset_defaults(dict(data))
+    _validate_flow_fields(data)
     bonus_milestones = data.pop("bonus_milestones", None) or []
     _check_mode_content(data["mode"], data.get("brief_script"), data.get("content_drive_url"))
     if data["cpm_rate"] <= 0 or data["budget"] <= 0:
@@ -97,7 +134,8 @@ def update_campaign(db: Session, campaign_id: uuid.UUID, data: dict) -> Campaign
     c = get_campaign(db, campaign_id)
     if c.status == "archived":
         raise HTTPException(status.HTTP_409_CONFLICT, "Archived campaigns cannot be edited")
-    data = dict(data)
+    data = _drop_unset_defaults(dict(data))
+    _validate_flow_fields(data)
     milestones_provided = "bonus_milestones" in data
     bonus_milestones = data.pop("bonus_milestones", None) or []
     new_mode = c.mode
