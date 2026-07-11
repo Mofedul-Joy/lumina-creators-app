@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.security import _now
-from app.models import CreatorProfile, PortfolioItem, SocialAccount, StorageObject
+from app.models import CreatorExperience, CreatorProfile, PortfolioItem, SocialAccount, StorageObject
 from app.services import geo, urls
 
 
@@ -209,6 +209,76 @@ def delete_portfolio(db: Session, creator_id: uuid.UUID, item_id: uuid.UUID) -> 
     db.delete(item)
     db.commit()
     recompute_completion(db, creator_id)
+
+
+# ---- experiences ----
+# Auto-verified on add (Bill: no manual review). `kind` drives what the entry
+# means; `title` carries the job title for a professional role and the type's
+# own label otherwise, so the admin card can render every row uniformly.
+EXPERIENCE_KINDS = {
+    "organic_ugc": "Organic UGC",
+    "ugc_paid_ad": "UGC paid ad",
+    "professional_role": "Professional role",
+}
+
+ROLE_TITLES = [
+    "Content creator",
+    "Content strategist",
+    "Social media manager",
+    "Social media intern",
+    "Campaign manager",
+    "Community manager",
+    "Influencer marketing manager",
+    "Brand ambassador",
+    "Other",
+]
+
+
+def list_experiences(db: Session, creator_id: uuid.UUID):
+    return db.scalars(
+        select(CreatorExperience)
+        .where(CreatorExperience.creator_id == creator_id)
+        .order_by(CreatorExperience.created_at.desc())
+    ).all()
+
+
+def add_experience(db: Session, creator_id: uuid.UUID, data: dict) -> CreatorExperience:
+    kind = (data.get("kind") or "").strip()
+    if kind not in EXPERIENCE_KINDS:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid experience type")
+
+    if kind == "professional_role":
+        title = (data.get("role_title") or "").strip()
+        if not title:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Pick a job title")
+        if title not in ROLE_TITLES:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid job title")
+    else:
+        title = EXPERIENCE_KINDS[kind]
+
+    raw_url = (data.get("company_url") or "").strip()
+    if not raw_url:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Add the company website")
+    url = urls.canonicalize_url(raw_url)
+    # The review screen shows a company name; fall back to the site's bare host
+    # ("lumina-clippers.com") so the card is never blank.
+    org = (data.get("company_name") or "").strip() or urls.bare_host(url)
+
+    item = CreatorExperience(
+        creator_id=creator_id, kind=kind, title=title, org=org, url=url, verified=True
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+def delete_experience(db: Session, creator_id: uuid.UUID, item_id: uuid.UUID) -> None:
+    item = db.get(CreatorExperience, item_id)
+    if item is None or item.creator_id != creator_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Experience not found")
+    db.delete(item)
+    db.commit()
 
 
 # ---- completion (server-owned) ----

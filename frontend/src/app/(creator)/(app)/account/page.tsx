@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { getAuthToken } from "@/lib/auth";
-import { getProfile, isAuthError } from "@/lib/api";
+import { deleteExperience, getProfile, isAuthError, listExperiences, type ExperienceOut } from "@/lib/api";
+import { AddExperienceModal } from "@/components/creator/AddExperienceModal";
 import { listSubmissions } from "@/lib/campaigns";
 import { getMyGamification } from "@/lib/gamification";
 import { fmtInt, fmtMoney } from "@/lib/format";
@@ -37,10 +38,50 @@ function StatTile({ label, value }: { label: string; value: string }) {
   );
 }
 
+function ExperienceCard({ e, onDelete }: { e: ExperienceOut; onDelete: (id: string) => void }) {
+  return (
+    <div className="card-grad flex items-center gap-4 rounded-[var(--radius-card)] p-4">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-sm font-semibold text-[var(--color-text)]">{e.org || "Company"}</p>
+          {e.verified ? (
+            <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-[var(--color-brand)] text-[var(--color-on-brand)]" title="Verified">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="m5 13 4 4L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          ) : null}
+        </div>
+        <p className="mt-0.5 truncate text-sm text-[var(--color-text-secondary)]">
+          {e.title} · {e.kind_label}
+        </p>
+      </div>
+      <button
+        onClick={() => onDelete(e.id)}
+        aria-label="Remove experience"
+        className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-full text-[var(--color-text-muted)] transition hover:bg-[var(--color-surface-2)] hover:text-[var(--color-danger)]"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+const TABS = [
+  { key: "overview", label: "Overview" },
+  { key: "experiences", label: "Experiences" },
+] as const;
+type TabKey = (typeof TABS)[number]["key"];
+
 export default function AccountPage() {
   const router = useRouter();
+  const qc = useQueryClient();
   const [token, setToken] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [tab, setTab] = useState<TabKey>("overview");
+  const [addOpen, setAddOpen] = useState(false);
   useEffect(() => {
     setToken(getAuthToken());
     setReady(true);
@@ -54,6 +95,13 @@ export default function AccountPage() {
   const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfile(bearer), enabled, retry: false });
   const gamificationQ = useQuery({ queryKey: ["my-gamification"], queryFn: getMyGamification, enabled, retry: false });
   const subsQ = useQuery({ queryKey: ["submissions"], queryFn: listSubmissions, enabled, retry: false });
+  const expQ = useQuery({ queryKey: ["experiences"], queryFn: () => listExperiences(bearer), enabled, retry: false });
+
+  async function removeExperience(id: string) {
+    if (!token) return;
+    await deleteExperience(token, id);
+    qc.invalidateQueries({ queryKey: ["experiences"] });
+  }
 
   useEffect(() => {
     if (profileQ.isError && isAuthError(profileQ.error)) router.replace("/login");
@@ -99,6 +147,62 @@ export default function AccountPage() {
         </Link>
       </div>
 
+      {/* tabs */}
+      <div className="mt-6 inline-flex items-center gap-1 rounded-full bg-[var(--color-surface)] p-1">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`min-h-9 cursor-pointer rounded-full px-4 text-sm transition ${
+              tab === t.key
+                ? "bg-[var(--color-surface-2)] font-medium text-[var(--color-text)]"
+                : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "experiences" ? (
+        <section className="mt-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-[var(--color-text)]">Experiences</h2>
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                Past brand work and roles. Added experiences are verified automatically.
+              </p>
+            </div>
+            <button
+              onClick={() => setAddOpen(true)}
+              className="inline-flex min-h-10 shrink-0 cursor-pointer items-center rounded-full bg-[var(--color-brand)] px-4 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
+            >
+              Add experience
+            </button>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {expQ.isLoading ? (
+              <Skeleton className="h-20 w-full" />
+            ) : (expQ.data ?? []).length === 0 ? (
+              <div className="card-lumina rounded-[var(--radius-card)] p-10 text-center text-sm text-[var(--color-text-secondary)]">
+                No experiences yet. Add your first one to strengthen your profile.
+              </div>
+            ) : (
+              (expQ.data ?? []).map((e) => <ExperienceCard key={e.id} e={e} onDelete={removeExperience} />)
+            )}
+          </div>
+
+          <AddExperienceModal
+            open={addOpen}
+            onClose={() => setAddOpen(false)}
+            onAdded={() => qc.invalidateQueries({ queryKey: ["experiences"] })}
+          />
+        </section>
+      ) : null}
+
+      {tab !== "overview" ? null : (
+        <>
       {!profile?.completed ? (
         <Link
           href="/onboarding"
@@ -152,6 +256,8 @@ export default function AccountPage() {
           <StatTile label="Total posts" value={fmtInt(g?.total_posts ?? subs.length)} />
         </div>
       </section>
+        </>
+      )}
     </main>
   );
 }

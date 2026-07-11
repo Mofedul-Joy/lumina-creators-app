@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { publicApi, type PublicCampaign } from "@/lib/api";
+import { campaignImage } from "@/lib/campaignTheme";
 import { fmtMoney } from "@/lib/format";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { SkeletonCardGrid } from "@/components/ui/Skeleton";
@@ -18,12 +19,17 @@ const ALL_PLATFORMS = ["tiktok", "instagram", "youtube", "twitter", "facebook"] 
 function CardInner({ c, completed }: { c: PublicCampaign; completed?: boolean }) {
   return (
     <>
-      <div className="relative h-32 w-full bg-gradient-to-br from-[var(--color-brand)]/30 to-[var(--color-bg-deep)]">
-        {c.brand_logo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={c.brand_logo_url} alt="" className={`h-full w-full object-cover ${completed ? "opacity-50 grayscale" : ""}`} />
-        ) : null}
-        <span className="absolute right-2 top-2 rounded-full bg-black/40 px-2.5 py-0.5 text-[11px] font-medium text-white">
+      <div className="relative h-32 w-full overflow-hidden bg-gradient-to-br from-[var(--color-brand)]/30 to-[var(--color-bg-deep)]">
+        {/* Uploaded banner, else a niche-matched stock photo — never an empty card. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={campaignImage(c)}
+          alt=""
+          loading="lazy"
+          className={`h-full w-full object-cover ${completed ? "opacity-50 grayscale" : "transition duration-300 group-hover:scale-[1.03]"}`}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[var(--color-bg-deep)]/80 via-transparent to-transparent" />
+        <span className="absolute right-2 top-2 rounded-full bg-black/50 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
           {completed ? "Completed" : MODE_LABEL[c.mode]}
         </span>
       </div>

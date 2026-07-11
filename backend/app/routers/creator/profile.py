@@ -12,6 +12,8 @@ from app.integrations import storage
 from app.models import Creator, CreatorProfile, StorageObject
 from app.schemas.profile import (
     CompletionOut,
+    ExperienceIn,
+    ExperienceOut,
     PortfolioIn,
     PortfolioOut,
     ProfileIn,
@@ -133,3 +135,32 @@ def add_portfolio(body: PortfolioIn, current: Creator = Depends(get_current_crea
 @router.delete("/portfolio/{item_id}", status_code=204)
 def delete_portfolio(item_id: uuid.UUID, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
     svc.delete_portfolio(db, current.id, item_id)
+
+
+# ---- experiences ----
+def _experience_out(e) -> ExperienceOut:
+    return ExperienceOut(
+        id=str(e.id), kind=e.kind, kind_label=svc.EXPERIENCE_KINDS.get(e.kind, e.kind),
+        title=e.title, org=e.org, url=e.url, verified=e.verified, created_at=e.created_at,
+    )
+
+
+@router.get("/experiences", response_model=list[ExperienceOut])
+def list_experiences(current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
+    return [_experience_out(e) for e in svc.list_experiences(db, current.id)]
+
+
+@router.get("/experiences/role-titles", response_model=list[str])
+def experience_role_titles():
+    """The fixed job-title list the add-experience popup offers."""
+    return svc.ROLE_TITLES
+
+
+@router.post("/experiences", response_model=ExperienceOut)
+def add_experience(body: ExperienceIn, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
+    return _experience_out(svc.add_experience(db, current.id, body.model_dump()))
+
+
+@router.delete("/experiences/{item_id}", status_code=204)
+def delete_experience(item_id: uuid.UUID, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
+    svc.delete_experience(db, current.id, item_id)

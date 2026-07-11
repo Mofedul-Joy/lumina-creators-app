@@ -39,6 +39,11 @@ def canonicalize_url(raw: str) -> str:
     return urlunparse(("https", host, path, "", "", ""))
 
 
+def bare_host(raw: str) -> str:
+    """Host of a full URL, minus 'www' — e.g. 'lumina-clippers.com'."""
+    return _bare_host(urlparse(canonicalize_url(raw)).netloc)
+
+
 def url_hash(raw: str) -> str:
     return hashlib.sha256(canonicalize_url(raw).encode("utf-8")).hexdigest()
 

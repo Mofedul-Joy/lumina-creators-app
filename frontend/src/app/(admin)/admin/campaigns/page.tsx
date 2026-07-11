@@ -9,6 +9,7 @@ import { AdminTabs } from "@/components/admin/AdminTabs";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pager } from "@/components/admin/Pager";
 import { getAdminToken } from "@/lib/auth";
+import { campaignImage } from "@/lib/campaignTheme";
 import { fmtMoney } from "@/lib/format";
 import { archiveCampaign, closeCampaign, listAdminCampaigns, publishCampaign, reopenCampaign } from "@/lib/admin";
 
@@ -146,11 +147,19 @@ export default function AdminCampaignsPage() {
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {rows.map((c) => (
                 <Link key={c.id} href={`/admin/campaigns/${c.id}`} className="group overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] transition hover:ring-1 hover:ring-[var(--color-brand)]/40">
-                  <div className="relative h-32 w-full bg-gradient-to-br from-[var(--color-brand)]/40 to-[var(--color-bg-deep)]">
-                    {c.brand_logo_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={c.brand_logo_url} alt="" className="h-full w-full object-cover" />
-                    ) : null}
+                  <div className="relative h-32 w-full overflow-hidden bg-gradient-to-br from-[var(--color-brand)]/40 to-[var(--color-bg-deep)]">
+                    {/* Uploaded banner, else a niche-matched stock photo — same
+                        resolver the creator-facing cards use, so a campaign
+                        never renders as an empty green rectangle. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={campaignImage(c)}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                    />
+                    {/* scrim keeps the status pill legible on a bright photo */}
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[var(--color-bg-deep)]/85 via-[var(--color-bg-deep)]/20 to-transparent" />
                     <span className="absolute right-3 top-3"><StatusBadge status={c.status} /></span>
                   </div>
                   <div className="p-4">

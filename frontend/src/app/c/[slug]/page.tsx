@@ -12,6 +12,7 @@ import { Markdown } from "@/components/ui/Markdown";
 import { BonusMilestones } from "@/components/ui/BonusMilestones";
 import { ExampleVideos } from "@/components/ui/ExampleVideos";
 import { paymentHeadline, paymentTypeLabel, targetingChips } from "@/lib/campaignDisplay";
+import { campaignImage } from "@/lib/campaignTheme";
 
 export default function CampaignEntryPage() {
   const router = useRouter();
@@ -64,32 +65,18 @@ export default function CampaignEntryPage() {
 
       <main className="mx-auto grid max-w-5xl gap-6 px-6 py-10 lg:grid-cols-[1fr_380px]">
         <section>
-          {/* Banner hero (falls back to brand-tinted gradient + logo) */}
+          {/* Banner hero — uploaded banner, else a niche-matched stock photo, so
+              the hero is never an empty gradient. */}
           <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[var(--radius-card)] bg-gradient-to-br from-[var(--color-brand)]/30 to-[var(--color-bg-deep)] sm:h-48 sm:aspect-auto">
-            {c.banner_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={c.banner_url} alt="" className="h-full w-full object-cover" />
-            ) : c.brand_logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={c.brand_logo_url} alt="" className="h-full w-full object-cover" />
-            ) : null}
-            {c.banner_url ? (
-              <>
-                <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-bg-deep)] via-transparent to-transparent" />
-                <div className="absolute bottom-0 left-0 p-4">
-                  <p className="text-xs font-medium text-[var(--color-text-secondary)]">{c.brand_name ?? "Lumina campaign"}</p>
-                  <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--color-text)] drop-shadow">{c.name}</h1>
-                </div>
-              </>
-            ) : null}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={campaignImage(c)} alt="" className="h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-bg-deep)] via-transparent to-transparent" />
+            <div className="absolute bottom-0 left-0 p-4">
+              <p className="text-xs font-medium text-[var(--color-text-secondary)]">{c.brand_name ?? "Lumina campaign"}</p>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--color-text)] drop-shadow">{c.name}</h1>
+            </div>
           </div>
 
-          {!c.banner_url ? (
-            <>
-              <p className="mt-4 text-xs font-medium text-[var(--color-text-secondary)]">{c.brand_name ?? "Lumina campaign"}</p>
-              <h1 className="mt-1 text-3xl font-semibold tracking-tight text-[var(--color-text)]">{c.name}</h1>
-            </>
-          ) : null}
           {c.description ? <p className="mt-3 text-[var(--color-text-secondary)]">{c.description}</p> : null}
 
           <div className="mt-5 flex flex-wrap items-center gap-2">

@@ -98,6 +98,24 @@ class PortfolioOut(BaseModel):
     platform: Optional[str] = None
 
 
+class ExperienceIn(BaseModel):
+    kind: str                            # organic_ugc | ugc_paid_ad | professional_role
+    role_title: Optional[str] = None     # required when kind == professional_role
+    company_url: Optional[str] = None
+    company_name: Optional[str] = None
+
+
+class ExperienceOut(BaseModel):
+    id: str
+    kind: str
+    kind_label: str                      # "Organic UGC" / "UGC paid ad" / "Professional role"
+    title: str                           # job title, or the type label
+    org: Optional[str] = None            # company name (derived from the URL when omitted)
+    url: Optional[str] = None
+    verified: bool
+    created_at: datetime
+
+
 class CompletionOut(BaseModel):
     completed: bool
     missing: List[str]

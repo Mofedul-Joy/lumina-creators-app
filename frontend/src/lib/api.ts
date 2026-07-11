@@ -563,6 +563,46 @@ export const deletePortfolio = (token: string, id: string) =>
     token,
   });
 
+// ── Experiences ───────────────────────────────────────────────────────────────
+export type ExperienceKind = "organic_ugc" | "ugc_paid_ad" | "professional_role";
+
+export type ExperienceIn = {
+  kind: ExperienceKind;
+  role_title?: string;   // required when kind === "professional_role"
+  company_url: string;
+  company_name?: string;
+};
+
+export type ExperienceOut = {
+  id: string;
+  kind: ExperienceKind;
+  kind_label: string;
+  title: string;
+  org: string | null;
+  url: string | null;
+  verified: boolean;
+  created_at: string;
+};
+
+export const listExperiences = (token: string) =>
+  apiFetch<ExperienceOut[]>("/api/creator/profile/experiences", { token });
+
+export const listRoleTitles = (token: string) =>
+  apiFetch<string[]>("/api/creator/profile/experiences/role-titles", { token });
+
+export const addExperience = (token: string, body: ExperienceIn) =>
+  apiFetch<ExperienceOut>("/api/creator/profile/experiences", {
+    method: "POST",
+    body: JSON.stringify(body),
+    token,
+  });
+
+export const deleteExperience = (token: string, id: string) =>
+  apiFetch<void>(`/api/creator/profile/experiences/${id}`, {
+    method: "DELETE",
+    token,
+  });
+
 // ── Uploads methods (creator bearer token) ────────────────────────────────────
 export const presignUpload = (token: string, body: PresignIn) =>
   apiFetch<PresignOut>("/api/creator/uploads/presign", {

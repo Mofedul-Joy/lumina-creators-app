@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.security import _now
+from app.integrations import apify
 from app.models import (
     CampaignParticipation, CreatorProfile, PayoutItem, ScrapeJob, StorageObject, Submission,
 )
@@ -40,10 +41,21 @@ def create_submission(db: Session, creator_id: uuid.UUID, campaign_slug: str, po
     if db.scalar(select(Submission.id).where(Submission.campaign_id == campaign.id, Submission.url_hash == url_hash)):
         raise HTTPException(status.HTTP_409_CONFLICT, "This post was already submitted to this campaign")
 
+    # Resolve the post's real thumbnail NOW rather than waiting on the scrape
+    # worker — an unscraped submission would otherwise show an empty card in the
+    # admin dashboard for as long as the job sits queued. Uses the FAST resolver
+    # (oEmbed/og:image, no Apify actor) so the request can't hang; the worker
+    # later overwrites it with the scraped one. None → clean fallback card.
+    try:
+        thumbnail = apify.fast_thumbnail(platform, post_url)
+    except Exception:  # noqa: BLE001 - thumbnail is best-effort, never block a submit
+        thumbnail = None
+
     sub = Submission(
         participation_id=participation.id, campaign_id=campaign.id, creator_id=creator_id,
         post_url=post_url.strip(), canonical_url=canonical, url_hash=url_hash, platform=platform,
         cpm_rate_snapshot=campaign.cpm_rate, eligible_view_pct_snapshot=campaign.eligible_view_pct,
+        thumbnail_url=thumbnail,
     )
     db.add(sub)
     db.flush()  # get sub.id before creating its job

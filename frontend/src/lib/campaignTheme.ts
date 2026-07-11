@@ -1,6 +1,6 @@
 import type { Campaign } from "@/lib/campaigns";
 import { fmtMoney } from "@/lib/format";
-import { NICHES, matchesNiche } from "@/lib/niches";
+import { NICHES, matchesNiche, type CampaignLike } from "@/lib/niches";
 
 // Curated, niche-relevant stock photos (Unsplash, hotlink-stable, all verified
 // 200) so a campaign without an uploaded banner still gets a real, on-topic
@@ -19,14 +19,27 @@ const NICHE_IMAGE: Record<string, string> = {
   home: U("photo-1600880292203-757bb62b4baf"),
   photo: U("photo-1526374965328-7f61d4dc18c5"),
 };
-const DEFAULT_IMAGE = U("photo-1533488765986-dfa2a9939acd"); // content-creation desk
+
+// Fallback pool, not a single image: most campaign names match no niche keyword,
+// and one shared default made every uncategorised card look identical. Picked
+// deterministically per campaign so a card keeps its look across renders.
+const FALLBACK_IMAGES: string[] = [
+  U("photo-1533488765986-dfa2a9939acd"), // content-creation desk
+  U("photo-1492724441997-5dc865305da7"), // filming a phone shot
+  U("photo-1598550476439-6847785fcea6"), // ring light / studio setup
+  U("photo-1516280440614-37939bbacd81"), // neon studio portrait
+  U("photo-1626785774573-4b799315345d"), // vibrant product still life
+  U("photo-1611162617474-5b21e879e113"), // creator filming to camera
+];
 
 // The image to show for a campaign: uploaded banner if any, else a niche-matched
-// stock photo (first niche whose keywords match), else a generic UGC image.
-export function campaignImage(c: Campaign): string {
+// stock photo (first niche whose keywords match), else a deterministic fallback.
+export function campaignImage(c: CampaignLike): string {
   if (c.banner_url) return c.banner_url;
   const hit = NICHES.find((n) => n.keywords.length > 0 && matchesNiche(c, n.key));
-  return (hit && NICHE_IMAGE[hit.key]) || DEFAULT_IMAGE;
+  if (hit && NICHE_IMAGE[hit.key]) return NICHE_IMAGE[hit.key];
+  const key = c.id || c.slug || c.name || "";
+  return FALLBACK_IMAGES[hash(key) % FALLBACK_IMAGES.length];
 }
 
 // Rich, Lumina-flavoured banner gradients used as a fallback thumbnail when a

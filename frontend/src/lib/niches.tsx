@@ -1,4 +1,17 @@
-import type { Campaign } from "@/lib/campaigns";
+// Structural shape rather than the creator `Campaign` type, so the admin's
+// AdminCampaign (no `joined`, looser numerics) can be matched/themed too.
+export type CampaignLike = {
+  id?: string;
+  slug?: string;
+  name?: string | null;
+  description?: string | null;
+  brand_name?: string | null;
+  banner_url?: string | null;
+  content_type?: string | null;
+  job_type?: string | null;
+  creator_type?: string | null;
+  platform_focus?: string[] | null;
+};
 
 // Niche taxonomy mirrored from the SideShift browse list. Campaigns have no
 // niche column, so each niche carries keywords we match against a campaign's
@@ -34,12 +47,12 @@ export const NICHES: Niche[] = [
 ];
 
 // Text we search a campaign against for both keyword search and niche matching.
-export function campaignText(c: Campaign): string {
+export function campaignText(c: CampaignLike): string {
   return [c.name, c.description, c.brand_name, c.content_type, c.job_type, c.creator_type, ...(c.platform_focus ?? [])]
     .filter(Boolean).join(" ").toLowerCase();
 }
 
-export function matchesNiche(c: Campaign, nicheKey: string): boolean {
+export function matchesNiche(c: CampaignLike, nicheKey: string): boolean {
   if (!nicheKey) return true;
   const text = campaignText(c);
   // "Other" = uncategorised: a campaign that matches none of the keyworded niches.

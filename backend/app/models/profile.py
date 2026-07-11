@@ -166,9 +166,10 @@ class PortfolioItem(Base):
 
 
 class CreatorExperience(Base):
-    """Résumé-style entry (e.g. past brand deal, agency, or role) shown on the
-    rich creator detail card (Feature 2). Read-only from the admin API for now
-    — no admin edit route yet, per BUILD_SPEC.md §3.1."""
+    """Résumé-style entry (past brand deal, paid ad, or professional role) shown
+    on the creator's own Experiences tab and on the rich admin detail card
+    (Feature 2). Creator-authored (Feature 3) and auto-verified — there is no
+    manual review step."""
 
     __tablename__ = "creator_experiences"
     __table_args__ = (Index("idx_experiences_creator", "creator_id"),)
@@ -179,9 +180,13 @@ class CreatorExperience(Base):
     creator_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("creators.id", ondelete="CASCADE"), nullable=False
     )
+    # organic_ugc | ugc_paid_ad | professional_role  (chk_experience_kind)
+    kind: Mapped[str] = mapped_column(Text, nullable=False, server_default="professional_role")
+    # For professional_role this is the job title; otherwise the type's label.
     title: Mapped[str] = mapped_column(Text, nullable=False)
     org: Mapped[Optional[str]] = mapped_column(Text)
     url: Mapped[Optional[str]] = mapped_column(Text)
+    verified: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
