@@ -32,9 +32,9 @@ class RehostResult(BaseModel):
 
 
 def _needs_rehost(url: Optional[str]) -> bool:
-    """Missing, or still a platform CDN link. Those are signed, short-lived and
-    hotlink-blocked, so they render for nobody and must be re-hosted."""
-    return not url or "/uploads/" not in url
+    """Missing, a platform CDN link (signed, short-lived, hotlink-blocked), or a
+    stale link to some other host — e.g. a localhost URL a dev-box run wrote."""
+    return not thumbnails.is_self_hosted(url)
 
 
 @router.post("/rehost-thumbnails", response_model=RehostResult)

@@ -39,6 +39,20 @@ _BROWSER_UA = (
 )
 
 
+def is_self_hosted(url: Optional[str]) -> bool:
+    """True only if `url` is served by THIS deployment's storage.
+
+    Deliberately not a "/uploads/" substring test: a URL written by a dev box
+    (http://localhost:8000/uploads/...) also contains that, and treating it as
+    ours would leave an unreachable link in the shared database forever.
+    """
+    if not url:
+        return False
+    s = get_settings()
+    bases = [s.api_public_url, s.r2_public_base]
+    return any(b and url.startswith(b.rstrip("/")) for b in bases)
+
+
 def rehost(url: Optional[str], purpose: str, owner_id) -> Optional[str]:
     """Download `url` and store it on our own storage; return our public URL.
 
@@ -48,8 +62,7 @@ def rehost(url: Optional[str], purpose: str, owner_id) -> Optional[str]:
     """
     if not url:
         return None
-    # Already ours (e.g. re-running over a backfilled row) — nothing to do.
-    if url.startswith(get_settings().api_public_url) or "/uploads/" in url:
+    if is_self_hosted(url):
         return url
 
     try:

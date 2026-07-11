@@ -27,11 +27,10 @@ from app.services import thumbnails  # noqa: E402
 
 
 def _needs_rehost(url: str | None) -> bool:
-    """A missing thumbnail, or one still pointing at a platform CDN (signed,
-    short-lived, hotlink-blocked — it renders for nobody)."""
-    if not url:
-        return True
-    return "/uploads/" not in url
+    """A missing thumbnail, or one not served by THIS deployment's storage —
+    a platform CDN link (signed, short-lived, hotlink-blocked), or a stale link
+    to another host."""
+    return not thumbnails.is_self_hosted(url)
 
 
 def main() -> None:
