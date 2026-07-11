@@ -14,6 +14,7 @@ import { fmtMoney } from "@/lib/format";
 import { archiveCampaign, closeCampaign, listAdminCampaigns, publishCampaign, reopenCampaign } from "@/lib/admin";
 
 const PAGE_SIZE = 8;
+const VIEW_KEY = "admin-campaigns-view";
 
 // small action icons for the campaigns table
 const iconBtn = "grid h-8 w-8 cursor-pointer place-items-center rounded-md text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)] transition";
@@ -34,11 +35,21 @@ export default function AdminCampaignsPage() {
   const qc = useQueryClient();
   const router = useRouter();
   const [hasToken, setHasToken] = useState(false);
-  const [view, setView] = useState<"line" | "grid">("line");
+  // Grid is the default view; a manual switch to the line view is remembered.
+  const [view, setView] = useState<"line" | "grid">("grid");
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all");
   const [q, setQ] = useState("");
   useEffect(() => setHasToken(!!getAdminToken()), []);
+  useEffect(() => {
+    const saved = localStorage.getItem(VIEW_KEY);
+    if (saved === "line" || saved === "grid") setView(saved);
+  }, []);
+
+  function chooseView(v: "line" | "grid") {
+    setView(v);
+    localStorage.setItem(VIEW_KEY, v);
+  }
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["admin-campaigns"],
@@ -88,7 +99,7 @@ export default function AdminCampaignsPage() {
               {(["line", "grid"] as const).map((m) => (
                 <button
                   key={m}
-                  onClick={() => setView(m)}
+                  onClick={() => chooseView(m)}
                   aria-label={`${m} view`}
                   className={`grid h-8 w-8 cursor-pointer place-items-center rounded-full transition ${
                     view === m ? "bg-[var(--color-surface-2)] text-[var(--color-text)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
