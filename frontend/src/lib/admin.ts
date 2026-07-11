@@ -36,6 +36,8 @@ export type AdminCampaign = {
   requirements_url: string | null;
   min_retention_days: number;
   client_id: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
   published_at: string | null;
   // ---- 6-step campaign builder wizard (Feature 3) ----
   job_type: string | null;
@@ -57,6 +59,15 @@ export type AdminCampaign = {
   physical_product: boolean;
   banner_url: string | null;
   bonus_milestones: BonusMilestone[];
+  // ---- campaign creation flow (0024) ----
+  campaign_kind: string;
+  experience_level: string;
+  no_platform_tracking: boolean;
+  payment_schedule: string | null;
+  payment_cycle_trigger: string;
+  pro_rata: boolean;
+  min_views: number | null;
+  posts_per_payment: number;
   // ---- Client read-only report + share_token (Feature 6) ----
   share_token: string | null;
   share_enabled: boolean;
@@ -150,6 +161,33 @@ export type CampaignCreate = {
   starts_at?: string;
   ends_at?: string;
 };
+
+// ── Campaign overview (detail page) ───────────────────────────────────────────
+export type CampaignOverviewCreator = {
+  creator_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  status: string;
+  posts: number;
+  views: number;
+  earned: number | string;
+  joined_at: string;
+};
+
+export type CampaignOverview = {
+  active_creators: number;
+  delivered_creators: number;
+  total_posts: number;
+  total_views: number;
+  total_spend: number | string;
+  creators: CampaignOverviewCreator[];
+};
+
+export const getCampaignOverview = (id: string) =>
+  apiFetch<CampaignOverview>(`/api/admin/campaigns/${id}/overview`, auth());
+
+export const convertCampaignToAdvanced = (id: string) =>
+  apiFetch<AdminCampaign>(`/api/admin/campaigns/${id}/convert-to-advanced`, { method: "POST", ...auth() });
 
 export type AdminClient = { id: string; email: string; name: string | null; status: string };
 

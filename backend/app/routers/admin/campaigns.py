@@ -3,9 +3,12 @@ from __future__ import annotations
 
 import secrets
 import uuid
-from typing import Optional
+from datetime import datetime
+from decimal import Decimal
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -16,6 +19,7 @@ from app.db.session import get_db
 from app.models import Admin, Campaign, CampaignBonusMilestone, CreatorProfile, Submission
 from app.schemas.campaign import BonusMilestoneOut, CampaignCreateIn, CampaignOut, CampaignUpdateIn, ShareTokenOut
 from app.services import audit, campaign as svc
+from app.services import campaign_overview as overview_svc
 from app.services.csv_export import csv_response
 
 router = APIRouter(prefix="/campaigns", tags=["admin-campaigns"])
@@ -102,6 +106,40 @@ def reopen(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db
 @router.post("/{campaign_id}/archive", response_model=CampaignOut)
 def archive(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     return campaign_out(svc.archive_campaign(db, campaign_id, admin.id), db)
+
+
+class CampaignOverviewCreator(BaseModel):
+    creator_id: str
+    display_name: str
+    avatar_url: Optional[str] = None
+    status: str
+    posts: int
+    views: int
+    earned: Decimal
+    joined_at: datetime
+
+
+class CampaignOverviewOut(BaseModel):
+    active_creators: int
+    delivered_creators: int
+    total_posts: int
+    total_views: int
+    total_spend: Decimal
+    creators: List[CampaignOverviewCreator]
+
+
+@router.get("/{campaign_id}/overview", response_model=CampaignOverviewOut)
+def campaign_overview(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Stat tiles + active-creator list for the campaign detail page."""
+    svc.get_campaign(db, campaign_id)  # 404 if it doesn't exist
+    return overview_svc.overview(db, campaign_id)
+
+
+@router.post("/{campaign_id}/convert-to-advanced", response_model=CampaignOut)
+def convert_to_advanced(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """One-way flip to the advanced setup — just exposes the extra options; it
+    never removes anything the admin already configured."""
+    return campaign_out(svc.update_campaign(db, campaign_id, {"experience_level": "advanced"}), db)
 
 
 @router.post("/{campaign_id}/impersonate-client")
