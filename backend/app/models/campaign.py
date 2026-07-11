@@ -189,6 +189,9 @@ class CampaignParticipation(Base):
     reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     messaged_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     bookmarked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    # Admin removed the creator from this campaign. Marked, not deleted — a
+    # submission hangs off this row, and payouts are RESTRICT against it.
+    removed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     declined_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     admin_note: Mapped[Optional[str]] = mapped_column(Text)

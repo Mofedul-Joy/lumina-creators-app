@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { CreatorDetailCard } from "@/components/admin/CreatorDetailCard";
+import { RemoveCreatorModal } from "@/components/admin/RemoveCreatorModal";
 import { getAdminToken } from "@/lib/auth";
 import { flagCreatorSuspicious, getCreatorDetail, isAuthError, unflagCreatorSuspicious } from "@/lib/api";
 
@@ -19,6 +20,7 @@ export default function AdminCreatorDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const [confirmingFlag, setConfirmingFlag] = useState(false);
+  const [removeOpen, setRemoveOpen] = useState(false);
 
   const [token, setToken] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -76,7 +78,25 @@ export default function AdminCreatorDetailPage() {
       </Link>
       <AdminTabs />
 
-      <header className="flex items-start justify-end gap-4">
+      <header className="flex items-start justify-between gap-4">
+        <button
+          onClick={() => setRemoveOpen(true)}
+          className="inline-flex min-h-10 shrink-0 cursor-pointer items-center gap-2 rounded-full border border-[var(--color-danger)]/40 px-4 text-sm font-medium text-[var(--color-danger)] transition hover:bg-[var(--color-danger)]/10"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path d="M5 7h14M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Remove creator
+        </button>
+
+        <RemoveCreatorModal
+          open={removeOpen}
+          onClose={() => setRemoveOpen(false)}
+          creatorId={id}
+          creatorName={c.display_name || c.email}
+          onRemoved={() => router.push("/admin/creators")}
+        />
+
         <div className="flex shrink-0 flex-col items-end gap-2">
           <span
             className="rounded-[var(--radius-pill)] px-3 py-1 text-xs font-medium"

@@ -43,6 +43,15 @@ class Creator(TimestampMixin, Base):
     # A soft "watch this account" state, short of a hard status='suspended'.
     is_suspicious: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
 
+    # ---- removal (admin "Remove creator") ----
+    # Existing posts keep earning, but no new post can be submitted or tracked.
+    tracking_disabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+    removed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    # delete_all | keep_analytics | keep_posts
+    removal_mode: Mapped[Optional[str]] = mapped_column(Text)
+
 
 class Admin(Base):
     __tablename__ = "admins"

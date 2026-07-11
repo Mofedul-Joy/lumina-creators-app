@@ -12,7 +12,11 @@ from app.db.session import get_db
 from app.models import Admin
 from app.schemas.admin_creators import CreatorDetail, CreatorListItem, CreatorRichDetail
 from app.schemas.gamification import CreatorGamificationOut
+from pydantic import BaseModel
+
 from app.services import admin_creators as svc
+from app.services import audit
+from app.services import creator_removal as removal_svc
 from app.services import creators_export
 from app.services import gamification as gam_svc
 from app.services.csv_export import csv_response
@@ -65,6 +69,48 @@ def creator_rich_detail(creator_id: uuid.UUID, admin: Admin = Depends(get_curren
     with gamification (rank/xp/streak/awards), niches, experiences, and a
     recent-submissions video reel. Keeps the plain endpoint above intact."""
     return CreatorRichDetail(**svc.get_creator_rich_detail(db, creator_id))
+
+
+class RemoveCreatorIn(BaseModel):
+    mode: str    # delete_all | keep_analytics | keep_posts
+    scope: str   # campaigns_only | entire
+
+
+class RemoveCreatorOut(BaseModel):
+    removed: bool
+    mode: str
+    scope: str
+    email: str
+    campaigns_detached: int
+    hard_deleted: bool      # the row was really deleted (never been paid)
+    retained_ledger: bool   # scrubbed + tombstoned instead, to keep payouts intact
+
+
+@router.post("/{creator_id}/remove", response_model=RemoveCreatorOut)
+def remove_creator(
+    creator_id: uuid.UUID,
+    body: RemoveCreatorIn,
+    admin: Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Remove a creator. See services/creator_removal for what each mode does."""
+    result = removal_svc.remove_creator(db, creator_id, body.mode, body.scope)
+    # The service already committed (it may have hard-deleted the row), so the
+    # audit row needs its own commit — audit.log only flushes.
+    audit.log(
+        db,
+        actor_admin_id=admin.id,
+        action="creator.remove",
+        entity_type="creator",
+        entity_id=None if result["hard_deleted"] else creator_id,
+        mode=body.mode,
+        scope=body.scope,
+        email=result["email"],
+        hard_deleted=result["hard_deleted"],
+        retained_ledger=result["retained_ledger"],
+    )
+    db.commit()
+    return result
 
 
 @router.post("/{creator_id}/flag-suspicious", response_model=CreatorDetail)

@@ -10,7 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.security import _now
-from app.models import Campaign, CampaignBonusMilestone, CampaignParticipation, Submission
+from app.models import Campaign, CampaignBonusMilestone, CampaignParticipation, Creator, Submission
 from app.services import audit
 
 _MODES = {"create_new", "copy_paste"}
@@ -227,6 +227,15 @@ def join_campaign(db: Session, creator_id: uuid.UUID, slug: str) -> CampaignPart
         # String detail (not an object) so the frontend matches it directly and
         # opens the "complete your profile" popup on this exact value.
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="profile_incomplete")
+
+    # A creator an admin removed must not be able to walk straight back in.
+    creator = db.get(Creator, creator_id)
+    if creator is not None and creator.tracking_disabled:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "This account can no longer join campaigns.",
+        )
+
     campaign = get_active_campaign(db, slug)
     existing = db.scalar(
         select(CampaignParticipation).where(
@@ -235,6 +244,11 @@ def join_campaign(db: Session, creator_id: uuid.UUID, slug: str) -> CampaignPart
         )
     )
     if existing:
+        if existing.removed_at is not None:
+            raise HTTPException(
+                status.HTTP_403_FORBIDDEN,
+                "You were removed from this campaign.",
+            )
         return existing
     part = CampaignParticipation(campaign_id=campaign.id, creator_id=creator_id)
     db.add(part)

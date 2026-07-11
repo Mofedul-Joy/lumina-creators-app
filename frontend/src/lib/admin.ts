@@ -379,6 +379,27 @@ export const downloadCreatorsCsv = () => {
   return downloadCsv("/api/admin/creators/export.csv", token);
 };
 
+// ── Creator removal ───────────────────────────────────────────────────────────
+export type RemovalMode = "delete_all" | "keep_analytics" | "keep_posts";
+export type RemovalScope = "campaigns_only" | "entire";
+
+export type RemovalResult = {
+  removed: boolean;
+  mode: RemovalMode;
+  scope: RemovalScope;
+  email: string;
+  campaigns_detached: number;
+  hard_deleted: boolean;    // row really deleted (creator had never been paid)
+  retained_ledger: boolean; // scrubbed + tombstoned instead, to keep payouts intact
+};
+
+export const removeCreator = (id: string, mode: RemovalMode, scope: RemovalScope) =>
+  apiFetch<RemovalResult>(`/api/admin/creators/${id}/remove`, {
+    method: "POST",
+    body: JSON.stringify({ mode, scope }),
+    ...auth(),
+  });
+
 // ── Creator invites ───────────────────────────────────────────────────────────
 export type CreatorInvite = {
   id: string;

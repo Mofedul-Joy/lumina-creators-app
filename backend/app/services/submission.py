@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.security import _now
 from app.integrations import apify
 from app.models import (
-    CampaignParticipation, CreatorProfile, PayoutItem, ScrapeJob, StorageObject, Submission,
+    CampaignParticipation, Creator, CreatorProfile, PayoutItem, ScrapeJob, StorageObject, Submission,
 )
 from app.services import campaign as campaign_svc
 from app.services import urls
@@ -21,10 +21,20 @@ from app.services.gamification import bump_streak_on_submission, refresh_creator
 def create_submission(db: Session, creator_id: uuid.UUID, campaign_slug: str, post_url: str) -> Submission:
     campaign = campaign_svc.get_active_campaign(db, campaign_slug)
 
+    # Removed with "keep posts for payouts": what they already posted keeps
+    # earning, but nothing new is tracked.
+    creator = db.get(Creator, creator_id)
+    if creator is not None and creator.tracking_disabled:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "This account can no longer submit new posts.",
+        )
+
     participation = db.scalar(
         select(CampaignParticipation).where(
             CampaignParticipation.campaign_id == campaign.id,
             CampaignParticipation.creator_id == creator_id,
+            CampaignParticipation.removed_at.is_(None),
         )
     )
     if participation is None:
