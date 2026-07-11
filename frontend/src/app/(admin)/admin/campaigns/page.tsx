@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { NewCampaignModal } from "@/components/admin/NewCampaignModal";
 import { Pager } from "@/components/admin/Pager";
 import { getAdminToken } from "@/lib/auth";
 import { campaignImage } from "@/lib/campaignTheme";
@@ -40,6 +41,7 @@ export default function AdminCampaignsPage() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all");
   const [q, setQ] = useState("");
+  const [newOpen, setNewOpen] = useState(false);
   useEffect(() => setHasToken(!!getAdminToken()), []);
   useEffect(() => {
     const saved = localStorage.getItem(VIEW_KEY);
@@ -109,14 +111,17 @@ export default function AdminCampaignsPage() {
                 </button>
               ))}
             </div>
-            <Link
-              href="/admin/campaigns/new"
-              className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
+            {/* Opens the chooser (scratch vs template) rather than jumping
+                straight into the builder. */}
+            <button
+              onClick={() => setNewOpen(true)}
+              className="inline-flex min-h-11 cursor-pointer items-center rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
             >
               New campaign
-            </Link>
+            </button>
           </div>
         </div>
+        <NewCampaignModal open={newOpen} onClose={() => setNewOpen(false)} />
         <AdminTabs />
 
         {/* status filters + search — the Clippers campaign states */}

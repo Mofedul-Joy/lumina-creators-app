@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { BannerInput } from "@/components/admin/BannerInput";
+import { getTemplate, type CampaignTemplate } from "@/lib/campaignTemplates";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import {
@@ -251,11 +252,34 @@ const initialState: WizardState = {
 export default function NewCampaignPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  // A template only SEEDS the builder — every value it fills stays editable, so
+  // the wizard below is identical whether you came from scratch or a template.
+  const [template, setTemplate] = useState<CampaignTemplate | undefined>();
   const [f, setF] = useState<WizardState>(initialState);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  useEffect(() => {
+    const key = new URLSearchParams(window.location.search).get("template");
+    const t = getTemplate(key);
+    if (!t) return;
+    setTemplate(t);
+    setF((cur) => ({ ...cur, ...t.preset }));
+  }, []);
+
   function patch(p: Partial<WizardState>) {
     setF((cur) => ({ ...cur, ...p }));
+  }
+
+  /** Drop the template's seeded pay fields, keeping anything already typed. */
+  function clearTemplate() {
+    if (!template) return;
+    const seeded = Object.keys(template.preset) as (keyof WizardState)[];
+    const reset = Object.fromEntries(
+      seeded.map((k) => [k, initialState[k]]),
+    ) as Partial<WizardState>;
+    setF((cur) => ({ ...cur, ...reset }));
+    setTemplate(undefined);
+    window.history.replaceState(null, "", "/admin/campaigns/new");
   }
 
   function validateStep(n: number): boolean {
@@ -355,6 +379,25 @@ export default function NewCampaignPage() {
         </Link>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[var(--color-text)]">New campaign</h1>
         <AdminTabs />
+
+        {template ? (
+          <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-[var(--color-brand)]/30 bg-[var(--color-brand)]/10 p-4">
+            <span className="rounded-full bg-[var(--color-brand)]/20 px-2.5 py-0.5 text-[10px] font-medium text-[var(--color-brand)]">
+              {template.badge}
+            </span>
+            <p className="min-w-0 flex-1 text-sm text-[var(--color-text-secondary)]">
+              Pre-filled from <span className="text-[var(--color-text)]">{template.title}</span>. Every value is
+              still editable.
+            </p>
+            <button
+              type="button"
+              onClick={clearTemplate}
+              className="shrink-0 cursor-pointer text-sm text-[var(--color-text-muted)] underline hover:text-[var(--color-text)]"
+            >
+              Clear template
+            </button>
+          </div>
+        ) : null}
 
         {/* step indicator */}
         <ol className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-3">
