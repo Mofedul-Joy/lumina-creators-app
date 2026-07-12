@@ -354,6 +354,14 @@ export type CreatorListItem = {
   rank: string | null;
   total_views: number;
   total_earned: number | string;
+  // SideShift-parity roster columns.
+  status: string;
+  accounts_count: number;
+  campaigns_total: number;
+  campaigns_active: number;
+  posts_7d: number;
+  days_active_7d: number;
+  created_at: string | null;
 };
 
 export type SocialItem = {

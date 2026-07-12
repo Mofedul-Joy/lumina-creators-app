@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
 from fastapi import HTTPException, status
@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.integrations import storage
 from app.models import (
     Campaign,
+    CampaignParticipation,
     Creator,
     CreatorExperience,
     CreatorProfile,
@@ -119,6 +120,34 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
     ).all()
     agg_by_creator = {cid: {"views": int(v), "earned": Decimal(e), "posts": int(c)} for cid, v, e, c in agg_rows}
 
+    # Campaigns joined (active count) per creator — one grouped query.
+    camp_total: dict[uuid.UUID, int] = {}
+    camp_active: dict[uuid.UUID, int] = {}
+    for cid, cstatus, cnt in db.execute(
+        select(CampaignParticipation.creator_id, Campaign.status, func.count())
+        .join(Campaign, Campaign.id == CampaignParticipation.campaign_id)
+        .where(CampaignParticipation.creator_id.in_(ids), CampaignParticipation.removed_at.is_(None))
+        .group_by(CampaignParticipation.creator_id, Campaign.status)
+    ).all():
+        camp_total[cid] = camp_total.get(cid, 0) + int(cnt)
+        if cstatus == "active":
+            camp_active[cid] = camp_active.get(cid, 0) + int(cnt)
+
+    # Post activity in the last 7 days — posts + distinct days posted (drives the
+    # SideShift-style "X/5 days" weekly dots).
+    since = datetime.now(timezone.utc) - timedelta(days=7)
+    recent_by_creator: dict[uuid.UUID, dict] = {}
+    for cid, posts, days in db.execute(
+        select(
+            Submission.creator_id,
+            func.count(Submission.id),
+            func.count(func.distinct(func.date(Submission.created_at))),
+        )
+        .where(Submission.creator_id.in_(ids), Submission.created_at >= since)
+        .group_by(Submission.creator_id)
+    ).all():
+        recent_by_creator[cid] = {"posts": int(posts), "days": int(days)}
+
     out = []
     for c in creators:
         prof = profiles.get(c.id)
@@ -141,6 +170,13 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
             "rank": rank,
             "total_views": a["views"],
             "total_earned": a["earned"],
+            "status": c.status,
+            "accounts_count": len(socials),
+            "campaigns_total": camp_total.get(c.id, 0),
+            "campaigns_active": camp_active.get(c.id, 0),
+            "posts_7d": recent_by_creator.get(c.id, {}).get("posts", 0),
+            "days_active_7d": recent_by_creator.get(c.id, {}).get("days", 0),
+            "created_at": c.created_at,
         })
     return out
 

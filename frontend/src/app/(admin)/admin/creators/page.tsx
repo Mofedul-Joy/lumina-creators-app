@@ -42,6 +42,30 @@ function fmtMoney(n: number | string | null | undefined): string {
   return `$${Number.isFinite(v) ? v.toFixed(2) : "0.00"}`;
 }
 
+function fmtJoined(iso: string | null): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
+}
+
+// Weekly posting activity — up to 5 dots, one lit per distinct day posted in the
+// last 7 days (SideShift's "X/5 days" indicator).
+function WeekDots({ days }: { days: number }) {
+  const lit = Math.min(Number(days) || 0, 5);
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex gap-1">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <span
+            key={i}
+            className={`h-2.5 w-2.5 rounded-[3px] ${i < lit ? "bg-[var(--color-brand)]" : "bg-[var(--color-surface-2)] ring-1 ring-inset ring-[var(--color-border)]"}`}
+          />
+        ))}
+      </div>
+      <span className="tabular text-xs text-[var(--color-text-muted)]">{lit}/5 days</span>
+    </div>
+  );
+}
+
 type Prefs = { gender: string; platform: string; ethnicity: string; primary_language: string; country: string; city: string; min_followers: string; completed_only: boolean };
 const EMPTY: Prefs = { gender: "", platform: "", ethnicity: "", primary_language: "", country: "", city: "", min_followers: "", completed_only: false };
 
@@ -289,22 +313,64 @@ export default function AdminCreatorsPage() {
               ))}
             </div>
           ) : (
-            <div className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)]">
-              <table className="w-full min-w-[640px] text-left text-sm">
+            <div className="overflow-x-auto rounded-[var(--radius-card)] border border-[var(--color-border)]">
+              <table className="w-full min-w-[900px] text-left text-sm">
                 <thead className="bg-[var(--color-surface)] text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
-                  <tr><th className="px-4 py-3 font-medium">Creator</th><th className="px-4 py-3 font-medium">Country</th><th className="px-4 py-3 font-medium">Language</th><th className="px-4 py-3 text-right font-medium">Followers</th><th className="px-4 py-3 font-medium">Status</th></tr>
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Creator</th>
+                    <th className="px-4 py-3 font-medium">Email</th>
+                    <th className="px-4 py-3 font-medium">Post activity</th>
+                    <th className="px-4 py-3 text-right font-medium">Views</th>
+                    <th className="px-4 py-3 font-medium">Accounts</th>
+                    <th className="px-4 py-3 font-medium">Campaigns</th>
+                    <th className="px-4 py-3 font-medium">Tags</th>
+                    <th className="px-4 py-3 font-medium">Joined</th>
+                  </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
                   {pageRows.map((c) => (
                     <tr key={c.id} onClick={() => router.push(`/admin/creators/${c.id}`)} className="cursor-pointer transition hover:bg-[var(--color-surface)]/50">
-                      <td className="px-4 py-3"><p className="font-medium text-[var(--color-text)]">{c.display_name ?? "Unnamed"}</p><p className="text-xs text-[var(--color-text-muted)]">{c.email}</p></td>
-                      <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.country ?? "-"}</td>
-                      <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.primary_language ?? "-"}</td>
-                      <td className="tabular px-4 py-3 text-right text-[var(--color-text)]">{c.total_followers.toLocaleString()}</td>
                       <td className="px-4 py-3">
-                        {c.completed ? <span className="text-xs text-emerald-400">Complete</span> : <span className="text-xs text-[var(--color-text-muted)]">Incomplete</span>}
-                        {c.is_suspicious ? <span className="ml-2 text-xs text-amber-400">Flagged</span> : null}
+                        <div className="flex items-center gap-3">
+                          <Avatar url={c.avatar_url} name={c.display_name} size={36} />
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-[var(--color-text)]">{c.display_name ?? "Unnamed"}</p>
+                            <div className="mt-0.5 flex items-center gap-1.5">
+                              <span className={`h-1.5 w-1.5 rounded-full ${c.status === "active" ? "bg-emerald-400" : "bg-[var(--color-text-muted)]"}`} />
+                              <span className="text-xs capitalize text-[var(--color-text-muted)]">{c.status}</span>
+                              {c.is_suspicious ? <span className="text-xs text-amber-400">· Flagged</span> : null}
+                            </div>
+                          </div>
+                        </div>
                       </td>
+                      <td className="px-4 py-3 text-[var(--color-text-secondary)]">{c.email}</td>
+                      <td className="px-4 py-3">
+                        <WeekDots days={c.days_active_7d} />
+                        <p className="mt-0.5 text-[11px] text-[var(--color-text-muted)]">
+                          {c.posts_7d > 0 ? `${c.posts_7d} post${c.posts_7d > 1 ? "s" : ""} this week` : "No data"}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <p className="tabular text-[var(--color-text)]">{fmtNumber(c.total_views)}</p>
+                        <p className="text-[11px] text-[var(--color-text-muted)]">views</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        {c.accounts_count > 0 ? (
+                          <span className="tabular text-[var(--color-text)]">{c.accounts_count} account{c.accounts_count > 1 ? "s" : ""}</span>
+                        ) : (
+                          <span className="text-[var(--color-text-muted)]">No accounts</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="tabular text-[var(--color-text)]">{c.campaigns_total}</p>
+                        {c.campaigns_active > 0 ? (
+                          <p className="text-[11px] text-[var(--color-brand)]">{c.campaigns_active} active</p>
+                        ) : (
+                          <p className="text-[11px] text-[var(--color-text-muted)]">none active</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-[var(--color-text-muted)]">None</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-[var(--color-text-secondary)]">{fmtJoined(c.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>

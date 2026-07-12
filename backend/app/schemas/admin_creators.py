@@ -22,6 +22,15 @@ class CreatorListItem(BaseModel):
     rank: Optional[str] = None
     total_views: int = 0
     total_earned: Decimal = Decimal("0")
+    # SideShift-parity roster columns: status dot, weekly post activity,
+    # connected accounts, campaigns joined/active, joined date.
+    status: str = "active"
+    accounts_count: int = 0
+    campaigns_total: int = 0
+    campaigns_active: int = 0
+    posts_7d: int = 0
+    days_active_7d: int = 0
+    created_at: Optional[datetime] = None
 
 
 class SocialItem(BaseModel):
