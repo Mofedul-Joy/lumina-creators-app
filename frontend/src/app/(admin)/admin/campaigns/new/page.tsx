@@ -555,99 +555,62 @@ export default function NewCampaignPage() {
           {/* ── step 1: payment type (from template, or overridden) ── */}
           {step === 1 ? (
             <div className={sectionCls}>
-              {template && !f.overrideTemplate ? (
-                <>
-                  <div className="flex flex-wrap items-start gap-3 rounded-xl border border-[var(--color-brand)]/30 bg-[var(--color-brand)]/10 p-4">
-                    <span className="rounded-full bg-[var(--color-brand)]/20 px-2.5 py-0.5 text-[10px] font-medium text-[var(--color-brand)]">
-                      {template.badge}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-[var(--color-text)]">
-                        Using template: {template.title}
-                      </p>
-                      <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">{template.example}</p>
-                    </div>
+              {/* A template pre-selects a payment type but every option stays
+                  fully clickable — the admin can change it right here. */}
+              {template ? (
+                <div className="flex flex-wrap items-start gap-3 rounded-xl border border-[var(--color-brand)]/30 bg-[var(--color-brand)]/10 p-4">
+                  <span className="rounded-full bg-[var(--color-brand)]/20 px-2.5 py-0.5 text-[10px] font-medium text-[var(--color-brand)]">
+                    {template.badge}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-[var(--color-text)]">Using template: {template.title}</p>
+                    <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">{template.example}</p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={clearTemplate}
+                    className="cursor-pointer text-xs text-[var(--color-text-muted)] underline hover:text-[var(--color-text)]"
+                  >
+                    Clear
+                  </button>
+                </div>
+              ) : null}
 
-                  <h2 className="text-lg font-semibold text-[var(--color-text)]">Payment Structure from Template</h2>
-                  <p className="text-sm text-[var(--color-text-secondary)]">
-                    Your selected template uses the payment structure below. You can override it if needed.
-                  </p>
+              <h2 className="text-lg font-semibold text-[var(--color-text)]">How would you like to pay creators?</h2>
+              <p className="text-sm text-[var(--color-text-secondary)]">
+                Choose the payment structure that works best for this campaign.
+                {template && f.payment_type !== template.preset.payment_type ? (
+                  <>
+                    {" "}You changed it from the template&apos;s{" "}
+                    <button
+                      type="button"
+                      onClick={() => patch({ ...template.preset })}
+                      className="cursor-pointer font-medium text-[var(--color-brand)] underline"
+                    >
+                      {PAYMENT_TYPES.find((p) => p.value === template.preset.payment_type)?.label} (reset)
+                    </button>
+                    .
+                  </>
+                ) : null}
+              </p>
 
-                  <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
-                    <p className="text-sm font-semibold text-[var(--color-text)]">
-                      {PAYMENT_TYPES.find((p) => p.value === f.payment_type)?.label}
-                    </p>
-                    <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
-                      {PAYMENT_TYPES.find((p) => p.value === f.payment_type)?.blurb}
-                    </p>
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border)] pt-3">
-                      <p className="text-xs font-medium text-[var(--color-brand)]">✓ Pre-configured from template</p>
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => patch({ overrideTemplate: true })}
-                          className="cursor-pointer rounded-full border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)] transition hover:border-[var(--color-brand)]"
-                        >
-                          Override template
-                        </button>
-                        <button
-                          type="button"
-                          onClick={clearTemplate}
-                          className="cursor-pointer text-xs text-[var(--color-text-muted)] underline hover:text-[var(--color-text)]"
-                        >
-                          Clear
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h2 className="text-lg font-semibold text-[var(--color-text)]">How would you like to pay creators?</h2>
-                  <p className="text-sm text-[var(--color-text-secondary)]">
-                    Choose the payment structure that works best for this campaign.
-                  </p>
-
-                  {template && f.overrideTemplate ? (
-                    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
-                      <p className="text-sm text-amber-300">
-                        <span className="font-semibold">Override mode:</span> you are changing the payment structure
-                        from your selected template. The template&apos;s original configuration was{" "}
-                        <span className="font-semibold">
-                          {PAYMENT_TYPES.find((p) => p.value === template.preset.payment_type)?.label}
-                        </span>
-                        .
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => patch({ overrideTemplate: false, ...template.preset })}
-                        className="mt-3 cursor-pointer rounded-full border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)] transition hover:border-[var(--color-brand)]"
-                      >
-                        ← Back to template
-                      </button>
-                    </div>
-                  ) : null}
-
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                    {PAYMENT_TYPES.map((p) => (
-                      <button
-                        key={p.value}
-                        type="button"
-                        onClick={() => patch({ payment_type: p.value })}
-                        className={`card-lumina rounded-[var(--radius-card)] border p-3 text-left transition ${
-                          f.payment_type === p.value
-                            ? "border-[var(--color-brand)] bg-[var(--color-brand)]/10"
-                            : "border-[var(--color-border)] hover:border-[var(--color-text-muted)]"
-                        }`}
-                      >
-                        <p className="text-sm font-semibold text-[var(--color-text)]">{p.label}</p>
-                        <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{p.blurb}</p>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                {PAYMENT_TYPES.map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => patch({ payment_type: p.value })}
+                    className={`card-lumina rounded-[var(--radius-card)] border p-3 text-left transition ${
+                      f.payment_type === p.value
+                        ? "border-[var(--color-brand)] bg-[var(--color-brand)]/10"
+                        : "border-[var(--color-border)] hover:border-[var(--color-text-muted)]"
+                    }`}
+                  >
+                    <p className="text-sm font-semibold text-[var(--color-text)]">{p.label}</p>
+                    <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{p.blurb}</p>
+                  </button>
+                ))}
+              </div>
             </div>
           ) : null}
 
@@ -935,10 +898,34 @@ export default function NewCampaignPage() {
                       }`}
                     >
                       <p className="text-sm font-semibold text-[var(--color-text)]">{t.label}</p>
-                      <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{t.blurb}</p>
+                      <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+                        {/* Spell out the interval so the admin knows exactly how
+                            often creators get paid — not just "the schedule above". */}
+                        {t.key === "schedule"
+                          ? `Creators are paid ${scheduleLabel(f.payment_schedule).toLowerCase()}, regardless of when they deliver.`
+                          : t.blurb}
+                      </p>
                     </button>
                   ))}
                 </div>
+
+                {/* When paying on a schedule, set the interval right here — no need
+                    to hunt back to the Compensation step. Same field as step 4. */}
+                {f.payment_cycle_trigger === "schedule" ? (
+                  <div className="mt-1 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
+                    <label className={labelCls}>Payment interval — how often creators are paid</label>
+                    <select
+                      className={`${controlCls} mt-2`}
+                      value={f.payment_schedule}
+                      onChange={(e) => patch({ payment_schedule: e.target.value as PaymentSchedule })}
+                    >
+                      {PAYMENT_SCHEDULES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+                    </select>
+                    <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                      A new payment cycle runs {scheduleLabel(f.payment_schedule).toLowerCase()}.
+                    </p>
+                  </div>
+                ) : null}
               </div>
 
               <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
