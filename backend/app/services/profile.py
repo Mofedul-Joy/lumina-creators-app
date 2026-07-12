@@ -181,20 +181,19 @@ def add_portfolio(db: Session, creator_id: uuid.UUID, data: dict) -> PortfolioIt
     # add returns immediately — the actor path could take ~75s and time the
     # request out ("Failed to fetch"). None → clean fallback card, never a
     # broken image.
-    thumb = data.get("thumbnail_url")
-    if not thumb:
-        from app.integrations import apify
-        from app.services import thumbnails
-        try:
-            # Resolve from the ORIGINAL url — canonicalize_url strips query params
-            # (e.g. YouTube's ?v=ID) and can break oEmbed lookups. Then re-host:
-            # platform CDN images are signed, short-lived and hotlink-blocked, so
-            # a stored CDN link renders for nobody.
-            thumb = thumbnails.rehost(
-                apify.fast_thumbnail(platform, video_url), "portfolio_thumb", creator_id
-            )
-        except Exception:  # noqa: BLE001
-            thumb = None
+    from app.integrations import apify
+    from app.services import thumbnails
+    try:
+        # Prefer a client-supplied thumbnail, else resolve one from the ORIGINAL
+        # url (canonicalize_url strips query params like YouTube's ?v=ID and can
+        # break oEmbed lookups). EITHER WAY re-host it: platform CDN images are
+        # signed, short-lived and hotlink-blocked, so a stored CDN link renders
+        # for nobody. rehost() returns a self-hosted URL unchanged and None on
+        # failure → clean fallback card, never a broken image.
+        raw_thumb = data.get("thumbnail_url") or apify.fast_thumbnail(platform, video_url)
+        thumb = thumbnails.rehost(raw_thumb, "portfolio_thumb", creator_id)
+    except Exception:  # noqa: BLE001
+        thumb = None
     item = PortfolioItem(
         creator_id=creator_id, video_url=canonical,
         thumbnail_url=thumb, brand_name=data.get("brand_name"),

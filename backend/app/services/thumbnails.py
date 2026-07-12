@@ -53,6 +53,42 @@ def is_self_hosted(url: Optional[str]) -> bool:
     return any(b and url.startswith(b.rstrip("/")) for b in bases)
 
 
+def repair_portfolio_thumbnails(db) -> dict:
+    """Re-resolve + re-host any portfolio thumbnail that isn't served by our own
+    storage (e.g. a raw, now-expired Instagram CDN link) or is missing. MUST run
+    where storage is real (production → R2); on a dev box it would write
+    unreachable localhost URLs. Returns a summary.
+    """
+    from sqlalchemy import select
+
+    from app.integrations import apify
+    from app.models import PortfolioItem
+
+    fixed = cleared = skipped = 0
+    for it in db.scalars(select(PortfolioItem)).all():
+        if it.thumbnail_url and is_self_hosted(it.thumbnail_url):
+            skipped += 1
+            continue
+        new = None
+        if it.video_url:
+            try:
+                new = rehost(apify.fast_thumbnail(it.platform, it.video_url), "portfolio_thumb", it.creator_id)
+            except Exception:  # noqa: BLE001
+                new = None
+        if new:
+            it.thumbnail_url = new
+            fixed += 1
+        elif it.thumbnail_url:
+            # A stored link we couldn't re-host is a broken image for everyone —
+            # drop it so the UI shows its clean fallback instead.
+            it.thumbnail_url = None
+            cleared += 1
+        else:
+            skipped += 1
+    db.commit()
+    return {"fixed": fixed, "cleared": cleared, "skipped": skipped}
+
+
 def rehost(url: Optional[str], purpose: str, owner_id) -> Optional[str]:
     """Download `url` and store it on our own storage; return our public URL.
 

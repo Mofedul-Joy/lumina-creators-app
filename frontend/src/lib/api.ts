@@ -1,5 +1,5 @@
 // Typed API client — the contract with the FastAPI backend. Keep in lockstep with Pydantic schemas.
-import { clearSession, getRefresh, realmFromPath, saveSession, type Realm } from "@/lib/tokens";
+import { clearSession, getAccess, getRefresh, realmFromPath, saveSession, type Realm } from "@/lib/tokens";
 
 // Backend URL resolution order:
 //   1) Runtime: if we're served from *.vercel.app (production frontend), pin to the
@@ -56,7 +56,14 @@ export function isAuthError(err: unknown): boolean {
 // refresh token isn't spent twice (which would trip reuse-detection and log out).
 const refreshing: Partial<Record<Realm, Promise<string | null>>> = {};
 
-async function refreshRealm(realm: Realm): Promise<string | null> {
+// `usedToken` is the access token the failing request sent. With multiple tabs
+// open, another tab may have already rotated the refresh token — so before (and
+// after) we spend ours, we check whether localStorage now holds a NEWER access
+// token than the one that just 401'd, and use that instead of tripping
+// reuse-detection and logging everyone out.
+async function refreshRealm(realm: Realm, usedToken?: string): Promise<string | null> {
+  const newer = getAccess(realm);
+  if (newer && newer !== usedToken) return newer; // another tab already refreshed
   if (refreshing[realm]) return refreshing[realm]!;
   const refresh = getRefresh(realm);
   if (!refresh) return null;
@@ -68,6 +75,11 @@ async function refreshRealm(realm: Realm): Promise<string | null> {
         body: JSON.stringify({ refresh_token: refresh }),
       });
       if (!res.ok) {
+        // We may have just lost a cross-tab rotation race: another tab could have
+        // saved a fresh token a moment ago. Only clear the session if there's
+        // genuinely no newer token to fall back on.
+        const afterFail = getAccess(realm);
+        if (afterFail && afterFail !== usedToken) return afterFail;
         clearSession(realm); // refresh token expired/invalid → force re-login
         return null;
       }
@@ -100,7 +112,7 @@ export async function apiFetch<T>(
   if (res.status === 401 && !opts._retried) {
     const realm = realmFromPath(path);
     if (realm) {
-      const fresh = await refreshRealm(realm);
+      const fresh = await refreshRealm(realm, opts.token);
       if (fresh) return apiFetch<T>(path, { ...opts, token: fresh, _retried: true });
     }
   }

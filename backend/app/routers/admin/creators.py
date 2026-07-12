@@ -28,6 +28,14 @@ from app.services.csv_export import csv_response
 router = APIRouter(prefix="/creators", tags=["admin-creators"])
 
 
+@router.post("/thumbnails/rehost")
+def rehost_thumbnails(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Re-resolve + re-host any portfolio thumbnail that isn't on our own storage
+    (fixes stale Instagram CDN links that render broken). Runs in prod → R2."""
+    from app.services import thumbnails
+    return thumbnails.repair_portfolio_thumbnails(db)
+
+
 @router.get("/export.csv")
 def export_creators_csv(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     """Full creator database as CSV — every creator, not just the loaded page."""

@@ -8,6 +8,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/admin/Avatar";
+import { ThumbImage } from "@/components/ui/ThumbImage";
 import { getAdminToken } from "@/lib/auth";
 import { getCreatorRichDetail, updateApplicantStatusSafe } from "@/lib/admin-rich";
 import type { CreatorRichDetail, GemstoneRank } from "@/lib/api";
@@ -72,15 +73,11 @@ function VideoTile({
           highlight ? "border-[var(--color-brand)]" : "border-[var(--color-border)]"
         }`}
       >
-        {thumbnail ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumbnail} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <div
-            className="h-full w-full"
-            style={{ background: PLATFORM_GRADIENT[platform ?? ""] ?? "linear-gradient(135deg,#22c55e33,#05261533)" }}
-          />
-        )}
+        <ThumbImage
+          src={thumbnail}
+          className="h-full w-full object-cover"
+          fallback={<div className="h-full w-full" style={{ background: PLATFORM_GRADIENT[platform ?? ""] ?? "linear-gradient(135deg,#22c55e33,#05261533)" }} />}
+        />
         {href ? (
           <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100" aria-hidden>
             <span className="grid h-9 w-9 place-items-center rounded-full bg-black/50 text-white">▶</span>
