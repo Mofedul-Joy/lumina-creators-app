@@ -6207,7 +6207,7 @@
       "label": "SocialItem",
       "file_type": "code",
       "source_file": "schemas/admin_creators.py",
-      "source_location": "L27",
+      "source_location": "L36",
       "_origin": "ast",
       "id": "schemas_admin_creators_socialitem",
       "community": 40,
@@ -6217,7 +6217,7 @@
       "label": "PortfolioItemOut",
       "file_type": "code",
       "source_file": "schemas/admin_creators.py",
-      "source_location": "L34",
+      "source_location": "L43",
       "_origin": "ast",
       "id": "schemas_admin_creators_portfolioitemout",
       "community": 40,
@@ -6227,7 +6227,7 @@
       "label": "CreatorDetail",
       "file_type": "code",
       "source_file": "schemas/admin_creators.py",
-      "source_location": "L46",
+      "source_location": "L55",
       "_origin": "ast",
       "id": "schemas_admin_creators_creatordetail",
       "community": 9,
@@ -6237,7 +6237,7 @@
       "label": "RichSocialItem",
       "file_type": "code",
       "source_file": "schemas/admin_creators.py",
-      "source_location": "L67",
+      "source_location": "L76",
       "_origin": "ast",
       "id": "schemas_admin_creators_richsocialitem",
       "community": 40,
@@ -6247,7 +6247,7 @@
       "label": "RecentSubmissionItem",
       "file_type": "code",
       "source_file": "schemas/admin_creators.py",
-      "source_location": "L74",
+      "source_location": "L83",
       "_origin": "ast",
       "id": "schemas_admin_creators_recentsubmissionitem",
       "community": 40,
@@ -6257,7 +6257,7 @@
       "label": "ExperienceItem",
       "file_type": "code",
       "source_file": "schemas/admin_creators.py",
-      "source_location": "L87",
+      "source_location": "L96",
       "_origin": "ast",
       "id": "schemas_admin_creators_experienceitem",
       "community": 40,
@@ -6267,7 +6267,7 @@
       "label": "CreatorRichDetail",
       "file_type": "code",
       "source_file": "schemas/admin_creators.py",
-      "source_location": "L95",
+      "source_location": "L104",
       "_origin": "ast",
       "id": "schemas_admin_creators_creatorrichdetail",
       "community": 9,
@@ -7117,7 +7117,7 @@
       "label": "_avatar_urls()",
       "file_type": "code",
       "source_file": "services/admin_creators.py",
-      "source_location": "L32",
+      "source_location": "L33",
       "_origin": "ast",
       "id": "services_admin_creators_avatar_urls",
       "community": 25,
@@ -7127,7 +7127,7 @@
       "label": "Session",
       "file_type": "code",
       "source_file": "services/admin_creators.py",
-      "source_location": "L32",
+      "source_location": "L33",
       "_origin": "ast",
       "id": "services_admin_creators_py_session",
       "community": 25,
@@ -7137,7 +7137,7 @@
       "label": "_dob_bounds()",
       "file_type": "code",
       "source_file": "services/admin_creators.py",
-      "source_location": "L46",
+      "source_location": "L47",
       "_origin": "ast",
       "id": "services_admin_creators_dob_bounds",
       "community": 25,
@@ -7147,7 +7147,7 @@
       "label": "list_creators()",
       "file_type": "code",
       "source_file": "services/admin_creators.py",
-      "source_location": "L53",
+      "source_location": "L54",
       "_origin": "ast",
       "id": "services_admin_creators_list_creators",
       "community": 25,
@@ -7157,7 +7157,7 @@
       "label": "set_suspicious()",
       "file_type": "code",
       "source_file": "services/admin_creators.py",
-      "source_location": "L148",
+      "source_location": "L184",
       "_origin": "ast",
       "id": "services_admin_creators_set_suspicious",
       "community": 25,
@@ -7167,7 +7167,7 @@
       "label": "UUID",
       "file_type": "code",
       "source_file": "services/admin_creators.py",
-      "source_location": "L148",
+      "source_location": "L184",
       "_origin": "ast",
       "id": "services_admin_creators_py_uuid",
       "community": 25,
@@ -7177,7 +7177,7 @@
       "label": "Creator",
       "file_type": "code",
       "source_file": "services/admin_creators.py",
-      "source_location": "L148",
+      "source_location": "L184",
       "_origin": "ast",
       "id": "services_admin_creators_py_creator",
       "community": 25,
@@ -7187,7 +7187,7 @@
       "label": "get_creator_detail()",
       "file_type": "code",
       "source_file": "services/admin_creators.py",
-      "source_location": "L163",
+      "source_location": "L199",
       "_origin": "ast",
       "id": "services_admin_creators_get_creator_detail",
       "community": 25,
@@ -7197,7 +7197,7 @@
       "label": "_age()",
       "file_type": "code",
       "source_file": "services/admin_creators.py",
-      "source_location": "L205",
+      "source_location": "L241",
       "_origin": "ast",
       "id": "services_admin_creators_age",
       "community": 25,
@@ -7207,7 +7207,7 @@
       "label": "get_creator_rich_detail()",
       "file_type": "code",
       "source_file": "services/admin_creators.py",
-      "source_location": "L212",
+      "source_location": "L248",
       "_origin": "ast",
       "id": "services_admin_creators_get_creator_rich_detail",
       "community": 25,
@@ -7227,9 +7227,9 @@
       "label": "Map creator_id -> public avatar URL (batched).",
       "file_type": "rationale",
       "source_file": "services/admin_creators.py",
-      "source_location": "L33",
+      "source_location": "L34",
       "_origin": "ast",
-      "id": "services_admin_creators_rationale_33",
+      "id": "services_admin_creators_rationale_34",
       "community": 25,
       "norm_label": "map creator_id -> public avatar url (batched)."
     },
@@ -7237,9 +7237,9 @@
       "label": "Soft fraud flag on the whole account \u2014 a warning signal, not a suspend.     Neve",
       "file_type": "rationale",
       "source_file": "services/admin_creators.py",
-      "source_location": "L150",
+      "source_location": "L186",
       "_origin": "ast",
-      "id": "services_admin_creators_rationale_150",
+      "id": "services_admin_creators_rationale_186",
       "community": 25,
       "norm_label": "soft fraud flag on the whole account \u2014 a warning signal, not a suspend.     neve"
     },
@@ -7247,9 +7247,9 @@
       "label": "SideShift-style rich detail card (Feature 2, BUILD_SPEC.md \u00a73.1 + \u00a73.9).     Sup",
       "file_type": "rationale",
       "source_file": "services/admin_creators.py",
-      "source_location": "L213",
+      "source_location": "L249",
       "_origin": "ast",
-      "id": "services_admin_creators_rationale_213",
+      "id": "services_admin_creators_rationale_249",
       "community": 25,
       "norm_label": "sideshift-style rich detail card (feature 2, build_spec.md \u00a73.1 + \u00a73.9).     sup"
     },
@@ -12605,9 +12605,9 @@
       "source_file": "models/contract.py",
       "source_location": "L13",
       "weight": 0.8,
+      "confidence_score": 0.5,
       "source": "models_contract_campaigncontract",
-      "target": "db_base_base",
-      "confidence_score": 0.5
+      "target": "db_base_base"
     },
     {
       "relation": "uses",
@@ -12615,9 +12615,9 @@
       "source_file": "models/contract.py",
       "source_location": "L13",
       "weight": 0.8,
+      "confidence_score": 0.5,
       "source": "models_contract_creatorcontract",
-      "target": "db_base_base",
-      "confidence_score": 0.5
+      "target": "db_base_base"
     },
     {
       "relation": "uses",
@@ -13918,9 +13918,9 @@
       "source_file": "integrations/email.py",
       "source_location": "L119",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "integrations_email",
-      "target": "integrations_email_send_contract_ready",
-      "confidence_score": 1.0
+      "target": "integrations_email_send_contract_ready"
     },
     {
       "relation": "contains",
@@ -14012,9 +14012,9 @@
       "source_file": "integrations/email.py",
       "source_location": "L135",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "integrations_email_send_contract_ready",
-      "target": "integrations_email_send",
-      "confidence_score": 1.0
+      "target": "integrations_email_send"
     },
     {
       "relation": "calls",
@@ -14054,9 +14054,9 @@
       "source_file": "integrations/email.py",
       "source_location": "L120",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "integrations_email_rationale_120",
-      "target": "integrations_email_send_contract_ready",
-      "confidence_score": 1.0
+      "target": "integrations_email_send_contract_ready"
     },
     {
       "relation": "contains",
@@ -14692,9 +14692,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts",
-      "target": "fastapi",
-      "confidence_score": 1.0
+      "target": "fastapi"
     },
     {
       "relation": "imports_from",
@@ -15048,9 +15048,9 @@
       "source_file": "models/contract.py",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "models_contract",
-      "target": "models_contract_campaigncontract",
-      "confidence_score": 1.0
+      "target": "models_contract_campaigncontract"
     },
     {
       "relation": "contains",
@@ -15058,9 +15058,9 @@
       "source_file": "models/contract.py",
       "source_location": "L40",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "models_contract",
-      "target": "models_contract_creatorcontract",
-      "confidence_score": 1.0
+      "target": "models_contract_creatorcontract"
     },
     {
       "relation": "rationale_for",
@@ -15068,9 +15068,9 @@
       "source_file": "models/contract.py",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "models_contract_rationale_1",
-      "target": "models_contract",
-      "confidence_score": 1.0
+      "target": "models_contract"
     },
     {
       "relation": "rationale_for",
@@ -15078,9 +15078,9 @@
       "source_file": "models/contract.py",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "models_contract_rationale_17",
-      "target": "models_contract_campaigncontract",
-      "confidence_score": 1.0
+      "target": "models_contract_campaigncontract"
     },
     {
       "relation": "rationale_for",
@@ -15088,9 +15088,9 @@
       "source_file": "models/contract.py",
       "source_location": "L41",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "models_contract_rationale_41",
-      "target": "models_contract_creatorcontract",
-      "confidence_score": 1.0
+      "target": "models_contract_creatorcontract"
     },
     {
       "relation": "contains",
@@ -15718,9 +15718,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L322",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_contractrow",
-      "target": "basemodel",
-      "confidence_score": 1.0
+      "target": "basemodel"
     },
     {
       "relation": "inherits",
@@ -15728,9 +15728,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L315",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_contracttemplatein",
-      "target": "basemodel",
-      "confidence_score": 1.0
+      "target": "basemodel"
     },
     {
       "relation": "inherits",
@@ -15738,9 +15738,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L305",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_contracttemplateout",
-      "target": "basemodel",
-      "confidence_score": 1.0
+      "target": "basemodel"
     },
     {
       "relation": "inherits",
@@ -16008,9 +16008,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L40",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_acceptin",
-      "target": "basemodel",
-      "confidence_score": 1.0
+      "target": "basemodel"
     },
     {
       "relation": "inherits",
@@ -16018,9 +16018,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L28",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_contractdetail",
-      "target": "basemodel",
-      "confidence_score": 1.0
+      "target": "basemodel"
     },
     {
       "relation": "inherits",
@@ -16028,9 +16028,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_contractsummary",
-      "target": "basemodel",
-      "confidence_score": 1.0
+      "target": "basemodel"
     },
     {
       "relation": "inherits",
@@ -18553,9 +18553,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L332",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns",
-      "target": "admin_campaigns_contract_template_out",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_contract_template_out"
     },
     {
       "relation": "contains",
@@ -18563,9 +18563,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L322",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns",
-      "target": "admin_campaigns_contractrow",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_contractrow"
     },
     {
       "relation": "contains",
@@ -18573,9 +18573,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L315",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns",
-      "target": "admin_campaigns_contracttemplatein",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_contracttemplatein"
     },
     {
       "relation": "contains",
@@ -18583,9 +18583,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L305",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns",
-      "target": "admin_campaigns_contracttemplateout",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_contracttemplateout"
     },
     {
       "relation": "contains",
@@ -18643,9 +18643,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L340",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns",
-      "target": "admin_campaigns_get_contract_template",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_get_contract_template"
     },
     {
       "relation": "contains",
@@ -18693,9 +18693,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L355",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns",
-      "target": "admin_campaigns_list_campaign_contracts",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_list_campaign_contracts"
     },
     {
       "relation": "contains",
@@ -18773,9 +18773,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L346",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns",
-      "target": "admin_campaigns_update_contract_template",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_update_contract_template"
     },
     {
       "relation": "imports",
@@ -19047,9 +19047,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L340",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_get_contract_template",
-      "target": "routers_admin_campaigns_py_session",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_session"
     },
     {
       "relation": "references",
@@ -19102,9 +19102,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L355",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_list_campaign_contracts",
-      "target": "routers_admin_campaigns_py_session",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_session"
     },
     {
       "relation": "references",
@@ -19179,9 +19179,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L346",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_update_contract_template",
-      "target": "routers_admin_campaigns_py_session",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_session"
     },
     {
       "relation": "references",
@@ -19300,9 +19300,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L340",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_get_contract_template",
-      "target": "routers_admin_campaigns_py_admin",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_admin"
     },
     {
       "relation": "references",
@@ -19355,9 +19355,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L355",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_list_campaign_contracts",
-      "target": "routers_admin_campaigns_py_admin",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_admin"
     },
     {
       "relation": "references",
@@ -19432,9 +19432,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L346",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_update_contract_template",
-      "target": "routers_admin_campaigns_py_admin",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_admin"
     },
     {
       "relation": "references",
@@ -19542,9 +19542,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L340",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_get_contract_template",
-      "target": "routers_admin_campaigns_py_uuid",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_uuid"
     },
     {
       "relation": "references",
@@ -19575,9 +19575,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L355",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_list_campaign_contracts",
-      "target": "routers_admin_campaigns_py_uuid",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_uuid"
     },
     {
       "relation": "references",
@@ -19652,9 +19652,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L346",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_update_contract_template",
-      "target": "routers_admin_campaigns_py_uuid",
-      "confidence_score": 1.0
+      "target": "routers_admin_campaigns_py_uuid"
     },
     {
       "relation": "references",
@@ -19706,9 +19706,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L137",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_rationale_137",
-      "target": "admin_campaigns_campaign_overview",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_campaign_overview"
     },
     {
       "relation": "rationale_for",
@@ -19716,9 +19716,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L144",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_rationale_144",
-      "target": "admin_campaigns_convert_to_advanced",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_convert_to_advanced"
     },
     {
       "relation": "rationale_for",
@@ -19726,9 +19726,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L151",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_rationale_151",
-      "target": "admin_campaigns_impersonate_client",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_impersonate_client"
     },
     {
       "relation": "calls",
@@ -19747,9 +19747,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L166",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_rationale_166",
-      "target": "admin_campaigns_export_submissions_csv",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_export_submissions_csv"
     },
     {
       "relation": "calls",
@@ -19801,9 +19801,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L207",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_rationale_207",
-      "target": "admin_campaigns_enable_share",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_enable_share"
     },
     {
       "relation": "rationale_for",
@@ -19811,9 +19811,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L222",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_rationale_222",
-      "target": "admin_campaigns_rotate_share",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_rotate_share"
     },
     {
       "relation": "calls",
@@ -19843,9 +19843,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L234",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_rationale_234",
-      "target": "admin_campaigns_disable_share",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_disable_share"
     },
     {
       "relation": "references",
@@ -19897,9 +19897,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L276",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_rationale_276",
-      "target": "admin_campaigns_invite_to_campaign",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_invite_to_campaign"
     },
     {
       "relation": "references",
@@ -19908,9 +19908,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L332",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_contract_template_out",
-      "target": "admin_campaigns_contracttemplateout",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_contracttemplateout"
     },
     {
       "relation": "references",
@@ -19919,9 +19919,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L346",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_update_contract_template",
-      "target": "admin_campaigns_contracttemplatein",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_contracttemplatein"
     },
     {
       "relation": "calls",
@@ -19930,9 +19930,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L356",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_list_campaign_contracts",
-      "target": "admin_campaigns_contractrow",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_contractrow"
     },
     {
       "relation": "calls",
@@ -19941,9 +19941,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L342",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_get_contract_template",
-      "target": "admin_campaigns_contract_template_out",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_contract_template_out"
     },
     {
       "relation": "calls",
@@ -19952,9 +19952,9 @@
       "source_file": "routers/admin/campaigns.py",
       "source_location": "L351",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_campaigns_update_contract_template",
-      "target": "admin_campaigns_contract_template_out",
-      "confidence_score": 1.0
+      "target": "admin_campaigns_contract_template_out"
     },
     {
       "relation": "contains",
@@ -25256,9 +25256,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L73",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts",
-      "target": "creator_contracts_accept_contract",
-      "confidence_score": 1.0
+      "target": "creator_contracts_accept_contract"
     },
     {
       "relation": "contains",
@@ -25266,9 +25266,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L40",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts",
-      "target": "creator_contracts_acceptin",
-      "confidence_score": 1.0
+      "target": "creator_contracts_acceptin"
     },
     {
       "relation": "contains",
@@ -25276,9 +25276,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L28",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts",
-      "target": "creator_contracts_contractdetail",
-      "confidence_score": 1.0
+      "target": "creator_contracts_contractdetail"
     },
     {
       "relation": "contains",
@@ -25286,9 +25286,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts",
-      "target": "creator_contracts_contractsummary",
-      "confidence_score": 1.0
+      "target": "creator_contracts_contractsummary"
     },
     {
       "relation": "contains",
@@ -25296,9 +25296,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L44",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts",
-      "target": "creator_contracts_detail",
-      "confidence_score": 1.0
+      "target": "creator_contracts_detail"
     },
     {
       "relation": "contains",
@@ -25306,9 +25306,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L68",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts",
-      "target": "creator_contracts_get_contract",
-      "confidence_score": 1.0
+      "target": "creator_contracts_get_contract"
     },
     {
       "relation": "contains",
@@ -25316,9 +25316,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L55",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts",
-      "target": "creator_contracts_list_my_contracts",
-      "confidence_score": 1.0
+      "target": "creator_contracts_list_my_contracts"
     },
     {
       "relation": "rationale_for",
@@ -25326,9 +25326,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_rationale_1",
-      "target": "creator_contracts",
-      "confidence_score": 1.0
+      "target": "creator_contracts"
     },
     {
       "relation": "calls",
@@ -25337,9 +25337,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L59",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_list_my_contracts",
-      "target": "creator_contracts_contractsummary",
-      "confidence_score": 1.0
+      "target": "creator_contracts_contractsummary"
     },
     {
       "relation": "references",
@@ -25348,9 +25348,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L44",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_detail",
-      "target": "creator_contracts_contractdetail",
-      "confidence_score": 1.0
+      "target": "creator_contracts_contractdetail"
     },
     {
       "relation": "references",
@@ -25359,9 +25359,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L73",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_accept_contract",
-      "target": "creator_contracts_acceptin",
-      "confidence_score": 1.0
+      "target": "creator_contracts_acceptin"
     },
     {
       "relation": "calls",
@@ -25370,9 +25370,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L76",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_accept_contract",
-      "target": "creator_contracts_detail",
-      "confidence_score": 1.0
+      "target": "creator_contracts_detail"
     },
     {
       "relation": "references",
@@ -25381,9 +25381,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L44",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_detail",
-      "target": "routers_creator_contracts_py_session",
-      "confidence_score": 1.0
+      "target": "routers_creator_contracts_py_session"
     },
     {
       "relation": "calls",
@@ -25392,9 +25392,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L69",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_get_contract",
-      "target": "creator_contracts_detail",
-      "confidence_score": 1.0
+      "target": "creator_contracts_detail"
     },
     {
       "relation": "references",
@@ -25403,9 +25403,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L73",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_accept_contract",
-      "target": "routers_creator_contracts_py_session",
-      "confidence_score": 1.0
+      "target": "routers_creator_contracts_py_session"
     },
     {
       "relation": "references",
@@ -25414,9 +25414,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L68",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_get_contract",
-      "target": "routers_creator_contracts_py_session",
-      "confidence_score": 1.0
+      "target": "routers_creator_contracts_py_session"
     },
     {
       "relation": "references",
@@ -25425,9 +25425,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L55",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_list_my_contracts",
-      "target": "routers_creator_contracts_py_session",
-      "confidence_score": 1.0
+      "target": "routers_creator_contracts_py_session"
     },
     {
       "relation": "references",
@@ -25436,9 +25436,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L55",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_list_my_contracts",
-      "target": "routers_creator_contracts_py_creator",
-      "confidence_score": 1.0
+      "target": "routers_creator_contracts_py_creator"
     },
     {
       "relation": "references",
@@ -25447,9 +25447,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L73",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_accept_contract",
-      "target": "routers_creator_contracts_py_creator",
-      "confidence_score": 1.0
+      "target": "routers_creator_contracts_py_creator"
     },
     {
       "relation": "references",
@@ -25458,9 +25458,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L68",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_get_contract",
-      "target": "routers_creator_contracts_py_creator",
-      "confidence_score": 1.0
+      "target": "routers_creator_contracts_py_creator"
     },
     {
       "relation": "references",
@@ -25469,9 +25469,9 @@
       "source_file": "routers/creator/contracts.py",
       "source_location": "L73",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "creator_contracts_accept_contract",
-      "target": "routers_creator_contracts_py_request",
-      "confidence_score": 1.0
+      "target": "routers_creator_contracts_py_request"
     },
     {
       "relation": "contains",
@@ -28023,9 +28023,9 @@
       "source_file": "routers/public/uploads_local.py",
       "source_location": "L35",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "public_uploads_local_put_local",
-      "target": "routers_public_uploads_local_py_request",
-      "confidence_score": 1.0
+      "target": "routers_public_uploads_local_py_request"
     },
     {
       "relation": "references",
@@ -28034,9 +28034,9 @@
       "source_file": "routers/public/uploads_local.py",
       "source_location": "L62",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "public_uploads_local_put_r2",
-      "target": "routers_public_uploads_local_py_request",
-      "confidence_score": 1.0
+      "target": "routers_public_uploads_local_py_request"
     },
     {
       "relation": "references",
@@ -29110,11 +29110,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "services/admin_creators.py",
-      "source_location": "L33",
+      "source_location": "L34",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_admin_creators_rationale_33",
-      "target": "services_admin_creators_avatar_urls"
+      "source": "services_admin_creators_rationale_34",
+      "target": "services_admin_creators_avatar_urls",
+      "confidence_score": 1.0
     },
     {
       "relation": "references",
@@ -29175,11 +29175,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "services/admin_creators.py",
-      "source_location": "L150",
+      "source_location": "L186",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_admin_creators_rationale_150",
-      "target": "services_admin_creators_set_suspicious"
+      "source": "services_admin_creators_rationale_186",
+      "target": "services_admin_creators_set_suspicious",
+      "confidence_score": 1.0
     },
     {
       "relation": "references",
@@ -29240,11 +29240,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "services/admin_creators.py",
-      "source_location": "L213",
+      "source_location": "L249",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_admin_creators_rationale_213",
-      "target": "services_admin_creators_get_creator_rich_detail"
+      "source": "services_admin_creators_rationale_249",
+      "target": "services_admin_creators_get_creator_rich_detail",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -31139,9 +31139,9 @@
       "source_file": "services/campaign.py",
       "source_location": "L107",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_rationale_107",
-      "target": "services_campaign_replace_bonus_milestones",
-      "confidence_score": 1.0
+      "target": "services_campaign_replace_bonus_milestones"
     },
     {
       "relation": "calls",
@@ -31226,9 +31226,9 @@
       "source_file": "services/campaign.py",
       "source_location": "L187",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_rationale_187",
-      "target": "services_campaign_close_campaign",
-      "confidence_score": 1.0
+      "target": "services_campaign_close_campaign"
     },
     {
       "relation": "rationale_for",
@@ -31236,9 +31236,9 @@
       "source_file": "services/campaign.py",
       "source_location": "L200",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_rationale_200",
-      "target": "services_campaign_reopen_campaign",
-      "confidence_score": 1.0
+      "target": "services_campaign_reopen_campaign"
     },
     {
       "relation": "rationale_for",
@@ -31246,9 +31246,9 @@
       "source_file": "services/campaign.py",
       "source_location": "L230",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_rationale_230",
-      "target": "services_campaign_list_completed_campaigns",
-      "confidence_score": 1.0
+      "target": "services_campaign_list_completed_campaigns"
     },
     {
       "relation": "calls",
@@ -31278,9 +31278,9 @@
       "source_file": "services/campaign.py",
       "source_location": "L244",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_rationale_244",
-      "target": "services_campaign_get_bonus_milestones",
-      "confidence_score": 1.0
+      "target": "services_campaign_get_bonus_milestones"
     },
     {
       "relation": "references",
@@ -31299,9 +31299,9 @@
       "source_file": "services/campaign.py",
       "source_location": "L317",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_campaign_rationale_317",
-      "target": "services_campaign_list_creator_campaigns",
-      "confidence_score": 1.0
+      "target": "services_campaign_list_creator_campaigns"
     },
     {
       "relation": "contains",
@@ -32044,9 +32044,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L349",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_accept",
-      "confidence_score": 1.0
+      "target": "services_contracts_accept"
     },
     {
       "relation": "contains",
@@ -32054,9 +32054,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L319",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_active_count",
-      "confidence_score": 1.0
+      "target": "services_contracts_active_count"
     },
     {
       "relation": "contains",
@@ -32064,9 +32064,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L172",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_campaign_term",
-      "confidence_score": 1.0
+      "target": "services_contracts_campaign_term"
     },
     {
       "relation": "contains",
@@ -32074,9 +32074,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L160",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_company_name",
-      "confidence_score": 1.0
+      "target": "services_contracts_company_name"
     },
     {
       "relation": "contains",
@@ -32084,9 +32084,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L146",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_compensation_line",
-      "confidence_score": 1.0
+      "target": "services_contracts_compensation_line"
     },
     {
       "relation": "contains",
@@ -32094,9 +32094,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L186",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_context",
-      "confidence_score": 1.0
+      "target": "services_contracts_context"
     },
     {
       "relation": "contains",
@@ -32104,9 +32104,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L134",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_fmt_money",
-      "confidence_score": 1.0
+      "target": "services_contracts_fmt_money"
     },
     {
       "relation": "contains",
@@ -32114,9 +32114,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L251",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_generate_for_creator",
-      "confidence_score": 1.0
+      "target": "services_contracts_generate_for_creator"
     },
     {
       "relation": "contains",
@@ -32124,9 +32124,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L329",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_get_for_creator",
-      "confidence_score": 1.0
+      "target": "services_contracts_get_for_creator"
     },
     {
       "relation": "contains",
@@ -32134,9 +32134,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L213",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_get_or_create_template",
-      "confidence_score": 1.0
+      "target": "services_contracts_get_or_create_template"
     },
     {
       "relation": "contains",
@@ -32144,9 +32144,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L299",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_list_for_campaign",
-      "confidence_score": 1.0
+      "target": "services_contracts_list_for_campaign"
     },
     {
       "relation": "contains",
@@ -32154,9 +32154,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L342",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_list_mine",
-      "confidence_score": 1.0
+      "target": "services_contracts_list_mine"
     },
     {
       "relation": "contains",
@@ -32164,9 +32164,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L179",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_merge",
-      "confidence_score": 1.0
+      "target": "services_contracts_merge"
     },
     {
       "relation": "imports_from",
@@ -32175,9 +32175,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_py_decimal",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_decimal"
     },
     {
       "relation": "imports",
@@ -32186,9 +32186,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_uuid"
     },
     {
       "relation": "contains",
@@ -32196,9 +32196,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L241",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_render_preview",
-      "confidence_score": 1.0
+      "target": "services_contracts_render_preview"
     },
     {
       "relation": "contains",
@@ -32206,9 +32206,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L138",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_schedule_label",
-      "confidence_score": 1.0
+      "target": "services_contracts_schedule_label"
     },
     {
       "relation": "contains",
@@ -32216,9 +32216,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L229",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts",
-      "target": "services_contracts_update_template",
-      "confidence_score": 1.0
+      "target": "services_contracts_update_template"
     },
     {
       "relation": "rationale_for",
@@ -32226,9 +32226,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_rationale_1",
-      "target": "services_contracts",
-      "confidence_score": 1.0
+      "target": "services_contracts"
     },
     {
       "relation": "calls",
@@ -32237,9 +32237,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L149",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_compensation_line",
-      "target": "services_contracts_fmt_money",
-      "confidence_score": 1.0
+      "target": "services_contracts_fmt_money"
     },
     {
       "relation": "references",
@@ -32248,9 +32248,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L134",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_fmt_money",
-      "target": "services_contracts_py_decimal",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_decimal"
     },
     {
       "relation": "calls",
@@ -32259,9 +32259,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L204",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_context",
-      "target": "services_contracts_schedule_label",
-      "confidence_score": 1.0
+      "target": "services_contracts_schedule_label"
     },
     {
       "relation": "references",
@@ -32270,9 +32270,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L146",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_compensation_line",
-      "target": "services_contracts_py_campaign",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_campaign"
     },
     {
       "relation": "calls",
@@ -32281,9 +32281,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L203",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_context",
-      "target": "services_contracts_compensation_line",
-      "confidence_score": 1.0
+      "target": "services_contracts_compensation_line"
     },
     {
       "relation": "references",
@@ -32292,9 +32292,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L172",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_campaign_term",
-      "target": "services_contracts_py_campaign",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_campaign"
     },
     {
       "relation": "references",
@@ -32303,9 +32303,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L160",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_company_name",
-      "target": "services_contracts_py_campaign",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_campaign"
     },
     {
       "relation": "references",
@@ -32314,9 +32314,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L186",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_context",
-      "target": "services_contracts_py_campaign",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_campaign"
     },
     {
       "relation": "references",
@@ -32325,9 +32325,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L160",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_company_name",
-      "target": "campaigncontract",
-      "confidence_score": 1.0
+      "target": "campaigncontract"
     },
     {
       "relation": "references",
@@ -32336,9 +32336,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L160",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_company_name",
-      "target": "services_contracts_py_session",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_session"
     },
     {
       "relation": "calls",
@@ -32347,9 +32347,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L196",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_context",
-      "target": "services_contracts_company_name",
-      "confidence_score": 1.0
+      "target": "services_contracts_company_name"
     },
     {
       "relation": "calls",
@@ -32358,9 +32358,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L273",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_generate_for_creator",
-      "target": "services_contracts_company_name",
-      "confidence_score": 1.0
+      "target": "services_contracts_company_name"
     },
     {
       "relation": "references",
@@ -32369,9 +32369,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L349",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_accept",
-      "target": "services_contracts_py_session",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_session"
     },
     {
       "relation": "references",
@@ -32380,9 +32380,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L319",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_active_count",
-      "target": "services_contracts_py_session",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_session"
     },
     {
       "relation": "references",
@@ -32391,9 +32391,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L186",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_context",
-      "target": "services_contracts_py_session",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_session"
     },
     {
       "relation": "references",
@@ -32402,9 +32402,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L251",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_generate_for_creator",
-      "target": "services_contracts_py_session",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_session"
     },
     {
       "relation": "references",
@@ -32413,9 +32413,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L329",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_get_for_creator",
-      "target": "services_contracts_py_session",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_session"
     },
     {
       "relation": "references",
@@ -32424,9 +32424,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L213",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_get_or_create_template",
-      "target": "services_contracts_py_session",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_session"
     },
     {
       "relation": "references",
@@ -32435,9 +32435,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L299",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_list_for_campaign",
-      "target": "services_contracts_py_session",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_session"
     },
     {
       "relation": "references",
@@ -32446,9 +32446,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L342",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_list_mine",
-      "target": "services_contracts_py_session",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_session"
     },
     {
       "relation": "references",
@@ -32457,9 +32457,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L241",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_render_preview",
-      "target": "services_contracts_py_session",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_session"
     },
     {
       "relation": "references",
@@ -32468,9 +32468,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L229",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_update_template",
-      "target": "services_contracts_py_session",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_session"
     },
     {
       "relation": "references",
@@ -32479,9 +32479,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L186",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_context",
-      "target": "campaigncontract",
-      "confidence_score": 1.0
+      "target": "campaigncontract"
     },
     {
       "relation": "references",
@@ -32490,9 +32490,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L213",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_get_or_create_template",
-      "target": "campaigncontract",
-      "confidence_score": 1.0
+      "target": "campaigncontract"
     },
     {
       "relation": "references",
@@ -32501,9 +32501,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L229",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_update_template",
-      "target": "campaigncontract",
-      "confidence_score": 1.0
+      "target": "campaigncontract"
     },
     {
       "relation": "calls",
@@ -32512,9 +32512,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L202",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_context",
-      "target": "services_contracts_campaign_term",
-      "confidence_score": 1.0
+      "target": "services_contracts_campaign_term"
     },
     {
       "relation": "calls",
@@ -32523,9 +32523,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L274",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_generate_for_creator",
-      "target": "services_contracts_merge",
-      "confidence_score": 1.0
+      "target": "services_contracts_merge"
     },
     {
       "relation": "calls",
@@ -32534,9 +32534,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L247",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_render_preview",
-      "target": "services_contracts_merge",
-      "confidence_score": 1.0
+      "target": "services_contracts_merge"
     },
     {
       "relation": "references",
@@ -32545,9 +32545,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L186",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_context",
-      "target": "services_contracts_py_creator",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_creator"
     },
     {
       "relation": "calls",
@@ -32556,9 +32556,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L269",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_generate_for_creator",
-      "target": "services_contracts_context",
-      "confidence_score": 1.0
+      "target": "services_contracts_context"
     },
     {
       "relation": "calls",
@@ -32567,9 +32567,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L245",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_render_preview",
-      "target": "services_contracts_context",
-      "confidence_score": 1.0
+      "target": "services_contracts_context"
     },
     {
       "relation": "calls",
@@ -32578,9 +32578,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L267",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_generate_for_creator",
-      "target": "services_contracts_get_or_create_template",
-      "confidence_score": 1.0
+      "target": "services_contracts_get_or_create_template"
     },
     {
       "relation": "references",
@@ -32589,9 +32589,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L213",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_get_or_create_template",
-      "target": "services_contracts_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_uuid"
     },
     {
       "relation": "calls",
@@ -32600,9 +32600,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L244",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_render_preview",
-      "target": "services_contracts_get_or_create_template",
-      "confidence_score": 1.0
+      "target": "services_contracts_get_or_create_template"
     },
     {
       "relation": "calls",
@@ -32611,9 +32611,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L230",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_update_template",
-      "target": "services_contracts_get_or_create_template",
-      "confidence_score": 1.0
+      "target": "services_contracts_get_or_create_template"
     },
     {
       "relation": "references",
@@ -32622,9 +32622,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L349",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_accept",
-      "target": "services_contracts_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_uuid"
     },
     {
       "relation": "references",
@@ -32633,9 +32633,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L319",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_active_count",
-      "target": "services_contracts_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_uuid"
     },
     {
       "relation": "references",
@@ -32644,9 +32644,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L251",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_generate_for_creator",
-      "target": "services_contracts_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_uuid"
     },
     {
       "relation": "references",
@@ -32655,9 +32655,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L329",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_get_for_creator",
-      "target": "services_contracts_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_uuid"
     },
     {
       "relation": "references",
@@ -32666,9 +32666,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L299",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_list_for_campaign",
-      "target": "services_contracts_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_uuid"
     },
     {
       "relation": "references",
@@ -32677,9 +32677,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L342",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_list_mine",
-      "target": "services_contracts_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_uuid"
     },
     {
       "relation": "references",
@@ -32688,9 +32688,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L241",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_render_preview",
-      "target": "services_contracts_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_uuid"
     },
     {
       "relation": "references",
@@ -32699,9 +32699,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L229",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_update_template",
-      "target": "services_contracts_py_uuid",
-      "confidence_score": 1.0
+      "target": "services_contracts_py_uuid"
     },
     {
       "relation": "rationale_for",
@@ -32709,9 +32709,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L242",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_rationale_242",
-      "target": "services_contracts_render_preview",
-      "confidence_score": 1.0
+      "target": "services_contracts_render_preview"
     },
     {
       "relation": "references",
@@ -32720,9 +32720,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L251",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_generate_for_creator",
-      "target": "creatorcontract",
-      "confidence_score": 1.0
+      "target": "creatorcontract"
     },
     {
       "relation": "rationale_for",
@@ -32730,9 +32730,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L253",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_rationale_253",
-      "target": "services_contracts_generate_for_creator",
-      "confidence_score": 1.0
+      "target": "services_contracts_generate_for_creator"
     },
     {
       "relation": "references",
@@ -32741,9 +32741,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L349",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_accept",
-      "target": "creatorcontract",
-      "confidence_score": 1.0
+      "target": "creatorcontract"
     },
     {
       "relation": "references",
@@ -32752,9 +32752,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L329",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_get_for_creator",
-      "target": "creatorcontract",
-      "confidence_score": 1.0
+      "target": "creatorcontract"
     },
     {
       "relation": "references",
@@ -32763,9 +32763,9 @@
       "source_file": "services/contracts.py",
       "source_location": "L342",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_contracts_list_mine",
-      "target": "creatorcontract",
-      "confidence_score": 1.0
+      "target": "creatorcontract"
     },
     {
       "relation": "contains",
@@ -38766,5 +38766,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "b6224e8e80a7f7eeba706a7ea79108a47c123d22"
+  "built_at_commit": "51066df16acb8e21b68babba175d3a84e1f09fa3"
 }
