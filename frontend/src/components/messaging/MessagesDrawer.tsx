@@ -8,6 +8,7 @@ import {
   type Conversation, type Realm,
 } from "@/lib/messaging";
 import { ConversationExtras } from "@/components/messaging/ConversationExtras";
+import { ActionsMenu, TemplatePicker } from "@/components/messaging/ConversationActions";
 
 function timeAgo(iso: string | null): string {
   if (!iso) return "";
@@ -151,6 +152,8 @@ export function MessagesDrawer({ realm, open, onClose }: { realm: Realm; open: b
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="M17 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM21 20v-1a4 4 0 0 0-3-3.87M16 4.13A4 4 0 0 1 16 11.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
+              {/* admin-only quick actions (pay / review / invite) */}
+              {realm === "admin" ? <ActionsMenu creatorId={active.creator_id} /> : null}
               {/* email button — opens Gmail compose to the other person */}
               <button
                 onClick={() => composeEmail(active.email, "")}
@@ -227,6 +230,11 @@ export function MessagesDrawer({ realm, open, onClose }: { realm: Realm; open: b
               onSubmit={(e) => { e.preventDefault(); if (draft.trim()) sendM.mutate(draft.trim()); }}
               className="flex items-end gap-2 border-t border-[var(--color-border)]/60 p-3"
             >
+              <TemplatePicker
+                realm={realm}
+                counterparty={realm === "admin" ? active.name.split(" ")[0] : "team"}
+                onPick={(body) => setDraft((d) => (d.trim() ? d.trimEnd() + "\n\n" + body : body))}
+              />
               <textarea
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
