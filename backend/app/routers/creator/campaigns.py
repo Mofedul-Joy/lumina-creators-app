@@ -19,7 +19,7 @@ def mine(current: Creator = Depends(get_current_creator), db: Session = Depends(
     return [MyCampaignOut(**m) for m in svc.list_creator_campaigns(db, current.id)]
 
 
-def _public_out(c: Campaign, joined: bool, db: Session | None = None) -> CampaignPublicOut:
+def _public_out(c: Campaign, joined: bool, approved: bool = False, db: Session | None = None) -> CampaignPublicOut:
     milestones: list[BonusMilestoneOut] = []
     if db is not None:
         milestones = [
@@ -36,7 +36,7 @@ def _public_out(c: Campaign, joined: bool, db: Session | None = None) -> Campaig
         content_drive_url=c.content_drive_url, caption_rules=c.caption_rules,
         required_mentions=list(c.required_mentions or []), example_captions=list(c.example_captions or []),
         requirements_url=c.requirements_url, brand_name=c.brand_name, brand_logo_url=c.brand_logo_url,
-        starts_at=c.starts_at, ends_at=c.ends_at, joined=joined,
+        starts_at=c.starts_at, ends_at=c.ends_at, joined=joined, approved=approved,
         payment_type=c.payment_type, fixed_amount=c.fixed_amount,
         weekly_hours_needed=c.weekly_hours_needed, hourly_rate=c.hourly_rate,
         required_hours=c.required_hours, per_post_amount=c.per_post_amount,
@@ -52,13 +52,18 @@ def _public_out(c: Campaign, joined: bool, db: Session | None = None) -> Campaig
 @router.get("", response_model=list[CampaignPublicOut])
 def browse(current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
     campaigns = svc.list_active_campaigns(db)
-    return [_public_out(c, svc.creator_has_joined(db, c.id, current.id), db) for c in campaigns]
+    return [
+        _public_out(c, svc.creator_has_joined(db, c.id, current.id),
+                    svc.creator_is_accepted(db, c.id, current.id), db)
+        for c in campaigns
+    ]
 
 
 @router.get("/{slug}", response_model=CampaignPublicOut)
 def detail(slug: str, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
     c = svc.get_active_campaign(db, slug)
-    return _public_out(c, svc.creator_has_joined(db, c.id, current.id), db)
+    return _public_out(c, svc.creator_has_joined(db, c.id, current.id),
+                       svc.creator_is_accepted(db, c.id, current.id), db)
 
 
 @router.post("/{slug}/join", response_model=ParticipationOut)

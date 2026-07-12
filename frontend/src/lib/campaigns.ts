@@ -59,6 +59,7 @@ export type Campaign = {
   starts_at: string | null;
   ends_at: string | null;
   joined: boolean;
+  approved: boolean;
 } & CampaignWizardFields;
 
 export type Participation = { id: string; campaign_id: string; status: string };

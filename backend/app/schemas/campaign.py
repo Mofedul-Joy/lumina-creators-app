@@ -221,6 +221,7 @@ class CampaignPublicOut(BaseModel):
     starts_at: Optional[datetime] = None
     ends_at: Optional[datetime] = None
     joined: bool = False
+    approved: bool = False   # admin has accepted the creator into the campaign
 
     # ── 6-step campaign builder wizard (Feature 3) — surfaced natively (Feature 5) ──
     payment_type: Optional[str] = None

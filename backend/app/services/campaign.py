@@ -325,6 +325,18 @@ def creator_has_joined(db: Session, campaign_id: uuid.UUID, creator_id: uuid.UUI
     ) is not None
 
 
+def creator_is_accepted(db: Session, campaign_id: uuid.UUID, creator_id: uuid.UUID) -> bool:
+    """True once an admin has approved the creator into the campaign
+    (accepted_at set). Gates the creator-side submit UI (two-gate model)."""
+    return db.scalar(
+        select(CampaignParticipation.accepted_at).where(
+            CampaignParticipation.campaign_id == campaign_id,
+            CampaignParticipation.creator_id == creator_id,
+            CampaignParticipation.removed_at.is_(None),
+        )
+    ) is not None
+
+
 def join_campaign(db: Session, creator_id: uuid.UUID, slug: str) -> CampaignParticipation:
     # Applying to a campaign requires a minimally-complete profile (name + at
     # least one social) — SideShift-style "complete your profile" wall. This is
