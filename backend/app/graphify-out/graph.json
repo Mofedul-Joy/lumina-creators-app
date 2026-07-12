@@ -100,7 +100,7 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "core_config_settings_validate_for_runtime",
-      "community": 36,
+      "community": 24,
       "norm_label": ".validate_for_runtime()"
     },
     {
@@ -130,7 +130,7 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "core_config_rationale_99",
-      "community": 36,
+      "community": 24,
       "norm_label": "fail fast on misconfiguration that is dangerous in production.          called o"
     },
     {
@@ -200,7 +200,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "core_security_hash_password",
-      "community": 17,
+      "community": 12,
       "norm_label": "hash_password()"
     },
     {
@@ -500,7 +500,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "runtimeerror",
-      "community": 14,
+      "community": 24,
       "norm_label": "runtimeerror"
     },
     {
@@ -1440,7 +1440,7 @@
       "source_location": "L137",
       "_origin": "ast",
       "id": "models_payout_wallettransaction",
-      "community": 2,
+      "community": 0,
       "norm_label": "wallettransaction"
     },
     {
@@ -1450,7 +1450,7 @@
       "source_location": "L173",
       "_origin": "ast",
       "id": "models_payout_payoutitem",
-      "community": 0,
+      "community": 51,
       "norm_label": "payoutitem"
     },
     {
@@ -1470,7 +1470,7 @@
       "source_location": "L138",
       "_origin": "ast",
       "id": "models_payout_rationale_138",
-      "community": 2,
+      "community": 0,
       "norm_label": "the wallet ledger \u2014 one row per deposit/withdrawal/payout/refund/     adjustment"
     },
     {
@@ -1630,7 +1630,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "models_system_auditlog",
-      "community": 0,
+      "community": 7,
       "norm_label": "auditlog"
     },
     {
@@ -2684,14 +2684,14 @@
       "norm_label": "creators.py"
     },
     {
-      "label": "export_creators_csv()",
+      "label": "rehost_thumbnails()",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
       "source_location": "L32",
       "_origin": "ast",
-      "id": "admin_creators_export_creators_csv",
+      "id": "admin_creators_rehost_thumbnails",
       "community": 9,
-      "norm_label": "export_creators_csv()"
+      "norm_label": "rehost_thumbnails()"
     },
     {
       "label": "Admin",
@@ -2714,10 +2714,20 @@
       "norm_label": "session"
     },
     {
+      "label": "export_creators_csv()",
+      "file_type": "code",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L40",
+      "_origin": "ast",
+      "id": "admin_creators_export_creators_csv",
+      "community": 9,
+      "norm_label": "export_creators_csv()"
+    },
+    {
       "label": "list_creators()",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L39",
+      "source_location": "L47",
       "_origin": "ast",
       "id": "admin_creators_list_creators",
       "community": 9,
@@ -2727,7 +2737,7 @@
       "label": "creator_detail()",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L66",
+      "source_location": "L74",
       "_origin": "ast",
       "id": "admin_creators_creator_detail",
       "community": 9,
@@ -2737,7 +2747,7 @@
       "label": "UUID",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L66",
+      "source_location": "L74",
       "_origin": "ast",
       "id": "routers_admin_creators_py_uuid",
       "community": 9,
@@ -2747,7 +2757,7 @@
       "label": "creator_rich_detail()",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L71",
+      "source_location": "L79",
       "_origin": "ast",
       "id": "admin_creators_creator_rich_detail",
       "community": 9,
@@ -2757,7 +2767,7 @@
       "label": "WeeklyPostPoint",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L78",
+      "source_location": "L86",
       "_origin": "ast",
       "id": "admin_creators_weeklypostpoint",
       "community": 9,
@@ -2767,7 +2777,7 @@
       "label": "ViewsPoint",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L85",
+      "source_location": "L93",
       "_origin": "ast",
       "id": "admin_creators_viewspoint",
       "community": 9,
@@ -2777,7 +2787,7 @@
       "label": "CreatorActivityOut",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L90",
+      "source_location": "L98",
       "_origin": "ast",
       "id": "admin_creators_creatoractivityout",
       "community": 9,
@@ -2787,7 +2797,7 @@
       "label": "creator_activity()",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L102",
+      "source_location": "L110",
       "_origin": "ast",
       "id": "admin_creators_creator_activity",
       "community": 9,
@@ -2797,7 +2807,7 @@
       "label": "RemoveCreatorIn",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L111",
+      "source_location": "L119",
       "_origin": "ast",
       "id": "admin_creators_removecreatorin",
       "community": 9,
@@ -2807,7 +2817,7 @@
       "label": "RemoveCreatorOut",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L116",
+      "source_location": "L124",
       "_origin": "ast",
       "id": "admin_creators_removecreatorout",
       "community": 9,
@@ -2817,7 +2827,7 @@
       "label": "remove_creator()",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L127",
+      "source_location": "L135",
       "_origin": "ast",
       "id": "admin_creators_remove_creator",
       "community": 9,
@@ -2827,7 +2837,7 @@
       "label": "flag_suspicious()",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L154",
+      "source_location": "L162",
       "_origin": "ast",
       "id": "admin_creators_flag_suspicious",
       "community": 9,
@@ -2837,7 +2847,7 @@
       "label": "unflag_suspicious()",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L160",
+      "source_location": "L168",
       "_origin": "ast",
       "id": "admin_creators_unflag_suspicious",
       "community": 9,
@@ -2847,7 +2857,7 @@
       "label": "refresh_gamification()",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L166",
+      "source_location": "L174",
       "_origin": "ast",
       "id": "admin_creators_refresh_gamification",
       "community": 9,
@@ -2857,7 +2867,7 @@
       "label": "refresh_gamification_all()",
       "file_type": "code",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L174",
+      "source_location": "L182",
       "_origin": "ast",
       "id": "admin_creators_refresh_gamification_all",
       "community": 9,
@@ -2874,12 +2884,22 @@
       "norm_label": "admin creator database: filterable list + drill-down profile. admin-only."
     },
     {
-      "label": "Full creator database as CSV \u2014 every creator, not just the loaded page.",
+      "label": "Re-resolve + re-host any portfolio thumbnail that isn't on our own storage     (",
       "file_type": "rationale",
       "source_file": "routers/admin/creators.py",
       "source_location": "L33",
       "_origin": "ast",
       "id": "admin_creators_rationale_33",
+      "community": 9,
+      "norm_label": "re-resolve + re-host any portfolio thumbnail that isn't on our own storage     ("
+    },
+    {
+      "label": "Full creator database as CSV \u2014 every creator, not just the loaded page.",
+      "file_type": "rationale",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L41",
+      "_origin": "ast",
+      "id": "admin_creators_rationale_41",
       "community": 9,
       "norm_label": "full creator database as csv \u2014 every creator, not just the loaded page."
     },
@@ -2887,9 +2907,9 @@
       "label": "SideShift-style rich detail card (Feature 2) \u2014 superset of `creator_detail`",
       "file_type": "rationale",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L72",
+      "source_location": "L80",
       "_origin": "ast",
-      "id": "admin_creators_rationale_72",
+      "id": "admin_creators_rationale_80",
       "community": 9,
       "norm_label": "sideshift-style rich detail card (feature 2) \u2014 superset of `creator_detail`"
     },
@@ -2897,9 +2917,9 @@
       "label": "Charts + headline numbers for the creator profile (weekly posts, views growth).",
       "file_type": "rationale",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L107",
+      "source_location": "L115",
       "_origin": "ast",
-      "id": "admin_creators_rationale_107",
+      "id": "admin_creators_rationale_115",
       "community": 9,
       "norm_label": "charts + headline numbers for the creator profile (weekly posts, views growth)."
     },
@@ -2907,9 +2927,9 @@
       "label": "Remove a creator. See services/creator_removal for what each mode does.",
       "file_type": "rationale",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L133",
+      "source_location": "L141",
       "_origin": "ast",
-      "id": "admin_creators_rationale_133",
+      "id": "admin_creators_rationale_141",
       "community": 9,
       "norm_label": "remove a creator. see services/creator_removal for what each mode does."
     },
@@ -2917,9 +2937,9 @@
       "label": "Admin-triggered write-back (Feature 7): recompute rank/xp/awards for one     cre",
       "file_type": "rationale",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L167",
+      "source_location": "L175",
       "_origin": "ast",
-      "id": "admin_creators_rationale_167",
+      "id": "admin_creators_rationale_175",
       "community": 9,
       "norm_label": "admin-triggered write-back (feature 7): recompute rank/xp/awards for one     cre"
     },
@@ -2927,9 +2947,9 @@
       "label": "Admin-triggered bulk write-back (Feature 7): recompute rank/xp/awards     for ev",
       "file_type": "rationale",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L175",
+      "source_location": "L183",
       "_origin": "ast",
-      "id": "admin_creators_rationale_175",
+      "id": "admin_creators_rationale_183",
       "community": 9,
       "norm_label": "admin-triggered bulk write-back (feature 7): recompute rank/xp/awards     for ev"
     },
@@ -6490,7 +6510,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "schemas_campaign",
-      "community": 15,
+      "community": 61,
       "norm_label": "campaign.py"
     },
     {
@@ -6500,7 +6520,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "schemas_campaign_bonusmilestonein",
-      "community": 15,
+      "community": 61,
       "norm_label": "bonusmilestonein"
     },
     {
@@ -6520,7 +6540,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "schemas_campaign_campaigncreatein",
-      "community": 15,
+      "community": 61,
       "norm_label": "campaigncreatein"
     },
     {
@@ -6530,7 +6550,7 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "schemas_campaign_campaignupdatein",
-      "community": 15,
+      "community": 61,
       "norm_label": "campaignupdatein"
     },
     {
@@ -6540,7 +6560,7 @@
       "source_location": "L132",
       "_origin": "ast",
       "id": "schemas_campaign_campaignout",
-      "community": 15,
+      "community": 61,
       "norm_label": "campaignout"
     },
     {
@@ -6560,7 +6580,7 @@
       "source_location": "L202",
       "_origin": "ast",
       "id": "schemas_campaign_campaignpublicout",
-      "community": 15,
+      "community": 61,
       "norm_label": "campaignpublicout"
     },
     {
@@ -6580,7 +6600,7 @@
       "source_location": "L253",
       "_origin": "ast",
       "id": "schemas_campaign_mycampaignout",
-      "community": 15,
+      "community": 61,
       "norm_label": "mycampaignout"
     },
     {
@@ -6590,7 +6610,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "schemas_campaign_rationale_1",
-      "community": 15,
+      "community": 61,
       "norm_label": "campaign schemas. money as decimal (never float). optional/list for 3.9 pydantic"
     },
     {
@@ -6600,7 +6620,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "schemas_campaign_rationale_10",
-      "community": 15,
+      "community": 61,
       "norm_label": "step 3 of the campaign wizard \u2014 repeatable views-threshold bonus row."
     },
     {
@@ -6620,7 +6640,7 @@
       "source_location": "L203",
       "_origin": "ast",
       "id": "schemas_campaign_rationale_203",
-      "community": 15,
+      "community": 61,
       "norm_label": "creator-facing browse/detail view \u2014 no spent_amount/client/created_by."
     },
     {
@@ -6630,7 +6650,7 @@
       "source_location": "L254",
       "_origin": "ast",
       "id": "schemas_campaign_rationale_254",
-      "community": 15,
+      "community": 61,
       "norm_label": "a campaign the creator has applied to / joined, with their application     statu"
     },
     {
@@ -7450,7 +7470,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "services_audit",
-      "community": 0,
+      "community": 7,
       "norm_label": "audit.py"
     },
     {
@@ -7460,7 +7480,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "services_audit_log",
-      "community": 0,
+      "community": 7,
       "norm_label": "log()"
     },
     {
@@ -7470,7 +7490,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "services_audit_py_session",
-      "community": 0,
+      "community": 7,
       "norm_label": "session"
     },
     {
@@ -7480,7 +7500,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "services_audit_py_uuid",
-      "community": 0,
+      "community": 7,
       "norm_label": "uuid"
     },
     {
@@ -7490,7 +7510,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "services_audit_rationale_1",
-      "community": 0,
+      "community": 7,
       "norm_label": "write an audit_log row for an admin action with real consequences (verify/reject"
     },
     {
@@ -9440,7 +9460,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "services_invites",
-      "community": 0,
+      "community": 21,
       "norm_label": "invites.py"
     },
     {
@@ -9450,7 +9470,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "services_invites_link",
-      "community": 0,
+      "community": 21,
       "norm_label": "_link()"
     },
     {
@@ -9460,7 +9480,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "services_invites_create_invite",
-      "community": 0,
+      "community": 21,
       "norm_label": "create_invite()"
     },
     {
@@ -9470,7 +9490,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "services_invites_py_session",
-      "community": 0,
+      "community": 21,
       "norm_label": "session"
     },
     {
@@ -9480,7 +9500,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "services_invites_py_uuid",
-      "community": 0,
+      "community": 21,
       "norm_label": "uuid"
     },
     {
@@ -9490,7 +9510,7 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "services_invites_list_invites",
-      "community": 0,
+      "community": 21,
       "norm_label": "list_invites()"
     },
     {
@@ -9500,7 +9520,7 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "services_invites_revoke_invite",
-      "community": 0,
+      "community": 21,
       "norm_label": "revoke_invite()"
     },
     {
@@ -9510,7 +9530,7 @@
       "source_location": "L96",
       "_origin": "ast",
       "id": "services_invites_peek",
-      "community": 0,
+      "community": 21,
       "norm_label": "peek()"
     },
     {
@@ -9520,7 +9540,7 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "services_invites_accept",
-      "community": 0,
+      "community": 21,
       "norm_label": "accept()"
     },
     {
@@ -9530,7 +9550,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "services_invites_rationale_1",
-      "community": 0,
+      "community": 21,
       "norm_label": "creator invites: email an address and/or hand out a shareable join link.  both c"
     },
     {
@@ -9540,7 +9560,7 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "services_invites_rationale_97",
-      "community": 0,
+      "community": 21,
       "norm_label": "public: what the signup page shows when opened from an invite link."
     },
     {
@@ -9550,7 +9570,7 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "services_invites_rationale_107",
-      "community": 0,
+      "community": 21,
       "norm_label": "mark an invite used. best-effort: a bad/expired token must never fail a     sign"
     },
     {
@@ -10377,7 +10397,7 @@
       "label": "delete_portfolio()",
       "file_type": "code",
       "source_file": "services/profile.py",
-      "source_location": "L210",
+      "source_location": "L209",
       "_origin": "ast",
       "id": "services_profile_delete_portfolio",
       "community": 18,
@@ -10387,7 +10407,7 @@
       "label": "list_top_videos()",
       "file_type": "code",
       "source_file": "services/profile.py",
-      "source_location": "L226",
+      "source_location": "L225",
       "_origin": "ast",
       "id": "services_profile_list_top_videos",
       "community": 18,
@@ -10397,7 +10417,7 @@
       "label": "add_top_video()",
       "file_type": "code",
       "source_file": "services/profile.py",
-      "source_location": "L234",
+      "source_location": "L233",
       "_origin": "ast",
       "id": "services_profile_add_top_video",
       "community": 18,
@@ -10407,7 +10427,7 @@
       "label": "refresh_top_video_stats()",
       "file_type": "code",
       "source_file": "services/profile.py",
-      "source_location": "L274",
+      "source_location": "L273",
       "_origin": "ast",
       "id": "services_profile_refresh_top_video_stats",
       "community": 18,
@@ -10417,7 +10437,7 @@
       "label": "list_experiences()",
       "file_type": "code",
       "source_file": "services/profile.py",
-      "source_location": "L321",
+      "source_location": "L320",
       "_origin": "ast",
       "id": "services_profile_list_experiences",
       "community": 18,
@@ -10427,7 +10447,7 @@
       "label": "add_experience()",
       "file_type": "code",
       "source_file": "services/profile.py",
-      "source_location": "L329",
+      "source_location": "L328",
       "_origin": "ast",
       "id": "services_profile_add_experience",
       "community": 18,
@@ -10437,7 +10457,7 @@
       "label": "CreatorExperience",
       "file_type": "code",
       "source_file": "services/profile.py",
-      "source_location": "L329",
+      "source_location": "L328",
       "_origin": "ast",
       "id": "creatorexperience",
       "community": 18,
@@ -10447,7 +10467,7 @@
       "label": "delete_experience()",
       "file_type": "code",
       "source_file": "services/profile.py",
-      "source_location": "L360",
+      "source_location": "L359",
       "_origin": "ast",
       "id": "services_profile_delete_experience",
       "community": 18,
@@ -10457,7 +10477,7 @@
       "label": "recompute_completion()",
       "file_type": "code",
       "source_file": "services/profile.py",
-      "source_location": "L372",
+      "source_location": "L371",
       "_origin": "ast",
       "id": "services_profile_recompute_completion",
       "community": 18,
@@ -10467,7 +10487,7 @@
       "label": "_verified()",
       "file_type": "code",
       "source_file": "services/profile.py",
-      "source_location": "L398",
+      "source_location": "L397",
       "_origin": "ast",
       "id": "services_profile_verified",
       "community": 18,
@@ -10477,7 +10497,7 @@
       "label": "profile_completeness()",
       "file_type": "code",
       "source_file": "services/profile.py",
-      "source_location": "L404",
+      "source_location": "L403",
       "_origin": "ast",
       "id": "services_profile_profile_completeness",
       "community": 18,
@@ -10507,9 +10527,9 @@
       "label": "Best-effort scrape of view/like counts. Raise-only: a failed/empty scrape     ne",
       "file_type": "rationale",
       "source_file": "services/profile.py",
-      "source_location": "L275",
+      "source_location": "L274",
       "_origin": "ast",
-      "id": "services_profile_rationale_275",
+      "id": "services_profile_rationale_274",
       "community": 18,
       "norm_label": "best-effort scrape of view/like counts. raise-only: a failed/empty scrape     ne"
     },
@@ -10840,7 +10860,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "services_socials_verify",
-      "community": 21,
+      "community": 0,
       "norm_label": "socials_verify.py"
     },
     {
@@ -10850,7 +10870,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "services_socials_verify_now",
-      "community": 21,
+      "community": 0,
       "norm_label": "_now()"
     },
     {
@@ -10860,7 +10880,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "services_socials_verify_py_datetime",
-      "community": 21,
+      "community": 0,
       "norm_label": "datetime"
     },
     {
@@ -10870,7 +10890,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "services_socials_verify_gen_code",
-      "community": 21,
+      "community": 0,
       "norm_label": "_gen_code()"
     },
     {
@@ -10880,7 +10900,7 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "services_socials_verify_clean_handle",
-      "community": 21,
+      "community": 0,
       "norm_label": "_clean_handle()"
     },
     {
@@ -10890,7 +10910,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "services_socials_verify_resolve_social",
-      "community": 21,
+      "community": 0,
       "norm_label": "_resolve_social()"
     },
     {
@@ -10900,7 +10920,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "services_socials_verify_py_session",
-      "community": 21,
+      "community": 0,
       "norm_label": "session"
     },
     {
@@ -10910,7 +10930,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "services_socials_verify_py_uuid",
-      "community": 21,
+      "community": 0,
       "norm_label": "uuid"
     },
     {
@@ -10920,7 +10940,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "services_socials_verify_py_socialaccount",
-      "community": 21,
+      "community": 0,
       "norm_label": "socialaccount"
     },
     {
@@ -10930,7 +10950,7 @@
       "source_location": "L85",
       "_origin": "ast",
       "id": "services_socials_verify_start_verification",
-      "community": 21,
+      "community": 0,
       "norm_label": "start_verification()"
     },
     {
@@ -10940,7 +10960,7 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "services_socials_verify_confirm_verification",
-      "community": 21,
+      "community": 0,
       "norm_label": "confirm_verification()"
     },
     {
@@ -10950,7 +10970,7 @@
       "source_location": "L174",
       "_origin": "ast",
       "id": "services_socials_verify_mark_verified",
-      "community": 21,
+      "community": 0,
       "norm_label": "_mark_verified()"
     },
     {
@@ -10960,7 +10980,7 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "services_socials_verify_norm",
-      "community": 21,
+      "community": 0,
       "norm_label": "_norm()"
     },
     {
@@ -10970,7 +10990,7 @@
       "source_location": "L196",
       "_origin": "ast",
       "id": "services_socials_verify_apply_eligibility",
-      "community": 21,
+      "community": 0,
       "norm_label": "apply_eligibility()"
     },
     {
@@ -10980,7 +11000,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "services_socials_verify_rationale_1",
-      "community": 21,
+      "community": 0,
       "norm_label": "social handle verification via the bio-code method (sideshift-style).  flow:   1"
     },
     {
@@ -10990,7 +11010,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "services_socials_verify_rationale_52",
-      "community": 21,
+      "community": 0,
       "norm_label": "exactly one account per (creator, platform). dedupes any legacy duplicates     ("
     },
     {
@@ -11000,7 +11020,7 @@
       "source_location": "L188",
       "_origin": "ast",
       "id": "services_socials_verify_rationale_188",
-      "community": 21,
+      "community": 0,
       "norm_label": "case/space-insensitive compare so 'lc-f9rjk2' in a bio still matches."
     },
     {
@@ -11154,10 +11174,20 @@
       "norm_label": "is_self_hosted()"
     },
     {
-      "label": "rehost()",
+      "label": "repair_portfolio_thumbnails()",
       "file_type": "code",
       "source_file": "services/thumbnails.py",
       "source_location": "L56",
+      "_origin": "ast",
+      "id": "services_thumbnails_repair_portfolio_thumbnails",
+      "community": 50,
+      "norm_label": "repair_portfolio_thumbnails()"
+    },
+    {
+      "label": "rehost()",
+      "file_type": "code",
+      "source_file": "services/thumbnails.py",
+      "source_location": "L96",
       "_origin": "ast",
       "id": "services_thumbnails_rehost",
       "community": 50,
@@ -11184,12 +11214,22 @@
       "norm_label": "true only if `url` is served by this deployment's storage.      deliberately not"
     },
     {
-      "label": "Download `url` and store it on our own storage; return our public URL.      Retu",
+      "label": "Re-resolve + re-host any portfolio thumbnail that isn't served by our own     st",
       "file_type": "rationale",
       "source_file": "services/thumbnails.py",
       "source_location": "L57",
       "_origin": "ast",
       "id": "services_thumbnails_rationale_57",
+      "community": 50,
+      "norm_label": "re-resolve + re-host any portfolio thumbnail that isn't served by our own     st"
+    },
+    {
+      "label": "Download `url` and store it on our own storage; return our public URL.      Retu",
+      "file_type": "rationale",
+      "source_file": "services/thumbnails.py",
+      "source_location": "L97",
+      "_origin": "ast",
+      "id": "services_thumbnails_rationale_97",
       "community": 50,
       "norm_label": "download `url` and store it on our own storage; return our public url.      retu"
     },
@@ -20113,6 +20153,16 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/creators.py",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "admin_creators",
+      "target": "admin_creators_rehost_thumbnails",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
       "source_location": "L127",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -20191,6 +20241,71 @@
       "target": "admin_creators"
     },
     {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "admin_creators_rationale_33",
+      "target": "admin_creators_rehost_thumbnails",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "admin_creators_rehost_thumbnails",
+      "target": "routers_admin_creators_py_admin",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "admin_creators_rehost_thumbnails",
+      "target": "routers_admin_creators_py_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L102",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_creator_activity",
+      "target": "routers_admin_creators_py_admin"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L49",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_creator_detail",
+      "target": "routers_admin_creators_py_admin"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L54",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_creator_rich_detail",
+      "target": "routers_admin_creators_py_admin"
+    },
+    {
       "relation": "references",
       "context": "parameter_type",
       "confidence": "EXTRACTED",
@@ -20206,11 +20321,256 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/creators.py",
+      "source_location": "L62",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_flag_suspicious",
+      "target": "routers_admin_creators_py_admin"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L22",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_list_creators",
+      "target": "routers_admin_creators_py_admin"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L74",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_refresh_gamification",
+      "target": "routers_admin_creators_py_admin"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L82",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_refresh_gamification_all",
+      "target": "routers_admin_creators_py_admin"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L127",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_remove_creator",
+      "target": "routers_admin_creators_py_admin"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L68",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_unflag_suspicious",
+      "target": "routers_admin_creators_py_admin"
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L13",
+      "weight": 0.8,
+      "confidence_score": 0.5,
+      "source": "routers_admin_creators_py_admin",
+      "target": "schemas_admin_creators_creatordetail"
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L13",
+      "weight": 0.8,
+      "confidence_score": 0.5,
+      "source": "routers_admin_creators_py_admin",
+      "target": "schemas_admin_creators_creatorlistitem"
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L13",
+      "weight": 0.8,
+      "confidence_score": 0.5,
+      "source": "routers_admin_creators_py_admin",
+      "target": "schemas_admin_creators_creatorrichdetail"
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "confidence_score": 0.5,
+      "source": "routers_admin_creators_py_admin",
+      "target": "schemas_gamification_creatorgamificationout"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L102",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_creator_activity",
+      "target": "routers_admin_creators_py_session"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L49",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_creator_detail",
+      "target": "routers_admin_creators_py_session"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L54",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_creator_rich_detail",
+      "target": "routers_admin_creators_py_session"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
       "source_location": "L32",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "admin_creators_export_creators_csv",
       "target": "routers_admin_creators_py_session"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L62",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_flag_suspicious",
+      "target": "routers_admin_creators_py_session"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L22",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_list_creators",
+      "target": "routers_admin_creators_py_session"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L74",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_refresh_gamification",
+      "target": "routers_admin_creators_py_session"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L82",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_refresh_gamification_all",
+      "target": "routers_admin_creators_py_session"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L127",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_remove_creator",
+      "target": "routers_admin_creators_py_session"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L68",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "admin_creators_unflag_suspicious",
+      "target": "routers_admin_creators_py_session"
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L13",
+      "weight": 0.8,
+      "confidence_score": 0.5,
+      "source": "routers_admin_creators_py_session",
+      "target": "schemas_admin_creators_creatordetail"
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L13",
+      "weight": 0.8,
+      "confidence_score": 0.5,
+      "source": "routers_admin_creators_py_session",
+      "target": "schemas_admin_creators_creatorlistitem"
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L13",
+      "weight": 0.8,
+      "confidence_score": 0.5,
+      "source": "routers_admin_creators_py_session",
+      "target": "schemas_admin_creators_creatorrichdetail"
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "confidence_score": 0.5,
+      "source": "routers_admin_creators_py_session",
+      "target": "schemas_gamification_creatorgamificationout"
     },
     {
       "relation": "calls",
@@ -20234,282 +20594,14 @@
       "target": "admin_creators_export_creators_csv"
     },
     {
-      "relation": "references",
-      "context": "parameter_type",
+      "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L102",
+      "source_location": "L41",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_creator_activity",
-      "target": "routers_admin_creators_py_admin"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L49",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_creator_detail",
-      "target": "routers_admin_creators_py_admin"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L54",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_creator_rich_detail",
-      "target": "routers_admin_creators_py_admin"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L62",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_flag_suspicious",
-      "target": "routers_admin_creators_py_admin"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L22",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_list_creators",
-      "target": "routers_admin_creators_py_admin"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L74",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_refresh_gamification",
-      "target": "routers_admin_creators_py_admin"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L82",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_refresh_gamification_all",
-      "target": "routers_admin_creators_py_admin"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L127",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_remove_creator",
-      "target": "routers_admin_creators_py_admin"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L68",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_unflag_suspicious",
-      "target": "routers_admin_creators_py_admin"
-    },
-    {
-      "relation": "uses",
-      "confidence": "INFERRED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L13",
-      "weight": 0.8,
-      "confidence_score": 0.5,
-      "source": "routers_admin_creators_py_admin",
-      "target": "schemas_admin_creators_creatordetail"
-    },
-    {
-      "relation": "uses",
-      "confidence": "INFERRED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L13",
-      "weight": 0.8,
-      "confidence_score": 0.5,
-      "source": "routers_admin_creators_py_admin",
-      "target": "schemas_admin_creators_creatorlistitem"
-    },
-    {
-      "relation": "uses",
-      "confidence": "INFERRED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L13",
-      "weight": 0.8,
-      "confidence_score": 0.5,
-      "source": "routers_admin_creators_py_admin",
-      "target": "schemas_admin_creators_creatorrichdetail"
-    },
-    {
-      "relation": "uses",
-      "confidence": "INFERRED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L14",
-      "weight": 0.8,
-      "confidence_score": 0.5,
-      "source": "routers_admin_creators_py_admin",
-      "target": "schemas_gamification_creatorgamificationout"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L102",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_creator_activity",
-      "target": "routers_admin_creators_py_session"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L49",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_creator_detail",
-      "target": "routers_admin_creators_py_session"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L54",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_creator_rich_detail",
-      "target": "routers_admin_creators_py_session"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L62",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_flag_suspicious",
-      "target": "routers_admin_creators_py_session"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L22",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_list_creators",
-      "target": "routers_admin_creators_py_session"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L74",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_refresh_gamification",
-      "target": "routers_admin_creators_py_session"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L82",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_refresh_gamification_all",
-      "target": "routers_admin_creators_py_session"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L127",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_remove_creator",
-      "target": "routers_admin_creators_py_session"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L68",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_unflag_suspicious",
-      "target": "routers_admin_creators_py_session"
-    },
-    {
-      "relation": "uses",
-      "confidence": "INFERRED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L13",
-      "weight": 0.8,
-      "confidence_score": 0.5,
-      "source": "routers_admin_creators_py_session",
-      "target": "schemas_admin_creators_creatordetail"
-    },
-    {
-      "relation": "uses",
-      "confidence": "INFERRED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L13",
-      "weight": 0.8,
-      "confidence_score": 0.5,
-      "source": "routers_admin_creators_py_session",
-      "target": "schemas_admin_creators_creatorlistitem"
-    },
-    {
-      "relation": "uses",
-      "confidence": "INFERRED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L13",
-      "weight": 0.8,
-      "confidence_score": 0.5,
-      "source": "routers_admin_creators_py_session",
-      "target": "schemas_admin_creators_creatorrichdetail"
-    },
-    {
-      "relation": "uses",
-      "confidence": "INFERRED",
-      "source_file": "routers/admin/creators.py",
-      "source_location": "L14",
-      "weight": 0.8,
-      "confidence_score": 0.5,
-      "source": "routers_admin_creators_py_session",
-      "target": "schemas_gamification_creatorgamificationout"
+      "source": "admin_creators_rationale_41",
+      "target": "admin_creators_export_creators_csv",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -20665,11 +20757,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L72",
+      "source_location": "L80",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_rationale_72",
-      "target": "admin_creators_creator_rich_detail"
+      "source": "admin_creators_rationale_80",
+      "target": "admin_creators_creator_rich_detail",
+      "confidence_score": 1.0
     },
     {
       "relation": "uses",
@@ -20795,11 +20887,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L107",
+      "source_location": "L115",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_rationale_107",
-      "target": "admin_creators_creator_activity"
+      "source": "admin_creators_rationale_115",
+      "target": "admin_creators_creator_activity",
+      "confidence_score": 1.0
     },
     {
       "relation": "references",
@@ -20896,11 +20988,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L133",
+      "source_location": "L141",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_rationale_133",
-      "target": "admin_creators_remove_creator"
+      "source": "admin_creators_rationale_141",
+      "target": "admin_creators_remove_creator",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -20928,11 +21020,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "routers/admin/creators.py",
-      "source_location": "L167",
+      "source_location": "L175",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "admin_creators_rationale_167",
-      "target": "admin_creators_refresh_gamification"
+      "source": "admin_creators_rationale_175",
+      "target": "admin_creators_refresh_gamification",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -20954,6 +21046,16 @@
       "confidence_score": 1.0,
       "source": "admin_creators_rationale_175",
       "target": "admin_creators_refresh_gamification_all"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "routers/admin/creators.py",
+      "source_location": "L183",
+      "weight": 1.0,
+      "source": "admin_creators_rationale_183",
+      "target": "admin_creators_refresh_gamification_all",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -29112,9 +29214,9 @@
       "source_file": "services/admin_creators.py",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_admin_creators_rationale_34",
-      "target": "services_admin_creators_avatar_urls",
-      "confidence_score": 1.0
+      "target": "services_admin_creators_avatar_urls"
     },
     {
       "relation": "references",
@@ -29177,9 +29279,9 @@
       "source_file": "services/admin_creators.py",
       "source_location": "L186",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_admin_creators_rationale_186",
-      "target": "services_admin_creators_set_suspicious",
-      "confidence_score": 1.0
+      "target": "services_admin_creators_set_suspicious"
     },
     {
       "relation": "references",
@@ -29242,9 +29344,9 @@
       "source_file": "services/admin_creators.py",
       "source_location": "L249",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_admin_creators_rationale_249",
-      "target": "services_admin_creators_get_creator_rich_detail",
-      "confidence_score": 1.0
+      "target": "services_admin_creators_get_creator_rich_detail"
     },
     {
       "relation": "contains",
@@ -36741,11 +36843,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "services/profile.py",
-      "source_location": "L275",
+      "source_location": "L274",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_profile_rationale_275",
-      "target": "services_profile_refresh_top_video_stats"
+      "source": "services_profile_rationale_274",
+      "target": "services_profile_refresh_top_video_stats",
+      "confidence_score": 1.0
     },
     {
       "relation": "references",
@@ -38158,6 +38260,16 @@
       "target": "services_thumbnails_rehost"
     },
     {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "services/thumbnails.py",
+      "source_location": "L56",
+      "weight": 1.0,
+      "source": "services_thumbnails",
+      "target": "services_thumbnails_repair_portfolio_thumbnails",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "services/thumbnails.py",
@@ -38189,6 +38301,38 @@
       "target": "services_thumbnails_is_self_hosted"
     },
     {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "services/thumbnails.py",
+      "source_location": "L69",
+      "weight": 1.0,
+      "source": "services_thumbnails_repair_portfolio_thumbnails",
+      "target": "services_thumbnails_is_self_hosted",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "services/thumbnails.py",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "services_thumbnails_rationale_57",
+      "target": "services_thumbnails_repair_portfolio_thumbnails",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "services/thumbnails.py",
+      "source_location": "L79",
+      "weight": 1.0,
+      "source": "services_thumbnails_repair_portfolio_thumbnails",
+      "target": "services_thumbnails_rehost",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "services/thumbnails.py",
@@ -38197,6 +38341,16 @@
       "confidence_score": 1.0,
       "source": "services_thumbnails_rationale_57",
       "target": "services_thumbnails_rehost"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "services/thumbnails.py",
+      "source_location": "L97",
+      "weight": 1.0,
+      "source": "services_thumbnails_rationale_97",
+      "target": "services_thumbnails_rehost",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -38766,5 +38920,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "51066df16acb8e21b68babba175d3a84e1f09fa3"
+  "built_at_commit": "b58962ddf0c6f450cc7712095e1c2d39750b2571"
 }
