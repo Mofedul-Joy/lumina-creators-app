@@ -4,16 +4,15 @@ import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
+import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import {
   deleteSubmission, logSubmissionPayout, rejectSubmission, verifySubmission,
   type AdminSubmission, type PayoutMethod,
 } from "@/lib/admin";
 import { flagCreatorSuspicious, unflagCreatorSuspicious } from "@/lib/api";
 import { getAdminToken } from "@/lib/auth";
-import { getEmbedUrl } from "@/lib/embeds";
 import { fmtInt, fmtMoney } from "@/lib/format";
-import { SubmissionThumbnail } from "@/components/ui/SubmissionThumbnail";
+import { SocialEmbed } from "@/components/admin/SocialEmbed";
 
 const METHODS: PayoutMethod[] = ["paypal", "solana", "whop"];
 const METHOD_LABEL: Record<string, string> = { paypal: "PayPal", solana: "Solana", whop: "Whop" };
@@ -63,13 +62,11 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
     onSuccess: refetchStay, onError: fail,
   });
 
-  const embedUrl = getEmbedUrl(sub.platform, sub.post_url);
   const isPaid = sub.status === "paid";
-  // A proof (verification) video only applies to create_new campaigns — a
-  // repost has nothing to prove. So verified-without-a-video is expected for
-  // reposts, and for create_new we now block Verify until the video is in.
-  const needsProof = sub.campaign_mode === "create_new";
-  const canVerify = !needsProof || !!sub.proof_url;
+  // Approval is a visual review of the post itself (watched inline below), not
+  // a separate proof-video upload — so Verify is available whenever the post
+  // isn't already paid out. Backend enforces the real rules.
+  const canVerify = !isPaid;
 
   if (!mounted) return null;
 
@@ -99,25 +96,14 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto p-5">
-          {/* media — same fallback chain as the cards so the modal is never blank */}
-          <a href={sub.post_url} target="_blank" rel="noopener noreferrer" className="block">
-            <SubmissionThumbnail
-              thumbnailUrl={sub.thumbnail_url}
-              postUrl={sub.post_url}
-              platform={sub.platform}
-              pool={pool}
-              className="aspect-video w-full rounded-[var(--radius-btn)]"
-            >
-              <span className="absolute inset-0 grid place-items-center">
-                <span className="grid h-11 w-11 place-items-center rounded-full bg-black/40 text-white">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7L8 5Z" /></svg>
-                </span>
-              </span>
-              <span className="absolute right-2 top-2 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-medium text-white">
-                {platformLabel(sub.platform)}{embedUrl ? "" : " · open post"}
-              </span>
-            </SubmissionThumbnail>
-          </a>
+          {/* Watch the post inline on Lumina; link-out fallback for broken embeds. */}
+          <SocialEmbed
+            platform={sub.platform}
+            postUrl={sub.post_url}
+            thumbnailUrl={sub.thumbnail_url}
+            embedBroken={sub.embed_broken}
+            pool={pool}
+          />
 
           {/* stats */}
           <div className="mt-4 grid grid-cols-4 gap-2">
@@ -140,19 +126,9 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
               className="mt-2 flex items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-[var(--color-brand)]/12 py-2 text-sm font-medium text-[var(--color-brand-soft)] transition hover:bg-[var(--color-brand)]/20"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7L8 5Z" /></svg>
-              View verification video
+              View optional proof video
             </a>
-          ) : !needsProof ? (
-            // repost campaign — verification means "approved clip", no video expected
-            <p className="mt-2 text-xs text-[var(--color-text-muted)]">Repost campaign — no proof video required.</p>
-          ) : sub.verification_status === "verified" ? (
-            // create_new that got verified before a video was attached: flag it
-            <p className="mt-2 rounded-[var(--radius-btn)] bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-400">
-              Verified without a proof video on file. New verifications now require the creator&apos;s video first.
-            </p>
-          ) : (
-            <p className="mt-2 text-xs text-[var(--color-text-muted)]">Waiting on the creator&apos;s proof video before this can be verified.</p>
-          )}
+          ) : null}
           {sub.verification_note ? (
             <p className="mt-2 text-xs text-[var(--color-text-muted)]">Note: {sub.verification_note}</p>
           ) : null}
@@ -205,7 +181,7 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
               {sub.verification_status !== "verified" && !isPaid ? (
                 <button disabled={verifyM.isPending || !canVerify} onClick={() => { setError(""); verifyM.mutate(); }}
                   className="cursor-pointer rounded-md bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/25 hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-40"
-                  title={canVerify ? "Confirm you've watched the proof video and the stats are legit" : "Creator hasn't uploaded a proof video yet — can't verify a create-new post without it"}>Verify</button>
+                  title="Approve this post after watching it above">Verify</button>
               ) : null}
               {!isPaid ? (
                 <button onClick={() => { setPaying(true); setError(""); }}

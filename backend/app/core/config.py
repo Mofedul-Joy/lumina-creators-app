@@ -1,4 +1,5 @@
 """Application settings, loaded from environment / .env."""
+from decimal import Decimal
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -74,6 +75,21 @@ class Settings(BaseSettings):
     @property
     def apify_configured(self) -> bool:
         return bool(self.apify_api_token)
+
+    # --- Stock images (auto campaign banner when the admin doesn't upload one) ---
+    # Pexels: free, high-quality, generous limits (200 req/hr, 20k/mo), no
+    # attribution required. Leave blank to disable auto-fetch — campaigns then
+    # fall back to the client-side niche/gradient thumbnail.
+    pexels_api_key: str = ""
+
+    @property
+    def stock_images_configured(self) -> bool:
+        return bool(self.pexels_api_key)
+
+    # --- Payouts ---
+    # Minimum accumulated (verified, unpaid) earnings a creator must reach before
+    # they can request a payout. Admin-overridable via env.
+    min_payout_amount: Decimal = Decimal("25")
 
     # --- frontend base URL (for building absolute links, e.g. client share pages) ---
     frontend_url: str = "https://lumina-creators-app.vercel.app"

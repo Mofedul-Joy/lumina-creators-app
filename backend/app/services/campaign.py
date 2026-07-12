@@ -100,7 +100,70 @@ def create_campaign(db: Session, admin_id: uuid.UUID, data: dict) -> Campaign:
         contracts.get_or_create_template(db, campaign.id)
     except Exception:  # noqa: BLE001 - never fail campaign creation on the contract seed
         pass
+    # No uploaded banner → fetch a topic-relevant stock photo so the card is
+    # never a bare wordmark. Best-effort; leaves banner_url empty on any failure.
+    ensure_campaign_banner(db, campaign)
     return campaign
+
+
+# Filler words stripped when turning a campaign name into a stock-photo query.
+_TOPIC_FILLER = {
+    "challenge", "campaign", "launch", "giveaway", "ugc", "video", "app", "the",
+    "for", "with", "get", "new", "program", "promo", "promotion", "contest",
+    "official", "and", "your",
+}
+
+
+def _topic_candidates(c: Campaign) -> list[str]:
+    """Ordered stock-photo queries for a campaign, specific → broad. The search
+    tries each until one returns an image, so a narrow name still lands art while
+    the generic net at the end guarantees *something* on-topic."""
+    import re
+
+    words = [
+        w for w in re.findall(r"[A-Za-z]+", c.name or "")
+        if len(w) > 2 and w.lower() not in _TOPIC_FILLER
+    ]
+    ct = (c.content_type or "").replace("_", " ").strip()
+    cands: list[str] = []
+    if words:
+        cands.append(" ".join(words[:2]))   # e.g. "Summer Skincare"
+    if ct:
+        cands.append(ct)                     # e.g. "beauty"
+    if words:
+        cands.append(words[-1])              # trailing word is often the category
+        cands.append(words[0])
+    cands.append("social media content creation")  # always-hits safety net
+    seen: list[str] = []
+    for q in cands:
+        q = q.strip()
+        if q and q.lower() not in {s.lower() for s in seen}:
+            seen.append(q)
+    return seen
+
+
+def ensure_campaign_banner(db: Session, campaign: Campaign) -> None:
+    """If a campaign has no uploaded banner, fetch a topic-relevant stock photo,
+    re-host it, and store it as the banner. Best-effort — never raises."""
+    if campaign.banner_url:
+        return
+    try:
+        from app.integrations import stock_images
+        from app.services import thumbnails
+
+        url = None
+        for query in _topic_candidates(campaign):
+            url = stock_images.search_topic_image(query)
+            if url:
+                break
+        if not url:
+            return
+        # Re-host so we don't depend on the source CDN; fall back to the direct
+        # (hotlink-stable) URL when storage isn't configured.
+        campaign.banner_url = thumbnails.rehost(url, "campaign_banner", campaign.id) or url
+        db.commit()
+    except Exception:  # noqa: BLE001 - a banner is cosmetic; never fail the caller
+        db.rollback()
 
 
 def _replace_bonus_milestones(db: Session, campaign_id: uuid.UUID, milestones: list) -> None:
@@ -180,6 +243,9 @@ def publish_campaign(db: Session, campaign_id: uuid.UUID, admin_id: uuid.UUID | 
     audit.log(db, actor_admin_id=admin_id, action="campaign.publish", entity_type="campaign", entity_id=c.id)
     db.commit()
     db.refresh(c)
+    # A draft may have been created without a banner — fetch topic art now that
+    # it's going live (no-op if the admin uploaded one).
+    ensure_campaign_banner(db, c)
     return c
 
 

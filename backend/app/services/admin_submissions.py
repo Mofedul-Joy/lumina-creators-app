@@ -70,14 +70,10 @@ def _get(db: Session, submission_id: uuid.UUID) -> Submission:
 
 def verify_submission(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID) -> Submission:
     sub = _get(db, submission_id)
-    # A create_new submission has nothing to verify without its proof video —
-    # "verified" is meaningless there without one. Reposts have no video to gate on.
-    camp = db.get(Campaign, sub.campaign_id)
-    if camp is not None and camp.mode == "create_new" and sub.proof_object_id is None:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            "This create-new post has no proof video yet — the creator must upload one before it can be verified.",
-        )
+    # Approval = the admin watched the submitted post in Video Reviews and it
+    # looks good. The post URL itself is the video, so no separate proof-video
+    # upload is required (that legacy gate contradicted the review-and-approve
+    # flow). Fraud is caught by the admin's visual review + the is_suspicious flag.
     sub.verification_status = "verified"
     sub.verified_by = admin_id
     sub.verified_at = _now()

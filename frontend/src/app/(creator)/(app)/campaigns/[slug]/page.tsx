@@ -43,8 +43,15 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
     queryKey: ["track-sub", trackId],
     queryFn: () => getSubmission(trackId!),
     enabled: !!trackId,
-    refetchInterval: (query) =>
-      query.state.data && query.state.data.scrape_status === "pending" ? 4000 : false,
+    refetchInterval: (query) => {
+      const d = query.state.data;
+      if (!d) return false;
+      // Verified + still scraping → poll fast to surface stats. Awaiting review
+      // → poll slower to catch the admin's approval. Otherwise stop.
+      if (d.verification_status === "verified") return d.scrape_status === "pending" ? 4000 : false;
+      if (d.verification_status === "rejected") return false;
+      return 10000;
+    },
   });
   const bulkSubmit = useMutation({
     mutationFn: async () => {
@@ -243,10 +250,19 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
                       {/* live 'updating stats' tracker for the last submitted post */}
                       {trackId && track.data ? (
                         <div className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-3">
-                          {track.data.scrape_status === "pending" ? (
+                          {track.data.verification_status === "rejected" ? (
+                            <p className="text-sm text-[var(--color-danger)]">
+                              Not approved for this campaign. Check My Campaigns for details.
+                            </p>
+                          ) : track.data.verification_status !== "verified" ? (
+                            <p className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+                              <span className="h-4 w-4 rounded-full border-2 border-[var(--color-text-muted)]/40 border-t-[var(--color-text-muted)]" />
+                              Submitted — waiting for admin review. Stats start once it&apos;s approved.
+                            </p>
+                          ) : track.data.scrape_status === "pending" ? (
                             <p className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
                               <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-brand)]/30 border-t-[var(--color-brand)]" />
-                              Fetching stats from {platformLabel(track.data.platform)}…
+                              Approved ✓ — fetching stats from {platformLabel(track.data.platform)}…
                             </p>
                           ) : (
                             <p className="text-sm text-[var(--color-brand)]">

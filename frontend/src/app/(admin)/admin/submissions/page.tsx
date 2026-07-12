@@ -8,7 +8,8 @@ import { AdminTabs } from "@/components/admin/AdminTabs";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pager } from "@/components/admin/Pager";
 import { getAdminToken } from "@/lib/auth";
-import { getSubmissionCounts, listSubmissions, rejectSubmission, verifySubmission } from "@/lib/admin";
+import { getSubmissionCounts, listSubmissions, rejectSubmission, verifySubmission, type AdminSubmission } from "@/lib/admin";
+import { SubmissionDetailModal } from "@/components/admin/SubmissionDetailModal";
 import { isAuthError } from "@/lib/api";
 import { fmtInt, fmtMoney } from "@/lib/format";
 
@@ -39,6 +40,7 @@ function SubmissionsInner() {
   useEffect(() => { if (urlStatus !== null) setFilter(urlStatus); }, [urlStatus]);
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const [detail, setDetail] = useState<AdminSubmission | null>(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 15;
 
@@ -193,6 +195,12 @@ function SubmissionsInner() {
                           </div>
                         ) : (
                           <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => setDetail(s)}
+                              className="cursor-pointer rounded-md bg-[var(--color-brand)]/15 px-2.5 py-1 text-xs font-medium text-[var(--color-brand-soft)] ring-1 ring-inset ring-[var(--color-brand)]/25 hover:bg-[var(--color-brand)]/25"
+                            >
+                              Watch
+                            </button>
                             {s.verification_status !== "verified" ? (
                               <button
                                 disabled={verifyM.isPending}
@@ -222,6 +230,9 @@ function SubmissionsInner() {
         </div>
         <Pager page={page} pageCount={pageCount} onPage={setPage} total={rows.length} />
       </main>
+      {detail ? (
+        <SubmissionDetailModal sub={detail} onClose={() => { setDetail(null); refresh(); }} />
+      ) : null}
     </div>
   );
 }

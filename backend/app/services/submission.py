@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import uuid
+from decimal import Decimal
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.security import _now
 from app.integrations import apify
 from app.models import (
@@ -40,6 +42,15 @@ def create_submission(db: Session, creator_id: uuid.UUID, campaign_slug: str, po
     )
     if participation is None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Enter the campaign before submitting")
+    # Two-gate model: joining a campaign only creates a pending request
+    # (status 'joined'). An admin must approve the applicant (sets accepted_at)
+    # before the creator may submit posts. Until then, block the submit so the
+    # video-review pipeline stays "approved creators only".
+    if participation.accepted_at is None:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "Your request to join this campaign is awaiting admin approval.",
+        )
 
     platform = urls.detect_platform(post_url)
     if platform is None:
@@ -128,6 +139,25 @@ def claim_submission(db: Session, creator_id: uuid.UUID, submission_id: uuid.UUI
     prof = db.scalar(select(CreatorProfile).where(CreatorProfile.creator_id == creator_id))
     if prof is None or not prof.payout_method or not prof.payout_address:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "no_payout_method")
+    # Minimum-balance gate: a creator can only request a payout once their total
+    # verified, unpaid, non-suspicious earnings reach the configured threshold.
+    threshold = get_settings().min_payout_amount
+    claimable = db.scalar(
+        select(func.coalesce(func.sum(Submission.estimated_amount), 0)).where(
+            Submission.creator_id == creator_id,
+            Submission.verification_status == "verified",
+            Submission.is_suspicious.is_(False),
+            Submission.id.not_in(
+                select(PayoutItem.submission_id).where(PayoutItem.voided_at.is_(None))
+            ),
+        )
+    ) or Decimal(0)
+    if Decimal(claimable) < threshold:
+        # Frontend parses "below_threshold:<min>:<current>" to show "earn $X more".
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"below_threshold:{threshold}:{Decimal(claimable):.2f}",
+        )
     sub.claimed_at = _now()
     db.commit()
     db.refresh(sub)

@@ -66,6 +66,9 @@ export default function MyCampaignsPage() {
   const [uploadPct, setUploadPct] = useState(0);
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
 
+  // Minimum accumulated earnings before a payout can be requested (mirrors the
+  // backend min_payout_amount default; backend is the authoritative gate).
+  const MIN_PAYOUT = 25;
   const claimM = useMutation({
     mutationFn: async (ids: string[]) => { for (const id of ids) await claimSubmission(id); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["submissions"] }),
@@ -180,14 +183,25 @@ export default function MyCampaignsPage() {
                 </div>
 
                 {g.claimable > 0 ? (
-                  <button
-                    type="button"
-                    disabled={claimM.isPending}
-                    onClick={() => claimM.mutate(g.claimableIds)}
-                    className="mt-4 w-full cursor-pointer rounded-full bg-[var(--color-brand)] py-2 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)] disabled:opacity-50"
-                  >
-                    {claimM.isPending ? "Claiming…" : `Claim ${fmtMoney(g.claimable)}`}
-                  </button>
+                  g.claimable >= MIN_PAYOUT ? (
+                    <button
+                      type="button"
+                      disabled={claimM.isPending}
+                      onClick={() => claimM.mutate(g.claimableIds)}
+                      className="mt-4 w-full cursor-pointer rounded-full bg-[var(--color-brand)] py-2 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)] disabled:opacity-50"
+                    >
+                      {claimM.isPending ? "Claiming…" : `Claim ${fmtMoney(g.claimable)}`}
+                    </button>
+                  ) : (
+                    <div className="mt-4">
+                      <button type="button" disabled className="w-full cursor-not-allowed rounded-full bg-[var(--color-surface-2)] py-2 text-sm font-semibold text-[var(--color-text-muted)]">
+                        Claim {fmtMoney(g.claimable)}
+                      </button>
+                      <p className="mt-1.5 text-center text-xs text-[var(--color-text-muted)]">
+                        Earn {fmtMoney(MIN_PAYOUT - g.claimable)} more to request a payout (min {fmtMoney(MIN_PAYOUT)}).
+                      </p>
+                    </div>
+                  )
                 ) : firstProof ? (
                   <div className="mt-4">
                     <input
