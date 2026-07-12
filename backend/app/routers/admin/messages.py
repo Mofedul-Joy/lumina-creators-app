@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Optional
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -10,8 +11,9 @@ from app.core.deps import get_current_admin
 from app.db.session import get_db
 from app.models import Admin, Conversation, Message
 from app.schemas.messaging import (
-    ArchivedIn, ContractHistoryItem, ConversationInfoOut, ConversationOut,
-    MessageIn, MessageOut, MutedIn, StartConversationIn, UnreadCountOut,
+    ArchivedIn, ChannelMemberOut, ChannelMembersIn, ContractHistoryItem,
+    ConversationInfoOut, ConversationOut, CreateChannelIn, MessageIn, MessageOut,
+    MutedIn, StartConversationIn, UnreadCountOut,
 )
 from app.services import messaging as svc
 
@@ -22,11 +24,12 @@ def _msg_out(m: Message) -> MessageOut:
     return MessageOut(
         id=str(m.id), conversation_id=str(m.conversation_id), sender_type=m.sender_type,
         sender_admin_id=str(m.sender_admin_id) if m.sender_admin_id else None,
+        sender_creator_id=str(m.sender_creator_id) if m.sender_creator_id else None,
         body=m.body, created_at=m.created_at,
     )
 
 
-def _creator_id(db: Session, conversation_id: uuid.UUID) -> uuid.UUID:
+def _creator_id(db: Session, conversation_id: uuid.UUID) -> Optional[uuid.UUID]:
     from fastapi import HTTPException, status
     conv = db.get(Conversation, conversation_id)
     if conv is None:
@@ -35,9 +38,37 @@ def _creator_id(db: Session, conversation_id: uuid.UUID) -> uuid.UUID:
 
 
 @router.get("", response_model=list[ConversationOut])
-def list_conversations(unread: bool = False, archived: bool = False,
+def list_conversations(unread: bool = False, archived: bool = False, kind: Optional[str] = None,
                        admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return [ConversationOut(**c) for c in svc.list_for_admin(db, unread_only=unread, archived=archived)]
+    return [ConversationOut(**c) for c in svc.list_for_admin(db, unread_only=unread, archived=archived, kind=kind)]
+
+
+# ── channels (group threads) ──
+@router.post("/channels", response_model=ConversationOut)
+def create_channel(body: CreateChannelIn, admin: Admin = Depends(get_current_admin),
+                   db: Session = Depends(get_db)):
+    conv = svc.create_channel(db, body.title, [uuid.UUID(c) for c in body.creator_ids])
+    # Seed the thread so it appears in members' lists right away.
+    svc.send_message(db, conv.id, "admin", f"Welcome to #{conv.title} 👋", sender_admin_id=admin.id)
+    return ConversationOut(**svc._admin_row(db, conv))
+
+
+@router.get("/{conversation_id}/members", response_model=list[ChannelMemberOut])
+def channel_members(conversation_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
+                    db: Session = Depends(get_db)):
+    return [ChannelMemberOut(**m) for m in svc.list_channel_members(db, conversation_id)]
+
+
+@router.post("/{conversation_id}/members", status_code=204)
+def add_members(conversation_id: uuid.UUID, body: ChannelMembersIn,
+                admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    svc.add_channel_members(db, conversation_id, [uuid.UUID(c) for c in body.creator_ids])
+
+
+@router.delete("/{conversation_id}/members/{creator_id}", status_code=204)
+def remove_member(conversation_id: uuid.UUID, creator_id: uuid.UUID,
+                  admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    svc.remove_channel_member(db, conversation_id, creator_id)
 
 
 @router.get("/unread-count", response_model=UnreadCountOut)
@@ -70,7 +101,7 @@ def start(body: StartConversationIn, admin: Admin = Depends(get_current_admin),
 def messages(conversation_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
              db: Session = Depends(get_db)):
     svc.mark_read(db, conversation_id, "admin")
-    return [_msg_out(m) for m in svc.list_messages(db, conversation_id)]
+    return [MessageOut(**d) for d in svc.list_messages_dicts(db, conversation_id)]
 
 
 @router.post("/{conversation_id}/messages", response_model=MessageOut)

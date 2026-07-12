@@ -7,8 +7,9 @@ from pydantic import BaseModel
 
 class ConversationOut(BaseModel):
     id: str
-    creator_id: str
-    name: str                       # counterparty display name
+    kind: str = "dm"                # 'dm' | 'channel'
+    creator_id: Optional[str] = None  # null for channels
+    name: str                       # counterparty display name / channel name
     email: Optional[str] = None     # counterparty email (for the email button)
     last_message: Optional[str] = None
     last_message_at: Optional[datetime] = None
@@ -16,6 +17,7 @@ class ConversationOut(BaseModel):
     unread: bool = False
     muted: bool = False
     archived: bool = False
+    member_count: Optional[int] = None  # channels only
 
 
 class MessageOut(BaseModel):
@@ -23,6 +25,8 @@ class MessageOut(BaseModel):
     conversation_id: str
     sender_type: str                # 'admin' | 'creator'
     sender_admin_id: Optional[str] = None
+    sender_creator_id: Optional[str] = None
+    sender_name: Optional[str] = None  # resolved author label (channels)
     body: str
     created_at: datetime
 
@@ -62,3 +66,19 @@ class ContractHistoryItem(BaseModel):
     sent_at: Optional[datetime] = None
     accepted_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
+
+
+# ── channels ──
+class CreateChannelIn(BaseModel):
+    title: str
+    creator_ids: list[str] = []
+
+
+class ChannelMembersIn(BaseModel):
+    creator_ids: list[str] = []
+
+
+class ChannelMemberOut(BaseModel):
+    creator_id: str
+    name: str
+    email: Optional[str] = None

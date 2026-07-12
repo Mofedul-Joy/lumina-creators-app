@@ -1,8 +1,12 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { contractHistory, conversationInfo, type Conversation, type Realm } from "@/lib/messaging";
-import { getCreatorRichDetail } from "@/lib/admin";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  addChannelMembers, channelMembers, contractHistory, conversationInfo,
+  removeChannelMember, type Conversation, type Realm,
+} from "@/lib/messaging";
+import { getCreatorRichDetail, listCreators } from "@/lib/admin";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -29,7 +33,10 @@ export function ConversationExtras({
   onClose: () => void;
   onEmail: () => void;
 }) {
-  const title = panel === "profile" ? "Profile" : panel === "info" ? "Message history" : "Contract history";
+  const isChannel = conversation.kind === "channel";
+  const title = panel === "profile"
+    ? (isChannel ? "Members" : "Profile")
+    : panel === "info" ? "Message history" : "Contract history";
 
   return (
     <div className="absolute inset-0 z-30 flex flex-col bg-[var(--color-bg-deep)]">
@@ -42,7 +49,9 @@ export function ConversationExtras({
 
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {panel === "profile" ? (
-          <ProfilePanel realm={realm} conversation={conversation} onEmail={onEmail} />
+          isChannel
+            ? <MembersPanel realm={realm} conversation={conversation} />
+            : <ProfilePanel realm={realm} conversation={conversation} onEmail={onEmail} />
         ) : panel === "info" ? (
           <InfoPanel realm={realm} conversation={conversation} />
         ) : (
@@ -58,8 +67,8 @@ function ProfilePanel({ realm, conversation, onEmail }: { realm: Realm; conversa
   // (there's no rich endpoint for the company side).
   const richQ = useQuery({
     queryKey: ["conv-profile", conversation.creator_id],
-    queryFn: () => getCreatorRichDetail(conversation.creator_id),
-    enabled: realm === "admin",
+    queryFn: () => getCreatorRichDetail(conversation.creator_id as string),
+    enabled: realm === "admin" && !!conversation.creator_id,
     retry: false,
   });
   const r = richQ.data;
@@ -133,6 +142,86 @@ function ProfilePanel({ realm, conversation, onEmail }: { realm: Realm; conversa
         </>
       ) : (
         <p className="text-center text-xs text-[var(--color-text-muted)]">Couldn&apos;t load this profile.</p>
+      )}
+    </div>
+  );
+}
+
+function MembersPanel({ realm, conversation }: { realm: Realm; conversation: Conversation }) {
+  const qc = useQueryClient();
+  const [adding, setAdding] = useState(false);
+  const [search, setSearch] = useState("");
+  const membersQ = useQuery({
+    queryKey: ["channel-members", conversation.id],
+    queryFn: () => channelMembers(realm, conversation.id),
+    retry: false,
+  });
+  const members = membersQ.data ?? [];
+  const memberIds = new Set(members.map((m) => m.creator_id));
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["channel-members", conversation.id] });
+    qc.invalidateQueries({ queryKey: ["conversations", realm] });
+  };
+  const addM = useMutation({ mutationFn: (id: string) => addChannelMembers(conversation.id, [id]), onSuccess: invalidate });
+  const removeM = useMutation({ mutationFn: (id: string) => removeChannelMember(conversation.id, id), onSuccess: invalidate });
+
+  const creatorsQ = useQuery({ queryKey: ["admin-creators-lite"], queryFn: () => listCreators({}), enabled: adding && realm === "admin", retry: false });
+  const candidates = useMemo(() => {
+    const list = (creatorsQ.data ?? []).filter((c) => !memberIds.has(c.id));
+    const q = search.trim().toLowerCase();
+    return q ? list.filter((c) => (c.display_name ?? c.email).toLowerCase().includes(q) || c.email.toLowerCase().includes(q)) : list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [creatorsQ.data, search, members]);
+
+  if (adding) {
+    return (
+      <div className="space-y-2">
+        <div className="mb-1 flex items-center gap-2">
+          <button onClick={() => setAdding(false)} className="cursor-pointer text-xs font-medium text-[var(--color-brand)]">← Back to members</button>
+        </div>
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search creators…"
+          className="mb-2 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-1.5 text-sm text-[var(--color-text)] outline-none focus-visible:border-[var(--color-brand)]" />
+        {creatorsQ.isLoading ? <p className="px-1 py-2 text-xs text-[var(--color-text-muted)]">Loading…</p> : candidates.map((c) => {
+          const name = c.display_name || c.email.split("@")[0];
+          return (
+            <button key={c.id} onClick={() => addM.mutate(c.id)} disabled={addM.isPending}
+              className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition hover:bg-[var(--color-surface)]/60 disabled:opacity-50">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--color-surface-2)] text-xs font-semibold text-[var(--color-text-muted)]">{name.slice(0, 1).toUpperCase()}</span>
+              <div className="min-w-0 flex-1"><p className="truncate text-sm text-[var(--color-text)]">{name}</p><p className="truncate text-xs text-[var(--color-text-muted)]">{c.email}</p></div>
+              <span className="text-lg text-[var(--color-brand)]">+</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {realm === "admin" ? (
+        <button onClick={() => setAdding(true)} className="mb-1 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] transition hover:border-[var(--color-brand)] hover:text-[var(--color-brand)]">
+          <span className="text-base leading-none">+</span> Add members
+        </button>
+      ) : null}
+      {membersQ.isLoading ? (
+        <p className="text-center text-xs text-[var(--color-text-muted)]">Loading…</p>
+      ) : (
+        members.map((m) => {
+          const name = m.name;
+          return (
+            <div key={m.creator_id} className="flex items-center gap-3 rounded-lg border border-[var(--color-border)]/60 bg-[var(--color-surface)]/40 px-3 py-2.5">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-surface-2)] text-sm font-semibold text-[var(--color-text-muted)]">{name.slice(0, 1).toUpperCase()}</span>
+              <div className="min-w-0 flex-1"><p className="truncate text-sm text-[var(--color-text)]">{name}</p><p className="truncate text-xs text-[var(--color-text-muted)]">{m.email}</p></div>
+              {realm === "admin" ? (
+                <button onClick={() => removeM.mutate(m.creator_id)} disabled={removeM.isPending} aria-label={`Remove ${name}`}
+                  className="cursor-pointer rounded-lg p-1.5 text-[var(--color-text-muted)] transition hover:bg-[var(--color-surface)] hover:text-[var(--color-danger,#ef6a6a)] disabled:opacity-50">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                </button>
+              ) : null}
+            </div>
+          );
+        })
       )}
     </div>
   );

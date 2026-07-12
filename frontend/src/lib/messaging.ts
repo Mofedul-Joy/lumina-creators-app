@@ -5,7 +5,8 @@ export type Realm = "admin" | "creator";
 
 export type Conversation = {
   id: string;
-  creator_id: string;
+  kind: "dm" | "channel";
+  creator_id: string | null;
   name: string;
   email: string | null;
   last_message: string | null;
@@ -14,7 +15,10 @@ export type Conversation = {
   unread: boolean;
   muted: boolean;
   archived: boolean;
+  member_count: number | null;
 };
+
+export type ChannelMember = { creator_id: string; name: string; email: string | null };
 
 export type ConversationInfo = {
   message_count: number;
@@ -38,6 +42,8 @@ export type Message = {
   conversation_id: string;
   sender_type: "admin" | "creator";
   sender_admin_id: string | null;
+  sender_creator_id: string | null;
+  sender_name: string | null;   // resolved author label (channels)
   body: string;
   created_at: string;
 };
@@ -90,6 +96,27 @@ export const startConversation = (creatorId: string) =>
     method: "POST",
     body: JSON.stringify({ creator_id: creatorId }),
     token: getAdminToken() ?? undefined,
+  });
+
+// ── channels (admin) ──
+export const createChannel = (title: string, creatorIds: string[]) =>
+  apiFetch<Conversation>(`/api/admin/conversations/channels`, {
+    method: "POST", body: JSON.stringify({ title, creator_ids: creatorIds }),
+    token: getAdminToken() ?? undefined,
+  });
+
+export const channelMembers = (realm: Realm, conversationId: string) =>
+  apiFetch<ChannelMember[]>(`${base(realm)}/conversations/${conversationId}/members`, { token: tok(realm) });
+
+export const addChannelMembers = (conversationId: string, creatorIds: string[]) =>
+  apiFetch<void>(`/api/admin/conversations/${conversationId}/members`, {
+    method: "POST", body: JSON.stringify({ creator_ids: creatorIds }),
+    token: getAdminToken() ?? undefined,
+  });
+
+export const removeChannelMember = (conversationId: string, creatorId: string) =>
+  apiFetch<void>(`/api/admin/conversations/${conversationId}/members/${creatorId}`, {
+    method: "DELETE", token: getAdminToken() ?? undefined,
   });
 
 // Gmail compose in a new tab, recipient pre-filled. Falls back to mailto.

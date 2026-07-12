@@ -3,7 +3,7 @@ from __future__ import annotations
 from app.models.campaign import Campaign, CampaignBonusMilestone, CampaignInvite, CampaignParticipation
 from app.models.contract import CampaignContract, CreatorContract
 from app.models.identity import Admin, Client, Creator, CreatorInvite
-from app.models.messaging import Conversation, Message
+from app.models.messaging import Conversation, ConversationMember, Message
 from app.models.payout import PaymentMethod, Payout, PayoutItem, Wallet, WalletTransaction
 from app.models.profile import CreatorExperience, CreatorProfile, PortfolioItem, SocialAccount, StorageObject
 from app.models.submission import ScrapeJob, Submission, SubmissionViewSnapshot
@@ -19,6 +19,7 @@ __all__ = [
     "CampaignParticipation",
     "Client",
     "Conversation",
+    "ConversationMember",
     "Creator",
     "CreatorContract",
     "CreatorExperience",

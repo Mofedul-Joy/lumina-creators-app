@@ -18,27 +18,24 @@ from app.services import messaging as svc
 router = APIRouter(prefix="/conversations", tags=["creator-messages"])
 
 
-def _msg_out(m: Message) -> MessageOut:
-    return MessageOut(
-        id=str(m.id), conversation_id=str(m.conversation_id), sender_type=m.sender_type,
-        sender_admin_id=str(m.sender_admin_id) if m.sender_admin_id else None,
-        body=m.body, created_at=m.created_at,
-    )
-
-
 def _owned(db: Session, conversation_id: uuid.UUID, creator_id: uuid.UUID) -> Conversation:
+    """A creator may access their own DM or any channel they're a member of."""
     conv = db.get(Conversation, conversation_id)
-    if conv is None or conv.creator_id != creator_id:
+    if conv is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Conversation not found")
+    if conv.kind == "channel":
+        if not svc.creator_in_channel(db, conversation_id, creator_id):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Conversation not found")
+    elif conv.creator_id != creator_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Conversation not found")
     return conv
 
 
 @router.get("", response_model=list[ConversationOut])
 def my_conversations(current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
-    """The creator has a single thread with the team. Auto-created so the UI
-    always has somewhere to type, even before the team writes first."""
-    conv = svc.get_or_create_for_creator(db, current.id)
-    return [ConversationOut(**svc.creator_thread_dict(db, conv, current))]
+    """The creator's DM with the team (auto-created so there's always somewhere
+    to type) plus every channel they belong to."""
+    return [ConversationOut(**c) for c in svc.list_for_creator(db, current.id)]
 
 
 @router.get("/unread-count", response_model=UnreadCountOut)
@@ -50,30 +47,37 @@ def unread_count(current: Creator = Depends(get_current_creator), db: Session = 
 def messages(conversation_id: uuid.UUID, current: Creator = Depends(get_current_creator),
              db: Session = Depends(get_db)):
     _owned(db, conversation_id, current.id)
-    svc.mark_read(db, conversation_id, "creator")
-    return [_msg_out(m) for m in svc.list_messages(db, conversation_id)]
+    svc.mark_read(db, conversation_id, "creator", creator_id=current.id)
+    return [MessageOut(**d) for d in svc.list_messages_dicts(db, conversation_id)]
 
 
 @router.post("/{conversation_id}/messages", response_model=MessageOut)
 def send(conversation_id: uuid.UUID, body: MessageIn, current: Creator = Depends(get_current_creator),
          db: Session = Depends(get_db)):
     _owned(db, conversation_id, current.id)
-    return _msg_out(svc.send_message(db, conversation_id, "creator", body.body))
+    m = svc.send_message(db, conversation_id, "creator", body.body, sender_creator_id=current.id)
+    return MessageOut(
+        id=str(m.id), conversation_id=str(m.conversation_id), sender_type=m.sender_type,
+        sender_admin_id=None, sender_creator_id=str(current.id), body=m.body, created_at=m.created_at,
+    )
 
 
 @router.post("/{conversation_id}/read", status_code=204)
 def read(conversation_id: uuid.UUID, current: Creator = Depends(get_current_creator),
          db: Session = Depends(get_db)):
     _owned(db, conversation_id, current.id)
-    svc.mark_read(db, conversation_id, "creator")
+    svc.mark_read(db, conversation_id, "creator", creator_id=current.id)
 
 
 # ── three-dots menu ──
 @router.post("/{conversation_id}/mute", status_code=204)
 def mute(conversation_id: uuid.UUID, body: MutedIn, current: Creator = Depends(get_current_creator),
          db: Session = Depends(get_db)):
-    _owned(db, conversation_id, current.id)
-    svc.set_muted(db, conversation_id, "creator", body.muted)
+    conv = _owned(db, conversation_id, current.id)
+    if conv.kind == "channel":
+        svc.set_channel_muted(db, conversation_id, current.id, body.muted)
+    else:
+        svc.set_muted(db, conversation_id, "creator", body.muted)
 
 
 @router.get("/{conversation_id}/info", response_model=ConversationInfoOut)
