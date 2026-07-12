@@ -20,6 +20,7 @@ import {
 } from "@/lib/campaignFlow";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { fmtInt, fmtMoney } from "@/lib/format";
 import {
   createCampaign,
@@ -312,10 +313,13 @@ function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) =
   );
 }
 
-function ReviewRow({ label, value }: { label: string; value: React.ReactNode }) {
+function ReviewRow({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
   return (
     <div className="flex items-start justify-between gap-6 py-2">
-      <span className="text-sm text-[var(--color-text-secondary)]">{label}</span>
+      <span className="flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)]">
+        {label}
+        {hint ? <InfoTip text={hint} /> : null}
+      </span>
       <span className="text-right text-sm text-[var(--color-text)]">{value}</span>
     </div>
   );
@@ -552,11 +556,13 @@ export default function NewCampaignPage() {
 
         {/* kind + level context, so the admin can see what they picked */}
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-[var(--color-border)] px-2.5 py-0.5 text-[11px] text-[var(--color-text-secondary)]">
+          <span className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] px-2.5 py-0.5 text-[11px] text-[var(--color-text-secondary)]">
             {kindLabel(f.campaign_kind)}
+            <InfoTip text="The campaign type you picked on the first screen (e.g. High Volume UGC, Influencer, Paid Ads). It shapes the defaults. To change it, use ← Campaigns and start a new campaign." />
           </span>
-          <span className="rounded-full bg-[var(--color-brand)]/15 px-2.5 py-0.5 text-[11px] font-medium text-[var(--color-brand)]">
+          <span className="flex items-center gap-1.5 rounded-full bg-[var(--color-brand)]/15 px-2.5 py-0.5 text-[11px] font-medium text-[var(--color-brand)]">
             {advanced ? "Advanced" : "Essentials"}
+            <InfoTip text="Your setup mode. Essentials shows a short, guided form with sensible defaults. Advanced unlocks extra fields (account type, content type, posting frequency, bonus milestones)." />
           </span>
         </div>
 
@@ -629,7 +635,7 @@ export default function NewCampaignPage() {
               <h2 className="text-lg font-semibold text-[var(--color-text)]">Campaign Details</h2>
               <p className="text-sm text-[var(--color-text-secondary)]">Set up your campaign&apos;s basic information.</p>
 
-              <Field id="cf-name" requiredMark error={errors.name} label="Campaign name" value={f.name} onChange={(e) => patch({ name: e.target.value })} placeholder="e.g. TikTok UGC Ambassador" />
+              <Field id="cf-name" requiredMark error={errors.name} label="Campaign name" hint="The public name creators see when they browse and apply. Make it clear and specific." value={f.name} onChange={(e) => patch({ name: e.target.value })} placeholder="e.g. TikTok UGC Ambassador" />
 
               {advanced ? (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -757,12 +763,12 @@ export default function NewCampaignPage() {
                 {f.payment_type === "fixed" ? (
                   <>
                     <Field requiredMark error={errors.fixed_amount} label="Recurring payment amount ($)" type="number" value={f.fixed_amount} onChange={(e) => patch({ fixed_amount: e.target.value })} />
-                    <Field error={errors.posts_per_payment} label="Paid every N posts" type="number" min="1" value={f.posts_per_payment} onChange={(e) => patch({ posts_per_payment: e.target.value })} />
+                    <Field error={errors.posts_per_payment} label="Paid every N posts" hint="How many approved posts a creator must deliver to earn one fixed payment. e.g. 5 means they're paid the amount above for every 5 posts." type="number" min="1" value={f.posts_per_payment} onChange={(e) => patch({ posts_per_payment: e.target.value })} />
                   </>
                 ) : null}
 
                 {f.payment_type === "cpm" ? (
-                  <Field requiredMark error={errors.cpm_rate} label="CPM rate ($ / 1,000 views)" type="number" value={f.cpm_rate} onChange={(e) => patch({ cpm_rate: e.target.value })} />
+                  <Field requiredMark error={errors.cpm_rate} label="CPM rate ($ / 1,000 views)" hint="What you pay per 1,000 views. A creator's earnings = CPM × (their views ÷ 1,000). e.g. $3.50 CPM on 50,000 views = $175." type="number" value={f.cpm_rate} onChange={(e) => patch({ cpm_rate: e.target.value })} />
                 ) : null}
 
                 {f.payment_type === "mixed" ? (
@@ -790,6 +796,7 @@ export default function NewCampaignPage() {
               {!f.no_platform_tracking ? (
                 <Field
                   label="Minimum views (optional)"
+                  hint="A post must reach this many views before it starts counting toward payout. Leave blank so every view counts from the first one."
                   type="number"
                   placeholder="No minimum"
                   error={errors.min_views}
@@ -798,20 +805,18 @@ export default function NewCampaignPage() {
                 />
               ) : null}
 
+              {/* Total budget is a headline decision — always visible so the admin
+                  can set the spend cap without hunting for an 'Advanced' toggle. */}
               <div>
-                <button
-                  type="button"
-                  className="cursor-pointer text-xs font-medium text-[var(--color-text-secondary)] underline underline-offset-2"
-                  onClick={() => patch({ showAdvancedBudget: !f.showAdvancedBudget })}
-                >
-                  {f.showAdvancedBudget ? "Hide advanced" : "Advanced: set total campaign budget"}
-                </button>
-                {f.showAdvancedBudget ? (
-                  <div className="mt-3">
-                    <Field label="Total campaign budget ($)" type="number" value={f.budget} onChange={(e) => patch({ budget: e.target.value })} />
-                    <p className="mt-1 text-xs text-[var(--color-text-muted)]">Defaults to $10,000 if left as-is.</p>
-                  </div>
-                ) : null}
+                <Field
+                  label="Total campaign budget ($)"
+                  hint="The most this campaign will pay out in total across all creators. Once spend reaches this cap, payouts stop. Defaults to $10,000."
+                  type="number"
+                  placeholder="10000"
+                  value={f.budget}
+                  onChange={(e) => patch({ budget: e.target.value })}
+                />
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">Defaults to $10,000 if left blank.</p>
               </div>
 
               {/* Bonus milestones are a power-user feature — Essentials keeps the
@@ -1019,17 +1024,22 @@ export default function NewCampaignPage() {
               <p className="text-sm text-[var(--color-text-secondary)]">Review all details before creating your campaign.</p>
 
               <ReviewCard title="Payment type">
-                <ReviewRow label="Payment type" value={PAYMENT_TYPES.find((p) => p.value === f.payment_type)?.label} />
-                <ReviewRow label="From template" value={template ? (f.overrideTemplate ? `${template.title} (overridden)` : template.title) : "None"} />
+                <ReviewRow label="Payment type" value={PAYMENT_TYPES.find((p) => p.value === f.payment_type)?.label}
+                  hint="How creators get paid: CPM (per 1,000 views), Fixed (flat recurring), Mixed (fixed + CPM bonus), Per Hour, or Per Post. Chosen on step 1." />
+                <ReviewRow label="From template" value={template ? (f.overrideTemplate ? `${template.title} (overridden)` : template.title) : "None"}
+                  hint="Which saved template pre-filled this campaign. 'None' means you started from scratch. You choose a template on the very first screen, so it's just a record here." />
               </ReviewCard>
 
               <ReviewCard title="Basic information">
-                <ReviewRow label="Name" value={f.name || "—"} />
-                <ReviewRow label="Campaign type" value={kindLabel(f.campaign_kind)} />
-                <ReviewRow label="Setup" value={advanced ? "Advanced" : "Essentials"} />
+                <ReviewRow label="Name" value={f.name || "—"} hint="The campaign name creators see when browsing." />
+                <ReviewRow label="Campaign type" value={kindLabel(f.campaign_kind)}
+                  hint="The campaign kind you picked on the second screen (High Volume UGC, Influencer, Paid Ads, Campaign Manager, or Analytics Only). It sets the defaults for this campaign." />
+                <ReviewRow label="Setup" value={advanced ? "Advanced" : "Essentials"}
+                  hint="Your setup mode. Essentials = a short guided form. Advanced = extra control (account/content type, posting frequency, bonus milestones). Chosen on the third screen." />
                 <ReviewRow
                   label="Duration"
                   value={`${f.start_date || "—"} → ${f.ongoing ? "Ongoing" : f.end_date || "—"}`}
+                  hint="When the campaign runs. 'Ongoing' has no end date — creators can keep posting until you close it."
                 />
               </ReviewCard>
 
@@ -1037,22 +1047,28 @@ export default function NewCampaignPage() {
                 <ReviewRow
                   label="Platforms"
                   value={f.no_platform_tracking ? "No platform tracking" : f.platform_focus.join(", ") || "—"}
+                  hint="Which platforms creators may post on. Only posts from these platforms are accepted and tracked."
                 />
-                <ReviewRow label="Payment schedule" value={scheduleLabel(f.payment_schedule)} />
+                <ReviewRow label="Payment schedule" value={scheduleLabel(f.payment_schedule)}
+                  hint="How often payout cycles run (every 7 / 14 / 30 days)." />
               </ReviewCard>
 
               <ReviewCard title="Compensation">
-                <ReviewRow label="Pay" value={payLine} />
-                <ReviewRow label="Minimum views" value={f.min_views ? fmtInt(Number(f.min_views)) : "No minimum"} />
-                <ReviewRow label="Total budget" value={fmtMoney(effectiveBudget)} />
+                <ReviewRow label="Pay" value={payLine} hint="The headline rate creators earn, based on the payment type you chose." />
+                <ReviewRow label="Minimum views" value={f.min_views ? fmtInt(Number(f.min_views)) : "No minimum"}
+                  hint="A post must reach this many views before it counts toward payout. 'No minimum' means every view counts from the start." />
+                <ReviewRow label="Total budget" value={fmtMoney(effectiveBudget)}
+                  hint="The cap on total spend for this campaign. Payouts stop once the campaign has spent this much. Defaults to $10,000 — set it on the Compensation step." />
               </ReviewCard>
 
               <ReviewCard title="Settings">
                 <ReviewRow
                   label="Payment cycle trigger"
                   value={CYCLE_TRIGGERS.find((t) => t.key === f.payment_cycle_trigger)?.label}
+                  hint="What starts a payout cycle. 'Post delivery' starts counting when a creator delivers a post; 'Schedule' pays on a fixed calendar regardless of delivery."
                 />
-                <ReviewRow label="Automatically apply pro rata" value={f.pro_rata ? "Enabled" : "Disabled"} />
+                <ReviewRow label="Automatically apply pro rata" value={f.pro_rata ? "Enabled" : "Disabled"}
+                  hint="If a creator only delivers part-way through a cycle, pay the proportion actually delivered instead of the full amount." />
               </ReviewCard>
 
               <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--color-text-secondary)]">
