@@ -230,10 +230,13 @@ export default function AdminApplicantsPage() {
         ) : (
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {rows.map((r) => (
-              <button
+              <div
                 key={r.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => setOpenId(r.id)}
-                className="card-lumina group relative flex flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-950/50 p-5 text-left transition-all hover:border-[var(--color-brand)]/60 hover:shadow-[0_0_0_1px_rgba(34,197,94,0.35),0_18px_40px_-20px_rgba(34,197,94,0.45)]"
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenId(r.id); } }}
+                className="card-lumina group relative flex cursor-pointer flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-950/50 p-5 text-left transition-all hover:border-[var(--color-brand)]/60 hover:shadow-[0_0_0_1px_rgba(34,197,94,0.35),0_18px_40px_-20px_rgba(34,197,94,0.45)]"
               >
                 <div className="flex items-center gap-3">
                   <Avatar url={r.avatar_url} name={r.display_name} size={44} />
@@ -276,7 +279,7 @@ export default function AdminApplicantsPage() {
                   <button onClick={(e) => { e.stopPropagation(); applyStatus(r.id, "declined"); }}
                     className="rounded-lg border border-[var(--color-danger)]/40 px-2.5 py-1 text-xs text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10">Decline</button>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
