@@ -21,8 +21,9 @@ class AdminSubmissionRow(BaseModel):
     estimated_amount: Decimal
     verification_status: str
     scrape_status: str
-    status: str  # computed lifecycle: awaiting_stats|proof_uploaded|stats_verified|paid|rejected
+    status: str  # computed lifecycle: awaiting_stats|proof_uploaded|stats_verified|paid|rejected|revision_requested
     verification_note: Optional[str] = None
+    revision_mode: Optional[str] = None  # edit|repost when revision_requested
     proof_url: Optional[str] = None
     embed_broken: bool = False
     post_unavailable: bool = False
@@ -37,7 +38,13 @@ class RejectIn(BaseModel):
     note: str
 
 
+class RevisionIn(BaseModel):
+    mode: str          # edit | repost
+    note: str = ""     # optional
+
+
 class SubmissionCounts(BaseModel):
     pending: int = 0
     verified: int = 0
     rejected: int = 0
+    revision_requested: int = 0

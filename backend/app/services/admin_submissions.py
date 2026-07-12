@@ -78,8 +78,35 @@ def verify_submission(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID
     sub.verified_by = admin_id
     sub.verified_at = _now()
     sub.verification_note = None
+    sub.revision_mode = None
     audit.log(db, actor_admin_id=admin_id, action="submission.verify",
              entity_type="submission", entity_id=sub.id)
+    db.commit()
+    db.refresh(sub)
+    return sub
+
+
+_REVISION_MODES = {"edit", "repost"}
+
+
+def request_revision(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID,
+                     mode: str, note: str = "") -> Submission:
+    """Soft-bounce a submission back to the creator for changes — the middle
+    ground between verify and reject. `mode` decides how they fix it:
+      • 'edit'   — the creator amends this same submission (its link) → pending.
+      • 'repost' — the creator must submit a brand-new post; this one stays as
+                   revision_requested for the record.
+    Never scrapes or pays (the worker is verified-only). Note is optional."""
+    if mode not in _REVISION_MODES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "mode must be 'edit' or 'repost'")
+    sub = _get(db, submission_id)
+    sub.verification_status = "revision_requested"
+    sub.revision_mode = mode
+    sub.verified_by = admin_id
+    sub.verified_at = _now()
+    sub.verification_note = (note or "").strip() or None
+    audit.log(db, actor_admin_id=admin_id, action="submission.request_revision",
+             entity_type="submission", entity_id=sub.id, note=sub.verification_note)
     db.commit()
     db.refresh(sub)
     return sub
@@ -134,6 +161,8 @@ def lifecycle_status(sub: Submission, is_paid: bool) -> str:
         return "paid"
     if sub.verification_status == "rejected":
         return "rejected"
+    if sub.verification_status == "revision_requested":
+        return "revision_requested"
     if sub.claimed_at is not None:
         return "payment_claimed"
     if sub.verification_status == "verified":

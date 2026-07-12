@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAuthToken } from "@/lib/auth";
-import { browseCampaigns, claimSubmission, listSubmissions, uploadProofVideo, type Submission } from "@/lib/campaigns";
+import { browseCampaigns, claimSubmission, listSubmissions, resubmitClip, uploadProofVideo, type Submission } from "@/lib/campaigns";
 import { ApiError, listMyCampaigns } from "@/lib/api";
 import { fmtInt, fmtMoney } from "@/lib/format";
 import { SkeletonCardGrid } from "@/components/ui/Skeleton";
@@ -43,6 +43,8 @@ type Group = {
   claimable: number;
   pendingClaim: number;
   needsProofIds: string[];
+  slug: string | null;
+  revisionPosts: Submission[];
 };
 
 export default function MyCampaignsPage() {
@@ -80,6 +82,18 @@ export default function MyCampaignsPage() {
     onSettled: () => { setUploadingId(null); setUploadPct(0); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["submissions"] }),
   });
+  // Re-submitting a post the admin bounced back with an 'edit' revision.
+  const [editUrls, setEditUrls] = useState<Record<string, string>>({});
+  const [resubmitError, setResubmitError] = useState<Record<string, string>>({});
+  const resubmitM = useMutation({
+    mutationFn: ({ id, url }: { id: string; url: string }) => resubmitClip(id, url),
+    onSuccess: (_r, { id }) => {
+      setEditUrls((u) => { const n = { ...u }; delete n[id]; return n; });
+      setResubmitError((e) => { const n = { ...e }; delete n[id]; return n; });
+      qc.invalidateQueries({ queryKey: ["submissions"] });
+    },
+    onError: (err, { id }) => setResubmitError((e) => ({ ...e, [id]: err instanceof Error ? err.message : "Could not re-submit" })),
+  });
 
   if (ready && !hasToken)
     return (
@@ -111,11 +125,14 @@ export default function MyCampaignsPage() {
         claimable: 0,
         pendingClaim: 0,
         needsProofIds: [],
+        slug: c?.slug ?? null,
+        revisionPosts: [],
       };
       byId.set(s.campaign_id, g);
       groups.push(g);
     }
     g.posts.push(s);
+    if (s.verification_status === "revision_requested") g.revisionPosts.push(s);
     g.views += s.views;
     g.earned += Number(s.estimated_amount);
     if (s.is_paid) g.paid += Number(s.estimated_amount);
@@ -181,6 +198,47 @@ export default function MyCampaignsPage() {
                     <p className="tabular mt-1 text-xl font-semibold text-[var(--color-text)]">{fmtMoney(g.earned)}</p>
                   </div>
                 </div>
+
+                {g.revisionPosts.map((p) => (
+                  <div key={p.id} className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+                    <p className="text-sm font-medium text-amber-400">
+                      {p.revision_mode === "repost" ? "Post a new video" : "Changes requested"}
+                    </p>
+                    {p.verification_note ? (
+                      <p className="mt-1 text-xs text-[var(--color-text-secondary)]">“{p.verification_note}”</p>
+                    ) : (
+                      <p className="mt-1 text-xs text-[var(--color-text-muted)]">The admin asked you to update this post.</p>
+                    )}
+                    {p.revision_mode === "repost" ? (
+                      <Link
+                        href={g.slug ? `/campaigns/${g.slug}` : "/campaigns"}
+                        className="mt-2 inline-flex min-h-9 items-center rounded-full bg-amber-500/15 px-4 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 transition hover:bg-amber-500/25"
+                      >
+                        Post a new video
+                      </Link>
+                    ) : (
+                      <div className="mt-2">
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <input
+                            value={editUrls[p.id] ?? p.post_url}
+                            onChange={(e) => setEditUrls((u) => ({ ...u, [p.id]: e.target.value }))}
+                            placeholder="Updated post link…"
+                            className="min-h-9 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)]"
+                          />
+                          <button
+                            type="button"
+                            disabled={resubmitM.isPending}
+                            onClick={() => { setResubmitError((e) => { const n = { ...e }; delete n[p.id]; return n; }); resubmitM.mutate({ id: p.id, url: (editUrls[p.id] ?? p.post_url).trim() }); }}
+                            className="min-h-9 shrink-0 cursor-pointer rounded-full bg-amber-500/15 px-4 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 transition hover:bg-amber-500/25 disabled:opacity-50"
+                          >
+                            {resubmitM.isPending ? "Sending…" : "Re-submit"}
+                          </button>
+                        </div>
+                        {resubmitError[p.id] ? <p className="mt-1 text-xs text-[var(--color-danger)]">{resubmitError[p.id]}</p> : null}
+                      </div>
+                    )}
+                  </div>
+                ))}
 
                 {g.claimable > 0 ? (
                   g.claimable >= MIN_PAYOUT ? (

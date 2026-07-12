@@ -76,6 +76,7 @@ export type Submission = {
   scrape_status: string;
   verification_status: string;
   verification_note: string | null;
+  revision_mode: "edit" | "repost" | null;
   has_proof_video: boolean;
   thumbnail_url: string | null;
   claimed: boolean;
@@ -104,6 +105,16 @@ export const submitClip = (campaign_slug: string, post_url: string) =>
   apiFetch<Submission>("/api/creator/submissions", {
     method: "POST",
     body: JSON.stringify({ campaign_slug, post_url }),
+    ...auth(),
+  });
+
+// Amend a revision-requested (mode 'edit') submission with a corrected link →
+// back to pending review. campaign_slug is ignored server-side but keeps the
+// SubmissionCreateIn shape.
+export const resubmitClip = (id: string, post_url: string) =>
+  apiFetch<Submission>(`/api/creator/submissions/${id}/resubmit`, {
+    method: "POST",
+    body: JSON.stringify({ campaign_slug: "", post_url }),
     ...auth(),
   });
 

@@ -29,6 +29,7 @@ class CampaignCreateIn(BaseModel):
     budget: Decimal
     description: Optional[str] = None
     max_payout_per_creator: Optional[Decimal] = None
+    min_payout_amount: Optional[Decimal] = None
     eligible_view_pct: Decimal = Decimal("100")
     min_retention_days: int = 30
     platforms: List[str] = []
@@ -82,6 +83,7 @@ class CampaignUpdateIn(BaseModel):
     cpm_rate: Optional[Decimal] = None
     budget: Optional[Decimal] = None
     max_payout_per_creator: Optional[Decimal] = None
+    min_payout_amount: Optional[Decimal] = None
     eligible_view_pct: Optional[Decimal] = None
     min_retention_days: Optional[int] = None
     platforms: Optional[List[str]] = None
@@ -141,6 +143,7 @@ class CampaignOut(BaseModel):
     budget: Decimal
     spent_amount: Decimal
     max_payout_per_creator: Optional[Decimal] = None
+    min_payout_amount: Optional[Decimal] = None
     eligible_view_pct: Decimal
     min_retention_days: int
     platforms: List[str] = []

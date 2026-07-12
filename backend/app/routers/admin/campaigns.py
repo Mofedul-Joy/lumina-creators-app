@@ -45,7 +45,8 @@ def campaign_out(c: Campaign, db: Session | None = None) -> CampaignOut:
     return CampaignOut(
         id=str(c.id), slug=c.slug, name=c.name, description=c.description, mode=c.mode,
         status=c.status, cpm_rate=c.cpm_rate, budget=c.budget, spent_amount=c.spent_amount,
-        max_payout_per_creator=c.max_payout_per_creator, eligible_view_pct=c.eligible_view_pct,
+        max_payout_per_creator=c.max_payout_per_creator, min_payout_amount=c.min_payout_amount,
+        eligible_view_pct=c.eligible_view_pct,
         min_retention_days=c.min_retention_days, platforms=list(c.platforms or []),
         geo_countries=list(c.geo_countries or []), brief_script=c.brief_script,
         content_drive_url=c.content_drive_url, caption_rules=c.caption_rules,

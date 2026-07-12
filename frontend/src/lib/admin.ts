@@ -158,6 +158,7 @@ export type CampaignCreate = {
   pro_rata?: boolean;
   min_views?: number;
   posts_per_payment?: number;
+  min_payout_amount?: number;
   starts_at?: string;
   ends_at?: string;
 };
@@ -319,10 +320,11 @@ export type AdminSubmission = {
   likes: number;
   comments: number;
   estimated_amount: number | string;
-  verification_status: "pending" | "verified" | "rejected";
-  status: "awaiting_stats" | "proof_uploaded" | "stats_verified" | "paid" | "rejected";
+  verification_status: "pending" | "verified" | "rejected" | "revision_requested";
+  status: "awaiting_stats" | "proof_uploaded" | "stats_verified" | "paid" | "rejected" | "revision_requested";
   scrape_status: string;
   verification_note: string | null;
+  revision_mode: "edit" | "repost" | null;
   proof_url: string | null;
   embed_broken: boolean;
   post_unavailable: boolean;
@@ -333,7 +335,7 @@ export type AdminSubmission = {
   created_at: string;
 };
 
-export type SubmissionCounts = { pending: number; verified: number; rejected: number };
+export type SubmissionCounts = { pending: number; verified: number; rejected: number; revision_requested: number };
 
 export const listSubmissions = (f: { status?: string; campaign_id?: string; platform?: string; suspicious?: boolean } = {}) => {
   const p = new URLSearchParams();
@@ -357,6 +359,15 @@ export const rejectSubmission = (id: string, note: string) =>
   apiFetch<AdminSubmission>(`/api/admin/submissions/${id}/reject`, {
     method: "POST",
     body: JSON.stringify({ note }),
+    ...auth(),
+  });
+
+// Soft-bounce a submission back to the creator. mode 'edit' lets them amend the
+// same post; 'repost' asks for a brand-new one. Note is optional.
+export const requestSubmissionRevision = (id: string, mode: "edit" | "repost", note = "") =>
+  apiFetch<AdminSubmission>(`/api/admin/submissions/${id}/request-revision`, {
+    method: "POST",
+    body: JSON.stringify({ mode, note }),
     ...auth(),
   });
 

@@ -13,7 +13,7 @@ from app.core.deps import get_current_admin
 from app.db.session import get_db
 from app.integrations import storage
 from app.models import Admin, Campaign, Creator, CreatorProfile, StorageObject, Submission
-from app.schemas.admin_submissions import AdminSubmissionRow, RejectIn, SubmissionCounts
+from app.schemas.admin_submissions import AdminSubmissionRow, RejectIn, RevisionIn, SubmissionCounts
 from app.services import admin_submissions as svc
 from app.services import payouts as payout_svc
 
@@ -35,7 +35,7 @@ def _row(db: Session, sub: Submission, name: str, mode: str, display_name,
         post_url=sub.post_url, views=sub.views, likes=sub.likes, comments=sub.comments,
         estimated_amount=sub.estimated_amount, verification_status=sub.verification_status,
         scrape_status=sub.scrape_status, status=svc.lifecycle_status(sub, is_paid),
-        verification_note=sub.verification_note,
+        verification_note=sub.verification_note, revision_mode=sub.revision_mode,
         proof_url=_proof_url(db, sub),
         embed_broken=sub.embed_broken, post_unavailable=sub.post_unavailable,
         is_suspicious=sub.is_suspicious, creator_is_suspicious=creator_is_suspicious,
@@ -64,7 +64,8 @@ def list_submissions(
 def counts(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     c = svc.counts_by_status(db)
     return SubmissionCounts(pending=c.get("pending", 0), verified=c.get("verified", 0),
-                            rejected=c.get("rejected", 0))
+                            rejected=c.get("rejected", 0),
+                            revision_requested=c.get("revision_requested", 0))
 
 
 @router.post("/{submission_id}/verify", response_model=AdminSubmissionRow)
@@ -78,6 +79,13 @@ def verify(submission_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
 def reject(submission_id: uuid.UUID, body: RejectIn, admin: Admin = Depends(get_current_admin),
            db: Session = Depends(get_db)):
     sub = svc.reject_submission(db, admin.id, submission_id, body.note)
+    return _reload(db, sub)
+
+
+@router.post("/{submission_id}/request-revision", response_model=AdminSubmissionRow)
+def request_revision(submission_id: uuid.UUID, body: RevisionIn,
+                     admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    sub = svc.request_revision(db, admin.id, submission_id, body.mode, body.note)
     return _reload(db, sub)
 
 

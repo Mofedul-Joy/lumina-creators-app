@@ -106,6 +106,7 @@ VERIFICATION_STATUS = Enum(
     "pending",
     "verified",
     "rejected",
+    "revision_requested",
     name="verification_status",
     native_enum=True,
     create_type=False,

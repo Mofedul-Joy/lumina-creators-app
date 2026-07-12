@@ -28,6 +28,7 @@ class SubmissionOut(BaseModel):
     scrape_status: str
     verification_status: str
     verification_note: Optional[str] = None
+    revision_mode: Optional[str] = None  # edit|repost when revision_requested
     has_proof_video: bool = False
     thumbnail_url: Optional[str] = None
     claimed: bool = False

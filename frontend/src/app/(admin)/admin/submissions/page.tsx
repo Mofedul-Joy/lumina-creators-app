@@ -24,6 +24,7 @@ const PLATFORM_LABEL: Record<string, string> = {
 const FILTERS = [
   { key: "", label: "All" },
   { key: "pending", label: "Pending" },
+  { key: "revision_requested", label: "Revisions" },
   { key: "verified", label: "Verified" },
   { key: "rejected", label: "Rejected" },
 ] as const;
@@ -104,7 +105,7 @@ function SubmissionsInner() {
         <div className="mt-6 flex flex-wrap gap-2">
           {FILTERS.map((f) => {
             const active = filter === f.key;
-            const n = f.key === "pending" ? c?.pending : f.key === "verified" ? c?.verified : f.key === "rejected" ? c?.rejected : undefined;
+            const n = f.key === "pending" ? c?.pending : f.key === "verified" ? c?.verified : f.key === "rejected" ? c?.rejected : f.key === "revision_requested" ? c?.revision_requested : undefined;
             return (
               <button
                 key={f.key}

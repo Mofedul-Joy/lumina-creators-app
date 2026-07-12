@@ -222,6 +222,7 @@ type WizardState = {
   per_post_amount: string;
   posts_per_payment: string;
   min_views: string;
+  min_payout_amount: string;
   budget: string;
   showAdvancedBudget: boolean;
   bonus_milestones: BonusMilestone[];
@@ -271,6 +272,7 @@ const initialState: WizardState = {
   per_post_amount: "",
   posts_per_payment: "1",
   min_views: "",
+  min_payout_amount: "",
   budget: "10000",
   showAdvancedBudget: false,
   bonus_milestones: [],
@@ -508,6 +510,7 @@ export default function NewCampaignPage() {
         pro_rata: f.pro_rata,
         min_views: f.min_views ? Number(f.min_views) : undefined,
         posts_per_payment: Number(f.posts_per_payment) || 1,
+        min_payout_amount: f.min_payout_amount ? Number(f.min_payout_amount) : undefined,
         starts_at: f.start_date ? new Date(f.start_date).toISOString() : undefined,
         // Ongoing == no end date, so there's no second source of truth to disagree.
         ends_at: !f.ongoing && f.end_date ? new Date(f.end_date).toISOString() : undefined,
@@ -947,6 +950,18 @@ export default function NewCampaignPage() {
                 <p className="mt-1 text-xs text-[var(--color-text-muted)]">
                   Part-way through a cycle, pay the proportion actually delivered rather than the full amount.
                 </p>
+              </div>
+
+              <div>
+                <Field
+                  label="Minimum payout threshold ($)"
+                  hint="How much a creator must earn in this campaign before they can request a payout. Stops tiny, fee-heavy payouts. Leave blank to use the platform default ($25)."
+                  type="number"
+                  placeholder="25"
+                  value={f.min_payout_amount}
+                  onChange={(e) => patch({ min_payout_amount: e.target.value })}
+                />
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">Defaults to $25 if left blank.</p>
               </div>
 
               {advanced ? (

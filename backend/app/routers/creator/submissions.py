@@ -32,7 +32,7 @@ def _out(s: Submission, is_paid: bool = False) -> SubmissionOut:
         views=s.views, likes=s.likes, comments=s.comments, estimated_amount=s.estimated_amount,
         payable_amount=s.payable_amount, scrape_status=s.scrape_status,
         verification_status=s.verification_status, verification_note=s.verification_note,
-        has_proof_video=s.proof_object_id is not None,
+        revision_mode=s.revision_mode, has_proof_video=s.proof_object_id is not None,
         thumbnail_url=s.thumbnail_url, claimed=s.claimed_at is not None, is_paid=is_paid,
         created_at=s.created_at,
     )
@@ -63,6 +63,15 @@ def detail(submission_id: uuid.UUID, current: Creator = Depends(get_current_crea
 def attach_proof(submission_id: uuid.UUID, body: ProofVideoAttachIn,
                  current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
     return _out_one(db, svc.attach_proof_video(db, current.id, submission_id, uuid.UUID(body.storage_object_id)))
+
+
+@router.post("/{submission_id}/resubmit", response_model=SubmissionOut)
+def resubmit(submission_id: uuid.UUID, body: SubmissionCreateIn,
+             current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
+    """Amend a revision-requested (mode 'edit') submission with a corrected link,
+    sending it back to pending review. Reuses SubmissionCreateIn for its post_url
+    (campaign_slug is ignored — the campaign is fixed by the submission)."""
+    return _out(svc.resubmit_submission(db, current.id, submission_id, body.post_url))
 
 
 @router.post("/{submission_id}/claim", response_model=SubmissionOut)

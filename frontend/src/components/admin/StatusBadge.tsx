@@ -10,6 +10,7 @@ const STYLES: Record<string, string> = {
   awaiting_stats: "bg-amber-500/15 text-amber-400 ring-amber-500/25",
   requested: "bg-amber-500/15 text-amber-400 ring-amber-500/25",
   proof_uploaded: "bg-sky-500/15 text-sky-400 ring-sky-500/25",
+  revision_requested: "bg-amber-500/15 text-amber-400 ring-amber-500/25",
   draft: "bg-white/10 text-[var(--color-text-muted)] ring-white/10",
   archived: "bg-white/5 text-[var(--color-text-muted)] ring-white/10",
   rejected: "bg-red-500/15 text-red-400 ring-red-500/25",

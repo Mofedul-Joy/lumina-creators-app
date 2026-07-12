@@ -13,7 +13,7 @@ from app.core.config import get_settings
 from app.core.security import _now
 from app.integrations import apify
 from app.models import (
-    CampaignParticipation, Creator, CreatorProfile, PayoutItem, ScrapeJob, StorageObject, Submission,
+    Campaign, CampaignParticipation, Creator, CreatorProfile, PayoutItem, ScrapeJob, StorageObject, Submission,
 )
 from app.services import campaign as campaign_svc
 from app.services import thumbnails
@@ -119,6 +119,58 @@ def get_submission(db: Session, creator_id: uuid.UUID, submission_id: uuid.UUID)
     return sub
 
 
+def resubmit_submission(db: Session, creator_id: uuid.UUID, submission_id: uuid.UUID,
+                        post_url: str) -> Submission:
+    """Creator amends a submission the admin bounced back with mode='edit',
+    re-pointing it at a corrected/replacement link. Moves it back to 'pending'
+    so it re-enters the admin's review queue. Only valid while the submission is
+    in 'revision_requested' with mode 'edit' (a 'repost' revision must go through
+    the normal submit flow as a brand-new post)."""
+    sub = get_submission(db, creator_id, submission_id)
+    if sub.verification_status != "revision_requested" or sub.revision_mode != "edit":
+        raise HTTPException(status.HTTP_409_CONFLICT, "This submission isn't open for editing")
+
+    campaign = db.get(Campaign, sub.campaign_id)
+    platform = urls.detect_platform(post_url)
+    if platform is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unsupported or unrecognized post URL")
+    if platform not in (campaign.platforms or []):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"This campaign does not accept {platform} posts")
+
+    canonical = urls.canonicalize_url(post_url)
+    url_hash = urls.url_hash(post_url)
+    # Dedup within the campaign, but allow re-pointing to the same URL (self).
+    clash = db.scalar(select(Submission.id).where(
+        Submission.campaign_id == campaign.id,
+        Submission.url_hash == url_hash,
+        Submission.id != sub.id,
+    ))
+    if clash:
+        raise HTTPException(status.HTTP_409_CONFLICT, "This post was already submitted to this campaign")
+
+    try:
+        thumbnail = thumbnails.rehost(
+            apify.fast_thumbnail(platform, post_url), "submission_thumb", creator_id
+        )
+    except Exception:  # noqa: BLE001 - thumbnail is best-effort
+        thumbnail = None
+
+    sub.post_url = post_url.strip()
+    sub.canonical_url = canonical
+    sub.url_hash = url_hash
+    sub.platform = platform
+    if thumbnail:
+        sub.thumbnail_url = thumbnail
+    sub.verification_status = "pending"
+    sub.revision_mode = None
+    sub.verification_note = None
+    sub.verified_by = None
+    sub.verified_at = None
+    db.commit()
+    db.refresh(sub)
+    return sub
+
+
 def _has_active_payout(db: Session, submission_id: uuid.UUID) -> bool:
     return db.scalar(
         select(PayoutItem.id).where(
@@ -140,8 +192,14 @@ def claim_submission(db: Session, creator_id: uuid.UUID, submission_id: uuid.UUI
     if prof is None or not prof.payout_method or not prof.payout_address:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "no_payout_method")
     # Minimum-balance gate: a creator can only request a payout once their total
-    # verified, unpaid, non-suspicious earnings reach the configured threshold.
-    threshold = get_settings().min_payout_amount
+    # verified, unpaid, non-suspicious earnings reach the threshold. The campaign
+    # may set its own minimum (admin choice); otherwise the global default applies.
+    campaign = db.get(Campaign, sub.campaign_id)
+    threshold = (
+        campaign.min_payout_amount
+        if campaign is not None and campaign.min_payout_amount is not None
+        else get_settings().min_payout_amount
+    )
     claimable = db.scalar(
         select(func.coalesce(func.sum(Submission.estimated_amount), 0)).where(
             Submission.creator_id == creator_id,

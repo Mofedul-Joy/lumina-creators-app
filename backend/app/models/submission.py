@@ -15,6 +15,7 @@ from sqlalchemy import (
     Index,
     Integer,
     Numeric,
+    String,
     Text,
     UniqueConstraint,
     func,
@@ -79,6 +80,10 @@ class Submission(TimestampMixin, Base):
         VERIFICATION_STATUS, nullable=False, server_default=text("'pending'")
     )
     verification_note: Mapped[Optional[str]] = mapped_column(Text)
+    # When verification_status == 'revision_requested', how the admin wants it
+    # fixed: 'edit' (creator amends this same submission) or 'repost' (creator
+    # must submit a brand-new post). Null otherwise.
+    revision_mode: Mapped[Optional[str]] = mapped_column(String)
     verified_by: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("admins.id")
     )

@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import {
-  deleteSubmission, logSubmissionPayout, rejectSubmission, verifySubmission,
+  deleteSubmission, logSubmissionPayout, rejectSubmission, requestSubmissionRevision, verifySubmission,
   type AdminSubmission, type PayoutMethod,
 } from "@/lib/admin";
 import { flagCreatorSuspicious, unflagCreatorSuspicious } from "@/lib/api";
@@ -33,6 +33,7 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
   const qc = useQueryClient();
   const [mounted, setMounted] = useState(false);
   const [rejecting, setRejecting] = useState(false);
+  const [revising, setRevising] = useState<null | "edit" | "repost">(null);
   const [note, setNote] = useState("");
   const [paying, setPaying] = useState(false);
   const [method, setMethod] = useState<PayoutMethod>("paypal");
@@ -53,6 +54,7 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
 
   const verifyM = useMutation({ mutationFn: () => verifySubmission(sub.id), onSuccess: done, onError: fail });
   const rejectM = useMutation({ mutationFn: () => rejectSubmission(sub.id, note.trim()), onSuccess: done, onError: fail });
+  const reviseM = useMutation({ mutationFn: () => requestSubmissionRevision(sub.id, revising ?? "edit", note.trim()), onSuccess: done, onError: fail });
   const payM = useMutation({ mutationFn: () => logSubmissionPayout(sub.id, method, reference), onSuccess: done, onError: fail });
   const deleteM = useMutation({ mutationFn: () => deleteSubmission(sub.id), onSuccess: done, onError: fail });
   const flagCreatorM = useMutation({
@@ -149,6 +151,26 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
                   className="cursor-pointer rounded-md bg-red-500/15 px-3 py-1 text-xs font-medium text-red-400 ring-1 ring-inset ring-red-500/25 disabled:opacity-50">Confirm reject</button>
               </div>
             </div>
+          ) : revising ? (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                {revising === "edit"
+                  ? "Send back so the creator can fix and re-submit this same post."
+                  : "Send back and ask the creator to post a brand-new video."}
+              </p>
+              <textarea
+                value={note} onChange={(e) => setNote(e.target.value)} rows={2}
+                placeholder="What needs changing? (optional — shown to the creator)"
+                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-1.5 text-sm text-[var(--color-text)]"
+              />
+              <div className="flex justify-end gap-2">
+                <button onClick={() => { setRevising(null); setNote(""); }} className="cursor-pointer text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]">Cancel</button>
+                <button disabled={reviseM.isPending} onClick={() => { setError(""); reviseM.mutate(); }}
+                  className="cursor-pointer rounded-md bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 disabled:opacity-50">
+                  {revising === "edit" ? "Send back to edit" : "Ask for new post"}
+                </button>
+              </div>
+            </div>
           ) : paying ? (
             <div className="mt-4 space-y-2 rounded-[var(--radius-btn)] bg-[var(--color-surface-2)] p-3">
               <p className="text-sm font-medium text-[var(--color-text)]">Log payout of {fmtMoney(sub.estimated_amount)}</p>
@@ -172,7 +194,7 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
         </div>
 
         {/* controls */}
-        {!rejecting && !paying ? (
+        {!rejecting && !paying && !revising ? (
           <div className="border-t border-[var(--color-border)] px-5 py-4">
             {sub.claimed && sub.status !== "paid" ? (
               <p className="mb-3 rounded-md bg-amber-500/15 px-3 py-1.5 text-xs font-medium text-amber-400">Creator has claimed this payment.</p>
@@ -186,6 +208,16 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
               {!isPaid ? (
                 <button onClick={() => { setPaying(true); setError(""); }}
                   className="cursor-pointer rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-[var(--color-on-brand)] hover:bg-emerald-400">Log payout</button>
+              ) : null}
+              {sub.verification_status !== "verified" && !isPaid ? (
+                <>
+                  <button onClick={() => { setNote(""); setRevising("edit"); setError(""); }}
+                    title="Send back so the creator can fix and re-submit this same post"
+                    className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 hover:bg-amber-500/10">Revise</button>
+                  <button onClick={() => { setNote(""); setRevising("repost"); setError(""); }}
+                    title="Send back and ask the creator to post a brand-new video"
+                    className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 hover:bg-amber-500/10">Repost</button>
+                </>
               ) : null}
               {sub.verification_status !== "rejected" && !isPaid ? (
                 <button onClick={() => { setRejecting(true); setError(""); }}

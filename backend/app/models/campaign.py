@@ -79,6 +79,9 @@ class Campaign(TimestampMixin, Base):
     cpm_rate: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False)
     budget: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     max_payout_per_creator: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 2))
+    # Per-campaign override of the minimum a creator must accumulate (in this
+    # campaign) before they can request a payout. Null = use the global default.
+    min_payout_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
     eligible_view_pct: Mapped[Decimal] = mapped_column(
         Numeric(5, 2), nullable=False, server_default=text("100")
     )
