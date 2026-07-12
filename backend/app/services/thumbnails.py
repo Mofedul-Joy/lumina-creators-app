@@ -72,7 +72,11 @@ def repair_portfolio_thumbnails(db) -> dict:
         new = None
         if it.video_url:
             try:
-                new = rehost(apify.fast_thumbnail(it.platform, it.video_url), "portfolio_thumb", it.creator_id)
+                # Fast path (og:image / oEmbed) first; fall back to the Apify actor,
+                # which reads the platform's real cover from the dataset and is far
+                # more reliable for Instagram than og:image.
+                raw = apify.fast_thumbnail(it.platform, it.video_url) or apify.post_thumbnail(it.platform, it.video_url)
+                new = rehost(raw, "portfolio_thumb", it.creator_id)
             except Exception:  # noqa: BLE001
                 new = None
         if new:
