@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { getAuthToken } from "@/lib/auth";
-import { getMyPortfolio, isAuthError, type CreatorRichDetail } from "@/lib/api";
+import { deleteTopVideo, getMyPortfolio, isAuthError, type CreatorRichDetail } from "@/lib/api";
 import { fmtInt, fmtMoney } from "@/lib/format";
 import { ThumbImage } from "@/components/ui/ThumbImage";
 import { RankBadge } from "@/components/gamification/RankBadge";
@@ -85,11 +85,23 @@ export default function PortfolioPage() {
     if (ready && !token) router.replace("/login");
   }, [ready, token, router]);
 
+  const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["my-portfolio"],
     queryFn: () => getMyPortfolio(token ?? ""),
     enabled: ready && !!token,
     retry: false,
+  });
+  // Remove a Top Content clip straight from the portfolio (no trip to Profile).
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const deleteM = useMutation({
+    mutationFn: (id: string) => deleteTopVideo(token ?? "", id),
+    onMutate: (id) => setDeletingId(id),
+    onSettled: () => setDeletingId(null),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-portfolio"] });
+      qc.invalidateQueries({ queryKey: ["top-videos"] });
+    },
   });
   useEffect(() => {
     if (q.isError && isAuthError(q.error)) router.replace("/login");
@@ -152,37 +164,59 @@ export default function PortfolioPage() {
             </div>
           ) : (
             <div className="flex gap-3 overflow-x-auto pb-1">
-              {c.portfolio.map((p) => {
-                const Tag = p.video_url ? "a" : "div";
-                return (
-                  <Tag
-                    key={p.id}
-                    {...(p.video_url ? { href: p.video_url, target: "_blank", rel: "noopener noreferrer", "aria-label": p.brand_name ?? "Video" } : {})}
-                    className="group relative block aspect-[9/16] w-28 shrink-0 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] sm:w-32"
-                  >
-                    <ThumbImage
-                      src={p.thumbnail_url}
-                      className="h-full w-full object-cover"
-                      fallback={<div className="h-full w-full" style={{ background: PLATFORM_GRADIENT[p.platform ?? ""] ?? "linear-gradient(135deg,#22c55e33,#05261533)" }} />}
+              {c.portfolio.map((p) => (
+                // Wrapper is a div (never an <a>) so the delete button isn't an
+                // interactive descendant of a link (invalid HTML). The video link
+                // is a full-cover overlay <a>; the delete button sits above it.
+                <div
+                  key={p.id}
+                  className="group relative block aspect-[9/16] w-28 shrink-0 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] sm:w-32"
+                >
+                  <ThumbImage
+                    src={p.thumbnail_url}
+                    className="h-full w-full object-cover"
+                    fallback={<div className="h-full w-full" style={{ background: PLATFORM_GRADIENT[p.platform ?? ""] ?? "linear-gradient(135deg,#22c55e33,#05261533)" }} />}
+                  />
+                  {p.video_url ? (
+                    <a
+                      href={p.video_url} target="_blank" rel="noopener noreferrer"
+                      aria-label={p.brand_name ?? "Open video"}
+                      className="absolute inset-0 z-0"
                     />
-                    {/* view/like counts for top videos */}
-                    {p.views > 0 || p.likes > 0 ? (
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-1.5">
-                        <div className="flex items-center gap-2 text-[10px] font-medium text-white">
-                          <span className="tabular flex items-center gap-0.5">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" strokeWidth="2" /><circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="2" /></svg>
-                            {fmtInt(p.views)}
-                          </span>
-                          <span className="tabular flex items-center gap-0.5">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 11c0 5.5-7 10-7 10Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
-                            {fmtInt(p.likes)}
-                          </span>
-                        </div>
+                  ) : null}
+
+                  {/* delete — top-right, appears on hover/focus */}
+                  <button
+                    type="button"
+                    aria-label="Remove from Top Content"
+                    disabled={deletingId === p.id}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteM.mutate(p.id); }}
+                    className="absolute right-1.5 top-1.5 z-10 grid h-7 w-7 place-items-center rounded-full bg-black/55 text-white opacity-0 transition hover:bg-red-500/80 focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-50"
+                  >
+                    {deletingId === p.id ? (
+                      <svg width="13" height="13" viewBox="0 0 24 24" className="animate-spin" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" strokeDasharray="42" strokeLinecap="round" /></svg>
+                    ) : (
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
+                    )}
+                  </button>
+
+                  {/* view/like counts for top videos */}
+                  {p.views > 0 || p.likes > 0 ? (
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 bg-gradient-to-t from-black/80 to-transparent p-1.5">
+                      <div className="flex items-center gap-2 text-[10px] font-medium text-white">
+                        <span className="tabular flex items-center gap-0.5">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" strokeWidth="2" /><circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="2" /></svg>
+                          {fmtInt(p.views)}
+                        </span>
+                        <span className="tabular flex items-center gap-0.5">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 11c0 5.5-7 10-7 10Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
+                          {fmtInt(p.likes)}
+                        </span>
                       </div>
-                    ) : null}
-                  </Tag>
-                );
-              })}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
             </div>
           )}
         </SectionCard>
