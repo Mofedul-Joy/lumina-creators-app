@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Index, Text, func, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Text, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -35,6 +35,13 @@ class Conversation(Base):
     admin_last_read_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     creator_last_read_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     last_message_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    # Per-side "mute" — a muted conversation still receives messages but stops
+    # contributing to that side's unread badge.
+    admin_muted: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    creator_muted: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    # Admin-side "leave conversation" = archive it out of the inbox list. It
+    # un-archives automatically when the creator sends a new message.
+    admin_archived: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

@@ -14,6 +14,8 @@ class ConversationOut(BaseModel):
     last_message_at: Optional[datetime] = None
     last_sender: Optional[str] = None  # 'admin' | 'creator'
     unread: bool = False
+    muted: bool = False
+    archived: bool = False
 
 
 class MessageOut(BaseModel):
@@ -35,3 +37,28 @@ class StartConversationIn(BaseModel):
 
 class UnreadCountOut(BaseModel):
     unread: int = 0
+
+
+class MutedIn(BaseModel):
+    muted: bool
+
+
+class ArchivedIn(BaseModel):
+    archived: bool
+
+
+class ConversationInfoOut(BaseModel):
+    message_count: int = 0
+    first_message_at: Optional[datetime] = None
+    last_message_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+
+
+class ContractHistoryItem(BaseModel):
+    document_id: str
+    title: str
+    campaign_name: str
+    status: str
+    sent_at: Optional[datetime] = None
+    accepted_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None

@@ -9,7 +9,10 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_current_creator
 from app.db.session import get_db
 from app.models import Conversation, Creator, Message
-from app.schemas.messaging import ConversationOut, MessageIn, MessageOut, UnreadCountOut
+from app.schemas.messaging import (
+    ContractHistoryItem, ConversationInfoOut, ConversationOut, MessageIn,
+    MessageOut, MutedIn, UnreadCountOut,
+)
 from app.services import messaging as svc
 
 router = APIRouter(prefix="/conversations", tags=["creator-messages"])
@@ -63,3 +66,25 @@ def read(conversation_id: uuid.UUID, current: Creator = Depends(get_current_crea
          db: Session = Depends(get_db)):
     _owned(db, conversation_id, current.id)
     svc.mark_read(db, conversation_id, "creator")
+
+
+# ── three-dots menu ──
+@router.post("/{conversation_id}/mute", status_code=204)
+def mute(conversation_id: uuid.UUID, body: MutedIn, current: Creator = Depends(get_current_creator),
+         db: Session = Depends(get_db)):
+    _owned(db, conversation_id, current.id)
+    svc.set_muted(db, conversation_id, "creator", body.muted)
+
+
+@router.get("/{conversation_id}/info", response_model=ConversationInfoOut)
+def info(conversation_id: uuid.UUID, current: Creator = Depends(get_current_creator),
+         db: Session = Depends(get_db)):
+    _owned(db, conversation_id, current.id)
+    return ConversationInfoOut(**svc.conversation_info(db, conversation_id))
+
+
+@router.get("/{conversation_id}/contracts", response_model=list[ContractHistoryItem])
+def contracts(conversation_id: uuid.UUID, current: Creator = Depends(get_current_creator),
+              db: Session = Depends(get_db)):
+    _owned(db, conversation_id, current.id)
+    return [ContractHistoryItem(**c) for c in svc.contract_history(db, current.id)]

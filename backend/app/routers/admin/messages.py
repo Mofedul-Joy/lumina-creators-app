@@ -8,9 +8,10 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_admin
 from app.db.session import get_db
-from app.models import Admin, Message
+from app.models import Admin, Conversation, Message
 from app.schemas.messaging import (
-    ConversationOut, MessageIn, MessageOut, StartConversationIn, UnreadCountOut,
+    ArchivedIn, ContractHistoryItem, ConversationInfoOut, ConversationOut,
+    MessageIn, MessageOut, MutedIn, StartConversationIn, UnreadCountOut,
 )
 from app.services import messaging as svc
 
@@ -25,10 +26,18 @@ def _msg_out(m: Message) -> MessageOut:
     )
 
 
+def _creator_id(db: Session, conversation_id: uuid.UUID) -> uuid.UUID:
+    from fastapi import HTTPException, status
+    conv = db.get(Conversation, conversation_id)
+    if conv is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Conversation not found")
+    return conv.creator_id
+
+
 @router.get("", response_model=list[ConversationOut])
-def list_conversations(unread: bool = False, admin: Admin = Depends(get_current_admin),
-                       db: Session = Depends(get_db)):
-    return [ConversationOut(**c) for c in svc.list_for_admin(db, unread_only=unread)]
+def list_conversations(unread: bool = False, archived: bool = False,
+                       admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    return [ConversationOut(**c) for c in svc.list_for_admin(db, unread_only=unread, archived=archived)]
 
 
 @router.get("/unread-count", response_model=UnreadCountOut)
@@ -74,3 +83,29 @@ def send(conversation_id: uuid.UUID, body: MessageIn, admin: Admin = Depends(get
 def read(conversation_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
          db: Session = Depends(get_db)):
     svc.mark_read(db, conversation_id, "admin")
+
+
+# ── three-dots menu ──
+@router.post("/{conversation_id}/mute", status_code=204)
+def mute(conversation_id: uuid.UUID, body: MutedIn, admin: Admin = Depends(get_current_admin),
+         db: Session = Depends(get_db)):
+    svc.set_muted(db, conversation_id, "admin", body.muted)
+
+
+@router.post("/{conversation_id}/archive", status_code=204)
+def archive(conversation_id: uuid.UUID, body: ArchivedIn, admin: Admin = Depends(get_current_admin),
+            db: Session = Depends(get_db)):
+    """'Leave conversation' — archive it out of the inbox (restorable)."""
+    svc.set_archived(db, conversation_id, body.archived)
+
+
+@router.get("/{conversation_id}/info", response_model=ConversationInfoOut)
+def info(conversation_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
+         db: Session = Depends(get_db)):
+    return ConversationInfoOut(**svc.conversation_info(db, conversation_id))
+
+
+@router.get("/{conversation_id}/contracts", response_model=list[ContractHistoryItem])
+def contracts(conversation_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
+              db: Session = Depends(get_db)):
+    return [ContractHistoryItem(**c) for c in svc.contract_history(db, _creator_id(db, conversation_id))]

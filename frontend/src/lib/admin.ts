@@ -727,6 +727,7 @@ export type CreatorRichDetail = {
   streak_days: number;
   awards: string[];
   niches: string[];
+  creator_type: string | null;
   total_views: number;
   total_earned: number | string;
   total_posts: number;

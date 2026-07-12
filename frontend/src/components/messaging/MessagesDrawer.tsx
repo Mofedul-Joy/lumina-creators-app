@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  composeEmail, listConversations, listMessages, markRead, sendMessage,
+  composeEmail, contractHistory, conversationInfo, listConversations, listMessages,
+  markRead, sendMessage, setArchived, setMuted,
   type Conversation, type Realm,
 } from "@/lib/messaging";
+import { ConversationExtras } from "@/components/messaging/ConversationExtras";
 
 function timeAgo(iso: string | null): string {
   if (!iso) return "";
@@ -33,6 +35,9 @@ export function MessagesDrawer({ realm, open, onClose }: { realm: Realm; open: b
   const [tab, setTab] = useState<"all" | "unread">("all");
   const [search, setSearch] = useState("");
   const [draft, setDraft] = useState("");
+  // Three-dots menu + the slide-over sub-panels it (and the two-heads button) open.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [panel, setPanel] = useState<null | "profile" | "info" | "contracts">(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -89,6 +94,18 @@ export function MessagesDrawer({ realm, open, onClose }: { realm: Realm; open: b
     },
   });
 
+  const muteM = useMutation({
+    mutationFn: (muted: boolean) => setMuted(realm, activeId!, muted),
+    onSuccess: () => { convsQ.refetch(); qc.invalidateQueries({ queryKey: ["conv-unread", realm] }); },
+  });
+  const archiveM = useMutation({
+    mutationFn: (archived: boolean) => setArchived(activeId!, archived),
+    onSuccess: () => { setActiveId(null); convsQ.refetch(); qc.invalidateQueries({ queryKey: ["conv-unread", realm] }); },
+  });
+
+  // Reset the menu + any open sub-panel whenever the active thread changes.
+  useEffect(() => { setMenuOpen(false); setPanel(null); }, [activeId]);
+
   const filtered = conversations
     .filter((c) => (tab === "unread" ? c.unread : true))
     .filter((c) => (search ? c.name.toLowerCase().includes(search.toLowerCase()) || (c.email ?? "").toLowerCase().includes(search.toLowerCase()) : true));
@@ -125,6 +142,15 @@ export function MessagesDrawer({ realm, open, onClose }: { realm: Realm; open: b
                 <p className="truncate text-sm font-semibold text-[var(--color-text)]">{active.name}</p>
                 {active.email ? <p className="truncate text-xs text-[var(--color-text-muted)]">{active.email}</p> : null}
               </div>
+              {/* two-heads — open the profile slide-over */}
+              <button
+                onClick={() => { setPanel("profile"); setMenuOpen(false); }}
+                aria-label="View profile"
+                title="View profile"
+                className="cursor-pointer rounded-lg p-1.5 text-[var(--color-text-muted)] transition hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="M17 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM21 20v-1a4 4 0 0 0-3-3.87M16 4.13A4 4 0 0 1 16 11.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </button>
               {/* email button — opens Gmail compose to the other person */}
               <button
                 onClick={() => composeEmail(active.email, "")}
@@ -135,6 +161,42 @@ export function MessagesDrawer({ realm, open, onClose }: { realm: Realm; open: b
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="M3 7l9 6 9-6M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
+              {/* three-dots menu */}
+              <div className="relative">
+                <button
+                  onClick={() => setMenuOpen((v) => !v)}
+                  aria-label="Conversation options"
+                  aria-expanded={menuOpen}
+                  className={`cursor-pointer rounded-lg p-1.5 transition hover:bg-[var(--color-surface)] ${menuOpen ? "text-[var(--color-text)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"}`}
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="12" cy="19" r="1.6" /></svg>
+                </button>
+                {menuOpen ? (
+                  <>
+                    <div aria-hidden className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                    <div role="menu" className="absolute right-0 top-10 z-20 w-56 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-deep)] py-1 shadow-2xl">
+                      <button role="menuitem" onClick={() => { muteM.mutate(!active.muted); setMenuOpen(false); }} className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]">
+                        <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6ZM10 20a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />{active.muted ? <path d="M3 3l18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /> : null}</svg>
+                        {active.muted ? "Unmute notifications" : "Mute notifications"}
+                      </button>
+                      <button role="menuitem" onClick={() => { setPanel("info"); setMenuOpen(false); }} className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]">
+                        <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none"><path d="M12 8h.01M11 12h1v4h1M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        Message history
+                      </button>
+                      <button role="menuitem" onClick={() => { setPanel("contracts"); setMenuOpen(false); }} className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]">
+                        <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none"><path d="M8 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2M9 3h6v4H9zM9 12h6M9 16h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        Contract history
+                      </button>
+                      {realm === "admin" ? (
+                        <button role="menuitem" onClick={() => { archiveM.mutate(true); setMenuOpen(false); }} className="flex w-full items-center gap-2.5 border-t border-[var(--color-border)]/60 px-3 py-2 text-left text-sm text-[var(--color-danger,#ef6a6a)] transition hover:bg-[var(--color-surface)]">
+                          <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                          Leave conversation
+                        </button>
+                      ) : null}
+                    </div>
+                  </>
+                ) : null}
+              </div>
               <button onClick={onClose} aria-label="Close messages" className="cursor-pointer rounded-lg p-1.5 text-[var(--color-text-muted)] transition hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]">
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
               </button>
@@ -181,6 +243,17 @@ export function MessagesDrawer({ realm, open, onClose }: { realm: Realm; open: b
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="M4 12l16-8-6 16-3-6-7-2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             </form>
+
+            {/* two-heads / three-dots sub-panels slide over the thread */}
+            {panel ? (
+              <ConversationExtras
+                realm={realm}
+                conversation={active}
+                panel={panel}
+                onClose={() => setPanel(null)}
+                onEmail={() => composeEmail(active.email, "")}
+              />
+            ) : null}
           </>
         ) : (
           /* ── list view ── */
@@ -228,13 +301,18 @@ export function MessagesDrawer({ realm, open, onClose }: { realm: Realm; open: b
                         <div className="min-w-0 flex-1">
                           <div className="flex items-baseline justify-between gap-2">
                             <p className={`truncate text-sm ${c.unread ? "font-semibold text-[var(--color-text)]" : "font-medium text-[var(--color-text)]"}`}>{c.name}</p>
-                            <span className="shrink-0 text-[11px] text-[var(--color-text-muted)]">{timeAgo(c.last_message_at)}</span>
+                            <span className="flex shrink-0 items-center gap-1 text-[11px] text-[var(--color-text-muted)]">
+                              {c.muted ? (
+                                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" aria-label="Muted"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6ZM10 20a2 2 0 0 0 4 0M3 3l18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                              ) : null}
+                              {timeAgo(c.last_message_at)}
+                            </span>
                           </div>
                           <p className={`truncate text-xs ${c.unread ? "text-[var(--color-text-secondary)]" : "text-[var(--color-text-muted)]"}`}>
                             {c.last_sender === realm ? "You: " : ""}{c.last_message ?? "No messages yet"}
                           </p>
                         </div>
-                        {c.unread ? <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-brand)]" /> : null}
+                        {c.unread && !c.muted ? <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-brand)]" /> : null}
                       </button>
                     </li>
                   ))}

@@ -12,6 +12,25 @@ export type Conversation = {
   last_message_at: string | null;
   last_sender: "admin" | "creator" | null;
   unread: boolean;
+  muted: boolean;
+  archived: boolean;
+};
+
+export type ConversationInfo = {
+  message_count: number;
+  first_message_at: string | null;
+  last_message_at: string | null;
+  created_at: string | null;
+};
+
+export type ContractHistoryItem = {
+  document_id: string;
+  title: string;
+  campaign_name: string;
+  status: string;
+  sent_at: string | null;
+  accepted_at: string | null;
+  created_at: string | null;
 };
 
 export type Message = {
@@ -46,6 +65,24 @@ export const sendMessage = (realm: Realm, conversationId: string, body: string) 
 
 export const markRead = (realm: Realm, conversationId: string) =>
   apiFetch<void>(`${base(realm)}/conversations/${conversationId}/read`, { method: "POST", token: tok(realm) });
+
+// ── three-dots menu ──
+export const setMuted = (realm: Realm, conversationId: string, muted: boolean) =>
+  apiFetch<void>(`${base(realm)}/conversations/${conversationId}/mute`, {
+    method: "POST", body: JSON.stringify({ muted }), token: tok(realm),
+  });
+
+// Admin-only: "leave conversation" archives it out of the inbox (restorable).
+export const setArchived = (conversationId: string, archived: boolean) =>
+  apiFetch<void>(`/api/admin/conversations/${conversationId}/archive`, {
+    method: "POST", body: JSON.stringify({ archived }), token: getAdminToken() ?? undefined,
+  });
+
+export const conversationInfo = (realm: Realm, conversationId: string) =>
+  apiFetch<ConversationInfo>(`${base(realm)}/conversations/${conversationId}/info`, { token: tok(realm) });
+
+export const contractHistory = (realm: Realm, conversationId: string) =>
+  apiFetch<ContractHistoryItem[]>(`${base(realm)}/conversations/${conversationId}/contracts`, { token: tok(realm) });
 
 // Admin-only: open (or reuse) the DM thread with a specific creator.
 export const startConversation = (creatorId: string) =>
