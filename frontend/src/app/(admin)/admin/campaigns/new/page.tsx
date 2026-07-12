@@ -251,7 +251,12 @@ const initialState: WizardState = {
   job_type: "content_creator",
   creator_type: "ugc_ads",
   description: "",
-  start_date: todayISO(),
+  // Deterministic on both server and client so the wizard hydrates cleanly.
+  // A module-scope `new Date()` freezes at the (warm) server lambda's cold-start
+  // day while the client always computes today, producing a hydration mismatch
+  // that can leave the whole route's event handlers unattached in a production
+  // build (payment-type cards appear "unclickable"). Filled in on mount instead.
+  start_date: "",
   end_date: "",
   ongoing: true,
   platform_focus: ["tiktok"],
@@ -356,6 +361,10 @@ export default function NewCampaignPage() {
       ...(t ? t.preset : {}),
       ...(kind ? { campaign_kind: kind } : {}),
       ...(level ? { experience_level: level } : {}),
+      // Fill the default start date now that we're on the client — see the
+      // note on initialState.start_date for why this can't be a module-scope
+      // default.
+      start_date: cur.start_date || todayISO(),
     }));
     if (t) setTemplate(t);
   }, []);
