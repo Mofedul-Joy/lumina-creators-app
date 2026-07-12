@@ -59,9 +59,10 @@ class Submission(TimestampMixin, Base):
     canonical_url: Mapped[str] = mapped_column(Text, nullable=False)
     url_hash: Mapped[str] = mapped_column(Text, nullable=False)
     platform: Mapped[str] = mapped_column(PLATFORM, nullable=False)
-    views: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
-    likes: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
-    comments: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    # BigInteger: viral posts (e.g. a 1.8B-view YouTube video) overflow int32.
+    views: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    likes: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    comments: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
     cpm_rate_snapshot: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False)
     eligible_view_pct_snapshot: Mapped[Decimal] = mapped_column(
         Numeric(5, 2), nullable=False, server_default=text("100")
