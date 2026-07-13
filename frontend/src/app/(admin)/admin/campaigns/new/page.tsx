@@ -350,6 +350,11 @@ const STEPS = [
 export default function NewCampaignPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  // Furthest step the admin has unlocked by completing everything before it.
+  // The stepper circles are clickable up to (and including) this step, so they
+  // can jump freely among filled-out steps but can't skip ahead into an
+  // unfilled one. It only advances via `next()`, which validates first.
+  const [maxStep, setMaxStep] = useState(1);
   const [template, setTemplate] = useState<CampaignTemplate | undefined>();
   const [f, setF] = useState<WizardState>(initialState);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -423,11 +428,19 @@ export default function NewCampaignPage() {
 
   function next() {
     if (!validateStep(step)) return;
-    setStep((s) => Math.min(6, s + 1));
+    const dest = Math.min(6, step + 1);
+    setStep(dest);
+    setMaxStep((m) => Math.max(m, dest)); // unlock the step we just reached
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   function back() {
     setStep((s) => Math.max(1, s - 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  /** Jump straight to a step via its stepper circle — only if it's unlocked. */
+  function goTo(n: number) {
+    if (n > maxStep) return;
+    setStep(n);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -538,13 +551,16 @@ export default function NewCampaignPage() {
             <li key={s.n} className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => s.n < step && setStep(s.n)}
+                onClick={() => goTo(s.n)}
+                disabled={s.n > maxStep}
+                aria-current={s.n === step ? "step" : undefined}
+                title={s.n > maxStep ? "Complete the earlier steps first" : undefined}
                 className={`grid h-7 w-7 place-items-center rounded-full border text-xs font-semibold transition ${
                   s.n === step
                     ? "border-[var(--color-brand)] bg-[var(--color-brand)] text-[var(--color-on-brand)]"
-                    : s.n < step
-                    ? "cursor-pointer border-[var(--color-brand)] text-[var(--color-brand)]"
-                    : "border-[var(--color-border)] text-[var(--color-text-muted)]"
+                    : s.n <= maxStep
+                    ? "cursor-pointer border-[var(--color-brand)] text-[var(--color-brand)] hover:bg-[var(--color-brand)]/10"
+                    : "cursor-not-allowed border-[var(--color-border)] text-[var(--color-text-muted)]"
                 }`}
               >
                 {s.n < step ? "✓" : s.n}
