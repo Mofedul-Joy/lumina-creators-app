@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import _now
 from app.models import Campaign, Creator, CreatorProfile, PayoutItem, Submission
-from app.services import audit
+from app.services import audit, messaging, notifications
 
 
 def _has_active_payout(db: Session, submission_id: uuid.UUID) -> bool:
@@ -23,6 +23,37 @@ def _has_active_payout(db: Session, submission_id: uuid.UUID) -> bool:
             PayoutItem.submission_id == submission_id, PayoutItem.voided_at.is_(None)
         )
     ) is not None
+
+
+# Review outcome → (bell title, message verb). Drives _notify_creator.
+_OUTCOMES = {
+    "verified": ("Your video was approved", "approved"),
+    "rejected": ("Your video was rejected", "rejected"),
+    "revision_requested": ("Changes requested on your video", "needs changes"),
+}
+
+
+def _notify_creator(db: Session, admin_id: uuid.UUID, sub: Submission,
+                    outcome: str, note: str | None) -> None:
+    """After a review decision, tell the creator two ways: a bell notification
+    and a DM in the message section (with the admin's feedback, if any). Both are
+    best-effort — the review is already committed, so a notify hiccup never
+    unwinds it (golden rule: notifications are side effects)."""
+    title, verb = _OUTCOMES.get(outcome, ("Video review update", "updated"))
+    campaign_name = db.scalar(select(Campaign.name).where(Campaign.id == sub.campaign_id)) or "your campaign"
+    line = f'Your video for "{campaign_name}" was {verb}.'
+    if note:
+        line += f"\n\nFeedback from the team: {note}"
+    try:
+        notifications.push(db, sub.creator_id, kind="video_review",
+                           title=title, body=note or None, link="/submissions")
+    except Exception:
+        db.rollback()
+    try:
+        conv = messaging.get_or_create_for_creator(db, sub.creator_id)
+        messaging.send_message(db, conv.id, sender_type="admin", body=line, sender_admin_id=admin_id)
+    except Exception:
+        db.rollback()
 
 
 def list_submissions(db: Session, *, campaign_id=None, verification_status=None,
@@ -83,6 +114,7 @@ def verify_submission(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID
              entity_type="submission", entity_id=sub.id)
     db.commit()
     db.refresh(sub)
+    _notify_creator(db, admin_id, sub, "verified", None)
     return sub
 
 
@@ -109,6 +141,7 @@ def request_revision(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID,
              entity_type="submission", entity_id=sub.id, note=sub.verification_note)
     db.commit()
     db.refresh(sub)
+    _notify_creator(db, admin_id, sub, "revision_requested", sub.verification_note)
     return sub
 
 
@@ -122,6 +155,7 @@ def reject_submission(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID
              entity_type="submission", entity_id=sub.id, note=sub.verification_note)
     db.commit()
     db.refresh(sub)
+    _notify_creator(db, admin_id, sub, "rejected", sub.verification_note)
     return sub
 
 

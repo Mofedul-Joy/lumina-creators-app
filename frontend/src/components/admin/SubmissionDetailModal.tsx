@@ -203,7 +203,7 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
               {sub.verification_status !== "verified" && !isPaid ? (
                 <button disabled={verifyM.isPending || !canVerify} onClick={() => { setError(""); verifyM.mutate(); }}
                   className="cursor-pointer rounded-md bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/25 hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-40"
-                  title="Approve this post after watching it above">Verify</button>
+                  title="Approve this post after watching it above">Approve</button>
               ) : null}
               {!isPaid ? (
                 <button onClick={() => { setPaying(true); setError(""); }}
@@ -213,7 +213,7 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
                 <>
                   <button onClick={() => { setNote(""); setRevising("edit"); setError(""); }}
                     title="Send back so the creator can fix and re-submit this same post"
-                    className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 hover:bg-amber-500/10">Revise</button>
+                    className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 hover:bg-amber-500/10">Send for review</button>
                   <button onClick={() => { setNote(""); setRevising("repost"); setError(""); }}
                     title="Send back and ask the creator to post a brand-new video"
                     className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 hover:bg-amber-500/10">Repost</button>

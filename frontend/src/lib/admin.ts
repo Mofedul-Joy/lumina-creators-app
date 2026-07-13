@@ -346,6 +346,19 @@ export const listSubmissions = (f: { status?: string; campaign_id?: string; plat
 
 export const getSubmissionCounts = () => apiFetch<SubmissionCounts>("/api/admin/submissions/counts", auth());
 
+// ── admin notifications (derived activity feed for the bell) ──
+export type AdminNotification = {
+  id: string;
+  kind: "video_submission" | "applicant";
+  title: string;
+  body: string;
+  link: string;
+  created_at: string;
+};
+
+export const adminListNotifications = () =>
+  apiFetch<AdminNotification[]>("/api/admin/notifications", auth());
+
 export const verifySubmission = (id: string) =>
   apiFetch<AdminSubmission>(`/api/admin/submissions/${id}/verify`, { method: "POST", ...auth() });
 
