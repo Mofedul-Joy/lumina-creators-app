@@ -75,7 +75,7 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
   return createPortal(
     <div className="fixed inset-0 z-[60] grid place-items-center bg-black/70 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-lg overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl"
+        className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* header */}
@@ -97,7 +97,7 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
           </div>
         </div>
 
-        <div className="max-h-[70vh] overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-5">
           {/* Watch the post inline on Lumina; link-out fallback for broken embeds. */}
           <SocialEmbed
             platform={sub.platform}

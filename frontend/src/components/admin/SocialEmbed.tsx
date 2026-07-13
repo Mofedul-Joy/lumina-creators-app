@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { getEmbedUrl } from "@/lib/embeds";
+import { useEffect, useState } from "react";
+import { getEmbedUrl, isPortraitEmbed } from "@/lib/embeds";
 import { platformLabel } from "@/components/ui/PlatformIcon";
 import { SubmissionThumbnail } from "@/components/ui/SubmissionThumbnail";
 
@@ -10,7 +10,25 @@ import { SubmissionThumbnail } from "@/components/ui/SubmissionThumbnail";
 // the backend flagged broken (embed_broken, e.g. IG geo-restricted) — falls back
 // to a thumbnail that opens the original post in a new tab. A persistent
 // "Open on <platform>" link is always shown so the admin is never stuck.
-const PORTRAIT = new Set(["tiktok", "instagram"]);
+
+// While the platform iframe boots (and buffers), every embed paints solid black —
+// which reads as "broken", not "loading". We cover it with our own loading state
+// (the cached thumbnail, blurred, behind a spinner) until the iframe fires onLoad,
+// so the admin always sees the video is on its way instead of a dead black box.
+function LoadingCover({ platform, thumbnailUrl }: { platform: string; thumbnailUrl?: string | null }) {
+  return (
+    <div className="absolute inset-0 z-10 overflow-hidden">
+      {thumbnailUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={thumbnailUrl} alt="" className="h-full w-full scale-110 object-cover opacity-40 blur-md" />
+      ) : null}
+      <div className="absolute inset-0 grid place-items-center gap-3 bg-black/40">
+        <span className="h-9 w-9 animate-spin rounded-full border-2 border-white/25 border-t-white/90" />
+        <span className="text-xs font-medium text-white/80">Loading {platformLabel(platform)} video…</span>
+      </div>
+    </div>
+  );
+}
 
 export function SocialEmbed({
   platform,
@@ -26,8 +44,12 @@ export function SocialEmbed({
   pool?: string[];
 }) {
   const embedUrl = getEmbedUrl(platform, postUrl);
+  const portrait = isPortraitEmbed(platform, postUrl);
   // Let the admin force the fallback if an embed loads blank/login-walled.
   const [forceFallback, setForceFallback] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  // New submission opened in the same modal → show the loader again.
+  useEffect(() => { setLoaded(false); setForceFallback(false); }, [embedUrl]);
   const canEmbed = !!embedUrl && !embedBroken && !forceFallback;
 
   const openLink = (
@@ -57,10 +79,11 @@ export function SocialEmbed({
       <div>
         <div
           className={`relative mx-auto w-full overflow-hidden rounded-[var(--radius-btn)] bg-black ${
-            PORTRAIT.has(platform) ? "max-w-[340px]" : ""
+            portrait ? "max-w-[400px]" : ""
           }`}
-          style={PORTRAIT.has(platform) ? { height: "600px" } : { aspectRatio: "16 / 9" }}
+          style={portrait ? { height: "min(72vh, 660px)" } : { aspectRatio: "16 / 9" }}
         >
+          {!loaded ? <LoadingCover platform={platform} thumbnailUrl={thumbnailUrl} /> : null}
           <iframe
             src={embedUrl!}
             title={`${platformLabel(platform)} post`}
@@ -68,6 +91,7 @@ export function SocialEmbed({
             allow="autoplay; encrypted-media; picture-in-picture; fullscreen; clipboard-write"
             allowFullScreen
             loading="lazy"
+            onLoad={() => setLoaded(true)}
             referrerPolicy="strict-origin-when-cross-origin"
           />
         </div>
