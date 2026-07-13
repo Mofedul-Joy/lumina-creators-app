@@ -13,11 +13,24 @@ import { MessagesDrawer } from "@/components/messaging/MessagesDrawer";
  */
 export function AdminMessagesLauncher() {
   const [open, setOpen] = useState(false);
+  // Set when another page (e.g. Applicants "Message") asks us to open straight
+  // to a specific creator's thread via the `lumina:open-messages` window event.
+  const [initialConversationId, setInitialConversationId] = useState<string | null>(null);
   // The token only exists client-side (localStorage), so render nothing until
   // after mount — otherwise the server (no token → null) and client (button)
   // disagree and React throws a hydration mismatch.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const id = (e as CustomEvent<{ conversationId?: string }>).detail?.conversationId ?? null;
+      setInitialConversationId(id);
+      setOpen(true);
+    };
+    window.addEventListener("lumina:open-messages", onOpen);
+    return () => window.removeEventListener("lumina:open-messages", onOpen);
+  }, []);
   const token = getAdminToken() ?? "";
   const unread = useQuery({
     queryKey: ["conv-unread", "admin"],
@@ -49,7 +62,7 @@ export function AdminMessagesLauncher() {
           </span>
         ) : null}
       </button>
-      <MessagesDrawer realm="admin" open={open} onClose={() => setOpen(false)} />
+      <MessagesDrawer realm="admin" open={open} onClose={() => setOpen(false)} initialConversationId={initialConversationId} />
     </>
   );
 }

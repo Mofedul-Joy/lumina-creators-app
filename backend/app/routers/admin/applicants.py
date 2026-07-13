@@ -32,6 +32,7 @@ from app.models import (
     SocialAccount,
     Submission,
 )
+from app.models.messaging import Message
 from app.schemas.admin_applicants import (
     ApplicantCounts,
     ApplicantDetail,
@@ -39,7 +40,10 @@ from app.schemas.admin_applicants import (
     ApplicantSocial,
     ApplicantUpdateIn,
     ApplicantVideo,
+    OpenChatOut,
+    PendingCampaignItem,
 )
+from app.services import messaging as messaging_svc
 
 router = APIRouter(prefix="/applicants", tags=["admin-applicants"])
 
@@ -372,3 +376,82 @@ def update_applicant(
         ))
     db.commit()
     return applicant_detail(participation_id, admin=admin, db=db)
+
+
+def _first_name(name: Optional[str]) -> str:
+    return (name or "").strip().split(" ")[0] or "there"
+
+
+@router.post("/{participation_id}/message", response_model=OpenChatOut)
+def open_applicant_chat(
+    participation_id: uuid.UUID,
+    admin: Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Open (or reuse) the DM with this applicant and, if the thread is empty,
+    send a warm first message on the admin's behalf — so "Message" never dumps
+    the admin into a blank thread. Also moves the applicant into the Messaged
+    pipeline stage. Returns the conversation id so the UI can open that thread."""
+    row = db.execute(
+        select(CampaignParticipation, Campaign, CreatorProfile)
+        .join(Campaign, Campaign.id == CampaignParticipation.campaign_id)
+        .outerjoin(CreatorProfile, CreatorProfile.creator_id == CampaignParticipation.creator_id)
+        .where(CampaignParticipation.id == participation_id)
+    ).first()
+    if row is None:
+        raise HTTPException(http_status.HTTP_404_NOT_FOUND, "Applicant not found")
+    part, camp, prof = row
+
+    conv = messaging_svc.get_or_create_for_creator(db, part.creator_id)
+    has_messages = db.scalar(
+        select(func.count(Message.id)).where(Message.conversation_id == conv.id)
+    )
+    if not has_messages:
+        first = _first_name(prof.display_name if prof else None)
+        body = (
+            f"Hey {first}! Love your profile — you could be a great fit for "
+            f"\"{camp.name}\".\n\n"
+            "We'd really like to work with you, and I'm happy to share examples "
+            "of similar work we've done for other brands.\n\n"
+            "To kick things off: what brands have you created content for so far, "
+            "and what kind of content do you usually make? Tell me a bit and we'll "
+            "take it from there \U0001F64C"
+        )
+        messaging_svc.send_message(db, conv.id, sender_type="admin", body=body, sender_admin_id=admin.id)
+
+    # Advance the pipeline stage (mirrors the old "Message" button behaviour).
+    if part.status != "messaged" and part.messaged_at is None:
+        part.status = "messaged"
+        part.messaged_at = _now()
+        db.commit()
+
+    return OpenChatOut(conversation_id=str(conv.id))
+
+
+@router.get("/by-creator/{creator_id}/pending", response_model=list[PendingCampaignItem])
+def creator_pending_campaigns(
+    creator_id: uuid.UUID,
+    admin: Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Campaigns this creator has applied to but hasn't been accepted into yet
+    (and isn't declined/removed from) — so the admin can approve or decline them
+    straight from the message thread, no need to hunt through the Applicants tab."""
+    rows = db.execute(
+        select(CampaignParticipation, Campaign)
+        .join(Campaign, Campaign.id == CampaignParticipation.campaign_id)
+        .where(
+            CampaignParticipation.creator_id == creator_id,
+            CampaignParticipation.accepted_at.is_(None),
+            CampaignParticipation.declined_at.is_(None),
+            CampaignParticipation.removed_at.is_(None),
+        )
+        .order_by(CampaignParticipation.joined_at.desc())
+    ).all()
+    return [
+        PendingCampaignItem(
+            participation_id=str(part.id), campaign_id=str(camp.id),
+            campaign_name=camp.name, status=part.status,
+        )
+        for part, camp in rows
+    ]

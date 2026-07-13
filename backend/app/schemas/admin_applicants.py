@@ -94,3 +94,14 @@ class ApplicantCounts(BaseModel):
     submitted: int = 0
     approved: int = 0
     rejected: int = 0
+
+
+class OpenChatOut(BaseModel):
+    conversation_id: str
+
+
+class PendingCampaignItem(BaseModel):
+    participation_id: str
+    campaign_id: str
+    campaign_name: str
+    status: str

@@ -864,6 +864,18 @@ export const getApplicantDetail = (id: string) =>
 export const updateApplicant = (id: string, patch: ApplicantUpdateIn) =>
   apiFetch<ApplicantDetail>(`/api/admin/applicants/${id}`, { method: "PATCH", body: JSON.stringify(patch), ...auth() });
 
+// Open (or reuse) the DM with an applicant, seeding a warm first message if the
+// thread is empty. Returns the conversation id so the UI can open that thread.
+export const openApplicantChat = (participationId: string) =>
+  apiFetch<{ conversation_id: string }>(`/api/admin/applicants/${participationId}/message`, { method: "POST", ...auth() });
+
+export type PendingCampaign = { participation_id: string; campaign_id: string; campaign_name: string; status: string };
+
+// Campaigns a creator applied to but isn't accepted into yet — powers the
+// approve/decline chips inside the message thread.
+export const listCreatorPendingCampaigns = (creatorId: string) =>
+  apiFetch<PendingCampaign[]>(`/api/admin/applicants/by-creator/${creatorId}/pending`, auth());
+
 export function applicantsExportCsvUrl(f: { campaign_id?: string; status?: string } = {}): string {
   // Match resolveApiUrl() in api.ts — pin to prod backend when served from *.vercel.app.
   const PROD_BACKEND_URL = "https://lumina-creators-api-app.onrender.com";

@@ -14,6 +14,7 @@ import {
   getApplicantCounts,
   getApplicantDetail,
   updateApplicant,
+  openApplicantChat,
   applicantsExportCsvUrl,
   type ApplicantListItem,
   type ApplicantDetail,
@@ -140,6 +141,20 @@ export default function AdminApplicantsPage() {
       qc.invalidateQueries({ queryKey: ["admin-applicant-counts"] });
       if (openId === id) qc.invalidateQueries({ queryKey: ["admin-applicant-detail", id] });
     }
+  }
+
+  // "Message" opens (or reuses) the DM and seeds a warm first message server-side,
+  // then pops the Messages drawer straight to that thread — no more empty inbox.
+  async function openChat(participationId: string) {
+    try {
+      const { conversation_id } = await openApplicantChat(participationId);
+      window.dispatchEvent(new CustomEvent("lumina:open-messages", { detail: { conversationId: conversation_id } }));
+      setOpenId(null);
+    } catch { /* leave the applicant where they are if the chat couldn't open */ }
+    qc.invalidateQueries({ queryKey: ["admin-applicants"] });
+    qc.invalidateQueries({ queryKey: ["admin-applicant-counts"] });
+    qc.invalidateQueries({ queryKey: ["conversations", "admin"] });
+    qc.invalidateQueries({ queryKey: ["conv-unread", "admin"] });
   }
 
   async function saveNote() {
@@ -270,7 +285,7 @@ export default function AdminApplicantsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-1.5 border-t border-white/5 pt-3">
-                  <button onClick={(e) => { e.stopPropagation(); applyStatus(r.id, "messaged"); }}
+                  <button onClick={(e) => { e.stopPropagation(); openChat(r.id); }}
                     className="rounded-lg border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-text-secondary)] hover:border-[var(--color-brand)] hover:text-[var(--color-brand)]">Message</button>
                   <button onClick={(e) => { e.stopPropagation(); applyStatus(r.id, "bookmarked"); }}
                     className="rounded-lg border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-text-secondary)] hover:border-[var(--color-brand)] hover:text-[var(--color-brand)]">Bookmark</button>
@@ -314,7 +329,7 @@ export default function AdminApplicantsPage() {
                 </button>
 
                 <div className="mt-6 flex flex-wrap gap-2 border-t border-white/5 pt-4">
-                  <button onClick={() => applyStatus(detail.id, "messaged")} className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] hover:border-[var(--color-brand)] hover:text-[var(--color-brand)]">Message</button>
+                  <button onClick={() => openChat(detail.id)} className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] hover:border-[var(--color-brand)] hover:text-[var(--color-brand)]">Message</button>
                   <button onClick={() => applyStatus(detail.id, "bookmarked")} className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] hover:border-[var(--color-brand)] hover:text-[var(--color-brand)]">Bookmark</button>
                   <button onClick={() => applyStatus(detail.id, "accepted")} className="rounded-lg border border-[var(--color-brand)]/50 bg-[var(--color-brand)]/10 px-3 py-1.5 text-sm text-[var(--color-brand)] hover:bg-[var(--color-brand)]/20">Accept</button>
                   <button onClick={() => applyStatus(detail.id, "declined")} className="rounded-lg border border-[var(--color-danger)]/40 px-3 py-1.5 text-sm text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10">Decline</button>

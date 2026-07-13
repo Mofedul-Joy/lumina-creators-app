@@ -16,14 +16,14 @@ import {
   listCreators,
   listOwedV2,
   payAll,
-  payOne,
   type CreatorRow,
   type ForecastRow,
   type LedgerRow,
   type OwedRowV2,
   type SpendingSummary,
 } from "@/lib/admin";
-import { isAuthError } from "@/lib/api";
+import { getCreatorDetail, isAuthError, type CreatorDetail } from "@/lib/api";
+import { PayCreatorModal } from "@/components/admin/PayCreatorModal";
 import { fmtInt, fmtMoney } from "@/lib/format";
 
 const PAGE_TABS = [
@@ -172,6 +172,20 @@ export default function AdminPaymentsPage() {
   const [hoverRow, setHoverRow] = useState<string | null>(null);
 
   const [payMenuOpen, setPayMenuOpen] = useState(false);
+  // Row "Pay" opens a details popup (copyable creator payment info + receipt
+  // capture) rather than paying blind. Null when closed.
+  const [payTarget, setPayTarget] = useState<{ creator: CreatorDetail; owed: number } | null>(null);
+  const [payLoadingId, setPayLoadingId] = useState<string | null>(null);
+
+  async function openPay(creatorId: string, owed: number) {
+    setPayLoadingId(creatorId);
+    try {
+      const creator = await getCreatorDetail(getAdminToken() ?? "", creatorId);
+      if (creator) setPayTarget({ creator, owed });
+    } finally {
+      setPayLoadingId(null);
+    }
+  }
   const [walletOpen, setWalletOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
   const [showAddFunds, setShowAddFunds] = useState(false);
@@ -242,11 +256,6 @@ export default function AdminPaymentsPage() {
       setSelected(new Set());
       refresh();
     },
-  });
-
-  const payOneM = useMutation({
-    mutationFn: (creatorId: string) => payOne(creatorId),
-    onSuccess: () => refresh(),
   });
 
   if (!ready || !hasToken)
@@ -505,11 +514,11 @@ export default function AdminPaymentsPage() {
                           <td className="px-4 py-4 text-[var(--color-text-secondary)]">{fmtInt(r.total_views)} views</td>
                           <td className="px-4 py-4 text-right">
                             <button
-                              onClick={() => payOneM.mutate(r.creator_id)}
-                              disabled={payOneM.isPending}
+                              onClick={() => openPay(r.creator_id, Number(r.amount_owed))}
+                              disabled={payLoadingId === r.creator_id}
                               className="cursor-pointer rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-[var(--color-on-brand)] hover:bg-emerald-400 disabled:opacity-50"
                             >
-                              Pay
+                              {payLoadingId === r.creator_id ? "…" : "Pay"}
                             </button>
                           </td>
                         </tr>
@@ -714,6 +723,14 @@ export default function AdminPaymentsPage() {
           </div>
         ) : null}
       </main>
+
+      {payTarget ? (
+        <PayCreatorModal
+          creator={payTarget.creator}
+          owed={payTarget.owed}
+          onClose={() => { setPayTarget(null); refresh(); }}
+        />
+      ) : null}
     </div>
   );
 }
