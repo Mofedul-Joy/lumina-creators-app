@@ -618,10 +618,11 @@ export default function NewCampaignPage() {
                     key={p.value}
                     type="button"
                     onClick={() => patch({ payment_type: p.value })}
-                    className={`card-lumina rounded-[var(--radius-card)] border p-3 text-left transition ${
+                    aria-pressed={f.payment_type === p.value}
+                    className={`cursor-pointer rounded-[var(--radius-card)] border p-3 text-left transition ${
                       f.payment_type === p.value
-                        ? "border-[var(--color-brand)] bg-[var(--color-brand)]/10"
-                        : "border-[var(--color-border)] hover:border-[var(--color-text-muted)]"
+                        ? "border-[var(--color-brand)] bg-[var(--color-brand)]/15 ring-2 ring-[var(--color-brand)]"
+                        : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-text-muted)] hover:bg-white/5"
                     }`}
                   >
                     <p className="text-sm font-semibold text-[var(--color-text)]">{p.label}</p>
