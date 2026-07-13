@@ -97,8 +97,13 @@ export default function AdminCreatorDetailPage() {
     <div className="min-h-[100dvh]">
       <AdminShell />
       <main className="mx-auto max-w-6xl px-6 py-10 space-y-6">
-      <Link href="/admin/creators" className="text-sm text-[var(--color-brand)] underline">
-        ← Back to database
+      <Link
+        href="/admin/creators"
+        aria-label="Back to database"
+        title="Back to database"
+        className="group inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] shadow-sm transition hover:-translate-x-0.5 hover:border-[var(--color-brand)] hover:text-[var(--color-brand)]"
+      >
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </Link>
       <AdminTabs />
 

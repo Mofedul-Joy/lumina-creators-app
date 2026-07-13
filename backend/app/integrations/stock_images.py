@@ -30,7 +30,7 @@ def search_topic_image(query: str) -> Optional[str]:
     query = (query or "").strip()
     if not query:
         return None
-    return _pexels(query) or _openverse(query)
+    return _pexels(query) or _openverse(query) or _loremflickr(query)
 
 
 def _pexels(query: str) -> Optional[str]:
@@ -83,3 +83,14 @@ def _openverse(query: str) -> Optional[str]:
     if not results:
         return None
     return results[0].get("url") or results[0].get("thumbnail")
+
+
+def _loremflickr(query: str) -> Optional[str]:
+    """Always-hits keyless fallback. LoremFlickr returns a real, banner-shaped
+    Flickr photo for the given tags (and a random one if the tag is empty), so a
+    campaign is never left without art. `/g/` = safe-for-work only. The URL is
+    hotlink-stable, so it works even if re-hosting can't run."""
+    from urllib.parse import quote
+
+    tag = quote(query.lower().replace(" ", ","))
+    return f"https://loremflickr.com/1200/400/{tag}/all" if tag else "https://loremflickr.com/1200/400"
