@@ -25,11 +25,12 @@ def _has_active_payout(db: Session, submission_id: uuid.UUID) -> bool:
     ) is not None
 
 
-# Review outcome → (bell title, message verb). Drives _notify_creator.
+# Review outcome → (bell title, message sentence template). Drives _notify_creator.
 _OUTCOMES = {
-    "verified": ("Your video was approved", "approved"),
-    "rejected": ("Your video was rejected", "rejected"),
-    "revision_requested": ("Changes requested on your video", "needs changes"),
+    "verified": ("Your video was approved", 'Your video for "{c}" was approved.'),
+    "rejected": ("Your video was rejected", 'Your video for "{c}" was rejected.'),
+    "revision_requested": ("Changes requested on your video",
+                           'Your video for "{c}" needs some changes before it can be approved.'),
 }
 
 
@@ -39,9 +40,9 @@ def _notify_creator(db: Session, admin_id: uuid.UUID, sub: Submission,
     and a DM in the message section (with the admin's feedback, if any). Both are
     best-effort — the review is already committed, so a notify hiccup never
     unwinds it (golden rule: notifications are side effects)."""
-    title, verb = _OUTCOMES.get(outcome, ("Video review update", "updated"))
+    title, template = _OUTCOMES.get(outcome, ("Video review update", 'Your video for "{c}" was reviewed.'))
     campaign_name = db.scalar(select(Campaign.name).where(Campaign.id == sub.campaign_id)) or "your campaign"
-    line = f'Your video for "{campaign_name}" was {verb}.'
+    line = template.format(c=campaign_name)
     if note:
         line += f"\n\nFeedback from the team: {note}"
     try:
