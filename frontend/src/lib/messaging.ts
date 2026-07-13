@@ -119,9 +119,14 @@ export const removeChannelMember = (conversationId: string, creatorId: string) =
     method: "DELETE", token: getAdminToken() ?? undefined,
   });
 
-// Gmail compose in a new tab, recipient pre-filled. Falls back to mailto.
-export function composeEmail(to: string | null, subject = "") {
-  if (!to) return;
-  const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}${subject ? `&su=${encodeURIComponent(subject)}` : ""}`;
-  window.open(url, "_blank", "noopener,noreferrer");
+// Open the user's real Gmail inbox with the docked "New Message" composer
+// (bottom-right popup), rather than the disconnected full-screen compose page.
+// Gmail can't pre-fill the recipient through this URL — only the full-screen
+// `view=cm` form can — so we copy the address to the clipboard here; the
+// composer opens with the cursor in the To field, ready to paste.
+export function composeEmail(to: string | null, _subject = "") {
+  if (to && typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    void navigator.clipboard.writeText(to).catch(() => {});
+  }
+  window.open("https://mail.google.com/mail/u/0/#inbox?compose=new", "_blank", "noopener,noreferrer");
 }
