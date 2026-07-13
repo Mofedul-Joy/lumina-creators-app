@@ -712,6 +712,8 @@ export default function NewCampaignPage() {
                   ) : null}
                 </div>
               </div>
+
+              <BannerInput value={f.banner_url} onChange={(v) => patch({ banner_url: v })} />
             </div>
           ) : null}
 
@@ -1042,8 +1044,6 @@ export default function NewCampaignPage() {
                       </button>
                     ) : null}
                   </div>
-
-                  <BannerInput value={f.banner_url} onChange={(v) => patch({ banner_url: v })} />
                 </div>
               ) : null}
             </div>
@@ -1072,6 +1072,14 @@ export default function NewCampaignPage() {
                   label="Duration"
                   value={`${f.start_date || "—"} → ${f.ongoing ? "Ongoing" : f.end_date || "—"}`}
                   hint="When the campaign runs. 'Ongoing' has no end date — creators can keep posting until you close it."
+                />
+                <ReviewRow
+                  label="Thumbnail"
+                  value={f.banner_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={f.banner_url} alt="" className="h-10 w-16 rounded-md object-cover" />
+                  ) : "—"}
+                  hint="The cover image creators see on the campaign card. Set it on the Campaign details step."
                 />
               </ReviewCard>
 
