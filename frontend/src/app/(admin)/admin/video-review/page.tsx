@@ -36,6 +36,11 @@ function initials(name: string | null): string {
 /** One submitted video: its thumbnail up top, the creator's profile below —
  * the whole card opens the in-app review modal. */
 function VideoCard({ s, onOpen }: { s: AdminSubmission; onOpen: () => void }) {
+  // Thumbnails are cached on our own storage server-side (rehosted to R2), so a
+  // load failure is rare — but if a URL ever breaks, degrade to the platform
+  // icon instead of the browser's broken-image glyph. Reset when the URL changes.
+  const [broken, setBroken] = useState(false);
+  useEffect(() => { setBroken(false); }, [s.thumbnail_url]);
   return (
     <button
       type="button"
@@ -44,9 +49,15 @@ function VideoCard({ s, onOpen }: { s: AdminSubmission; onOpen: () => void }) {
     >
       {/* thumbnail */}
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-[var(--color-surface-2)]">
-        {s.thumbnail_url ? (
+        {s.thumbnail_url && !broken ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={s.thumbnail_url} alt="" className="h-full w-full object-cover transition group-hover:scale-[1.03]" />
+          <img
+            src={s.thumbnail_url}
+            alt=""
+            loading="lazy"
+            onError={() => setBroken(true)}
+            className="h-full w-full object-cover transition group-hover:scale-[1.03]"
+          />
         ) : (
           <div className="grid h-full w-full place-items-center text-[var(--color-text-muted)]">
             <PlatformIcon name={s.platform} className="h-8 w-8 opacity-50" />
