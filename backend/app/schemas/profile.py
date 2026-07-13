@@ -120,8 +120,15 @@ class TopVideoOut(BaseModel):
 class ExperienceIn(BaseModel):
     kind: str                            # organic_ugc | ugc_paid_ad | professional_role
     role_title: Optional[str] = None     # required when kind == professional_role
-    company_url: Optional[str] = None
-    company_name: Optional[str] = None
+    company_name: Optional[str] = None   # brand/client — now the primary required field
+    company_url: Optional[str] = None    # brand website (optional)
+    description: Optional[str] = None     # what you did / impact
+    platforms: Optional[List[str]] = None
+    deliverable: Optional[str] = None
+    niche: Optional[str] = None
+    work_url: Optional[str] = None        # link to the actual work
+    results: Optional[str] = None         # results / metrics
+    period: Optional[str] = None          # date / duration
 
 
 class ExperienceOut(BaseModel):
@@ -129,8 +136,15 @@ class ExperienceOut(BaseModel):
     kind: str
     kind_label: str                      # "Organic UGC" / "UGC paid ad" / "Professional role"
     title: str                           # job title, or the type label
-    org: Optional[str] = None            # company name (derived from the URL when omitted)
+    org: Optional[str] = None            # brand/client name
     url: Optional[str] = None
+    description: Optional[str] = None
+    platforms: List[str] = []
+    deliverable: Optional[str] = None
+    niche: Optional[str] = None
+    work_url: Optional[str] = None
+    results: Optional[str] = None
+    period: Optional[str] = None
     verified: bool
     created_at: datetime
 

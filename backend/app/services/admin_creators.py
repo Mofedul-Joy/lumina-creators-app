@@ -22,6 +22,7 @@ from app.models import (
     Submission,
 )
 from app.services import audit
+from app.services.profile import EXPERIENCE_KINDS
 # Gamification formulas now live in app.services.gamification (Feature 7) —
 # re-exported here under their original private names so every call site in
 # this file (and any external importer) keeps working unchanged.
@@ -217,6 +218,11 @@ def get_creator_detail(db: Session, creator_id: uuid.UUID) -> dict:
         "city": prof.city if prof else None,
         "completed": bool(prof and prof.completed_at),
         "is_suspicious": c.is_suspicious,
+        "payout_method": prof.payout_method if prof else None,
+        "payout_address": prof.payout_address if prof else None,
+        "payout_paypal": prof.payout_paypal if prof else None,
+        "payout_solana": prof.payout_solana if prof else None,
+        "payout_whop": prof.payout_whop if prof else None,
         "socials": [
             {"platform": s.platform, "handle": s.handle, "profile_url": s.profile_url, "follower_count": s.follower_count}
             for s in socials
@@ -363,7 +369,13 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
             for s in recent_subs
         ],
         "experiences": [
-            {"id": str(e.id), "title": e.title, "org": e.org, "url": e.url, "created_at": e.created_at}
+            {
+                "id": str(e.id), "title": e.title, "org": e.org, "url": e.url,
+                "kind_label": EXPERIENCE_KINDS.get(e.kind, e.kind),
+                "description": e.description, "platforms": list(e.platforms or []),
+                "deliverable": e.deliverable, "niche": e.niche, "work_url": e.work_url,
+                "results": e.results, "period": e.period, "created_at": e.created_at,
+            }
             for e in experiences
         ],
         "portfolio": [

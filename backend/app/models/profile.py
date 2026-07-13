@@ -189,8 +189,20 @@ class CreatorExperience(Base):
     kind: Mapped[str] = mapped_column(Text, nullable=False, server_default="professional_role")
     # For professional_role this is the job title; otherwise the type's label.
     title: Mapped[str] = mapped_column(Text, nullable=False)
-    org: Mapped[Optional[str]] = mapped_column(Text)
-    url: Mapped[Optional[str]] = mapped_column(Text)
+    org: Mapped[Optional[str]] = mapped_column(Text)   # brand/client name
+    url: Mapped[Optional[str]] = mapped_column(Text)   # company/brand website
+    # Richer résumé context (Bill's feedback: "add experience doesn't feel
+    # complete — say what you did there"). All nullable so every existing row
+    # stays valid; the form asks for brand + these, only brand is required.
+    description: Mapped[Optional[str]] = mapped_column(Text)     # what you did / impact
+    platforms: Mapped[List[str]] = mapped_column(
+        ARRAY(Text), nullable=False, server_default=text("'{}'::text[]")
+    )
+    deliverable: Mapped[Optional[str]] = mapped_column(Text)     # e.g. "Short-form video"
+    niche: Mapped[Optional[str]] = mapped_column(Text)
+    work_url: Mapped[Optional[str]] = mapped_column(Text)        # link to the actual work
+    results: Mapped[Optional[str]] = mapped_column(Text)         # results / metrics (freeform)
+    period: Mapped[Optional[str]] = mapped_column(Text)          # date/duration (freeform)
     verified: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

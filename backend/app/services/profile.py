@@ -316,6 +316,21 @@ ROLE_TITLES = [
     "Other",
 ]
 
+# Suggested option lists for the richer Add Experience form. The service stays
+# lenient (free text is accepted) so the UI can evolve without a backend change;
+# these just power the dropdowns/chips.
+EXPERIENCE_PLATFORMS = ["tiktok", "instagram", "youtube", "twitter", "facebook", "linkedin", "other"]
+DELIVERABLES = [
+    "Short-form video",
+    "Long-form video",
+    "Photo / image",
+    "Story",
+    "Livestream",
+    "Blog / article",
+    "Product review",
+    "Other",
+]
+
 
 def list_experiences(db: Session, creator_id: uuid.UUID):
     return db.scalars(
@@ -339,16 +354,28 @@ def add_experience(db: Session, creator_id: uuid.UUID, data: dict) -> CreatorExp
     else:
         title = EXPERIENCE_KINDS[kind]
 
+    # Brand/client name is now the primary required field (Bill: a creator
+    # expects to say WHO the work was for). The website is optional; if the name
+    # is blank we still fall back to the site's bare host so the card isn't empty.
     raw_url = (data.get("company_url") or "").strip()
-    if not raw_url:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Add the company website")
-    url = urls.canonicalize_url(raw_url)
-    # The review screen shows a company name; fall back to the site's bare host
-    # ("lumina-clippers.com") so the card is never blank.
-    org = (data.get("company_name") or "").strip() or urls.bare_host(url)
+    url = urls.canonicalize_url(raw_url) if raw_url else None
+    org = (data.get("company_name") or "").strip() or (urls.bare_host(url) if url else "")
+    if not org:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Add the brand or client name")
+
+    def _clean(key: str):
+        v = (data.get(key) or "").strip()
+        return v or None
+
+    platforms = [p for p in (data.get("platforms") or []) if isinstance(p, str) and p.strip()]
 
     item = CreatorExperience(
-        creator_id=creator_id, kind=kind, title=title, org=org, url=url, verified=True
+        creator_id=creator_id, kind=kind, title=title, org=org, url=url, verified=True,
+        description=_clean("description"), platforms=platforms,
+        deliverable=_clean("deliverable"), niche=_clean("niche"),
+        work_url=(urls.canonicalize_url(data["work_url"].strip())
+                  if (data.get("work_url") or "").strip() else None),
+        results=_clean("results"), period=_clean("period"),
     )
     db.add(item)
     db.commit()

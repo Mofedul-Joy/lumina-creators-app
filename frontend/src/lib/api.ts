@@ -412,6 +412,11 @@ export type CreatorDetail = {
   is_suspicious: boolean;
   socials: SocialItem[];
   portfolio: PortfolioItemOut[];
+  payout_method: string | null;
+  payout_address: string | null;
+  payout_paypal: string | null;
+  payout_solana: string | null;
+  payout_whop: string | null;
 };
 
 export type CreatorFilters = {
@@ -690,9 +695,16 @@ export type ExperienceKind = "organic_ugc" | "ugc_paid_ad" | "professional_role"
 
 export type ExperienceIn = {
   kind: ExperienceKind;
-  role_title?: string;   // required when kind === "professional_role"
-  company_url: string;
-  company_name?: string;
+  role_title?: string;    // required when kind === "professional_role"
+  company_name: string;   // brand/client — the one required field
+  company_url?: string;
+  description?: string;
+  platforms?: string[];
+  deliverable?: string;
+  niche?: string;
+  work_url?: string;
+  results?: string;
+  period?: string;
 };
 
 export type ExperienceOut = {
@@ -702,9 +714,43 @@ export type ExperienceOut = {
   title: string;
   org: string | null;
   url: string | null;
+  description: string | null;
+  platforms: string[];
+  deliverable: string | null;
+  niche: string | null;
+  work_url: string | null;
+  results: string | null;
+  period: string | null;
   verified: boolean;
   created_at: string;
 };
+
+// Static option lists that power the Add Experience form (kept UI-side; the
+// backend accepts any value, so these can evolve without a deploy dependency).
+export const EXPERIENCE_PLATFORMS: { key: string; label: string }[] = [
+  { key: "tiktok", label: "TikTok" },
+  { key: "instagram", label: "Instagram" },
+  { key: "youtube", label: "YouTube" },
+  { key: "twitter", label: "X / Twitter" },
+  { key: "facebook", label: "Facebook" },
+  { key: "linkedin", label: "LinkedIn" },
+  { key: "other", label: "Other" },
+];
+export const EXPERIENCE_DELIVERABLES = [
+  "Short-form video",
+  "Long-form video",
+  "Photo / image",
+  "Story",
+  "Livestream",
+  "Blog / article",
+  "Product review",
+  "Other",
+];
+export const EXPERIENCE_NICHES = [
+  "Beauty", "Fashion", "Fitness", "Food & drink", "Travel", "Tech", "Gaming",
+  "Finance", "Health & wellness", "Home & lifestyle", "Parenting", "Pets",
+  "Education", "Business", "Entertainment", "Other",
+];
 
 export const listExperiences = (token: string) =>
   apiFetch<ExperienceOut[]>("/api/creator/profile/experiences", { token });

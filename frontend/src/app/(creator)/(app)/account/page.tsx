@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { getAuthToken } from "@/lib/auth";
 import { deleteExperience, getProfile, isAuthError, listExperiences, type ExperienceOut } from "@/lib/api";
 import { AddExperienceModal } from "@/components/creator/AddExperienceModal";
+import { PayoutDetailsCard } from "@/components/creator/PayoutDetailsCard";
 import { TopVideosTab } from "@/components/creator/TopVideosTab";
 import { listSubmissions } from "@/lib/campaigns";
 import { getMyGamification } from "@/lib/gamification";
@@ -39,9 +40,18 @@ function StatTile({ label, value }: { label: string; value: string }) {
   );
 }
 
+const PLATFORM_LABELS: Record<string, string> = {
+  tiktok: "TikTok", instagram: "Instagram", youtube: "YouTube",
+  twitter: "X / Twitter", facebook: "Facebook", linkedin: "LinkedIn", other: "Other",
+};
+
 function ExperienceCard({ e, onDelete }: { e: ExperienceOut; onDelete: (id: string) => void }) {
+  // The little grey line under the title: role/type, then any deliverable and
+  // when it happened — only the parts that were filled in.
+  const meta = [e.title !== e.kind_label ? `${e.title} · ${e.kind_label}` : e.kind_label,
+    e.deliverable, e.niche, e.period].filter(Boolean).join(" · ");
   return (
-    <div className="card-grad flex items-center gap-4 rounded-[var(--radius-card)] p-4">
+    <div className="card-grad flex items-start gap-4 rounded-[var(--radius-card)] p-4">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-sm font-semibold text-[var(--color-text)]">{e.org || "Company"}</p>
@@ -53,9 +63,33 @@ function ExperienceCard({ e, onDelete }: { e: ExperienceOut; onDelete: (id: stri
             </span>
           ) : null}
         </div>
-        <p className="mt-0.5 truncate text-sm text-[var(--color-text-secondary)]">
-          {e.title} · {e.kind_label}
-        </p>
+        <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">{meta}</p>
+
+        {e.description ? (
+          <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">{e.description}</p>
+        ) : null}
+        {e.results ? (
+          <p className="mt-1.5 text-xs font-medium text-[var(--color-brand-soft)]">{e.results}</p>
+        ) : null}
+
+        {(e.platforms?.length || e.work_url) ? (
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+            {(e.platforms ?? []).map((p) => (
+              <span key={p} className="rounded-full bg-[var(--color-surface-2)] px-2 py-0.5 text-[11px] text-[var(--color-text-muted)]">
+                {PLATFORM_LABELS[p] ?? p}
+              </span>
+            ))}
+            {e.work_url ? (
+              <a
+                href={e.work_url} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-brand-soft)] hover:underline"
+              >
+                View work
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M7 17 17 7M17 7H9m8 0v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </a>
+            ) : null}
+          </div>
+        ) : null}
       </div>
       <button
         onClick={() => onDelete(e.id)}
@@ -260,6 +294,9 @@ export default function AccountPage() {
           <StatTile label="Total posts" value={fmtInt(g?.total_posts ?? subs.length)} />
         </div>
       </section>
+
+      {/* How the creator gets paid (manual payouts) */}
+      <PayoutDetailsCard profile={profile} />
         </>
       )}
     </main>

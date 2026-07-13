@@ -175,6 +175,8 @@ def _experience_out(e) -> ExperienceOut:
     return ExperienceOut(
         id=str(e.id), kind=e.kind, kind_label=svc.EXPERIENCE_KINDS.get(e.kind, e.kind),
         title=e.title, org=e.org, url=e.url, verified=e.verified, created_at=e.created_at,
+        description=e.description, platforms=list(e.platforms or []), deliverable=e.deliverable,
+        niche=e.niche, work_url=e.work_url, results=e.results, period=e.period,
     )
 
 

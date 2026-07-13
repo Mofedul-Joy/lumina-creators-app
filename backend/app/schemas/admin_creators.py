@@ -69,6 +69,13 @@ class CreatorDetail(BaseModel):
     is_suspicious: bool = False
     socials: List[SocialItem] = []
     portfolio: List[PortfolioItemOut] = []
+    # Payout details the creator saved themselves — surfaced so the admin's
+    # "Pay now" modal can show exactly where/how to pay them manually.
+    payout_method: Optional[str] = None
+    payout_address: Optional[str] = None
+    payout_paypal: Optional[str] = None
+    payout_solana: Optional[str] = None
+    payout_whop: Optional[str] = None
 
 
 # ── Feature 2: rich creator/applicant detail card (BUILD_SPEC.md §3.1 + §3.9) ──
@@ -98,6 +105,14 @@ class ExperienceItem(BaseModel):
     title: str
     org: Optional[str] = None
     url: Optional[str] = None
+    kind_label: Optional[str] = None
+    description: Optional[str] = None
+    platforms: List[str] = []
+    deliverable: Optional[str] = None
+    niche: Optional[str] = None
+    work_url: Optional[str] = None
+    results: Optional[str] = None
+    period: Optional[str] = None
     created_at: datetime
 
 
