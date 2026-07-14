@@ -23,40 +23,98 @@ import { COUNTRIES } from "@/lib/countries";
 // every step pre-fills from the profile so this doubles as "edit profile".
 
 type StepKey =
-  | "type" | "name" | "photo" | "bio"
-  | "socials"
-  | "portfolio" | "birthday" | "gender" | "education" | "ethnicity" | "language" | "location"
+  | "name" | "ugc_before" | "experience" | "brands" | "content_types" | "niches"
+  | "type" | "bio" | "portfolio"
+  | "posts_per_day" | "hours_per_week"
+  | "birthday" | "gender" | "education" | "ethnicity" | "language" | "location" | "how_heard"
+  | "socials" | "photo"
+  | "testimonial" | "earnings"
   | "payment" | "done";
 
 // Rev2 #2/#3: one Socials step with per-platform tabs (was 5 separate steps).
 const SOCIAL_PLATFORMS: Platform[] = ["instagram", "tiktok", "youtube", "twitter", "facebook"];
 
+// SideShift-style granular flow: name first, then experience/interests, the
+// mandatory profile bits (creator type + a video + socials gate the join), then
+// details, and reassurance/earnings before finish. `type`, `socials`, `portfolio`,
+// `birthday`, `payment` keys stay so the ProfileGate deep-links still resolve.
 const STEPS: { key: StepKey; optional?: boolean }[] = [
-  { key: "type" },
   { key: "name", optional: true },
-  { key: "photo", optional: true },
+  { key: "ugc_before", optional: true },
+  { key: "experience", optional: true },
+  { key: "brands", optional: true },
+  { key: "content_types", optional: true },
+  { key: "niches", optional: true },
+  { key: "type" },
   { key: "bio", optional: true },
-  { key: "socials", optional: true },
   { key: "portfolio", optional: true },
+  { key: "posts_per_day", optional: true },
+  { key: "hours_per_week", optional: true },
   { key: "birthday", optional: true },
   { key: "gender", optional: true },
   { key: "education", optional: true },
   { key: "ethnicity", optional: true },
   { key: "language", optional: true },
   { key: "location", optional: true },
+  { key: "how_heard", optional: true },
+  { key: "socials", optional: true },
+  { key: "photo", optional: true },
+  { key: "testimonial", optional: true },
+  { key: "earnings", optional: true },
   { key: "payment", optional: true },
   { key: "done" },
 ];
 
-// coarse sections for the clickable progress header (18 pills would be unusable)
+// coarse sections for the clickable progress header
 const SECTIONS: { label: string; first: StepKey }[] = [
-  { label: "About", first: "type" },
-  { label: "Socials", first: "socials" },
-  { label: "Videos", first: "portfolio" },
+  { label: "You", first: "name" },
+  { label: "Interests", first: "content_types" },
+  { label: "Profile", first: "type" },
   { label: "Details", first: "birthday" },
-  { label: "Payment", first: "payment" },
+  { label: "Socials", first: "socials" },
+  { label: "Finish", first: "testimonial" },
 ];
 const SECTION_STARTS = SECTIONS.map((s) => STEPS.findIndex((x) => x.key === s.first));
+
+// Brands Lumina's creators work with (from luminaclippers.com) — shown as social
+// proof on the "you could work with these brands" step.
+const LUMINA_BRANDS = [
+  "OKX", "Stake", "Magic Eden", "Polkadot", "Adobe", "Midjourney", "TikTok",
+  "Riverside", "Wispr Flow", "Aviator", "High Roller", "Caliente", "Forward", "Humanity",
+];
+const CONTENT_TYPES: { key: string; label: string; icon: string }[] = [
+  { key: "unboxing", label: "Unboxing Videos", icon: "📦" },
+  { key: "reviews", label: "Reviews & Testimonials", icon: "⭐" },
+  { key: "demos", label: "Product Demos", icon: "▶️" },
+  { key: "lifestyle", label: "Lifestyle Videos", icon: "🌤️" },
+  { key: "ads", label: "Video Ads", icon: "🎥" },
+  { key: "talking", label: "Talking Style Videos", icon: "🎙️" },
+  { key: "faceless", label: "Faceless Content / Clipping", icon: "✂️" },
+];
+const NICHE_OPTIONS: { key: string; label: string; icon: string }[] = [
+  { key: "social", label: "Social & Communication", icon: "💬" },
+  { key: "finance", label: "Finance & Commerce", icon: "📈" },
+  { key: "entertainment", label: "Entertainment & Media", icon: "🎬" },
+  { key: "health", label: "Health & Fitness", icon: "💪" },
+  { key: "education", label: "Education & Learning", icon: "🎓" },
+  { key: "travel", label: "Travel & Local", icon: "✈️" },
+  { key: "lifestyle", label: "Lifestyle & Utilities", icon: "🏆" },
+  { key: "photo", label: "Photo & Video", icon: "📷" },
+  { key: "food", label: "Food & Drink", icon: "🍔" },
+  { key: "home", label: "Home & Family", icon: "🏠" },
+  { key: "fashion", label: "Fashion, Beauty & Self-Expression", icon: "💄" },
+  { key: "other", label: "Other", icon: "🚀" },
+];
+const HOW_HEARD: { key: string; label: string }[] = [
+  { key: "friend", label: "Friend or colleague" },
+  { key: "referral", label: "Invite or referral" },
+  { key: "tiktok", label: "TikTok" },
+  { key: "linkedin", label: "LinkedIn" },
+  { key: "google", label: "Google or search" },
+  { key: "instagram", label: "Instagram" },
+  { key: "youtube", label: "YouTube" },
+  { key: "other", label: "Something else" },
+];
 
 const CREATOR_TYPE_COPY: Record<CreatorType, { title: string; blurb: string; icon: string }> = {
   ugc: { title: "UGC creator", blurb: "I make content for brands to use in their own ads.", icon: "🎬" },
@@ -115,6 +173,8 @@ export function OnboardingWizard() {
   const [audience, setAudience] = useState({ date_of_birth: "", gender: "", education: "", ethnicity: "", primary_language: "", country: "", city: "" });
   const [payout, setPayout] = useState({ method: "" as PayoutMethod | "", paypal: "", solana: "", whop: "" });
   const [socialForms, setSocialForms] = useState<Record<string, { handle: string; followers: string }>>({});
+  const [niches, setNiches] = useState<string[]>([]);
+  const [ob, setOb] = useState({ ugc_before: "", experience: "", content_types: [] as string[], posts_per_day: 3, hours_per_week: 10, how_heard: "" });
   const seeded = useRef(false);
   useEffect(() => {
     const d = profileQ.data;
@@ -131,6 +191,13 @@ export function OnboardingWizard() {
       paypal: d.payout_paypal ?? (d.payout_method === "paypal" ? d.payout_address ?? "" : ""),
       solana: d.payout_solana ?? (d.payout_method === "solana" ? d.payout_address ?? "" : ""),
       whop: d.payout_whop ?? (d.payout_method === "whop" ? d.payout_address ?? "" : ""),
+    });
+    setNiches(d.niches ?? []);
+    const o = (d.onboarding ?? {}) as Partial<typeof ob>;
+    setOb({
+      ugc_before: o.ugc_before ?? "", experience: o.experience ?? "",
+      content_types: o.content_types ?? [], posts_per_day: o.posts_per_day ?? 3,
+      hours_per_week: o.hours_per_week ?? 10, how_heard: o.how_heard ?? "",
     });
   }, [profileQ.data]);
 
@@ -208,8 +275,15 @@ export function OnboardingWizard() {
       else if (k === "language") await saveM.mutateAsync({ primary_language: audience.primary_language || undefined });
       else if (k === "location") await saveM.mutateAsync({ country: audience.country || undefined, city: audience.city || undefined });
       else if (k === "payment") await saveM.mutateAsync({ payout_method: (payout.method || undefined) as PayoutMethod | undefined, payout_paypal: payout.paypal || undefined, payout_solana: payout.solana || undefined, payout_whop: payout.whop || undefined });
-      // "socials" saves inline per-platform (verify flow + Add-account button),
-      // so there's nothing to persist on Continue.
+      else if (k === "niches") await saveM.mutateAsync({ niches });
+      else if (k === "ugc_before") await saveM.mutateAsync({ onboarding: { ugc_before: ob.ugc_before || undefined } });
+      else if (k === "experience") await saveM.mutateAsync({ onboarding: { experience: ob.experience || undefined } });
+      else if (k === "content_types") await saveM.mutateAsync({ onboarding: { content_types: ob.content_types } });
+      else if (k === "posts_per_day") await saveM.mutateAsync({ onboarding: { posts_per_day: ob.posts_per_day } });
+      else if (k === "hours_per_week") await saveM.mutateAsync({ onboarding: { hours_per_week: ob.hours_per_week } });
+      else if (k === "how_heard") await saveM.mutateAsync({ onboarding: { how_heard: ob.how_heard || undefined } });
+      // "socials" saves inline per-platform; "brands"/"testimonial"/"earnings"
+      // are informational — nothing to persist on Continue.
       next();
     } catch { /* err surfaced below */ }
   }
@@ -257,6 +331,138 @@ export function OnboardingWizard() {
       </div>
 
       <div className="min-h-[340px]">
+        {cur.key === "ugc_before" ? (
+          <StepShell eyebrow="Your background" title="Have you done UGC work before?" sub="This helps us personalize your onboarding path.">
+            <div className="grid gap-2">
+              <OptionCard selected={ob.ugc_before === "yes"} onClick={() => setOb({ ...ob, ugc_before: "yes" })} icon="✅" title="Yes, I've created for brands" />
+              <OptionCard selected={ob.ugc_before === "no"} onClick={() => setOb({ ...ob, ugc_before: "no" })} icon="✨" title="No, I'm just getting started" />
+            </div>
+          </StepShell>
+        ) : null}
+
+        {cur.key === "experience" ? (
+          <StepShell eyebrow="Your background" title="How much experience do you have with UGC campaigns?">
+            <div className="grid gap-2">
+              {[["getting_started", "I'm just getting started"], ["few", "I've done a few campaigns"], ["seasoned", "I'm a seasoned creator"]].map(([k, label]) => (
+                <OptionCard key={k} selected={ob.experience === k} onClick={() => setOb({ ...ob, experience: k })} icon="⭐" title={label} />
+              ))}
+            </div>
+          </StepShell>
+        ) : null}
+
+        {cur.key === "brands" ? (
+          <StepShell eyebrow="The opportunity" title={`${(details.display_name || "").trim().split(" ")[0] || "You"}, you could work with these brands!`} sub="Join Lumina creators already working with top brands.">
+            <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
+              {LUMINA_BRANDS.map((b) => (
+                <div key={b} className="flex flex-col items-center gap-1.5">
+                  <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-surface-2)] text-base font-bold text-[var(--color-brand-soft)] ring-1 ring-[var(--color-border)]">
+                    {b.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+                  </span>
+                  <span className="text-center text-[10px] leading-tight text-[var(--color-text-muted)]">{b}</span>
+                </div>
+              ))}
+            </div>
+          </StepShell>
+        ) : null}
+
+        {cur.key === "content_types" ? (
+          <StepShell eyebrow="Your craft" title="What type of content do you like to make?" sub="Select all that apply.">
+            <div className="flex flex-wrap gap-2">
+              {CONTENT_TYPES.map((c) => {
+                const on = ob.content_types.includes(c.key);
+                return (
+                  <button key={c.key} onClick={() => setOb({ ...ob, content_types: on ? ob.content_types.filter((x) => x !== c.key) : [...ob.content_types, c.key] })}
+                    className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm transition ${on ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]" : "card-grad text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"}`}>
+                    <span aria-hidden>{c.icon}</span>{c.label}
+                  </button>
+                );
+              })}
+            </div>
+          </StepShell>
+        ) : null}
+
+        {cur.key === "niches" ? (
+          <StepShell eyebrow="Your craft" title="What do you consider your niches?" sub="Select up to 5.">
+            <div className="flex flex-wrap gap-2">
+              {NICHE_OPTIONS.map((n) => {
+                const on = niches.includes(n.key);
+                const full = niches.length >= 5 && !on;
+                return (
+                  <button key={n.key} disabled={full} onClick={() => setNiches(on ? niches.filter((x) => x !== n.key) : [...niches, n.key])}
+                    className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm transition disabled:opacity-40 ${on ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]" : "card-grad text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"}`}>
+                    <span aria-hidden>{n.icon}</span>{n.label}
+                  </button>
+                );
+              })}
+            </div>
+          </StepShell>
+        ) : null}
+
+        {cur.key === "posts_per_day" ? (
+          <StepShell eyebrow="Your capacity" title="How many posts can you create per day?">
+            <div className="text-center">
+              <p className="tabular text-5xl font-semibold text-[var(--color-text)]">{ob.posts_per_day}</p>
+              <p className="text-[var(--color-text-secondary)]">post{ob.posts_per_day === 1 ? "" : "s"}</p>
+              <input type="range" min={1} max={10} value={ob.posts_per_day} onChange={(e) => setOb({ ...ob, posts_per_day: Number(e.target.value) })}
+                className="mt-6 w-full accent-[var(--color-brand)]" />
+            </div>
+          </StepShell>
+        ) : null}
+
+        {cur.key === "hours_per_week" ? (
+          <StepShell eyebrow="Your capacity" title="How many hours per week can you dedicate?" sub="We'll find campaigns that fit your schedule.">
+            <div className="text-center">
+              <p className="tabular text-5xl font-semibold text-[var(--color-text)]">{ob.hours_per_week}</p>
+              <p className="text-[var(--color-text-secondary)]">hours</p>
+              <input type="range" min={1} max={40} value={ob.hours_per_week} onChange={(e) => setOb({ ...ob, hours_per_week: Number(e.target.value) })}
+                className="mt-6 w-full accent-[var(--color-brand)]" />
+            </div>
+          </StepShell>
+        ) : null}
+
+        {cur.key === "how_heard" ? (
+          <StepShell eyebrow="Last thing" title="How did you hear about us?" sub="Optional, but helpful if someone invited or referred you.">
+            <div className="grid gap-2">
+              {HOW_HEARD.map((h) => (
+                <OptionCard key={h.key} compact selected={ob.how_heard === h.key} onClick={() => setOb({ ...ob, how_heard: h.key })} title={h.label} />
+              ))}
+            </div>
+          </StepShell>
+        ) : null}
+
+        {cur.key === "testimonial" ? (
+          <StepShell eyebrow="You're in good company" title="Join thousands of trusted creators">
+            <div className="card-lumina rounded-[var(--radius-card)] p-6">
+              <div className="flex items-center gap-3">
+                <span className="grid h-11 w-11 place-items-center rounded-full bg-[var(--color-brand)]/15 text-lg font-semibold text-[var(--color-brand-soft)]">D</span>
+                <div>
+                  <p className="font-semibold text-[var(--color-text)]">Darah E.</p>
+                  <p className="text-[var(--color-brand-soft)]">★★★★★</p>
+                </div>
+              </div>
+              <p className="mt-4 text-[var(--color-text-secondary)]">
+                &ldquo;I&apos;ve been using Lumina for about 6 months and it changed how I think about content. I get to work with cool brands on my own schedule — and the best part is you don&apos;t need a big following to get started.&rdquo;
+              </p>
+            </div>
+          </StepShell>
+        ) : null}
+
+        {cur.key === "earnings" ? (
+          <StepShell eyebrow="What's possible" title="Your earnings potential">
+            <div className="rounded-[var(--radius-card)] bg-[var(--color-brand)]/10 p-6 text-center ring-1 ring-[var(--color-brand)]/30">
+              <p className="tabular text-4xl font-semibold text-[var(--color-brand-soft)]">$2,500</p>
+              <p className="text-sm text-[var(--color-text-secondary)]">per month</p>
+            </div>
+            <div className="mt-4 grid gap-2">
+              {[["💼", "Get paid for brand campaigns"], ["🏆", "Earn weekly leaderboard bonuses"], ["📈", "Rank up to unlock higher payouts"]].map(([icon, label]) => (
+                <div key={label} className="card-grad flex items-center gap-3 rounded-[var(--radius-card)] px-4 py-3">
+                  <span aria-hidden>{icon}</span><span className="text-sm text-[var(--color-text)]">{label}</span>
+                </div>
+              ))}
+            </div>
+          </StepShell>
+        ) : null}
+
         {cur.key === "type" ? (
           <StepShell eyebrow="Welcome to Lumina" title="What kind of creator are you?" sub="This helps us match you to the right campaigns. You can change it anytime.">
             <div className="grid gap-3">

@@ -273,6 +273,8 @@ export type ProfileIn = {
   payout_paypal?: string;
   payout_solana?: string;
   payout_whop?: string;
+  niches?: string[];
+  onboarding?: Record<string, unknown>;
 };
 
 export type ProfileOut = {
@@ -294,6 +296,11 @@ export type ProfileOut = {
   payout_paypal: string | null;
   payout_solana: string | null;
   payout_whop: string | null;
+  niches: string[];
+  onboarding: {
+    ugc_before?: string; experience?: string; content_types?: string[];
+    posts_per_day?: number; hours_per_week?: number; how_heard?: string;
+  };
   completed: boolean;
   missing: string[];
 };

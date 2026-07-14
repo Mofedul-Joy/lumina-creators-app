@@ -20,7 +20,7 @@ const SECTION_LABEL: Record<ProfileSection, string> = {
 };
 // section → onboarding ?step= alias (resolveInitialStep understands these)
 const SECTION_STEP: Record<ProfileSection, string> = {
-  about: "",
+  about: "type",       // creator-type step gates the "about" requirement
   socials: "socials",
   videos: "portfolio",
   details: "details",

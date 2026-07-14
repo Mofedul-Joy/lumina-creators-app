@@ -13,6 +13,7 @@ import {
   creatorSetPassword,
   setAuthToken,
 } from "@/lib/auth";
+import { getProfile } from "@/lib/api";
 
 type Step = "email" | "password" | "set-password";
 
@@ -24,9 +25,16 @@ export default function CreatorLoginPage() {
   const [error, setError] = useState("");
   const [fieldError, setFieldError] = useState("");
 
-  function finish(token: string, refresh?: string) {
+  async function finish(token: string, refresh?: string) {
     setAuthToken(token, refresh);
-    router.push("/dashboard");
+    // First-timers (incomplete profile) go through the onboarding flow; returning
+    // creators with a finished profile go straight to their dashboard.
+    try {
+      const p = await getProfile(token);
+      router.push(p.completed ? "/dashboard" : "/onboarding");
+    } catch {
+      router.push("/dashboard");
+    }
   }
 
   const checkEmail = useMutation({
