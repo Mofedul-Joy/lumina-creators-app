@@ -6,11 +6,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
-import { SubmissionsSection } from "@/components/admin/SubmissionsSection";
 import { getAdminToken } from "@/lib/auth";
-import { getAdminStats } from "@/lib/admin";
+import { getAdminStats, getAdminAnalytics } from "@/lib/admin";
 import { isAuthError, retryNonAuth} from "@/lib/api";
-import { fmtInt } from "@/lib/format";
+import { fmtInt, fmtMoney } from "@/lib/format";
 
 function StatCard({
   label,
@@ -56,6 +55,12 @@ export default function AdminDashboardPage() {
     enabled: ready && hasToken,
     retry: retryNonAuth,
   });
+  const analyticsQ = useQuery({
+    queryKey: ["admin-analytics"],
+    queryFn: getAdminAnalytics,
+    enabled: ready && hasToken,
+    retry: retryNonAuth,
+  });
   useEffect(() => {
     if (q.isError && isAuthError(q.error)) router.replace("/admin/login");
   }, [q.isError, q.error, router]);
@@ -70,6 +75,8 @@ export default function AdminDashboardPage() {
     );
 
   const s = q.data;
+  const a = analyticsQ.data;
+  const maxViews = a ? Math.max(1, ...a.daily.map((d) => d.views)) : 1;
 
   return (
     <div className="min-h-[100dvh]">
@@ -122,18 +129,68 @@ export default function AdminDashboardPage() {
           />
         </div>
 
-        {/* submissions front-and-center — Bill: "as an admin the first thing I want
-            to see is just go straight into submissions" (campaigns live in the nav).
-            Rev2 (Mofedul) wanted this de-duplicated with Video Review: the full
-            grouped review hub now lives on the Submissions page; this stays as the
-            quick dashboard view, explicitly linked so they read as one feature. */}
-        <div className="mt-10">
-          <div className="mb-2 flex justify-end">
-            <Link href="/admin/video-review" className="text-sm font-medium text-[var(--color-brand)] hover:underline">
-              Open full Submissions →
-            </Link>
+        {/* second KPI row */}
+        <div className="mt-4 grid grid-cols-3 gap-4">
+          <StatCard label="Views tracked" value={s ? fmtInt(s.total_views) : "-"} accent />
+          <StatCard label="Total spend" value={a ? fmtMoney(a.kpis.total_spend) : "-"} hint={a ? `${fmtMoney(a.kpis.avg_cpm)} avg CPM` : undefined} />
+          <StatCard label="Verified posts" value={a ? fmtInt(a.kpis.verified_submissions) : "-"} hint={a ? `${a.kpis.engagement_rate}% engagement` : undefined} />
+        </div>
+
+        {/* Bill: dashboard = high-level summary (cards + graph + table), NOT a
+            duplicate of the Submissions page. */}
+        <div className="mt-8 grid gap-4 lg:grid-cols-2">
+          {/* views over the last N days */}
+          <div className="card-grad rounded-[var(--radius-card)] p-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-[var(--color-text)]">Views tracked</h2>
+              <span className="text-xs text-[var(--color-text-muted)]">last {a ? a.daily.length : 0} days</span>
+            </div>
+            {a ? (
+              <div className="mt-5 flex h-40 items-end gap-1.5">
+                {a.daily.map((d) => (
+                  <div key={d.date} className="group relative flex flex-1 flex-col items-center justify-end" title={`${d.date}: ${fmtInt(d.views)} views`}>
+                    <div className="w-full rounded-t bg-gradient-to-t from-[var(--color-brand)]/40 to-[var(--color-brand)] transition-all" style={{ height: `${Math.max(2, (d.views / maxViews) * 100)}%` }} />
+                    <span className="mt-1 text-[9px] text-[var(--color-text-muted)]">{d.date.slice(5)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-6 text-sm text-[var(--color-text-muted)]">Loading…</p>
+            )}
           </div>
-          <SubmissionsSection />
+
+          {/* top campaigns table */}
+          <div className="card-grad overflow-hidden rounded-[var(--radius-card)]">
+            <div className="flex items-center justify-between p-5 pb-3">
+              <h2 className="text-sm font-semibold text-[var(--color-text)]">Top campaigns</h2>
+              <Link href="/admin/campaigns" className="text-xs font-medium text-[var(--color-brand)] hover:underline">All campaigns →</Link>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[380px] text-sm">
+                <thead>
+                  <tr className="text-left text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">
+                    <th className="px-5 py-2 font-medium">Campaign</th>
+                    <th className="px-5 py-2 text-right font-medium">Views</th>
+                    <th className="px-5 py-2 text-right font-medium">Posts</th>
+                    <th className="px-5 py-2 text-right font-medium">Spend</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(a?.top_campaigns ?? []).slice(0, 6).map((c) => (
+                    <tr key={c.id} className="border-t border-[var(--color-border)]/40">
+                      <td className="px-5 py-3 text-[var(--color-text)]"><span className="block max-w-[160px] truncate">{c.name}</span></td>
+                      <td className="tabular px-5 py-3 text-right text-[var(--color-text-secondary)]">{fmtInt(c.views)}</td>
+                      <td className="tabular px-5 py-3 text-right text-[var(--color-text-secondary)]">{fmtInt(c.submissions)}</td>
+                      <td className="tabular px-5 py-3 text-right text-[var(--color-text)]">{fmtMoney(c.spend)}</td>
+                    </tr>
+                  ))}
+                  {a && a.top_campaigns.length === 0 ? (
+                    <tr><td colSpan={4} className="px-5 py-6 text-center text-sm text-[var(--color-text-muted)]">No campaign activity yet.</td></tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </main>
     </div>
