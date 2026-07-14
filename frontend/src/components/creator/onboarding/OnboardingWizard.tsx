@@ -50,6 +50,7 @@ const STEPS: { key: StepKey; optional?: boolean }[] = [
   { key: "portfolio", optional: true },
   { key: "posts_per_day", optional: true },
   { key: "hours_per_week", optional: true },
+  { key: "payment", optional: true },
   { key: "birthday", optional: true },
   { key: "gender", optional: true },
   { key: "education", optional: true },
@@ -61,7 +62,6 @@ const STEPS: { key: StepKey; optional?: boolean }[] = [
   { key: "photo", optional: true },
   { key: "testimonial", optional: true },
   { key: "earnings", optional: true },
-  { key: "payment", optional: true },
   { key: "done" },
 ];
 
@@ -716,16 +716,39 @@ function SocialsTabbed({ bearer, socials, socialForms, setSocialForms, onAdd, on
         })}
       </div>
 
-      <SocialStep
-        platform={active}
-        bearer={bearer}
-        existing={socials.find((s) => s.platform === active) as { id: string; handle: string; follower_count: number; is_verified: boolean } | undefined}
-        form={socialForms[active] ?? { handle: "", followers: "" }}
-        onForm={(f) => setSocialForms({ ...socialForms, [active]: f })}
-        onAdd={onAdd}
-        onRemove={onRemove}
-        onChanged={onChanged}
-      />
+      {/* Every account already added on this platform — remove any, add more. */}
+      {socials.filter((s) => s.platform === active).length > 0 ? (
+        <div className="space-y-2">
+          {socials.filter((s) => s.platform === active).map((a) => (
+            <div key={a.id} className="flex items-center justify-between gap-3 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3">
+              <span className="flex items-center gap-2 text-sm text-[var(--color-text)]">
+                {a.is_verified ? <CheckBadge /> : null}
+                @{a.handle} · <span className="tabular text-[var(--color-text-secondary)]">{a.follower_count.toLocaleString()}</span> followers
+                {a.is_verified ? <span className="rounded-full bg-[var(--color-brand)]/15 px-2 py-0.5 text-[11px] font-medium text-[var(--color-brand)]">Verified</span> : null}
+              </span>
+              <button className="cursor-pointer text-xs text-[var(--color-danger)]" onClick={() => onRemove(a.id)}>Remove</button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {/* Add / verify ANOTHER account on this platform (Bill: support >1 per platform). */}
+      <div className="space-y-2">
+        {socials.some((s) => s.platform === active) ? (
+          <p className="text-sm font-medium text-[var(--color-text-secondary)]">Add another {platformLabel(active)} account</p>
+        ) : null}
+        <SocialStep
+          key={`add-${active}-${socials.filter((s) => s.platform === active).length}`}
+          platform={active}
+          bearer={bearer}
+          existing={undefined}
+          form={socialForms[active] ?? { handle: "", followers: "" }}
+          onForm={(f) => setSocialForms({ ...socialForms, [active]: f })}
+          onAdd={onAdd}
+          onRemove={onRemove}
+          onChanged={onChanged}
+        />
+      </div>
     </div>
   );
 }

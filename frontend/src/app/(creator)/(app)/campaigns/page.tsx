@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { CampaignCard } from "@/components/campaign/CampaignCard";
-import { CampaignModal } from "@/components/campaign/CampaignModal";
 import { CampaignSearchModal } from "@/components/creator/CampaignSearchModal";
 import { getAuthToken } from "@/lib/auth";
 import { getProfile, listSocials, retryNonAuth} from "@/lib/api";
@@ -21,16 +21,18 @@ type Sort = (typeof SORTS)[number][0];
 const payValue = (c: Campaign) => c.cpm_rate || c.per_post_amount || c.fixed_amount || c.hourly_rate || 0;
 
 export default function CampaignsPage() {
+  const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [hasToken, setHasToken] = useState(false);
   useEffect(() => { const t = getAuthToken(); setToken(t); setHasToken(!!t); }, []);
+  // Clicking a campaign goes straight to it (no preview popup) per Bill's feedback.
+  const openCampaign = (c: Campaign) => router.push(`/campaigns/${c.slug}`);
   const [tab, setTab] = useState<"all" | "submitted">("all");
   const [platform, setPlatform] = useState<string>("");
   const [search, setSearch] = useState("");
   const [niche, setNiche] = useState("");
   const [sort, setSort] = useState<Sort>("newest");
   const [searchOpen, setSearchOpen] = useState(false);
-  const [active, setActive] = useState<Campaign | null>(null);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["campaigns"],
@@ -110,7 +112,7 @@ export default function CampaignsPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 {forYou.map((c) => (
-                  <CampaignCard key={`fy-${c.id}`} c={c} onOpen={setActive} />
+                  <CampaignCard key={`fy-${c.id}`} c={c} onOpen={openCampaign} />
                 ))}
               </div>
             </section>
@@ -225,7 +227,6 @@ export default function CampaignsPage() {
           onSearch={(q) => { setSearch(q); setNiche(""); }}
           onNiche={(key) => { setNiche(key); setSearch(""); }}
         />
-        <CampaignModal campaign={active} onClose={() => setActive(null)} />
 
         {!hasToken ? (
           <EmptyState
@@ -240,7 +241,7 @@ export default function CampaignsPage() {
         ) : campaigns.length > 0 ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {campaigns.map((c) => (
-              <CampaignCard key={c.id} c={c} onOpen={setActive} />
+              <CampaignCard key={c.id} c={c} onOpen={openCampaign} />
             ))}
           </div>
         ) : (
