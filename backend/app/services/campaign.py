@@ -331,6 +331,19 @@ def get_active_campaign(db: Session, slug: str) -> Campaign:
     return c
 
 
+def get_campaign_for_creator(db: Session, slug: str, creator_id: uuid.UUID) -> Campaign:
+    """Campaign detail for a creator. Active campaigns are visible to anyone; a
+    campaign that has since been closed/paused stays visible to a creator who
+    already joined it, so they can still read the brief and finish in-flight
+    submissions instead of hitting a bare 404. Archived campaigns stay hidden."""
+    c = db.scalar(select(Campaign).where(Campaign.slug == slug))
+    if c is None or c.status == "archived":
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Campaign not found")
+    if c.status != "active" and not creator_has_joined(db, c.id, creator_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Campaign not found")
+    return c
+
+
 def get_bonus_milestones(db: Session, campaign_id: uuid.UUID) -> list[CampaignBonusMilestone]:
     """Feature 5: eager-fetch bonus milestones for the native brief page (creator +
     public views) — mirrors the admin campaign_out() query."""
@@ -383,7 +396,13 @@ def join_campaign(db: Session, creator_id: uuid.UUID, slug: str) -> CampaignPart
             "This account can no longer join campaigns.",
         )
 
-    campaign = get_active_campaign(db, slug)
+    # Distinguish "closed" from "never existed" so the client can show a clear
+    # message instead of a bare 404 when a creator tries to join after close.
+    campaign = db.scalar(select(Campaign).where(Campaign.slug == slug))
+    if campaign is None or campaign.status == "archived":
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Campaign not found")
+    if campaign.status != "active":
+        raise HTTPException(status.HTTP_409_CONFLICT, "This campaign is closed and no longer accepting entries.")
     existing = db.scalar(
         select(CampaignParticipation).where(
             CampaignParticipation.campaign_id == campaign.id,

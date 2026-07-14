@@ -459,9 +459,14 @@ export default function NewCampaignPage() {
   // Compiled markdown brief used as brief_script — satisfies chk_mode_content
   // (mode='create_new' requires a non-empty brief_script).
   const compiledBrief = useMemo(() => {
+    // Use the human labels, never the raw enum values — underscores in values
+    // like `content_creator` / `ugc_ads` get parsed as markdown italics and
+    // mangle the rendered brief ("contentcreator", stray italics).
+    const jobLabel = JOB_TYPES.find((o) => o.value === f.job_type)?.label ?? f.job_type;
+    const creatorLabel = CREATOR_TYPES.find((o) => o.value === f.creator_type)?.label ?? f.creator_type;
     const parts = [f.description.trim()];
-    if (f.job_type) parts.push(`\n\n**Job type:** ${f.job_type}`);
-    if (f.creator_type) parts.push(`**Creator type:** ${f.creator_type}`);
+    if (f.job_type) parts.push(`\n\n**Job type:** ${jobLabel}`);
+    if (f.creator_type) parts.push(`**Creator type:** ${creatorLabel}`);
     return parts.filter(Boolean).join("\n");
   }, [f.description, f.job_type, f.creator_type]);
 

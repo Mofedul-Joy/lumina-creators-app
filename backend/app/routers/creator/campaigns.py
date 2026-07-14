@@ -65,7 +65,7 @@ def browse(current: Creator = Depends(get_current_creator), db: Session = Depend
 
 @router.get("/{slug}", response_model=CampaignPublicOut)
 def detail(slug: str, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
-    c = svc.get_active_campaign(db, slug)
+    c = svc.get_campaign_for_creator(db, slug, current.id)
     return _public_out(c, svc.creator_has_joined(db, c.id, current.id),
                        svc.creator_is_accepted(db, c.id, current.id), db)
 

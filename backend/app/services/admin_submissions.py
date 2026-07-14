@@ -102,6 +102,7 @@ def _get(db: Session, submission_id: uuid.UUID) -> Submission:
 
 def verify_submission(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID) -> Submission:
     sub = _get(db, submission_id)
+    was = sub.verification_status
     # Approval = the admin watched the submitted post in Video Reviews and it
     # looks good. The post URL itself is the video, so no separate proof-video
     # upload is required (that legacy gate contradicted the review-and-approve
@@ -115,7 +116,10 @@ def verify_submission(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID
              entity_type="submission", entity_id=sub.id)
     db.commit()
     db.refresh(sub)
-    _notify_creator(db, admin_id, sub, "verified", None)
+    # Only ping the creator on an actual transition — re-clicking Approve on an
+    # already-verified post must not re-spam their bell + DM thread.
+    if was != "verified":
+        _notify_creator(db, admin_id, sub, "verified", None)
     return sub
 
 
@@ -133,6 +137,7 @@ def request_revision(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID,
     if mode not in _REVISION_MODES:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "mode must be 'edit' or 'repost'")
     sub = _get(db, submission_id)
+    was = sub.verification_status
     sub.verification_status = "revision_requested"
     sub.revision_mode = mode
     sub.verified_by = admin_id
@@ -142,12 +147,16 @@ def request_revision(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID,
              entity_type="submission", entity_id=sub.id, note=sub.verification_note)
     db.commit()
     db.refresh(sub)
-    _notify_creator(db, admin_id, sub, "revision_requested", sub.verification_note)
+    # Notify on transition into revision only; a repeated request on an
+    # already-revision post shouldn't re-spam (a fresh note still updates the row).
+    if was != "revision_requested":
+        _notify_creator(db, admin_id, sub, "revision_requested", sub.verification_note)
     return sub
 
 
 def reject_submission(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID, note: str) -> Submission:
     sub = _get(db, submission_id)
+    was = sub.verification_status
     sub.verification_status = "rejected"
     sub.verified_by = admin_id
     sub.verified_at = _now()
@@ -156,7 +165,9 @@ def reject_submission(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID
              entity_type="submission", entity_id=sub.id, note=sub.verification_note)
     db.commit()
     db.refresh(sub)
-    _notify_creator(db, admin_id, sub, "rejected", sub.verification_note)
+    # Only notify on an actual transition into rejected — no re-spam on re-reject.
+    if was != "rejected":
+        _notify_creator(db, admin_id, sub, "rejected", sub.verification_note)
     return sub
 
 

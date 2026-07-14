@@ -24,8 +24,10 @@ function applicationTag(status: string): { label: string; cls: string } {
     case "declined":
     case "rejected":
       return { label: "Not selected", cls: "bg-[var(--color-surface-2)] text-[var(--color-text-muted)]" };
-    default: // "joined"
-      return { label: "Applied", cls: "bg-amber-500/15 text-amber-400" };
+    default: // "joined" — Rev2 auto-accepts on join, so joining IS being in the
+             // campaign (no approval wait). Show it as an active/green state, not
+             // an amber "Applied" pending tag.
+      return { label: "Joined", cls: "bg-[var(--color-brand)]/15 text-[var(--color-brand)]" };
   }
 }
 

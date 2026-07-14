@@ -248,7 +248,10 @@ def _age(dob) -> int | None:
     if not dob:
         return None
     today = date.today()
-    return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+    # Legacy/dirty rows (e.g. a future date_of_birth stored before the validator
+    # existed) would otherwise render a nonsensical negative age on the admin card.
+    return age if age >= 0 else None
 
 
 def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:

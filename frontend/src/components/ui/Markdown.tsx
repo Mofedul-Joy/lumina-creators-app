@@ -24,8 +24,13 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
   // Tokenize left-to-right with a single combined regex so nested/overlapping
   // matches don't fight each other. Order matters: links before bare URLs,
   // bold before italic (so **x** isn't half-eaten by the italic rule).
+  // NOTE: underscore-italics is flanked by (?<![A-Za-z0-9])…(?![A-Za-z0-9]) so
+  // intra-word underscores (snake_case enum values like `content_creator`,
+  // `ugc_ads`, file_names, un-linked URLs) are NOT treated as emphasis — matching
+  // CommonMark. Without this, `content_creator … ugc_ads` renders as garbled
+  // italics with the words joined. Asterisk-italics stays lenient.
   const pattern =
-    /(\[[^\]]+\]\([^)\s]+\))|(\*\*[^*]+\*\*)|(~~[^~]+~~)|(\*[^*]+\*)|(_[^_]+_)|(https?:\/\/[^\s)]+)/g;
+    /(\[[^\]]+\]\([^)\s]+\))|(\*\*[^*]+\*\*)|(~~[^~]+~~)|(\*[^*]+\*)|((?<![A-Za-z0-9])_[^_]+_(?![A-Za-z0-9]))|(https?:\/\/[^\s)]+)/g;
 
   const nodes: React.ReactNode[] = [];
   let lastIndex = 0;
