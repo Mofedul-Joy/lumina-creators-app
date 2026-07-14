@@ -18,7 +18,7 @@ from app.models import (
     CampaignParticipation,
     Creator,
     CreatorProfile,
-    PayoutItem,
+    Payout,
     StorageObject,
     Submission,
 )
@@ -53,11 +53,13 @@ def overview(db: Session, campaign_id: uuid.UUID) -> dict:
     ).all()
     by_creator = {r.creator_id: r for r in sub_rows}
 
-    # Spend to date = what's actually been paid out on this campaign's submissions.
+    # Spend to date = what's actually been paid out on this campaign. The
+    # payouts_v2 engine records campaign-tagged Payout rows (no PayoutItem), so
+    # summing PayoutItem showed $0 after every pay-all/pay-one. Sum Payout by
+    # campaign + status=paid, matching owed-v2 and the spend report.
     spend = db.scalar(
-        select(func.coalesce(func.sum(PayoutItem.amount), 0))
-        .join(Submission, Submission.id == PayoutItem.submission_id)
-        .where(Submission.campaign_id == campaign_id, PayoutItem.voided_at.is_(None))
+        select(func.coalesce(func.sum(Payout.amount), 0))
+        .where(Payout.campaign_id == campaign_id, Payout.status == "paid")
     ) or Decimal(0)
 
     profiles = {
