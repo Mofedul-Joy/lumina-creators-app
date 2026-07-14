@@ -377,7 +377,10 @@ def update_applicant(
         if body.status == "declined":
             part.accepted_at = None
         changes["status"] = {"from": old_status, "to": body.status}
-    if body.admin_note is not None:
+    # Use model_fields_set (not `is not None`) so an EXPLICIT null clears the note
+    # — with `is not None`, omitted and explicit-null both looked the same and the
+    # note could never be blanked.
+    if "admin_note" in body.model_fields_set and body.admin_note != part.admin_note:
         changes["admin_note"] = {"from": part.admin_note, "to": body.admin_note}
         part.admin_note = body.admin_note
 
