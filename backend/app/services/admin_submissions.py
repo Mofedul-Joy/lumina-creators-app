@@ -224,13 +224,18 @@ def lifecycle_status(sub: Submission, is_paid: bool) -> str:
 def delete_submission(db: Session, admin_id: uuid.UUID, submission_id: uuid.UUID) -> None:
     """Hard-delete a submission (and its scrape job). Blocked if it has been
     paid — a paid payout_item must be voided first (golden rule 5)."""
-    from app.models import ScrapeJob
+    from app.models import PayoutItem, ScrapeJob
     sub = db.get(Submission, submission_id)
     if sub is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Submission not found")
     if _has_active_payout(db, submission_id):
         raise HTTPException(status.HTTP_409_CONFLICT,
                             "This submission has been paid — void the payout before deleting")
+    # Any PayoutItem still pointing at this submission is VOIDED (the active-payout
+    # guard above blocks live ones) — but payout_items.submission_id is ondelete=
+    # RESTRICT, so those dead rows would otherwise raise a raw IntegrityError → 500.
+    # Remove them first so the delete succeeds cleanly.
+    db.execute(PayoutItem.__table__.delete().where(PayoutItem.submission_id == submission_id))
     db.execute(ScrapeJob.__table__.delete().where(ScrapeJob.submission_id == submission_id))
     audit.log(db, actor_admin_id=admin_id, action="submission.delete",
              entity_type="submission", entity_id=submission_id)
