@@ -133,7 +133,7 @@ export default function MyCampaignsPage() {
       g = {
         campaignId: s.campaign_id,
         name: c?.name ?? "Campaign",
-        brandLogo: c?.banner_url ?? c?.brand_logo_url ?? c?.thumbnail_url ?? null,
+        brandLogo: c?.banner_url ?? c?.brand_logo_url ?? null,
         posts: [],
         views: 0,
         earned: 0,
