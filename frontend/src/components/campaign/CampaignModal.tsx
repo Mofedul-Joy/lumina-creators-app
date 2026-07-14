@@ -153,7 +153,7 @@ export function CampaignModal({ campaign, onClose }: { campaign: Campaign | null
             onClick={apply}
             className="min-h-11 cursor-pointer rounded-full bg-[var(--color-brand)] px-7 text-sm font-semibold text-[var(--color-on-brand)] shadow-[0_0_20px_-6px_rgba(34,197,94,0.8)] transition hover:bg-[var(--color-brand-hover)]"
           >
-            {c.joined ? "View campaign" : "Apply now"}
+            {c.joined ? "View campaign" : "Join Campaign"}
           </button>
         </div>
       </div>

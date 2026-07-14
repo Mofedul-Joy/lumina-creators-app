@@ -61,8 +61,8 @@ export function ProfileGateModal({ open, onClose }: { open: boolean; onClose: ()
           Complete your profile first
         </h2>
         <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[var(--color-text-secondary)]">
-          Finish every part of your profile — About, Socials, Videos and Details —
-          before you can apply to a campaign.
+          Finish your profile (About, Socials and Videos) before you can join a campaign.
+          We&apos;ll take you straight to the part you still need.
         </p>
 
         {/* section checklist so they see what's left */}

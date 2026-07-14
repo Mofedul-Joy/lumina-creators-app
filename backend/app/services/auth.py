@@ -92,9 +92,25 @@ def creator_signup(db: Session, email: str, password: str | None = None, invite:
     email = _norm(email)
     if password:
         _require_strong(password)
-    if db.scalar(select(Creator).where(Creator.email == email)):
-        raise HTTPException(status.HTTP_409_CONFLICT, "An account with this email already exists")
     verify_on = get_settings().require_email_verification
+    existing = db.scalar(select(Creator).where(Creator.email == email))
+    if existing is not None:
+        # A REAL account (password already set) → tell them to sign in.
+        if existing.password_hash is not None:
+            raise HTTPException(status.HTTP_409_CONFLICT, "An account with this email already exists")
+        # Otherwise this is a half-finished signup (email captured on a prior
+        # attempt / double-submit but the password step never completed). Resume
+        # it instead of blocking the user with "already exists" — let them go set
+        # a password. If a password was supplied here, apply it now.
+        if password:
+            existing.password_hash = hash_password(password)
+        existing.email_verified = not verify_on
+        db.commit()
+        if not verify_on:
+            access, refresh = _issue(db, existing.id, "creator")
+            return {"status": "ok", "email": email, "access_token": access, "refresh_token": refresh}
+        code = _issue_email_code(db, existing)
+        return {"status": "verification_sent", "email": email, "dev_code": _dev_code(code)}
     creator = Creator(email=email, password_hash=hash_password(password) if password else None,
                       status="active", signup_source="self", email_verified=not verify_on)
     db.add(creator)
