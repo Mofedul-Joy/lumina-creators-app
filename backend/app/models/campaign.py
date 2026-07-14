@@ -34,7 +34,7 @@ from app.models.enums import (
 class Campaign(TimestampMixin, Base):
     __tablename__ = "campaigns"
     __table_args__ = (
-        CheckConstraint("cpm_rate > 0"),
+        CheckConstraint("cpm_rate >= 0", name="chk_campaigns_cpm_rate_nonneg"),
         CheckConstraint("budget > 0"),
         CheckConstraint("max_payout_per_creator IS NULL OR max_payout_per_creator > 0"),
         CheckConstraint("eligible_view_pct BETWEEN 0 AND 100"),
