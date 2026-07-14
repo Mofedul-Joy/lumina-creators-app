@@ -79,8 +79,13 @@ def create_campaign(db: Session, admin_id: uuid.UUID, data: dict) -> Campaign:
     _validate_flow_fields(data)
     bonus_milestones = data.pop("bonus_milestones", None) or []
     _check_mode_content(data["mode"], data.get("brief_script"), data.get("content_drive_url"))
-    if data["cpm_rate"] <= 0 or data["budget"] <= 0:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "cpm_rate and budget must be positive")
+    if data["budget"] <= 0:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "budget must be positive")
+    # cpm_rate only matters for CPM/mixed campaigns — fixed / per_hour / per_post
+    # don't pay on views, so a 0 CPM is valid there and must not be rejected.
+    _cpm_required = data.get("payment_type") in (None, "cpm", "mixed")
+    if _cpm_required and data["cpm_rate"] <= 0:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "cpm_rate must be positive")
     # create_new keeps content_drive_url NULL (DB constraint requires it)
     if data["mode"] == "create_new":
         data["content_drive_url"] = None
