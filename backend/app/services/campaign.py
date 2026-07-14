@@ -226,13 +226,25 @@ def update_campaign(db: Session, campaign_id: uuid.UUID, data: dict) -> Campaign
     _check_mode_content(new_mode, new_brief, new_drive)
     # Revalidate money invariants before they reach the DB CHECK constraints
     # (otherwise a bad value would surface as a generic 500).
-    if data.get("cpm_rate") is not None and data["cpm_rate"] <= 0:
+    # cpm_rate only matters for CPM/mixed (mirror create_campaign) — fixed /
+    # per_hour / per_post may legitimately be 0.
+    _eff_ptype = data.get("payment_type", c.payment_type)
+    if data.get("cpm_rate") is not None and data["cpm_rate"] <= 0 and _eff_ptype in (None, "cpm", "mixed"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "cpm_rate must be positive")
     if data.get("budget") is not None and data["budget"] <= 0:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "budget must be positive")
+    # The router passes model_dump(exclude_unset=True), so a field being present
+    # means the admin sent it — apply it even when null (lets banner_url,
+    # description, end date, etc. be cleared). Omitted fields stay untouched.
+    # Required (NOT NULL) columns can't be cleared — ignore an explicit null for
+    # them rather than 500 on the DB constraint; everything else may be nulled.
+    _never_null = {"name", "mode", "cpm_rate", "budget"}
     for field, value in data.items():
-        if value is not None and field != "client_id":
-            setattr(c, field, value)
+        if field == "client_id":  # handled below (needs UUID parsing)
+            continue
+        if value is None and field in _never_null:
+            continue
+        setattr(c, field, value)
     if "client_id" in data:
         c.client_id = uuid.UUID(data["client_id"]) if data["client_id"] else None
     if milestones_provided:

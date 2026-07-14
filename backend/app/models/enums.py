@@ -15,6 +15,10 @@ SIGNUP_SOURCE = Enum(
     "self",
     "admin_invite",
     "migrated",
+    # Added to the DB enum in migration 0007 (public campaign-entry funnel) but
+    # never mirrored here — loading a Creator row with this value threw
+    # LookupError and 500'd /admin/creators (list + export.csv).
+    "public_submit",
     name="signup_source",
     native_enum=True,
     create_type=False,
