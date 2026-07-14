@@ -133,7 +133,7 @@ export default function MyCampaignsPage() {
       g = {
         campaignId: s.campaign_id,
         name: c?.name ?? "Campaign",
-        brandLogo: c?.brand_logo_url ?? null,
+        brandLogo: c?.banner_url ?? c?.brand_logo_url ?? c?.thumbnail_url ?? null,
         posts: [],
         views: 0,
         earned: 0,
@@ -194,9 +194,9 @@ export default function MyCampaignsPage() {
                 <div className="flex items-center gap-3">
                   {g.brandLogo ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={g.brandLogo} alt="" className="h-9 w-9 rounded-lg object-cover" />
+                    <img src={g.brandLogo} alt="" className="h-11 w-16 shrink-0 rounded-lg object-cover ring-1 ring-[var(--color-border)]" />
                   ) : (
-                    <span className="grid h-9 w-9 place-items-center rounded-lg bg-[var(--color-surface-2)] text-sm text-[var(--color-text-muted)]">{g.name.charAt(0)}</span>
+                    <span className="grid h-11 w-16 shrink-0 place-items-center rounded-lg bg-[var(--color-surface-2)] text-base font-semibold text-[var(--color-text-muted)]">{g.name.charAt(0)}</span>
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-[var(--color-text)]">{g.name}</p>
