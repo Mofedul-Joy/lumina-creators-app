@@ -137,9 +137,9 @@ export function AddCreatorsToCampaignModal({
     <div className="fixed inset-0 z-50 grid place-items-center p-4" role="dialog" aria-modal="true" aria-labelledby="addcr-title">
       <div aria-hidden className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
       <div className="card-lumina relative flex max-h-[86vh] w-full max-w-lg flex-col rounded-[var(--radius-card)] p-6">
-        <h2 id="addcr-title" className="text-xl font-semibold text-[var(--color-text)]">Add creators</h2>
+        <h2 id="addcr-title" className="text-xl font-semibold text-[var(--color-text)]">Invite creators</h2>
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-          Invite creators to this campaign. They get a notification and an email with a link to join.
+          Invited creators are added to this campaign right away — no application needed. They get a notification, a message, and an email, and can start submitting videos.
         </p>
 
         <div className="mt-4 inline-flex items-center gap-1 rounded-full bg-[var(--color-surface)] p-1">
@@ -155,7 +155,19 @@ export function AddCreatorsToCampaignModal({
               placeholder="Search by name or email…"
               className="min-h-10 w-full rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
             />
-            <div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-xl border border-[var(--color-border)]">
+            {creators.length ? (
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="text-[var(--color-text-muted)]">{selected.size} of {creators.length} selected</span>
+                <button
+                  type="button"
+                  onClick={() => setSelected(selected.size === creators.length ? new Set() : new Set(creators.map((c) => c.id)))}
+                  className="cursor-pointer font-medium text-[var(--color-brand-soft)] hover:underline"
+                >
+                  {selected.size === creators.length ? "Clear all" : "Select all"}
+                </button>
+              </div>
+            ) : null}
+            <div className="mt-2 min-h-0 flex-1 overflow-y-auto rounded-xl border border-[var(--color-border)]">
               {creatorsQ.isLoading ? (
                 <p className="p-4 text-sm text-[var(--color-text-muted)]">Loading…</p>
               ) : creators.length === 0 ? (
@@ -184,7 +196,6 @@ export function AddCreatorsToCampaignModal({
                 </ul>
               )}
             </div>
-            {selected.size ? <p className="mt-2 text-xs text-[var(--color-text-muted)]">{selected.size} selected</p> : null}
           </div>
         ) : (
           <div className="mt-4">
@@ -231,7 +242,11 @@ export function AddCreatorsToCampaignModal({
             disabled={busy}
             className="inline-flex min-h-10 cursor-pointer items-center rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {busy ? "Sending…" : "Send invites"}
+            {busy ? "Inviting…"
+              : tab === "external" ? "Send invites"
+              : selected.size > 1 && selected.size === creators.length ? "Invite all"
+              : selected.size > 1 ? `Invite ${selected.size}`
+              : "Invite"}
           </button>
         </div>
       </div>

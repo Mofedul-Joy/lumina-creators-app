@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAuthToken } from "@/lib/auth";
-import { browseCampaigns, claimSubmission, listSubmissions, resubmitClip, uploadProofVideo, type Submission } from "@/lib/campaigns";
+import { browseCampaigns, claimSubmission, listSubmissions, resubmitClip, submitClip, uploadProofVideo, type Submission } from "@/lib/campaigns";
 import { ApiError, listMyCampaigns } from "@/lib/api";
 import { fmtInt, fmtMoney } from "@/lib/format";
 import { SkeletonCardGrid } from "@/components/ui/Skeleton";
@@ -93,6 +93,23 @@ export default function MyCampaignsPage() {
       qc.invalidateQueries({ queryKey: ["submissions"] });
     },
     onError: (err, { id }) => setResubmitError((e) => ({ ...e, [id]: err instanceof Error ? err.message : "Could not re-submit" })),
+  });
+
+  // Submit ANOTHER video to a campaign the creator is already in — every joined
+  // campaign supports more than one post (submissions are unique per-URL, not
+  // per-creator). Inline per-campaign so they never leave this page.
+  const [submitOpen, setSubmitOpen] = useState<Record<string, boolean>>({});
+  const [submitDraft, setSubmitDraft] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<Record<string, string>>({});
+  const submitM = useMutation({
+    mutationFn: ({ slug, url }: { slug: string; url: string; key: string }) => submitClip(slug, url),
+    onSuccess: (_r, { key }) => {
+      setSubmitDraft((d) => ({ ...d, [key]: "" }));
+      setSubmitError((e) => { const n = { ...e }; delete n[key]; return n; });
+      setSubmitOpen((o) => ({ ...o, [key]: false }));
+      qc.invalidateQueries({ queryKey: ["submissions"] });
+    },
+    onError: (err, { key }) => setSubmitError((e) => ({ ...e, [key]: err instanceof Error ? err.message : "Could not submit that video" })),
   });
 
   if (ready && !hasToken)
@@ -274,6 +291,47 @@ export default function MyCampaignsPage() {
                     ) : (
                       <button type="button" onClick={() => fileInputs.current[g.campaignId]?.click()} className="w-full cursor-pointer rounded-full bg-amber-500/15 py-2 text-sm font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 transition hover:bg-amber-500/25">
                         Upload proof video to get paid
+                      </button>
+                    )}
+                  </div>
+                ) : null}
+
+                {/* Submit another video — works for every joined campaign. */}
+                {g.slug ? (
+                  <div className="mt-4 border-t border-[var(--color-border)]/60 pt-4">
+                    {submitOpen[g.campaignId] ? (
+                      <div>
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <input
+                            autoFocus
+                            value={submitDraft[g.campaignId] ?? ""}
+                            onChange={(e) => setSubmitDraft((d) => ({ ...d, [g.campaignId]: e.target.value }))}
+                            onKeyDown={(e) => { if (e.key === "Enter" && (submitDraft[g.campaignId] ?? "").trim()) submitM.mutate({ slug: g.slug!, url: (submitDraft[g.campaignId] ?? "").trim(), key: g.campaignId }); }}
+                            placeholder="Paste your new post link…"
+                            className="min-h-9 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
+                          />
+                          <button
+                            type="button"
+                            disabled={submitM.isPending || !(submitDraft[g.campaignId] ?? "").trim()}
+                            onClick={() => submitM.mutate({ slug: g.slug!, url: (submitDraft[g.campaignId] ?? "").trim(), key: g.campaignId })}
+                            className="min-h-9 shrink-0 cursor-pointer rounded-full bg-[var(--color-brand)] px-4 text-xs font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)] disabled:opacity-50"
+                          >
+                            {submitM.isPending ? "Submitting…" : "Submit"}
+                          </button>
+                          <button type="button" onClick={() => setSubmitOpen((o) => ({ ...o, [g.campaignId]: false }))} className="min-h-9 shrink-0 cursor-pointer rounded-full px-3 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]">Cancel</button>
+                        </div>
+                        {submitError[g.campaignId] ? <p className="mt-1 text-xs text-[var(--color-danger)]">{submitError[g.campaignId]}</p> : (
+                          <p className="mt-1 text-xs text-[var(--color-text-muted)]">Paste the link to a post you&apos;ve published for this campaign.</p>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setSubmitOpen((o) => ({ ...o, [g.campaignId]: true }))}
+                        className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[var(--color-border)] py-2 text-sm font-medium text-[var(--color-text-secondary)] transition hover:border-[var(--color-brand)] hover:text-[var(--color-brand)]"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                        Submit another video
                       </button>
                     )}
                   </div>

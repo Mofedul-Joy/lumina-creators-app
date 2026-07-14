@@ -76,6 +76,30 @@ def _already_active(db: Session, campaign_id: uuid.UUID, creator_id: uuid.UUID) 
     ) is not None
 
 
+def _auto_accept(db: Session, campaign_id: uuid.UUID, creator_id: uuid.UUID) -> None:
+    """Put a directly-invited creator STRAIGHT into the campaign: an accepted
+    participation, no application/approval step. `accepted_at` is the gate the
+    submit flow checks, so once set they can submit videos immediately. Reuses
+    any prior (even removed) participation row to respect the unique constraint."""
+    part = db.scalar(
+        select(CampaignParticipation).where(
+            CampaignParticipation.campaign_id == campaign_id,
+            CampaignParticipation.creator_id == creator_id,
+        )
+    )
+    if part is None:
+        part = CampaignParticipation(
+            campaign_id=campaign_id, creator_id=creator_id,
+            status="accepted", accepted_at=_now(),
+        )
+        db.add(part)
+    else:
+        part.status = "accepted"
+        part.accepted_at = _now()
+        part.removed_at = None
+    db.flush()
+
+
 def invite(db: Session, admin_id: uuid.UUID, campaign_id: uuid.UUID,
            creator_ids: list[uuid.UUID] | None = None,
            emails: list[str] | None = None) -> dict:
@@ -87,6 +111,7 @@ def invite(db: Session, admin_id: uuid.UUID, campaign_id: uuid.UUID,
     skipped: list[str] = []
     emailed = 0
 
+    accepted_creators: list[Creator] = []  # for the post-commit DM + email pass
     for cid in creator_ids or []:
         creator = db.get(Creator, cid)
         if creator is None:
@@ -95,34 +120,19 @@ def invite(db: Session, admin_id: uuid.UUID, campaign_id: uuid.UUID,
         if _already_active(db, campaign_id, cid):
             skipped.append(creator.email or "creator (already active)")
             continue
-        if _open_invite_exists(db, campaign_id, cid):
-            skipped.append(creator.email or "creator (already invited)")
-            continue
-        inv = CampaignInvite(
-            campaign_id=campaign_id, creator_id=cid, created_by_admin_id=admin_id,
-            expires_at=_now() + timedelta(days=INVITE_TTL_DAYS),
-        )
-        db.add(inv)
-        db.flush()
-        # In-app notification — the convenient click-through to the campaign.
+        # Direct admin invite = auto-accepted into the campaign (no application).
+        _auto_accept(db, campaign_id, cid)
+        # In-app notification — click-through straight to the campaign.
         try:
             notifications.push(
                 db, cid, kind="campaign_invite",
-                title=f"You're invited to {campaign.name}",
-                body="An admin invited you to join this campaign. Tap to view and join.",
+                title=f"You've been added to {campaign.name}",
+                body="An admin added you to this campaign — no application needed. Tap to submit your video.",
                 link=_campaign_path(campaign.slug), commit=False,
             )
         except Exception:  # noqa: BLE001 - notification is a side effect, never block
             pass
-        # Email to their account (best-effort).
-        try:
-            if creator.email and email_svc.send_campaign_invite(
-                creator.email, campaign.name, _campaign_url(campaign.slug), existing=True
-            ):
-                inv.email_sent = True
-                emailed += 1
-        except Exception:  # noqa: BLE001
-            pass
+        accepted_creators.append(creator)
         invited_existing += 1
 
     for raw in emails or []:
@@ -155,6 +165,30 @@ def invite(db: Session, admin_id: uuid.UUID, campaign_id: uuid.UUID,
         invited_external += 1
 
     db.commit()
+
+    # Post-commit, best-effort: DM + email each auto-accepted creator. Done after
+    # the commit so a mail/messaging hiccup can never unwind the acceptance.
+    from app.services import messaging
+    for creator in accepted_creators:
+        try:
+            conv = messaging.get_or_create_for_creator(db, creator.id)
+            messaging.send_message(
+                db, conv.id, sender_type="admin",
+                body=(f"You've been invited to \"{campaign.name}\" 🎬\n\n"
+                      "You're all set — no application needed. Open the campaign and "
+                      "submit your video whenever you're ready, and we'll review it."),
+                sender_admin_id=admin_id,
+            )
+        except Exception:  # noqa: BLE001
+            db.rollback()
+        try:
+            if creator.email and email_svc.send_campaign_invite(
+                creator.email, campaign.name, _campaign_url(campaign.slug), existing=True
+            ):
+                emailed += 1
+        except Exception:  # noqa: BLE001
+            pass
+
     return {
         "invited_existing": invited_existing,
         "invited_external": invited_external,

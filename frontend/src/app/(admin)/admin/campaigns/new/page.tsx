@@ -7,6 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { BannerInput } from "@/components/admin/BannerInput";
+import { AddCreatorsToCampaignModal } from "@/components/admin/AddCreatorsToCampaignModal";
 import { platformLabel } from "@/components/ui/PlatformIcon";
 import { getTemplate, type CampaignTemplate } from "@/lib/campaignTemplates";
 import {
@@ -361,6 +362,7 @@ export default function NewCampaignPage() {
   const [f, setF] = useState<WizardState>(initialState);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [created, setCreated] = useState<{ id: string; name: string } | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   // The chooser modal picked the kind/level (and maybe a template) before
   // routing here. A template only SEEDS the form — every value stays editable.
@@ -1156,10 +1158,10 @@ export default function NewCampaignPage() {
             </p>
             <div className="mt-6 flex flex-col gap-2">
               <button
-                onClick={() => router.push("/admin/creators")}
+                onClick={() => setInviteOpen(true)}
                 className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
               >
-                Add creators to campaign
+                Invite creators
               </button>
               <button
                 onClick={() => router.push("/admin/campaigns")}
@@ -1169,6 +1171,15 @@ export default function NewCampaignPage() {
               </button>
             </div>
           </div>
+
+          {/* Invite creators straight from here — invited creators are auto-added
+              to the campaign (no application) and notified. */}
+          <AddCreatorsToCampaignModal
+            open={inviteOpen}
+            campaignId={created.id}
+            onClose={() => setInviteOpen(false)}
+            onInvited={() => { /* keep the modal open so they can invite more */ }}
+          />
         </div>
       ) : null}
     </div>
