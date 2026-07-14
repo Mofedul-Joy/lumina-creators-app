@@ -268,7 +268,6 @@ export function OnboardingWizard() {
               );
             })}
           </div>
-          {!isLast ? <span className="text-[11px] text-[var(--color-text-muted)]">Step {step + 1} of {STEPS.length - 1}</span> : null}
         </div>
       </div>
 
