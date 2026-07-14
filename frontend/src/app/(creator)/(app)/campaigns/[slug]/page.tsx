@@ -174,9 +174,9 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
             ) : null}
 
             {/* Example videos */}
-            {c.example_videos && c.example_videos.length > 0 ? (
+            {(c.examples?.length || c.example_videos?.length) ? (
               <Panel title="Example videos">
-                <ExampleVideos urls={c.example_videos} />
+                <ExampleVideos examples={c.examples} urls={c.example_videos} />
               </Panel>
             ) : null}
 

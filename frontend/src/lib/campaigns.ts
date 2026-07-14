@@ -24,6 +24,7 @@ export type CampaignWizardFields = {
   required_hours: number | null;
   per_post_amount: number | null;
   example_videos: string[];
+  examples?: { url: string; platform?: string | null; thumbnail_url?: string | null }[];
   age_requirement: string | null;
   platform_focus: string[];
   content_type: string | null;

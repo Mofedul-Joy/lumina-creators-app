@@ -876,6 +876,15 @@ export type PendingCampaign = { participation_id: string; campaign_id: string; c
 export const listCreatorPendingCampaigns = (creatorId: string) =>
   apiFetch<PendingCampaign[]>(`/api/admin/applicants/by-creator/${creatorId}/pending`, auth());
 
+// ── Campaign example videos ──────────────────────────────────────────────────
+export type CampaignExample = { id: string; url: string; platform: string | null; thumbnail_url: string | null; source: string };
+export const listCampaignExamples = (campaignId: string) =>
+  apiFetch<CampaignExample[]>(`/api/admin/campaigns/${campaignId}/examples`, auth());
+export const addCampaignExample = (campaignId: string, url: string) =>
+  apiFetch<CampaignExample>(`/api/admin/campaigns/${campaignId}/examples`, { method: "POST", body: JSON.stringify({ url }), ...auth() });
+export const deleteCampaignExample = (campaignId: string, exampleId: string) =>
+  apiFetch<void>(`/api/admin/campaigns/${campaignId}/examples/${exampleId}`, { method: "DELETE", ...auth() });
+
 export function applicantsExportCsvUrl(f: { campaign_id?: string; status?: string } = {}): string {
   // Match resolveApiUrl() in api.ts — pin to prod backend when served from *.vercel.app.
   const PROD_BACKEND_URL = "https://lumina-creators-api-app.onrender.com";

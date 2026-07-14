@@ -128,11 +128,11 @@ export default function CampaignEntryPage() {
             </div>
           ) : null}
 
-          {c.example_videos && c.example_videos.length > 0 ? (
+          {(c.examples?.length || c.example_videos?.length) ? (
             <div className="card-lumina mt-4 rounded-[var(--radius-card)] p-5">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Example videos</h2>
               <div className="mt-3">
-                <ExampleVideos urls={c.example_videos} />
+                <ExampleVideos examples={c.examples} urls={c.example_videos} />
               </div>
             </div>
           ) : null}

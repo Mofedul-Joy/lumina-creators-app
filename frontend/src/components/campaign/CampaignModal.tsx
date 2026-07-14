@@ -103,10 +103,10 @@ export function CampaignModal({ campaign, onClose }: { campaign: Campaign | null
                 </div>
               </div>
 
-              {c.example_videos && c.example_videos.length > 0 ? (
+              {(c.examples?.length || c.example_videos?.length) ? (
                 <div>
                   <h3 className="mb-2 text-sm font-semibold text-[var(--color-text)]">Examples</h3>
-                  <ExampleVideos urls={c.example_videos} />
+                  <ExampleVideos examples={c.examples} urls={c.example_videos} />
                 </div>
               ) : null}
 
