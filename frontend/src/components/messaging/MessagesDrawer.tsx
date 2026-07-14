@@ -1,16 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   composeEmail, listConversations, listMessages,
   markRead, sendMessage, setArchived, setMuted,
   type Conversation, type Realm,
 } from "@/lib/messaging";
-import { listCreatorPendingCampaigns, updateApplicant } from "@/lib/admin";
+import {
+  listCreatorPendingCampaigns, listCreatorPendingReviews, updateApplicant,
+  verifySubmission, rejectSubmission, type PendingReview,
+} from "@/lib/admin";
 import { ConversationExtras } from "@/components/messaging/ConversationExtras";
 import { ActionsMenu, TemplatePicker } from "@/components/messaging/ConversationActions";
 import { ChannelBuilder } from "@/components/messaging/ChannelBuilder";
+import { SocialEmbed } from "@/components/admin/SocialEmbed";
+import { PlatformIcon } from "@/components/ui/PlatformIcon";
 
 function timeAgo(iso: string | null): string {
   if (!iso) return "";
@@ -74,6 +80,120 @@ function CampaignApprovalBar({ creatorId }: { creatorId: string }) {
         </div>
       ))}
     </div>
+  );
+}
+
+/**
+ * Watch a submitted video in a popup that sits OVER the messages (higher z than
+ * the drawer), so the admin never leaves the chat. Approve/decline from here or
+ * just close and keep chatting. Closes only via its buttons (no accidental
+ * backdrop dismissal).
+ */
+function WatchVideoModal({
+  review, onApprove, onDecline, onClose, busy,
+}: {
+  review: PendingReview;
+  onApprove: () => void;
+  onDecline: () => void;
+  onClose: () => void;
+  busy: boolean;
+}) {
+  return createPortal(
+    <div className="fixed inset-0 z-[80] grid place-items-center bg-black/75 p-4">
+      <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-5 py-3.5">
+          <div className="flex min-w-0 items-center gap-2">
+            <PlatformIcon name={review.platform} className="h-4 w-4 shrink-0 text-[var(--color-text-secondary)]" />
+            <p className="truncate text-sm font-semibold text-[var(--color-text)]">{review.campaign_name}</p>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="cursor-pointer rounded-full p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          <SocialEmbed platform={review.platform} postUrl={review.post_url} thumbnailUrl={review.thumbnail_url} embedBroken={review.embed_broken} />
+        </div>
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border)] px-5 py-3.5">
+          <button disabled={busy} onClick={onDecline}
+            className="cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium text-[var(--color-danger,#ef6a6a)] ring-1 ring-inset ring-[var(--color-danger,#ef6a6a)]/40 transition hover:bg-[var(--color-danger,#ef6a6a)]/10 disabled:opacity-50">Decline</button>
+          <button disabled={busy} onClick={onApprove}
+            className="cursor-pointer rounded-full bg-[var(--color-brand)] px-5 py-1.5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)] disabled:opacity-50">Approve</button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/**
+ * Watch / approve / decline the videos this creator submitted for review —
+ * shown under the thread header (admin DMs) so the admin can review without
+ * leaving the chat. Renders nothing when nothing is pending.
+ */
+function SubmissionReviewBar({ creatorId }: { creatorId: string }) {
+  const qc = useQueryClient();
+  const [watching, setWatching] = useState<PendingReview | null>(null);
+  const q = useQuery({
+    queryKey: ["pending-reviews", creatorId],
+    queryFn: () => listCreatorPendingReviews(creatorId),
+    retry: false,
+  });
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["pending-reviews", creatorId] });
+    qc.invalidateQueries({ queryKey: ["dash-submissions"] });
+    qc.invalidateQueries({ queryKey: ["video-review"] });
+    qc.invalidateQueries({ queryKey: ["sub-counts"] });
+  };
+  const approveM = useMutation({ mutationFn: (id: string) => verifySubmission(id), onSuccess: invalidate });
+  const declineM = useMutation({ mutationFn: (id: string) => rejectSubmission(id, ""), onSuccess: invalidate });
+  const busy = approveM.isPending || declineM.isPending;
+  const items = q.data ?? [];
+  if (!items.length) return null;
+
+  return (
+    <>
+      <div className="flex flex-col gap-1.5 border-b border-[var(--color-border)]/60 bg-[var(--color-surface)]/40 px-3 py-2">
+        {items.map((s) => (
+          <div key={s.id} className="flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-deep)] py-1 pl-2.5 pr-1.5">
+            <PlatformIcon name={s.platform} className="h-3.5 w-3.5 shrink-0 text-[var(--color-text-secondary)]" />
+            <span className="min-w-0 flex-1 truncate text-xs font-medium text-[var(--color-text-secondary)]" title={s.campaign_name}>
+              Video · {s.campaign_name}
+            </span>
+            <button
+              onClick={() => setWatching(s)}
+              className="cursor-pointer rounded-full px-2.5 py-1 text-[11px] font-medium text-[var(--color-text)] ring-1 ring-inset ring-[var(--color-border)] transition hover:border-[var(--color-brand)] hover:text-[var(--color-brand)]"
+            >
+              Watch
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => approveM.mutate(s.id)}
+              title="Approve without watching"
+              className="cursor-pointer rounded-full bg-[var(--color-brand)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)] disabled:opacity-50"
+            >
+              Approve
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => declineM.mutate(s.id)}
+              title="Decline without watching"
+              className="cursor-pointer rounded-full px-2.5 py-1 text-[11px] font-medium text-[var(--color-danger,#ef6a6a)] ring-1 ring-inset ring-[var(--color-danger,#ef6a6a)]/40 transition hover:bg-[var(--color-danger,#ef6a6a)]/10 disabled:opacity-50"
+            >
+              Decline
+            </button>
+          </div>
+        ))}
+      </div>
+      {watching ? (
+        <WatchVideoModal
+          review={watching}
+          busy={busy}
+          onApprove={() => { approveM.mutate(watching.id); setWatching(null); }}
+          onDecline={() => { declineM.mutate(watching.id); setWatching(null); }}
+          onClose={() => setWatching(null)}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -375,6 +495,10 @@ export function MessagesDrawer({
       {/* approve / decline the campaigns this creator applied to — admin DMs only */}
       {realm === "admin" && active.kind === "dm" && active.creator_id ? (
         <CampaignApprovalBar creatorId={active.creator_id} />
+      ) : null}
+      {/* watch / approve / decline videos this creator submitted for review */}
+      {realm === "admin" && active.kind === "dm" && active.creator_id ? (
+        <SubmissionReviewBar creatorId={active.creator_id} />
       ) : null}
 
       <div className="flex-1 space-y-2 overflow-y-auto px-3 py-4">

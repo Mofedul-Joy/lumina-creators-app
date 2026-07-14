@@ -137,3 +137,37 @@ def _reload(db: Session, sub: Submission) -> AdminSubmissionRow:
         select(Creator.is_suspicious).where(Creator.id == sub.creator_id)
     ).scalar()
     return _row(db, sub, camp.name, camp.mode, prof, sub.id in svc.paid_submission_ids(db), bool(creator_susp))
+
+
+# ── Pending video reviews for a creator (shown in the chat header) ───────────
+class PendingReviewItem(BaseModel):
+    id: str
+    campaign_name: str
+    platform: str
+    post_url: str
+    thumbnail_url: Optional[str] = None
+    embed_broken: bool = False
+
+
+@router.get("/by-creator/{creator_id}/pending-review", response_model=list[PendingReviewItem])
+def creator_pending_review(creator_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
+                           db: Session = Depends(get_db)):
+    """Videos this creator submitted that are still awaiting review — so the admin
+    can watch / approve / decline them straight from the message thread."""
+    rows = db.execute(
+        select(Submission, Campaign.name)
+        .join(Campaign, Campaign.id == Submission.campaign_id)
+        .where(
+            Submission.creator_id == creator_id,
+            Submission.verification_status == "pending",
+            Submission.is_suspicious.is_(False),
+        )
+        .order_by(Submission.created_at.desc())
+    ).all()
+    return [
+        PendingReviewItem(
+            id=str(s.id), campaign_name=name, platform=s.platform, post_url=s.post_url,
+            thumbnail_url=s.thumbnail_url, embed_broken=s.embed_broken,
+        )
+        for s, name in rows
+    ]

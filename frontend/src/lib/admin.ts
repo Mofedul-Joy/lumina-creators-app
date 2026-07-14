@@ -876,6 +876,13 @@ export type PendingCampaign = { participation_id: string; campaign_id: string; c
 export const listCreatorPendingCampaigns = (creatorId: string) =>
   apiFetch<PendingCampaign[]>(`/api/admin/applicants/by-creator/${creatorId}/pending`, auth());
 
+export type PendingReview = { id: string; campaign_name: string; platform: string; post_url: string; thumbnail_url: string | null; embed_broken: boolean };
+
+// Videos this creator submitted that still need review — powers the
+// watch/approve/decline bar inside the message thread.
+export const listCreatorPendingReviews = (creatorId: string) =>
+  apiFetch<PendingReview[]>(`/api/admin/submissions/by-creator/${creatorId}/pending-review`, auth());
+
 // ── Campaign example videos ──────────────────────────────────────────────────
 export type CampaignExample = { id: string; url: string; platform: string | null; thumbnail_url: string | null; source: string };
 export const listCampaignExamples = (campaignId: string) =>
