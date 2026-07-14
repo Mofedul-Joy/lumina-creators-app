@@ -109,7 +109,7 @@ def analytics(admin: Admin = Depends(get_current_admin), db: Session = Depends(g
                 Submission.platform,
                 func.sum(Submission.views).label("v"),
                 func.count().label("c"),
-            ).group_by(Submission.platform).order_by(func.sum(Submission.views).desc())
+            ).where(_legit).group_by(Submission.platform).order_by(func.sum(Submission.views).desc())
         )
     ]
 
@@ -124,7 +124,7 @@ def analytics(admin: Admin = Depends(get_current_admin), db: Session = Depends(g
             func.count().label("subs"),
             func.sum(Submission.views).label("views"),
             func.sum(Submission.estimated_amount).label("spend"),
-        ).where(Submission.created_at >= since).group_by(day)
+        ).where(Submission.created_at >= since, _legit).group_by(day)
     ).all()
     by_day = {r.day: r for r in rows}
     start = since.date()
@@ -151,6 +151,7 @@ def analytics(admin: Admin = Depends(get_current_admin), db: Session = Depends(g
                 func.coalesce(func.sum(Submission.estimated_amount), 0).label("s"),
             )
             .join(Submission, Submission.campaign_id == Campaign.id)
+            .where(_legit)
             .group_by(Campaign.id, Campaign.name)
             .order_by(func.sum(Submission.views).desc())
             .limit(6)
@@ -169,6 +170,7 @@ def analytics(admin: Admin = Depends(get_current_admin), db: Session = Depends(g
                 func.count(Submission.id).label("c"),
             )
             .join(CreatorProfile, CreatorProfile.creator_id == Submission.creator_id)
+            .where(_legit)
             .group_by(Submission.creator_id, CreatorProfile.display_name)
             .order_by(func.sum(Submission.views).desc())
             .limit(6)
