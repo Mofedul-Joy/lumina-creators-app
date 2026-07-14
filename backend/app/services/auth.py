@@ -84,15 +84,19 @@ def _require_strong(password: str) -> None:
 
 
 # ---- creator ----
-def creator_signup(db: Session, email: str, password: str, invite: str | None = None) -> dict:
-    """Create the account UNVERIFIED and email a code. No token until verified."""
+def creator_signup(db: Session, email: str, password: str | None = None, invite: str | None = None) -> dict:
+    """Create the account UNVERIFIED and email a code. No token until verified.
+    Password is optional: the email-first flow verifies the OTP FIRST, then the
+    creator sets a password (twice) on the next step. A password given here is
+    still accepted (older one-screen flow)."""
     email = _norm(email)
-    _require_strong(password)
+    if password:
+        _require_strong(password)
     if db.scalar(select(Creator).where(Creator.email == email)):
         raise HTTPException(status.HTTP_409_CONFLICT, "An account with this email already exists")
     verify_on = get_settings().require_email_verification
-    creator = Creator(email=email, password_hash=hash_password(password), status="active",
-                      signup_source="self", email_verified=not verify_on)
+    creator = Creator(email=email, password_hash=hash_password(password) if password else None,
+                      status="active", signup_source="self", email_verified=not verify_on)
     db.add(creator)
     db.commit()
     db.refresh(creator)
@@ -187,12 +191,11 @@ def creator_set_password(db: Session, email: str, password: str) -> tuple[str, s
     email = _norm(email)
     _require_strong(password)
     creator = db.scalar(select(Creator).where(Creator.email == email))
-    # Only valid for an invited/migrated account that has no password yet.
-    # NOTE (security): this still trusts the email alone. Before the admin-invite
-    # feature ships, gate first-password on a signed/expiring invite token emailed
-    # to the address (so a stranger can't claim an invited account first). Today
-    # no code path creates null-password accounts, so this is not yet reachable.
-    if creator is None or creator.password_hash is not None or creator.signup_source == "self":
+    # Set the first password for a VERIFIED account that has none yet — the
+    # email-first signup (OTP already proved ownership) and public-submit
+    # accounts. Refused once a password exists, or if the email isn't verified,
+    # so a stranger can't claim an un-verified address.
+    if creator is None or creator.password_hash is not None or not creator.email_verified:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Cannot set password for this account")
     creator.password_hash = hash_password(password)
     db.commit()

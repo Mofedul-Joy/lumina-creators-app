@@ -12,11 +12,9 @@ import { creatorSignup, setAuthToken } from "@/lib/auth";
 
 export default function CreatorSignupPage() {
   const router = useRouter();
-  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string }>({});
 
   // Arrived from an admin invite link (/signup?invite=…). The token is passed
   // through to signup so the invite is marked used; if the admin invited a
@@ -36,16 +34,17 @@ export default function CreatorSignupPage() {
   }, []);
 
   const signup = useMutation({
-    mutationFn: () => creatorSignup(email, password, displayName, invite ?? undefined),
+    mutationFn: () => creatorSignup(email, undefined, undefined, invite ?? undefined),
     onSuccess: (data) => {
+      const e = encodeURIComponent(email);
       if (data.status === "ok") {
-        // Email verification disabled — straight into onboarding.
+        // Email verification disabled — go straight to set a password.
         setAuthToken(data.access_token, data.refresh_token);
-        router.push("/onboarding");
+        router.push(`/set-password?email=${e}`);
         return;
       }
-      // Account created unverified — go enter the emailed code.
-      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      // Account created unverified — enter the emailed code, then set a password.
+      router.push(`/verify-email?email=${e}&next=set-password`);
     },
     onError: (err) => setError((err as Error).message),
   });
@@ -53,9 +52,8 @@ export default function CreatorSignupPage() {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-    const errs: { email?: string; password?: string } = {};
+    const errs: { email?: string } = {};
     if (!email) errs.email = "Enter your email.";
-    if (password.length < 8) errs.password = "Password must be at least 8 characters.";
     setFieldErrors(errs);
     if (Object.keys(errs).length) return;
     signup.mutate();
@@ -64,7 +62,7 @@ export default function CreatorSignupPage() {
   return (
     <AuthCard
       title="Create your creator account"
-      subtitle="Join Lumina campaigns and get paid per 1,000 views."
+      subtitle="Enter your email — we'll send you a 6-digit code to verify it, then you'll set a password."
     >
       {invited ? (
         <div className="mb-5 flex items-start gap-3 rounded-xl border border-[var(--color-brand)]/30 bg-[var(--color-brand)]/10 p-4">
@@ -87,12 +85,6 @@ export default function CreatorSignupPage() {
 
       <form className="space-y-4" onSubmit={submit}>
         <Field
-          label="Display name"
-          autoComplete="name"
-          value={displayName}
-          onChange={(event) => setDisplayName(event.target.value)}
-        />
-        <Field
           label="Email"
           type="email"
           autoComplete="email"
@@ -100,16 +92,8 @@ export default function CreatorSignupPage() {
           error={fieldErrors.email}
           onChange={(event) => setEmail(event.target.value)}
         />
-        <Field
-          label="Password"
-          type="password"
-          autoComplete="new-password"
-          value={password}
-          error={fieldErrors.password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
         <Button type="submit" loading={signup.isPending}>
-          Create account
+          Send verification code
         </Button>
       </form>
 

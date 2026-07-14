@@ -12,6 +12,7 @@ function VerifyEmailInner() {
   const router = useRouter();
   const params = useSearchParams();
   const email = params.get("email") ?? "";
+  const next = params.get("next");   // "set-password" for the email-first signup
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -20,7 +21,8 @@ function VerifyEmailInner() {
     mutationFn: () => verifyEmailCode(email, code.trim()),
     onSuccess: (data) => {
       setAuthToken(data.access_token, data.refresh_token);
-      router.push("/onboarding");
+      // Email-first signup: verified, now choose a password. Otherwise straight in.
+      router.push(next === "set-password" ? `/set-password?email=${encodeURIComponent(email)}` : "/onboarding");
     },
     onError: (err) => setError((err as Error).message),
   });

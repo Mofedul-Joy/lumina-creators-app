@@ -11,7 +11,7 @@ class LoginIn(BaseModel):
 
 class SignupIn(BaseModel):
     email: str
-    password: str
+    password: Optional[str] = None   # optional: email-first flow sets it after OTP
     # Present when the creator arrived from an admin invite link.
     invite: Optional[str] = None
 

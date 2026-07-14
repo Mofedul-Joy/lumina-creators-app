@@ -27,12 +27,13 @@ export const setClientToken = (access: string, refresh?: string) => saveSession(
 export const getClientToken = () => getAccess("client");
 export const clearClientToken = () => clearSession("client");
 
-export function creatorSignup(email: string, password: string, displayName?: string, invite?: string) {
+export function creatorSignup(email: string, password?: string, displayName?: string, invite?: string) {
   return apiFetch<SignupResult>("/api/creator/auth/signup", {
     method: "POST",
     body: JSON.stringify({
       email,
-      password,
+      // Optional: the email-first flow sets the password after OTP verification.
+      password: password || undefined,
       display_name: displayName || undefined,
       // Set when they arrived from an admin invite link (/signup?invite=…).
       invite: invite || undefined,

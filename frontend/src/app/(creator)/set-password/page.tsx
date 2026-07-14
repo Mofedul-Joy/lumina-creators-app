@@ -1,25 +1,28 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { creatorSetPassword, setAuthToken } from "@/lib/auth";
 
-export default function CreatorSetPasswordPage() {
+function SetPasswordInner() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const params = useSearchParams();
+  const prefilled = params.get("email") ?? "";
+  const [email, setEmail] = useState(prefilled);
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState({ email: "", password: "" });
+  const [fieldErrors, setFieldErrors] = useState({ email: "", password: "", confirm: "" });
 
   const setCreatorPassword = useMutation({
     mutationFn: () => creatorSetPassword(email, password),
     onSuccess: (data) => {
       setAuthToken(data.access_token, data.refresh_token);
-      router.push("/dashboard");
+      router.push("/onboarding");
     },
     onError: (err) => setError((err as Error).message),
   });
@@ -29,15 +32,16 @@ export default function CreatorSetPasswordPage() {
     setError("");
     const nextErrors = {
       email: email ? "" : "Enter your email.",
-      password: password ? "" : "Enter a new password.",
+      password: password.length < 8 ? "Use at least 8 characters." : "",
+      confirm: confirm !== password ? "Passwords don't match." : "",
     };
     setFieldErrors(nextErrors);
-    if (nextErrors.email || nextErrors.password) return;
+    if (nextErrors.email || nextErrors.password || nextErrors.confirm) return;
     setCreatorPassword.mutate();
   }
 
   return (
-    <AuthCard title="Set your password" subtitle="Create a password for your creator account.">
+    <AuthCard title="Set your password" subtitle="Your email is verified — create a password to finish.">
       {error ? (
         <p role="alert" className="mb-4 text-sm text-[var(--color-danger)]">
           {error}
@@ -50,6 +54,7 @@ export default function CreatorSetPasswordPage() {
           autoComplete="email"
           value={email}
           error={fieldErrors.email}
+          readOnly={!!prefilled}
           onChange={(event) => setEmail(event.target.value)}
         />
         <Field
@@ -60,10 +65,26 @@ export default function CreatorSetPasswordPage() {
           error={fieldErrors.password}
           onChange={(event) => setPassword(event.target.value)}
         />
+        <Field
+          label="Confirm password"
+          type="password"
+          autoComplete="new-password"
+          value={confirm}
+          error={fieldErrors.confirm}
+          onChange={(event) => setConfirm(event.target.value)}
+        />
         <Button type="submit" loading={setCreatorPassword.isPending}>
-          Set password
+          Set password &amp; continue
         </Button>
       </form>
     </AuthCard>
+  );
+}
+
+export default function CreatorSetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <SetPasswordInner />
+    </Suspense>
   );
 }

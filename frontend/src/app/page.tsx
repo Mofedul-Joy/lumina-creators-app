@@ -114,12 +114,20 @@ export default function Home() {
             <LuminaMark size={28} />
             <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text)]">Lumina Creators</span>
           </Link>
-          <Link
-            href="/login"
-            className="inline-flex min-h-9 items-center rounded-full border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-brand)]"
-          >
-            Sign in
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/login"
+              className="inline-flex min-h-9 items-center rounded-full border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-brand)]"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/signup"
+              className="inline-flex min-h-9 items-center rounded-full bg-[var(--color-brand)] px-4 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
+            >
+              Sign up
+            </Link>
+          </div>
         </div>
       </header>
 

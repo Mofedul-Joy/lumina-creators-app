@@ -14,12 +14,9 @@ from app.models.enums import ADMIN_ROLE, CLIENT_STATUS, CREATOR_STATUS, SIGNUP_S
 
 class Creator(TimestampMixin, Base):
     __tablename__ = "creators"
-    __table_args__ = (
-        CheckConstraint(
-            "signup_source <> 'self' OR password_hash IS NOT NULL",
-            name="chk_self_signup_has_password",
-        ),
-    )
+    # NOTE: the old chk_self_signup_has_password CHECK was dropped in 0035 — the
+    # email-first signup verifies the OTP before a password is set, so a self
+    # account is briefly password-less (login routes it to set-password).
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
