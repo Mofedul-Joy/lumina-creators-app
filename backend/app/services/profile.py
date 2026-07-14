@@ -188,7 +188,14 @@ def add_portfolio(db: Session, creator_id: uuid.UUID, data: dict) -> PortfolioIt
             "Link must be a TikTok, Instagram, YouTube, X, or Facebook video/post URL",
         )
     canonical = urls.canonicalize_url(video_url)
-    platform = data.get("platform") or urls.detect_platform(video_url)
+    # Cross-check a client-supplied platform against the URL's real platform so a
+    # TikTok link can't be stored/badged as "youtube" (mirrors add_top_video).
+    detected = urls.detect_platform(video_url)
+    supplied = data.get("platform")
+    if supplied and detected and supplied != detected:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            f"platform '{supplied}' doesn't match the {detected} URL")
+    platform = supplied or detected
     # Real video thumbnail so the card shows the actual frame, not a "Watch on
     # <platform>" placeholder. Uses the FAST resolver (no Apify actor) so the
     # add returns immediately — the actor path could take ~75s and time the
@@ -421,12 +428,11 @@ def recompute_completion(db: Session, creator_id: uuid.UUID) -> tuple[bool, list
     missing: list[str] = [f for f in _REQUIRED_FIELDS if getattr(prof, f) in (None, "")]
     n_social = db.scalar(select(func.count()).select_from(SocialAccount).where(
         SocialAccount.creator_id == creator_id))
-    n_portfolio = db.scalar(select(func.count()).select_from(PortfolioItem).where(
-        PortfolioItem.creator_id == creator_id))
     if not n_social:
         missing.append("social_account")
-    if not n_portfolio:
-        missing.append("portfolio_item")
+    # A portfolio video is NOT required — this must stay in lockstep with the join
+    # gate (profile_completeness = creator_type + ≥1 social), otherwise a creator
+    # who can actually join still sees a stale "finish your profile" nudge.
     complete = not missing
     prof.completed_at = _now() if complete else None
     db.commit()
