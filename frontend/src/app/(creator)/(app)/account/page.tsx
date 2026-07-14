@@ -147,7 +147,7 @@ export default function AccountPage() {
 
   if (!ready || !token || profileQ.isLoading)
     return (
-      <main className="mx-auto max-w-3xl px-6 py-10">
+      <main className="mx-auto max-w-5xl px-6 py-10">
         <Skeleton className="h-4 w-32" />
         <Skeleton className="mt-3 h-10 w-72" />
         <div className="mt-8"><SkeletonStats count={3} /></div>
@@ -161,7 +161,7 @@ export default function AccountPage() {
   const g = gamificationQ.data;
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <main className="mx-auto max-w-5xl px-6 py-10">
       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">Lumina Creators</p>
       <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Account</h1>
       <p className="mt-2 text-[var(--color-text-secondary)]">Your profile summary, rank, and lifetime stats.</p>

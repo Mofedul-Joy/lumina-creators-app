@@ -302,10 +302,10 @@ export function OnboardingWizard() {
   }
 
   return (
-    <main className="mx-auto max-w-xl px-6 py-10">
+    <main className="mx-auto max-w-5xl px-6 py-10">
       {/* progress: thin bar + section pills + step counter */}
-      <div className="mb-8">
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
+      <div className="mb-9">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
           <div className="h-full rounded-full bg-[var(--color-brand)] transition-all duration-300" style={{ width: `${(step / (STEPS.length - 1)) * 100}%` }} />
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
@@ -320,7 +320,7 @@ export function OnboardingWizard() {
                   disabled={locked}
                   onClick={() => { if (!locked) goTo(SECTION_STARTS[i]); }}
                   title={locked ? "Finish the required steps first" : undefined}
-                  className={`rounded-full px-3.5 py-2 text-sm transition ${
+                  className={`rounded-full px-4 py-2.5 text-base transition ${
                     locked
                       ? "cursor-not-allowed text-[var(--color-text-muted)] opacity-40"
                       : i === curSection
@@ -328,11 +328,11 @@ export function OnboardingWizard() {
                         : "cursor-pointer text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
                   }`}
                 >
-                  <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-2">
                     {done ? (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden><path d="m5 13 4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden><path d="m5 13 4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                     ) : locked ? (
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden><rect x="4" y="10" width="16" height="11" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" strokeWidth="2" /></svg>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden><rect x="4" y="10" width="16" height="11" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" strokeWidth="2" /></svg>
                     ) : null}
                     {s.label}
                   </span>
@@ -626,10 +626,10 @@ export function OnboardingWizard() {
 function StepShell({ eyebrow, title, sub, children }: { eyebrow: string; title: string; sub?: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">{eyebrow}</p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--color-text)]">{title}</h1>
-      {sub ? <p className="mt-2 text-[var(--color-text-secondary)]">{sub}</p> : null}
-      <div className="mt-6">{children}</div>
+      <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--color-brand)]">{eyebrow}</p>
+      <h1 className="mt-2.5 text-4xl font-semibold tracking-tight text-[var(--color-text)]">{title}</h1>
+      {sub ? <p className="mt-3 text-lg text-[var(--color-text-secondary)]">{sub}</p> : null}
+      <div className="mt-7">{children}</div>
     </div>
   );
 }
