@@ -309,7 +309,7 @@ export function OnboardingWizard() {
           <div className="h-full rounded-full bg-[var(--color-brand)] transition-all duration-300" style={{ width: `${(step / (STEPS.length - 1)) * 100}%` }} />
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             {SECTIONS.map((s, i) => {
               const locked = sectionLocked(i);
               const done = sectionHasRequired(i) && sectionComplete(i);
@@ -320,19 +320,19 @@ export function OnboardingWizard() {
                   disabled={locked}
                   onClick={() => { if (!locked) goTo(SECTION_STARTS[i]); }}
                   title={locked ? "Finish the required steps first" : undefined}
-                  className={`rounded-full px-2.5 py-1 text-[11px] transition ${
+                  className={`rounded-full px-3.5 py-2 text-sm transition ${
                     locked
                       ? "cursor-not-allowed text-[var(--color-text-muted)] opacity-40"
                       : i === curSection
-                        ? "cursor-pointer bg-[var(--color-brand)]/15 font-medium text-[var(--color-brand-soft)]"
+                        ? "cursor-pointer bg-[var(--color-brand)]/15 font-semibold text-[var(--color-brand-soft)]"
                         : "cursor-pointer text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
                   }`}
                 >
-                  <span className="inline-flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1.5">
                     {done ? (
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden><path d="m5 13 4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden><path d="m5 13 4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                     ) : locked ? (
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden><rect x="4" y="10" width="16" height="11" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" strokeWidth="2" /></svg>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden><rect x="4" y="10" width="16" height="11" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" strokeWidth="2" /></svg>
                     ) : null}
                     {s.label}
                   </span>
@@ -612,9 +612,9 @@ export function OnboardingWizard() {
 
       {!isLast ? (
         <div className="mt-8 flex items-center justify-between gap-3">
-          <button onClick={back} disabled={step === 0} className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)] disabled:invisible">← Back</button>
+          <button onClick={back} disabled={step === 0} className="min-h-11 cursor-pointer rounded-full border border-[var(--color-border)] px-5 py-2.5 text-[15px] font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)] disabled:invisible">← Back</button>
           <div className="flex items-center gap-3">
-            {cur.optional && !stepRequired ? <button onClick={next} className="cursor-pointer text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]">Skip for now</button> : null}
+            {cur.optional && !stepRequired ? <button onClick={next} className="min-h-11 cursor-pointer px-3 text-[15px] font-medium text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]">Skip for now</button> : null}
             <div className="w-40"><Button loading={committing} disabled={!canContinue} onClick={onContinue}>Continue</Button></div>
           </div>
         </div>

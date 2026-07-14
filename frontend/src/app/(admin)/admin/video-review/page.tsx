@@ -59,8 +59,9 @@ function VideoCard({ s, onOpen }: { s: AdminSubmission; onOpen: () => void }) {
             className="h-full w-full object-cover transition group-hover:scale-[1.03]"
           />
         ) : (
-          <div className="grid h-full w-full place-items-center text-[var(--color-text-muted)]">
-            <PlatformIcon name={s.platform} className="h-8 w-8 opacity-50" />
+          <div className="grid h-full w-full place-items-center gap-2 bg-gradient-to-br from-[var(--color-surface-2)] to-[var(--color-surface)] text-[var(--color-text-muted)]">
+            <PlatformIcon name={s.platform} className="h-9 w-9 opacity-40" />
+            <span className="text-[11px] font-medium uppercase tracking-wide opacity-60">{s.platform}</span>
           </div>
         )}
         {/* play overlay */}

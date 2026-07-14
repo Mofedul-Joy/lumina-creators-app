@@ -347,28 +347,6 @@ export default function AdminPaymentsPage() {
 
             <div className="relative">
               <button
-                onClick={() => { setWalletOpen((v) => !v); setPayMenuOpen(false); setReportsOpen(false); }}
-                className="cursor-pointer rounded-full border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)]"
-              >
-                Wallet {wallet ? `· ${fmtMoney(availableBalance)}` : ""} ▾
-              </button>
-              {walletOpen ? (
-                <div className="absolute right-0 z-50 mt-2 w-56 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface)] p-2 shadow-xl" onMouseLeave={() => setWalletOpen(false)}>
-                  <div className="px-3 py-2 text-xs text-[var(--color-text-muted)]">
-                    Available: <span className="text-[var(--color-text)]">{fmtMoney(availableBalance)}</span>
-                  </div>
-                  <button
-                    onClick={() => { setShowAddFunds(true); setWalletOpen(false); }}
-                    className="w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-2)]"
-                  >
-                    Add Funds
-                  </button>
-                </div>
-              ) : null}
-            </div>
-
-            <div className="relative">
-              <button
                 onClick={() => { setReportsOpen((v) => !v); setPayMenuOpen(false); setWalletOpen(false); }}
                 className="cursor-pointer rounded-full border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)]"
               >
@@ -408,18 +386,9 @@ export default function AdminPaymentsPage() {
           </div>
         ) : null}
 
-        {/* stat tiles */}
+        {/* stat tile — owed only; wallet/balance UI removed until a real payment
+            processor is wired up (Bill: no add-funds without integration). */}
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="card-lumina rounded-[var(--radius-card)] p-5">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Available Balance</p>
-            <p className="tabular mt-3 text-3xl font-semibold text-[var(--color-brand-soft)]">{fmtMoney(availableBalance)}</p>
-            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">In the system wallet</p>
-          </div>
-          <div className="card-lumina rounded-[var(--radius-card)] p-5">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Pending Balance</p>
-            <p className="tabular mt-3 text-3xl font-semibold text-[var(--color-text)]">{fmtMoney(pendingBalance)}</p>
-            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Reserved, not yet settled</p>
-          </div>
           <div className="card-lumina rounded-[var(--radius-card)] p-5">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Total Owed</p>
             <p className="tabular mt-3 text-3xl font-semibold text-[var(--color-text)]">{fmtMoney(totalOwed)}</p>
