@@ -300,8 +300,29 @@ def wallet_add_funds(
     return wallet
 
 
+def _undo_txn(balance: Decimal, kind: str, amount) -> Decimal:
+    """Reverse one transaction's effect on the wallet balance (walking backward
+    from newest). Deposits/refunds credited the wallet; everything else debited."""
+    if kind in ("deposit", "refund"):
+        return _q(balance - amount)
+    return _q(balance + amount)
+
+
 def wallet_ledger(db: Session, limit: int = 100, offset: int = 0) -> list[dict]:
     wallet = wallet_get(db)
+    # Running balance walks backward from the CURRENT balance. On any page past
+    # the first, seed by first undoing every transaction newer than this page
+    # (the `offset` rows above it) — otherwise balance_after is wrong for offset>0.
+    balance = wallet.available_balance
+    if offset:
+        newer = db.scalars(
+            select(WalletTransaction)
+            .where(WalletTransaction.wallet_id == wallet.id)
+            .order_by(WalletTransaction.created_at.desc())
+            .limit(offset)
+        ).all()
+        for t in newer:
+            balance = _undo_txn(balance, t.kind, t.amount)
     txns = db.scalars(
         select(WalletTransaction)
         .where(WalletTransaction.wallet_id == wallet.id)
@@ -309,17 +330,10 @@ def wallet_ledger(db: Session, limit: int = 100, offset: int = 0) -> list[dict]:
         .offset(offset)
         .limit(limit)
     ).all()
-    # Running balance: start from current available_balance and walk
-    # backwards undoing each transaction's effect (credits: deposit/refund;
-    # debits: withdrawal/payout/adjustment is signed by convention as debit).
-    balance = wallet.available_balance
     out = []
     for t in txns:
         balance_after = balance
-        if t.kind in ("deposit", "refund"):
-            balance = _q(balance - t.amount)
-        else:
-            balance = _q(balance + t.amount)
+        balance = _undo_txn(balance, t.kind, t.amount)
         out.append({
             "id": str(t.id),
             "kind": t.kind,
@@ -416,6 +430,9 @@ def _pay_creator_rows(db: Session, admin_id: uuid.UUID, wallet: Wallet, rows: It
             part.payout_awarded_bonus_ids = existing + list(calc["newly_eligible_bonus_ids"])
 
         wallet.available_balance = _q(wallet.available_balance - amount)
+        # Track real per-campaign spend so the Forecast's avg_daily_burn reflects
+        # money actually paid (spent_amount was previously never written → burn $0).
+        campaign.spent_amount = _q((campaign.spent_amount or _ZERO) + amount)
         db.add(WalletTransaction(
             wallet_id=wallet.id, kind="payout", amount=amount,
             reference=campaign.name, payout_id=payout.id, admin_id=admin_id,
@@ -465,6 +482,45 @@ def pay_one(db: Session, admin_id: uuid.UUID, creator_id: uuid.UUID,
     # Return the largest single payout created (usually just one row/campaign;
     # if multiple campaigns owed, the caller can fetch full history for the rest).
     return max(created, key=lambda p: p.amount)
+
+
+def void_payout(db: Session, admin_id: uuid.UUID, payout_id: uuid.UUID) -> Payout:
+    """Reverse a paid payout: free its PayoutItems (so the work becomes owed and
+    re-payable again via uq_active_payout_item), credit the wallet back with a
+    `refund` ledger row, roll back the campaign's tracked spend, and mark the
+    Payout `failed` (the enum has no `voided` value; `failed` excludes it from
+    `_already_paid_for_participation` so the amount reappears as owed)."""
+    payout = db.get(Payout, payout_id)
+    if payout is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Payout not found")
+    if payout.status != "paid":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Only a paid payout can be voided")
+
+    wallet = wallet_get(db, for_update=True)
+    now = _now()
+    items = db.scalars(
+        select(PayoutItem).where(PayoutItem.payout_id == payout.id, PayoutItem.voided_at.is_(None))
+    ).all()
+    for it in items:
+        it.voided_at = now
+
+    amount = _q(payout.amount)
+    wallet.available_balance = _q(wallet.available_balance + amount)
+    if payout.campaign_id:
+        campaign = db.get(Campaign, payout.campaign_id)
+        if campaign is not None:
+            campaign.spent_amount = _q(max(_ZERO, (campaign.spent_amount or _ZERO) - amount))
+    db.add(WalletTransaction(
+        wallet_id=wallet.id, kind="refund", amount=amount,
+        reference=payout.program_name, payout_id=payout.id, admin_id=admin_id,
+        note=f"Void/refund of payout to creator {payout.creator_id}",
+    ))
+    payout.status = "failed"
+    audit.log(db, actor_admin_id=admin_id, action="payout.void", entity_type="payout",
+              entity_id=payout.id, creator_id=str(payout.creator_id), amount=str(amount))
+    db.commit()
+    db.refresh(payout)
+    return payout
 
 
 # ── forecast ─────────────────────────────────────────────────────────────────
@@ -543,6 +599,7 @@ def payout_report_rows(db: Session, limit: int = 1000, date_from=None, date_to=N
             "creator": prof.display_name if prof else str(p.creator_id),
             "amount": p.amount,
             "campaign": campaign.name if campaign else (p.program_name or ""),
+            "campaign_id": str(p.campaign_id) if p.campaign_id else "",
             "paid_at": p.paid_at.isoformat() if p.paid_at else "",
             "method": p.method,
             "external_ref": p.external_ref or "",

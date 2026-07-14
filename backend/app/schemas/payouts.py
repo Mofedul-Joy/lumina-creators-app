@@ -24,6 +24,8 @@ class PayoutRow(BaseModel):
     method: str
     status: str
     reference: Optional[str] = None
+    campaign_id: Optional[str] = None      # disambiguates same-named campaigns
+    campaign_name: Optional[str] = None
     paid_at: Optional[datetime] = None
     created_at: datetime
 

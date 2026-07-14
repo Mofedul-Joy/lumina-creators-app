@@ -40,7 +40,10 @@ _METHODS = {"paypal", "solana", "whop"}
 def _payout_row(p: Payout, name) -> PayoutRow:
     return PayoutRow(id=str(p.id), creator_id=str(p.creator_id), creator_name=name,
                      amount=p.amount, method=p.method, status=p.status,
-                     reference=p.external_ref, paid_at=p.paid_at, created_at=p.created_at)
+                     reference=p.external_ref,
+                     campaign_id=str(p.campaign_id) if p.campaign_id else None,
+                     campaign_name=p.program_name,
+                     paid_at=p.paid_at, created_at=p.created_at)
 
 
 @router.get("/owed", response_model=list[OwedRow])
@@ -126,6 +129,14 @@ def pay_one(creator_id: uuid.UUID, body: PayOneIn | None = None,
     return _payout_row(p, None)
 
 
+@router.post("/{payout_id}/void", response_model=PayoutRow)
+def void_payout(payout_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Reverse a paid payout — refunds the wallet, re-opens the owed amount, and
+    frees the submissions so they can be paid again."""
+    p = svc2.void_payout(db, admin.id, payout_id)
+    return _payout_row(p, None)
+
+
 @router.get("/forecast", response_model=list[ForecastRow])
 def forecast(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     return [ForecastRow(**row) for row in svc2.forecast_all(db)]
@@ -167,11 +178,11 @@ def reports_csv(
     def _gen():
         buf = io.StringIO()
         writer = csv.writer(buf)
-        writer.writerow(["creator", "amount", "campaign", "paid_at", "method", "external_ref"])
+        writer.writerow(["creator", "amount", "campaign", "campaign_id", "paid_at", "method", "external_ref"])
         yield buf.getvalue()
         buf.seek(0); buf.truncate(0)
         for r in rows:
-            writer.writerow([sanitize_cell(c) for c in [r["creator"], r["amount"], r["campaign"], r["paid_at"], r["method"], r["external_ref"]]])
+            writer.writerow([sanitize_cell(c) for c in [r["creator"], r["amount"], r["campaign"], r["campaign_id"], r["paid_at"], r["method"], r["external_ref"]]])
             yield buf.getvalue()
             buf.seek(0); buf.truncate(0)
 

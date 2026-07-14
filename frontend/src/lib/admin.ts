@@ -412,6 +412,8 @@ export type PayoutRow = {
   method: string;
   status: string;
   reference: string | null;
+  campaign_id: string | null;
+  campaign_name: string | null;
   paid_at: string | null;
   created_at: string;
 };
@@ -420,6 +422,8 @@ export type PayoutMethod = "paypal" | "solana" | "whop";
 
 export const listOwed = () => apiFetch<OwedRow[]>("/api/admin/payouts/owed", auth());
 export const listPayouts = () => apiFetch<PayoutRow[]>("/api/admin/payouts", auth());
+export const voidPayout = (payoutId: string) =>
+  apiFetch<PayoutRow>(`/api/admin/payouts/${payoutId}/void`, { method: "POST", ...auth() });
 export const recordPayout = (creator_id: string, method: PayoutMethod, reference?: string) =>
   apiFetch<PayoutRow>("/api/admin/payouts", { method: "POST", body: JSON.stringify({ creator_id, method, reference }), ...auth() });
 

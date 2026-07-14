@@ -15,11 +15,14 @@ import {
   getWallet,
   listCreators,
   listOwedV2,
+  listPayouts,
   payAll,
+  voidPayout,
   type CreatorRow,
   type ForecastRow,
   type LedgerRow,
   type OwedRowV2,
+  type PayoutRow,
   type SpendingSummary,
 } from "@/lib/admin";
 import { getCreatorDetail, isAuthError, type CreatorDetail, retryNonAuth} from "@/lib/api";
@@ -209,8 +212,25 @@ export default function AdminPaymentsPage() {
   const ledgerQ = useQuery({
     queryKey: ["payouts-ledger"],
     queryFn: () => getLedger(100),
+    enabled: enabled && tab === "ledger",
+    retry: retryNonAuth,
+  });
+  // Paid tab reads the payout HISTORY (status-aware, includes legacy payouts +
+  // creator/campaign) rather than wallet ledger 'payout' rows (which omit legacy
+  // payouts and can't reflect a void).
+  const paidQ = useQuery({
+    queryKey: ["payouts-history"],
+    queryFn: listPayouts,
     enabled: enabled && tab === "paid",
     retry: retryNonAuth,
+  });
+  const voidM = useMutation({
+    mutationFn: (payoutId: string) => voidPayout(payoutId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["payouts-history"] });
+      qc.invalidateQueries({ queryKey: ["payouts-owed-v2"] });
+      qc.invalidateQueries({ queryKey: ["payouts-wallet"] });
+    },
   });
   const forecastQ = useQuery({
     queryKey: ["payouts-forecast"],
@@ -525,30 +545,42 @@ export default function AdminPaymentsPage() {
           </div>
         ) : tab === "paid" ? (
           <div className="card-lumina mt-4 overflow-hidden rounded-[var(--radius-card)]">
-            {ledgerQ.isLoading ? (
+            {paidQ.isLoading ? (
               <p className="p-6 text-sm text-[var(--color-text-secondary)]">Loading…</p>
-            ) : ledger.filter((t) => t.kind === "payout").length === 0 ? (
+            ) : (paidQ.data ?? []).filter((p) => p.status === "paid").length === 0 ? (
               <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">No payments made yet.</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[640px] text-sm">
+                <table className="w-full min-w-[760px] text-sm">
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
                       <th className="px-6 py-3 font-medium">Date</th>
+                      <th className="px-6 py-3 font-medium">Creator</th>
+                      <th className="px-6 py-3 font-medium">Campaign</th>
                       <th className="px-6 py-3 text-right font-medium">Amount</th>
                       <th className="px-6 py-3 font-medium">Reference</th>
-                      <th className="px-6 py-3 font-medium">Note</th>
+                      <th className="px-6 py-3 text-right font-medium">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {ledger.filter((t) => t.kind === "payout").map((t: LedgerRow) => (
-                      <tr key={t.id} className="border-t border-[var(--color-border)]/40">
+                    {(paidQ.data ?? []).filter((p) => p.status === "paid").map((p: PayoutRow) => (
+                      <tr key={p.id} className="border-t border-[var(--color-border)]/40">
                         <td className="px-6 py-4 text-[var(--color-text-muted)]">
-                          {new Date(t.created_at).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
+                          {p.paid_at ? new Date(p.paid_at).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "—"}
                         </td>
-                        <td className="tabular px-6 py-4 text-right font-medium text-[var(--color-text)]">{fmtMoney(t.amount)}</td>
-                        <td className="px-6 py-4 text-[var(--color-text-secondary)]">{t.reference ?? "—"}</td>
-                        <td className="max-w-[280px] px-6 py-4 text-[var(--color-text-secondary)]">{t.note ?? "—"}</td>
+                        <td className="px-6 py-4 text-[var(--color-text)]">{p.creator_name ?? p.creator_id.slice(0, 8)}</td>
+                        <td className="max-w-[200px] truncate px-6 py-4 text-[var(--color-text-secondary)]" title={p.campaign_name ?? undefined}>{p.campaign_name ?? "—"}</td>
+                        <td className="tabular px-6 py-4 text-right font-medium text-[var(--color-text)]">{fmtMoney(p.amount)}</td>
+                        <td className="max-w-[180px] truncate px-6 py-4 text-[var(--color-text-secondary)]" title={p.reference ?? undefined}>{p.reference ?? "—"}</td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => { if (window.confirm(`Void this ${fmtMoney(p.amount)} payout to ${p.creator_name ?? "this creator"}? It will be refunded and re-owed.`)) voidM.mutate(p.id); }}
+                            disabled={voidM.isPending}
+                            className="cursor-pointer rounded-full border border-[var(--color-danger)]/40 px-3 py-1 text-xs font-medium text-[var(--color-danger)] transition hover:bg-[var(--color-danger)]/10 disabled:opacity-40"
+                          >
+                            Void
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
