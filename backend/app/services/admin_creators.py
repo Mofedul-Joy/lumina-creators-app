@@ -113,7 +113,7 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
         select(
             Submission.creator_id,
             func.coalesce(func.sum(Submission.views), 0),
-            func.coalesce(func.sum(Submission.payable_amount), 0),
+            func.coalesce(func.sum(Submission.estimated_amount), 0),
             func.count(Submission.id),
         )
         .where(Submission.creator_id.in_(ids))
@@ -277,7 +277,7 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
     agg_row = db.execute(
         select(
             func.coalesce(func.sum(Submission.views), 0),
-            func.coalesce(func.sum(Submission.payable_amount), 0),
+            func.coalesce(func.sum(Submission.estimated_amount), 0),
             func.count(Submission.id),
             func.coalesce(func.sum(Submission.likes), 0),
             func.coalesce(func.sum(Submission.comments), 0),

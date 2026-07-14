@@ -98,7 +98,7 @@ def _aggregate_stats(db: Session, creator_id: uuid.UUID) -> tuple[int, Decimal, 
     row = db.execute(
         select(
             func.coalesce(func.sum(Submission.views), 0),
-            func.coalesce(func.sum(Submission.payable_amount), 0),
+            func.coalesce(func.sum(Submission.estimated_amount), 0),
             func.count(Submission.id),
         ).where(Submission.creator_id == creator_id)
     ).first()
