@@ -76,11 +76,24 @@ const SECTIONS: { label: string; first: StepKey }[] = [
 ];
 const SECTION_STARTS = SECTIONS.map((s) => STEPS.findIndex((x) => x.key === s.first));
 
-// Brands Lumina's creators work with (from luminaclippers.com) — shown as social
-// proof on the "you could work with these brands" step.
-const LUMINA_BRANDS = [
-  "OKX", "Stake", "Magic Eden", "Polkadot", "Adobe", "Midjourney", "TikTok",
-  "Riverside", "Wispr Flow", "Aviator", "High Roller", "Caliente", "Forward", "Humanity",
+// Brands Lumina's creators work with (from luminaclippers.com), shown as social
+// proof. Logos come from Clearbit by domain; the initials show only if a logo
+// fails to load.
+const LUMINA_BRANDS: { name: string; domain: string }[] = [
+  { name: "OKX", domain: "okx.com" },
+  { name: "Stake", domain: "stake.com" },
+  { name: "Magic Eden", domain: "magiceden.io" },
+  { name: "Polkadot", domain: "polkadot.com" },
+  { name: "Adobe", domain: "adobe.com" },
+  { name: "Midjourney", domain: "midjourney.com" },
+  { name: "TikTok", domain: "tiktok.com" },
+  { name: "Riverside", domain: "riverside.fm" },
+  { name: "Wispr Flow", domain: "wisprflow.ai" },
+  { name: "Caliente", domain: "caliente.mx" },
+  { name: "Aviator", domain: "aviatorapp.io" },
+  { name: "High Roller", domain: "highroller.com" },
+  { name: "Forward", domain: "forward.com" },
+  { name: "Humanity", domain: "humanity.com" },
 ];
 const CONTENT_TYPES: { key: string; label: string; icon: string }[] = [
   { key: "unboxing", label: "Unboxing Videos", icon: "📦" },
@@ -354,11 +367,9 @@ export function OnboardingWizard() {
           <StepShell eyebrow="The opportunity" title={`${(details.display_name || "").trim().split(" ")[0] || "You"}, you could work with these brands!`} sub="Join Lumina creators already working with top brands.">
             <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
               {LUMINA_BRANDS.map((b) => (
-                <div key={b} className="flex flex-col items-center gap-1.5">
-                  <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-surface-2)] text-base font-bold text-[var(--color-brand-soft)] ring-1 ring-[var(--color-border)]">
-                    {b.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
-                  </span>
-                  <span className="text-center text-[10px] leading-tight text-[var(--color-text-muted)]">{b}</span>
+                <div key={b.name} className="flex flex-col items-center gap-1.5">
+                  <BrandLogo name={b.name} domain={b.domain} />
+                  <span className="text-center text-[10px] leading-tight text-[var(--color-text-muted)]">{b.name}</span>
                 </div>
               ))}
             </div>
@@ -441,7 +452,7 @@ export function OnboardingWizard() {
                 </div>
               </div>
               <p className="mt-4 text-[var(--color-text-secondary)]">
-                &ldquo;I&apos;ve been using Lumina for about 6 months and it changed how I think about content. I get to work with cool brands on my own schedule — and the best part is you don&apos;t need a big following to get started.&rdquo;
+                &ldquo;I&apos;ve been using Lumina for about 6 months and it changed how I think about content. I get to work with cool brands on my own schedule. The best part is you don&apos;t need a big following to get started.&rdquo;
               </p>
             </div>
           </StepShell>
@@ -620,6 +631,37 @@ function StepShell({ eyebrow, title, sub, children }: { eyebrow: string; title: 
       {sub ? <p className="mt-2 text-[var(--color-text-secondary)]">{sub}</p> : null}
       <div className="mt-6">{children}</div>
     </div>
+  );
+}
+
+// A brand's real logo on a white chip so colored marks read well. Tries the
+// DuckDuckGo icon service, then Google's favicon service (covers a few DDG
+// misses like Adobe), then falls back to the brand's initials.
+function BrandLogo({ name, domain }: { name: string; domain: string }) {
+  const sources = [
+    `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+  ];
+  const [idx, setIdx] = useState(0);
+  const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  if (idx >= sources.length) {
+    return (
+      <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-surface-2)] text-base font-bold text-[var(--color-brand-soft)] ring-1 ring-[var(--color-border)]">
+        {initials}
+      </span>
+    );
+  }
+  return (
+    <span className="grid h-14 w-14 place-items-center overflow-hidden rounded-full bg-white ring-1 ring-[var(--color-border)]">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={sources[idx]}
+        alt={name}
+        loading="lazy"
+        onError={() => setIdx((i) => i + 1)}
+        className="h-9 w-9 object-contain"
+      />
+    </span>
   );
 }
 
