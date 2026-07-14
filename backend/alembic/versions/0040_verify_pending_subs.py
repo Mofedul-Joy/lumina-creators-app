@@ -7,14 +7,14 @@ them to 'verified' (their ScrapeJob rows already exist and are past next_run_at,
 so the worker picks them up on the next tick). Only 'pending' is touched;
 'rejected' rows an admin explicitly declined are left as-is.
 
-Revision ID: 0040_backfill_verified_submissions
+Revision ID: 0040_verify_pending_subs
 Revises: 0039_backfill_accepted_status
 """
 from typing import Union
 
 from alembic import op
 
-revision: str = "0040_backfill_verified_submissions"
+revision: str = "0040_verify_pending_subs"
 down_revision: Union[str, None] = "0039_backfill_accepted_status"
 branch_labels = None
 depends_on = None
