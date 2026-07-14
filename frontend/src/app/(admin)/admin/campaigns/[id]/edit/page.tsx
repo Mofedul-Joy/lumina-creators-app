@@ -24,7 +24,7 @@ import { fmtMoney } from "@/lib/format";
 
 const ALL_PLATFORMS = ["instagram", "tiktok", "youtube", "twitter", "facebook"];
 const PLATFORM_LABEL: Record<string, string> = {
-  instagram: "Instagram", tiktok: "TikTok", youtube: "YouTube", twitter: "X (Twitter)", facebook: "Facebook",
+  instagram: "Instagram", tiktok: "TikTok", youtube: "YouTube", twitter: "X", facebook: "Facebook",
 };
 
 type FormState = {

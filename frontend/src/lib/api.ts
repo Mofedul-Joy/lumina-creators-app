@@ -731,7 +731,7 @@ export const EXPERIENCE_PLATFORMS: { key: string; label: string }[] = [
   { key: "tiktok", label: "TikTok" },
   { key: "instagram", label: "Instagram" },
   { key: "youtube", label: "YouTube" },
-  { key: "twitter", label: "X / Twitter" },
+  { key: "twitter", label: "X" },
   { key: "facebook", label: "Facebook" },
   { key: "linkedin", label: "LinkedIn" },
   { key: "other", label: "Other" },

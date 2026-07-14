@@ -43,7 +43,7 @@ function StatTile({ label, value }: { label: string; value: string }) {
 
 const PLATFORM_LABELS: Record<string, string> = {
   tiktok: "TikTok", instagram: "Instagram", youtube: "YouTube",
-  twitter: "X / Twitter", facebook: "Facebook", linkedin: "LinkedIn", other: "Other",
+  twitter: "X", facebook: "Facebook", linkedin: "LinkedIn", other: "Other",
 };
 
 function ExperienceCard({ e, onDelete }: { e: ExperienceOut; onDelete: (id: string) => void }) {

@@ -7,6 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { BannerInput } from "@/components/admin/BannerInput";
+import { platformLabel } from "@/components/ui/PlatformIcon";
 import { getTemplate, type CampaignTemplate } from "@/lib/campaignTemplates";
 import {
   CYCLE_TRIGGERS,
@@ -734,13 +735,13 @@ export default function NewCampaignPage() {
                       key={p}
                       type="button"
                       onClick={() => togglePlatformFocus(p)}
-                      className={`cursor-pointer rounded-full border px-3 py-1.5 text-sm capitalize transition ${
+                      className={`cursor-pointer rounded-full border px-3 py-1.5 text-sm transition ${
                         f.platform_focus.includes(p)
                           ? "border-[var(--color-brand)] bg-[var(--color-brand)]/15 text-[var(--color-brand)]"
                           : "border-[var(--color-border)] text-[var(--color-text-secondary)]"
                       }`}
                     >
-                      {p}
+                      {platformLabel(p)}
                     </button>
                   ))}
                 </div>
