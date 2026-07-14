@@ -101,7 +101,11 @@ function VideoReviewInner() {
   const [hasToken, setHasToken] = useState(false);
   const [filter, setFilter] = useState<string>(urlStatus ?? "");
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
+  const [platformFilter, setPlatformFilter] = useState<string>("");  // "", instagram, tiktok, youtube
+  const [page, setPage] = useState(0);
   useEffect(() => { if (urlStatus !== null) setFilter(urlStatus); }, [urlStatus]);
+  // Any filter change resets to the first page.
+  useEffect(() => { setPage(0); }, [filter, campaignFilter, platformFilter]);
   const [detail, setDetail] = useState<AdminSubmission | null>(null);
 
   useEffect(() => {
@@ -130,20 +134,27 @@ function VideoReviewInner() {
     qc.invalidateQueries({ queryKey: ["dash-submissions"] });
   };
 
-  // Group rows by campaign, preserving the (newest-first) order they arrive in.
-  const groups = useMemo(() => {
-    const rows = listQ.data ?? [];
-    const map = new Map<string, { id: string; name: string; mode: string; rows: AdminSubmission[] }>();
-    for (const s of rows) {
-      const g = map.get(s.campaign_id) ?? { id: s.campaign_id, name: s.campaign_name, mode: s.campaign_mode, rows: [] };
-      g.rows.push(s);
-      map.set(s.campaign_id, g);
-    }
-    return [...map.values()];
+  // The distinct campaigns present (for the dropdown), in arrival order.
+  const campaigns = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const s of listQ.data ?? []) if (!map.has(s.campaign_id)) map.set(s.campaign_id, s.campaign_name);
+    return [...map.entries()].map(([id, name]) => ({ id, name }));
   }, [listQ.data]);
-  // Rev2 #6: a campaign dropdown to jump straight to one campaign's videos
-  // instead of scrolling the whole list.
-  const visibleGroups = campaignFilter === "all" ? groups : groups.filter((g) => g.id === campaignFilter);
+
+  // Bill: the "All campaigns" view is a FLAT, mixed grid (no per-campaign
+  // subheadings) — the campaign dropdown filters, the platform icons filter, and
+  // pagination keeps it to a few rows on screen at a time.
+  const PAGE_SIZE = 12;  // 4 across × 3 rows
+  const filteredRows = useMemo(() => {
+    return (listQ.data ?? []).filter((s) =>
+      (campaignFilter === "all" || s.campaign_id === campaignFilter) &&
+      (!platformFilter || s.platform === platformFilter)
+    );
+  }, [listQ.data, campaignFilter, platformFilter]);
+  const pageCount = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount - 1);
+  const pageRows = filteredRows.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+  const PLATFORM_FILTERS = ["instagram", "tiktok", "youtube"] as const;
 
   if (!ready || !hasToken)
     return (
@@ -168,7 +179,7 @@ function VideoReviewInner() {
       <main className="mx-auto max-w-6xl px-6 py-10">
         <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Submissions</h1>
         <p className="mt-2 max-w-xl text-[var(--color-text-secondary)]">
-          Every video creators submitted, grouped by campaign — watch, approve, reject, or send back for changes without leaving Lumina.
+          Every video creators submitted. Filter by campaign or platform, and page through the grid.
         </p>
 
         {/* status tabs + campaign jump */}
@@ -191,47 +202,91 @@ function VideoReviewInner() {
               </button>
             );
           })}
-          {groups.length > 0 ? (
-            <select
-              value={campaignFilter}
-              onChange={(e) => setCampaignFilter(e.target.value)}
-              aria-label="Jump to campaign"
-              className="ml-auto cursor-pointer rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-1.5 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
-            >
-              <option value="all">All campaigns</option>
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </select>
-          ) : null}
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            {/* platform filter — click an icon to show only that platform's posts */}
+            <div className="flex items-center gap-1 rounded-full bg-[var(--color-surface)] p-1">
+              {PLATFORM_FILTERS.map((p) => {
+                const on = platformFilter === p;
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setPlatformFilter(on ? "" : p)}
+                    aria-label={`Show ${p} only`}
+                    title={`Show ${p} only`}
+                    aria-pressed={on}
+                    className={`grid h-8 w-8 cursor-pointer place-items-center rounded-full transition ${
+                      on ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                    }`}
+                  >
+                    <PlatformIcon name={p} className="h-4 w-4" />
+                  </button>
+                );
+              })}
+            </div>
+            {campaigns.length > 0 ? (
+              <select
+                value={campaignFilter}
+                onChange={(e) => setCampaignFilter(e.target.value)}
+                aria-label="Filter by campaign"
+                className="cursor-pointer rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-1.5 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
+              >
+                <option value="all">All campaigns</option>
+                {campaigns.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            ) : null}
+          </div>
         </div>
 
-        {/* campaigns → videos */}
+        {/* flat, mixed grid — no per-campaign subheadings; 4 across, paginated */}
         {listQ.isLoading ? (
           <p className="mt-10 text-sm text-[var(--color-text-secondary)]">Loading videos…</p>
-        ) : visibleGroups.length === 0 ? (
+        ) : filteredRows.length === 0 ? (
           <div className="card-lumina mt-6 rounded-[var(--radius-card)] p-12 text-center">
             <p className="text-sm text-[var(--color-text-secondary)]">No videos in this view.</p>
           </div>
         ) : (
-          <div className="mt-8 space-y-10">
-            {visibleGroups.map((g, i) => (
-              <section key={i}>
-                <div className="mb-4 flex items-center gap-3">
-                  <h2 className="text-lg font-semibold text-[var(--color-text)]">{g.name}</h2>
-                  <span className="rounded-full bg-[var(--color-surface-2)] px-2.5 py-0.5 text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">
-                    {MODE_LABEL[g.mode] ?? g.mode}
-                  </span>
-                  <span className="text-sm text-[var(--color-text-muted)]">{g.rows.length} video{g.rows.length === 1 ? "" : "s"}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                  {g.rows.map((s) => (
-                    <VideoCard key={s.id} s={s} onOpen={() => setDetail(s)} />
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
+          <>
+            <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {pageRows.map((s) => (
+                <VideoCard key={s.id} s={s} onOpen={() => setDetail(s)} />
+              ))}
+            </div>
+
+            {pageCount > 1 ? (
+              <div className="mt-8 flex items-center justify-center gap-1.5">
+                <button
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={safePage === 0}
+                  className="cursor-pointer rounded-full border border-[var(--color-border)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)] disabled:opacity-40"
+                >
+                  ← Prev
+                </button>
+                {Array.from({ length: pageCount }, (_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setPage(i)}
+                    aria-current={i === safePage}
+                    className={`min-w-9 cursor-pointer rounded-full px-3 py-1.5 text-sm transition ${
+                      i === safePage
+                        ? "bg-[var(--color-brand)] font-semibold text-[var(--color-on-brand)]"
+                        : "text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                  disabled={safePage >= pageCount - 1}
+                  className="cursor-pointer rounded-full border border-[var(--color-border)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)] disabled:opacity-40"
+                >
+                  Next →
+                </button>
+              </div>
+            ) : null}
+          </>
         )}
       </main>
 

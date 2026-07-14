@@ -37,6 +37,60 @@ function StatCard({
   );
 }
 
+function fmtCompact(n: number): string {
+  if (n >= 1e9) return (n / 1e9).toFixed(1).replace(/\.0$/, "") + "B";
+  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, "") + "K";
+  return String(Math.round(n));
+}
+
+/** Polished SVG area chart for daily views — gridlines, value axis, smooth line
+ *  + gradient fill, and hover points. Scales to the card width (uniform aspect). */
+function ViewsAreaChart({ daily }: { daily: { date: string; views: number }[] }) {
+  const W = 640, H = 220, padL = 46, padR = 14, padT = 14, padB = 26;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const n = daily.length;
+  const max = Math.max(1, ...daily.map((d) => d.views));
+  const x = (i: number) => padL + (n <= 1 ? iw / 2 : (i / (n - 1)) * iw);
+  const y = (v: number) => padT + ih - (v / max) * ih;
+  const pts = daily.map((d, i) => [x(i), y(d.views)] as const);
+  const line = pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
+  const area = pts.length
+    ? `${line} L ${x(n - 1).toFixed(1)} ${(padT + ih).toFixed(1)} L ${x(0).toFixed(1)} ${(padT + ih).toFixed(1)} Z`
+    : "";
+  const grids = [0, 0.25, 0.5, 0.75, 1];
+  const xticks = n <= 1 ? [0] : [0, Math.floor((n - 1) / 2), n - 1];
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="mt-4 h-auto w-full" role="img" aria-label="Views tracked over time">
+      <defs>
+        <linearGradient id="viewsFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--color-brand)" stopOpacity="0.32" />
+          <stop offset="100%" stopColor="var(--color-brand)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {grids.map((g) => {
+        const gy = padT + ih - g * ih;
+        return (
+          <g key={g}>
+            <line x1={padL} y1={gy} x2={W - padR} y2={gy} stroke="var(--color-border)" strokeOpacity="0.45" strokeWidth="1" />
+            <text x={padL - 8} y={gy + 3.5} textAnchor="end" fontSize="10.5" fill="var(--color-text-muted)">{fmtCompact(g * max)}</text>
+          </g>
+        );
+      })}
+      {area ? <path d={area} fill="url(#viewsFill)" /> : null}
+      {line ? <path d={line} fill="none" stroke="var(--color-brand)" strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round" /> : null}
+      {pts.map((p, i) => (
+        <circle key={i} cx={p[0]} cy={p[1]} r="2.75" fill="var(--color-bg-deep)" stroke="var(--color-brand)" strokeWidth="1.75">
+          <title>{`${daily[i].date}: ${fmtCompact(daily[i].views)} views`}</title>
+        </circle>
+      ))}
+      {xticks.map((i) => (
+        <text key={i} x={x(i)} y={H - 8} textAnchor="middle" fontSize="10.5" fill="var(--color-text-muted)">{daily[i]?.date.slice(5)}</text>
+      ))}
+    </svg>
+  );
+}
+
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
@@ -76,7 +130,6 @@ export default function AdminDashboardPage() {
 
   const s = q.data;
   const a = analyticsQ.data;
-  const maxViews = a ? Math.max(1, ...a.daily.map((d) => d.views)) : 1;
 
   return (
     <div className="min-h-[100dvh]">
@@ -141,22 +194,18 @@ export default function AdminDashboardPage() {
         <div className="mt-8 grid gap-4 lg:grid-cols-2">
           {/* views over the last N days */}
           <div className="card-grad rounded-[var(--radius-card)] p-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-[var(--color-text)]">Views tracked</h2>
-              <span className="text-xs text-[var(--color-text-muted)]">last {a ? a.daily.length : 0} days</span>
-            </div>
-            {a ? (
-              <div className="mt-5 flex h-40 items-end gap-1.5">
-                {a.daily.map((d) => (
-                  <div key={d.date} className="group relative flex flex-1 flex-col items-center justify-end" title={`${d.date}: ${fmtInt(d.views)} views`}>
-                    <div className="w-full rounded-t bg-gradient-to-t from-[var(--color-brand)]/40 to-[var(--color-brand)] transition-all" style={{ height: `${Math.max(2, (d.views / maxViews) * 100)}%` }} />
-                    <span className="mt-1 text-[9px] text-[var(--color-text-muted)]">{d.date.slice(5)}</span>
-                  </div>
-                ))}
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-[var(--color-text)]">Views tracked</h2>
+                {a ? (
+                  <p className="tabular mt-1 text-2xl font-semibold text-[var(--color-brand-soft)]">
+                    {fmtInt(a.daily.reduce((s, d) => s + d.views, 0))}
+                  </p>
+                ) : null}
               </div>
-            ) : (
-              <p className="mt-6 text-sm text-[var(--color-text-muted)]">Loading…</p>
-            )}
+              <span className="rounded-full bg-[var(--color-surface-2)] px-2.5 py-1 text-xs text-[var(--color-text-muted)]">last {a ? a.daily.length : 0} days</span>
+            </div>
+            {a ? <ViewsAreaChart daily={a.daily} /> : <p className="mt-6 text-sm text-[var(--color-text-muted)]">Loading…</p>}
           </div>
 
           {/* top campaigns table */}
