@@ -77,21 +77,29 @@ def analytics(admin: Admin = Depends(get_current_admin), db: Session = Depends(g
     i = lambda v: int(v or 0)                          # noqa: E731
     d = lambda v: Decimal(v or 0)                      # noqa: E731
 
-    total_views = i(scalar(select(func.sum(Submission.views))))
-    total_spend = d(scalar(select(func.sum(Submission.estimated_amount))))
-    total_subs = i(scalar(select(func.count()).select_from(Submission)))
+    # Exclude fraud-flagged submissions from every headline KPI — their fake
+    # view/like counts must not inflate the network numbers (mirrors the
+    # is_suspicious filter public/report + claim already apply).
+    _legit = Submission.is_suspicious.is_(False)
+    total_views = i(scalar(select(func.sum(Submission.views)).where(_legit)))
+    total_spend = d(scalar(select(func.sum(Submission.estimated_amount)).where(_legit)))
+    total_subs = i(scalar(select(func.count()).select_from(Submission).where(_legit)))
     verified = i(scalar(
-        select(func.count()).select_from(Submission).where(Submission.verification_status == "verified")
+        select(func.count()).select_from(Submission).where(
+            _legit, Submission.verification_status == "verified")
     ))
     active_campaigns = i(scalar(
         select(func.count()).select_from(Campaign).where(Campaign.status == "active")
     ))
-    active_creators = i(scalar(select(func.count(func.distinct(Submission.creator_id)))))
-    total_likes = i(scalar(select(func.sum(Submission.likes))))
-    total_comments = i(scalar(select(func.sum(Submission.comments))))
+    active_creators = i(scalar(select(func.count(func.distinct(Submission.creator_id))).where(_legit)))
+    # Engagement only makes sense on posts that actually have views — a 0-view row
+    # with non-zero likes (bad/seed data) would otherwise push the rate past 100%.
+    eng_views = i(scalar(select(func.sum(Submission.views)).where(_legit, Submission.views > 0)))
+    total_likes = i(scalar(select(func.sum(Submission.likes)).where(_legit, Submission.views > 0)))
+    total_comments = i(scalar(select(func.sum(Submission.comments)).where(_legit, Submission.views > 0)))
 
     avg_cpm = (total_spend / total_views * 1000) if total_views else Decimal(0)
-    engagement = (Decimal(total_likes + total_comments) / total_views * 100) if total_views else Decimal(0)
+    engagement = (Decimal(total_likes + total_comments) / eng_views * 100) if eng_views else Decimal(0)
 
     # platform breakdown
     by_platform = [

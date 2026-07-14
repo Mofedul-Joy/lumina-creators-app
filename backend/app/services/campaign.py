@@ -404,18 +404,20 @@ def creator_is_accepted(db: Session, campaign_id: uuid.UUID, creator_id: uuid.UU
     ) is not None
 
 
-def join_campaign(db: Session, creator_id: uuid.UUID, slug: str) -> CampaignParticipation:
+def join_campaign(db: Session, creator_id: uuid.UUID, slug: str,
+                  require_profile: bool = True) -> CampaignParticipation:
     # Applying to a campaign requires a minimally-complete profile (name + at
     # least one social) — SideShift-style "complete your profile" wall. This is
-    # the AUTHENTICATED creator path only; the public email+URL submit flow is
-    # separate and intentionally ungated.
+    # the AUTHENTICATED creator path only; the public email+URL submit flow
+    # passes require_profile=False because a stranger has no profile yet.
     from app.services import socials_verify
 
-    eligible, _missing = socials_verify.apply_eligibility(db, creator_id)
-    if not eligible:
-        # String detail (not an object) so the frontend matches it directly and
-        # opens the "complete your profile" popup on this exact value.
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="profile_incomplete")
+    if require_profile:
+        eligible, _missing = socials_verify.apply_eligibility(db, creator_id)
+        if not eligible:
+            # String detail (not an object) so the frontend matches it directly
+            # and opens the "complete your profile" popup on this exact value.
+            raise HTTPException(status.HTTP_403_FORBIDDEN, detail="profile_incomplete")
 
     # A creator an admin removed must not be able to walk straight back in.
     creator = db.get(Creator, creator_id)
@@ -423,6 +425,12 @@ def join_campaign(db: Session, creator_id: uuid.UUID, slug: str) -> CampaignPart
         raise HTTPException(
             status.HTTP_403_FORBIDDEN,
             "This account can no longer join campaigns.",
+        )
+    # A creator flagged suspicious is frozen from new activity while under review.
+    if creator is not None and creator.is_suspicious:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "This account is under review and can't join campaigns right now.",
         )
 
     # Distinguish "closed" from "never existed" so the client can show a clear

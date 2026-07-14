@@ -28,6 +28,7 @@ from app.schemas.payouts import (
     WalletOut,
 )
 from app.services import payouts as svc
+from app.services.csv_export import sanitize_cell
 from app.services import payouts_v2 as svc2
 
 router = APIRouter(prefix="/payouts", tags=["admin-payouts"])
@@ -164,7 +165,7 @@ def reports_csv(
         yield buf.getvalue()
         buf.seek(0); buf.truncate(0)
         for r in rows:
-            writer.writerow([r["creator"], r["amount"], r["campaign"], r["paid_at"], r["method"], r["external_ref"]])
+            writer.writerow([sanitize_cell(c) for c in [r["creator"], r["amount"], r["campaign"], r["paid_at"], r["method"], r["external_ref"]]])
             yield buf.getvalue()
             buf.seek(0); buf.truncate(0)
 

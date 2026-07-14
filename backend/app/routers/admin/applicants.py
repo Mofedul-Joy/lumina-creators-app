@@ -44,6 +44,7 @@ from app.schemas.admin_applicants import (
     PendingCampaignItem,
 )
 from app.services import messaging as messaging_svc
+from app.services.csv_export import sanitize_cell
 
 router = APIRouter(prefix="/applicants", tags=["admin-applicants"])
 
@@ -266,13 +267,13 @@ def export_csv(
         buf.seek(0); buf.truncate(0)
         for part, camp, creator, prof in rows:
             a = agg.get(part.id, {"views": 0, "earnings": Decimal("0"), "posts": 0})
-            writer.writerow([
+            writer.writerow([sanitize_cell(c) for c in [
                 str(part.id), camp.name, creator.email,
                 prof.display_name if prof else "", part.status,
                 prof.country if prof else "", prof.city if prof else "",
                 prof.gender if prof else "", a["views"], a["earnings"], a["posts"],
                 part.joined_at.isoformat(),
-            ])
+            ]])
             yield buf.getvalue()
             buf.seek(0); buf.truncate(0)
 

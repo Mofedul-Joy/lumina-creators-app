@@ -32,6 +32,13 @@ def create_submission(db: Session, creator_id: uuid.UUID, campaign_slug: str, po
             status.HTTP_403_FORBIDDEN,
             "This account can no longer submit new posts.",
         )
+    # A creator an admin flagged as suspicious is frozen from new activity while
+    # under review — otherwise they could keep farming payouts after being flagged.
+    if creator is not None and creator.is_suspicious:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "This account is under review and can't submit new posts right now.",
+        )
 
     participation = db.scalar(
         select(CampaignParticipation).where(

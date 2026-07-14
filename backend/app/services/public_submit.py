@@ -50,5 +50,7 @@ def _get_or_create_profile(db: Session, creator_id: uuid.UUID) -> None:
 def submit_public(db: Session, campaign_slug: str, email: str, post_url: str) -> Submission:
     creator = _get_or_create_creator(db, email)
     _get_or_create_profile(db, creator.id)
-    campaign_svc.join_campaign(db, creator.id, campaign_slug)  # idempotent, no profile gate
+    # Public funnel: a stranger has no profile yet, so skip the profile-completeness
+    # wall (require_profile=False). Auto-accept still applies so they can submit.
+    campaign_svc.join_campaign(db, creator.id, campaign_slug, require_profile=False)
     return submission_svc.create_submission(db, creator.id, campaign_slug, post_url)
