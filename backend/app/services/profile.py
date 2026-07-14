@@ -81,9 +81,9 @@ def update_profile(db: Session, creator_id: uuid.UUID, data: dict) -> CreatorPro
                   "primary_language", "country", "city", "avatar_object_id",
                   "payout_method", "payout_address",
                   "payout_paypal", "payout_solana", "payout_whop"):
-        if field in data and data[field] is not None:
+        if field in data:
             setattr(prof, field, data[field])
-    if data.get("languages") is not None:
+    if "languages" in data:
         prof.languages = data["languages"]
     # Keep payout_address as the resolved address for the selected method so
     # the admin payout prefill + claim gate (which read payout_address) stay
