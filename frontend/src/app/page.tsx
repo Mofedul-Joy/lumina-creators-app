@@ -46,9 +46,11 @@ function CardInner({ c, completed }: { c: PublicCampaign; completed?: boolean })
             ))}
           </div>
         </div>
-        <h3 className={`mt-1 text-lg font-semibold text-[var(--color-text)] transition-colors ${completed ? "" : "group-hover:text-[var(--color-brand)]"}`}>
+        {/* h2 (not h3) so the landing page heading order is h1 → h2 with no
+            skipped level — fixes the Lighthouse "heading-order" a11y audit. */}
+        <h2 className={`mt-1 text-lg font-semibold text-[var(--color-text)] transition-colors ${completed ? "" : "group-hover:text-[var(--color-brand)]"}`}>
           {c.name}
-        </h3>
+        </h2>
         <div className="mt-3 flex items-baseline gap-2">
           <span className="tabular text-2xl font-semibold text-[var(--color-brand)]">{fmtMoney(c.cpm_rate)}</span>
           <span className="text-sm text-[var(--color-text-muted)]">CPM / 1,000 views</span>
