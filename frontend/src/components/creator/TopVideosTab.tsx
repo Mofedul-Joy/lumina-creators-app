@@ -13,26 +13,33 @@ import {
 import { fmtInt } from "@/lib/format";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { VideoModal } from "@/components/ui/VideoModal";
 
 const MAX = 3;
 const PLATFORMS: TopVideoPlatform[] = ["tiktok", "instagram"];
 
-function VideoCard({ v, onDelete }: { v: TopVideoOut; onDelete: (id: string) => void }) {
+function VideoCard({ v, onDelete, onPlay }: { v: TopVideoOut; onDelete: (id: string) => void; onPlay: () => void }) {
   return (
     <div className="group relative aspect-[9/16] w-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)]">
-      {v.thumbnail_url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <a href={v.video_url ?? "#"} target="_blank" rel="noopener noreferrer">
+      {/* click plays the video inline (VideoModal), not a dead new tab */}
+      <button type="button" onClick={onPlay} className="absolute inset-0 z-0 h-full w-full cursor-pointer" aria-label="Play video">
+        {v.thumbnail_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={v.thumbnail_url} alt="" className="h-full w-full object-cover" />
-        </a>
-      ) : (
-        <div className="grid h-full w-full place-items-center text-[var(--color-text-muted)]">
-          {v.platform ? <PlatformIcon name={v.platform} className="h-6 w-6" /> : null}
-        </div>
-      )}
+        ) : (
+          <div className="grid h-full w-full place-items-center text-[var(--color-text-muted)]">
+            {v.platform ? <PlatformIcon name={v.platform} className="h-6 w-6" /> : null}
+          </div>
+        )}
+        <span className="absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100">
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="ml-0.5 h-5 w-5"><path d="M8 5v14l11-7z" /></svg>
+          </span>
+        </span>
+      </button>
 
       {/* stats overlay */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/80 to-transparent p-2">
         <div className="flex items-center gap-3 text-[11px] font-medium text-white">
           <span className="tabular flex items-center gap-1">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" strokeWidth="2" /><circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="2" /></svg>
@@ -48,7 +55,7 @@ function VideoCard({ v, onDelete }: { v: TopVideoOut; onDelete: (id: string) => 
       <button
         onClick={() => onDelete(v.id)}
         aria-label="Remove video"
-        className="absolute right-1.5 top-1.5 grid h-7 w-7 cursor-pointer place-items-center rounded-full bg-black/50 text-white opacity-0 transition group-hover:opacity-100"
+        className="absolute right-1.5 top-1.5 z-20 grid h-7 w-7 cursor-pointer place-items-center rounded-full bg-black/50 text-white opacity-0 transition group-hover:opacity-100"
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
       </button>
@@ -63,6 +70,7 @@ export function TopVideosTab() {
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [playing, setPlaying] = useState<TopVideoOut | null>(null);
 
   const q = useQuery({ queryKey: ["top-videos"], queryFn: () => listTopVideos(token), enabled: !!token, retry: retryNonAuth });
   const videos = q.data ?? [];
@@ -164,10 +172,19 @@ export function TopVideosTab() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {videos.map((v) => <VideoCard key={v.id} v={v} onDelete={remove} />)}
+            {videos.map((v) => <VideoCard key={v.id} v={v} onDelete={remove} onPlay={() => setPlaying(v)} />)}
           </div>
         )}
       </div>
+
+      {playing ? (
+        <VideoModal
+          url={playing.video_url ?? ""}
+          platform={playing.platform}
+          thumbnailUrl={playing.thumbnail_url}
+          onClose={() => setPlaying(null)}
+        />
+      ) : null}
     </section>
   );
 }
