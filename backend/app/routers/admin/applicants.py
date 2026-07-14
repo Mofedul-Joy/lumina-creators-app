@@ -361,6 +361,12 @@ def update_applicant(
         ts_col = TIMESTAMP_COLUMN.get(body.status)
         if ts_col:
             setattr(part, ts_col, _now())
+        # Declining must revoke the accepted gate. The creator-accepted check is
+        # `accepted_at IS NOT NULL AND removed_at IS NULL`, so leaving accepted_at
+        # set after a decline let a declined (previously-accepted) creator keep
+        # submit access. Clear it on decline; re-accepting sets it again above.
+        if body.status == "declined":
+            part.accepted_at = None
         changes["status"] = {"from": old_status, "to": body.status}
     if body.admin_note is not None:
         changes["admin_note"] = {"from": part.admin_note, "to": body.admin_note}

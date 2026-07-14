@@ -379,8 +379,17 @@ def join_campaign(db: Session, creator_id: uuid.UUID, slug: str) -> CampaignPart
                 status.HTTP_403_FORBIDDEN,
                 "You were removed from this campaign.",
             )
+        # No approval gate (Rev2): a creator who already joined but predates this
+        # change may still be un-accepted — lift the gate retroactively so they
+        # can submit immediately, matching the new no-request behaviour.
+        if existing.accepted_at is None:
+            existing.accepted_at = _now()
+            db.commit()
         return existing
-    part = CampaignParticipation(campaign_id=campaign.id, creator_id=creator_id)
+    # No approval gate (Rev2): entering a campaign accepts the creator straight
+    # away so they can submit without waiting on an admin. Admins still see who
+    # joined and can remove/decline (which clears accepted_at) if needed.
+    part = CampaignParticipation(campaign_id=campaign.id, creator_id=creator_id, accepted_at=_now())
     db.add(part)
     db.commit()
     db.refresh(part)
