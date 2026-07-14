@@ -446,11 +446,14 @@ def recompute_completion(db: Session, creator_id: uuid.UUID) -> tuple[bool, list
 # Instagram AND TikTok, which blocked everyone). Verification remains an
 # optional trust badge; this also keeps this gate consistent with the lenient
 # `recompute_completion` that feeds GET /profile's `completed` flag.
-# Bill's no-friction model: joining requires only About (creator_type) + Socials
-# (≥1 account). A portfolio VIDEO is NOT required — a brand-new creator with no
-# sample yet must still be able to join. "videos" stays in the completeness
-# breakdown (for display) but is not part of the join gate.
-SECTION_ORDER = ["about", "socials"]
+# Bill's no-friction model: joining requires only Socials (≥1 account) + About
+# (creator_type). SOCIALS FIRST — it's the most important step and the reduced
+# onboarding wizard puts it at index 0, so `next_section` must resolve to socials
+# first; otherwise the ProfileGate would deep-link to the later 'type' step and
+# the creator would skip past (and never complete) the socials step. A portfolio
+# VIDEO is NOT required — a brand-new creator with no sample yet can still join.
+# "videos" stays in the completeness breakdown (for display) but doesn't gate.
+SECTION_ORDER = ["socials", "about"]
 
 
 def _verified(db: Session, creator_id: uuid.UUID, platform: str) -> bool:

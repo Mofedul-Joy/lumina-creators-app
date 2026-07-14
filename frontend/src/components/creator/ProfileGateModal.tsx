@@ -26,7 +26,9 @@ const SECTION_STEP: Record<ProfileSection, string> = {
   details: "details",
   payment: "payment",
 };
-const ORDER: ProfileSection[] = ["about", "socials", "videos", "details"];
+// Socials-first + only the two sections the join gate actually requires
+// (socials + about/creator-type). Videos/Details are no longer gating.
+const ORDER: ProfileSection[] = ["socials", "about"];
 
 export function ProfileGateModal({ open, onClose, returnTo }: { open: boolean; onClose: () => void; returnTo?: string }) {
   const [next, setNext] = useState<ProfileSection | null>(null);
@@ -64,8 +66,8 @@ export function ProfileGateModal({ open, onClose, returnTo }: { open: boolean; o
           Complete your profile first
         </h2>
         <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[var(--color-text-secondary)]">
-          Finish your profile (About, Socials and Videos) before you can join a campaign.
-          We&apos;ll take you straight to the part you still need.
+          Add a social account and tell us what kind of creator you are, then you can
+          join the campaign. We&apos;ll take you straight to the part you still need.
         </p>
 
         {/* section checklist so they see what's left */}
