@@ -38,7 +38,11 @@ _EDUCATION = {"in_high_school", "in_college", "graduated", "grad_school", "no_co
 # and socials/portfolio are dashboard incentives, not a signup gate. Kept as a
 # tuple (not deleted outright) since recompute_completion() still reports
 # `completed`/`missing` for the UI to show encouragement copy against.
-_REQUIRED_FIELDS: tuple[str, ...] = ()
+# Keep GET /profile's `completed` flag in lockstep with the join gate
+# (profile_completeness): both require creator_type + >=1 social + >=1 video, so
+# a profile that reads "complete" can actually join. Fields the join gate checks
+# via portfolio/social counts are added in recompute_completion below.
+_REQUIRED_FIELDS: tuple[str, ...] = ("creator_type",)
 
 
 def get_or_create_profile(db: Session, creator_id: uuid.UUID) -> CreatorProfile:
@@ -419,10 +423,17 @@ def recompute_completion(db: Session, creator_id: uuid.UUID) -> tuple[bool, list
 
 # ---- apply-readiness (this IS a gate — join_campaign requires it) ----
 # Mandatory before a creator can apply to a campaign, and mirrored by the
-# onboarding wizard's step-gating: About (creator type), Socials (Instagram AND
-# TikTok verified), Videos (>=1). Order matters — the "complete your profile"
+# onboarding wizard's step-gating: About (creator type), Socials (at least one
+# connected account), Videos (>=1). Order matters — the "complete your profile"
 # popup routes the creator to `next_section`. Details (birthday/location) and
 # Payment are NOT required — creators can fill those in later.
+#
+# NOTE: joining requires only that a creator has CONNECTED a social account, not
+# that they've bio-verified it — verification is a real bio-code scrape and is
+# far too much friction to gate the whole funnel on (and it required BOTH
+# Instagram AND TikTok, which blocked everyone). Verification remains an
+# optional trust badge; this also keeps this gate consistent with the lenient
+# `recompute_completion` that feeds GET /profile's `completed` flag.
 SECTION_ORDER = ["about", "socials", "videos"]
 
 
@@ -432,13 +443,18 @@ def _verified(db: Session, creator_id: uuid.UUID, platform: str) -> bool:
         SocialAccount.is_verified.is_(True))) is not None
 
 
+def _has_any_social(db: Session, creator_id: uuid.UUID) -> bool:
+    return db.scalar(select(SocialAccount.id).where(
+        SocialAccount.creator_id == creator_id)) is not None
+
+
 def profile_completeness(db: Session, creator_id: uuid.UUID) -> dict:
     prof = get_or_create_profile(db, creator_id)
     n_portfolio = db.scalar(select(func.count()).select_from(PortfolioItem).where(
         PortfolioItem.creator_id == creator_id))
     sections = {
         "about": bool((prof.creator_type or "").strip()),
-        "socials": _verified(db, creator_id, "instagram") and _verified(db, creator_id, "tiktok"),
+        "socials": _has_any_social(db, creator_id),
         "videos": bool(n_portfolio),
     }
     next_section = next((s for s in SECTION_ORDER if not sections[s]), None)
