@@ -417,15 +417,23 @@ def join_campaign(db: Session, creator_id: uuid.UUID, slug: str) -> CampaignPart
             )
         # No approval gate (Rev2): a creator who already joined but predates this
         # change may still be un-accepted — lift the gate retroactively so they
-        # can submit immediately, matching the new no-request behaviour.
+        # can submit immediately, matching the new no-request behaviour. Also
+        # advance status off "joined" so the admin Applicants pipeline shows
+        # them under "Accepted", not "New" (they need no review under Rev2).
         if existing.accepted_at is None:
             existing.accepted_at = _now()
-            db.commit()
+        if existing.status == "joined":
+            existing.status = "accepted"
+        db.commit()
         return existing
     # No approval gate (Rev2): entering a campaign accepts the creator straight
     # away so they can submit without waiting on an admin. Admins still see who
-    # joined and can remove/decline (which clears accepted_at) if needed.
-    part = CampaignParticipation(campaign_id=campaign.id, creator_id=creator_id, accepted_at=_now())
+    # joined and can remove/decline (which clears accepted_at) if needed. status
+    # starts at "accepted" (not the default "joined") so the Applicants pipeline
+    # buckets them correctly — submissions never mutate participation.status.
+    part = CampaignParticipation(
+        campaign_id=campaign.id, creator_id=creator_id, accepted_at=_now(), status="accepted"
+    )
     db.add(part)
     db.commit()
     db.refresh(part)
