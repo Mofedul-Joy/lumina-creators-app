@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Iterable, Optional
 
 from fastapi import HTTPException, status
@@ -42,7 +42,9 @@ def _now():
 
 
 def _q(amount) -> Decimal:
-    return Decimal(amount or 0).quantize(_CENTS)
+    # ROUND_HALF_UP to match compute_estimated_amount (scrape_worker) — otherwise
+    # the two payout code paths round half-cents differently and drift apart.
+    return Decimal(amount or 0).quantize(_CENTS, rounding=ROUND_HALF_UP)
 
 
 # ── auto-calc ────────────────────────────────────────────────────────────────
@@ -65,6 +67,24 @@ def _total_views(db: Session, campaign_id: uuid.UUID, creator_id: uuid.UUID) -> 
             Submission.verification_status == "verified",
         )
     ) or 0
+
+
+def _cpm_earnings_snapshot(db: Session, campaign_id: uuid.UUID, creator_id: uuid.UUID) -> Decimal:
+    """CPM earnings summed from each verified submission's stored
+    `estimated_amount` — which the scrape worker computed from that post's
+    `cpm_rate_snapshot` at scrape time. Using the snapshot (not the live
+    `campaign.cpm_rate`) means a later admin rate-edit can't retroactively
+    inflate owed on already-paid views, and keeps `gross` equal to the sum of
+    the PayoutItem rows actually written (same verified + non-suspicious filter)."""
+    total = db.scalar(
+        select(func.coalesce(func.sum(Submission.estimated_amount), 0)).where(
+            Submission.campaign_id == campaign_id,
+            Submission.creator_id == creator_id,
+            Submission.verification_status == "verified",
+            Submission.is_suspicious.is_(False),
+        )
+    )
+    return _q(total)
 
 
 def _already_paid_for_participation(db: Session, campaign_id: uuid.UUID, creator_id: uuid.UUID) -> Decimal:
@@ -107,10 +127,10 @@ def compute_owed_for_participation(
     if payment_type == "fixed":
         fixed = _q(campaign.fixed_amount)
     elif payment_type == "cpm":
-        cpm = _q((Decimal(total_views) / Decimal(1000)) * Decimal(campaign.cpm_rate or 0))
+        cpm = _cpm_earnings_snapshot(db, campaign_id, creator_id)
     elif payment_type == "mixed":
         fixed = _q(campaign.fixed_amount)
-        cpm = _q((Decimal(total_views) / Decimal(1000)) * Decimal(campaign.cpm_rate or 0))
+        cpm = _cpm_earnings_snapshot(db, campaign_id, creator_id)
     elif payment_type == "per_post":
         per_post = _q(Decimal(approved_count) * Decimal(campaign.per_post_amount or 0))
     # per_hour -> 0 in MVP, nothing to add.
@@ -183,10 +203,15 @@ def compute_owed_all(db: Session) -> list[dict]:
     }
 
     for campaign in campaigns:
+        # Eligibility keys off accepted_at (set the moment a creator joins under
+        # the Rev2 no-approval flow), NOT the pipeline `status` enum. The enum
+        # stays "joined" for auto-accepted creators, so the old status filter
+        # made every such creator invisible to payouts — they'd never get paid.
         participations = db.scalars(
             select(CampaignParticipation).where(
                 CampaignParticipation.campaign_id == campaign.id,
-                CampaignParticipation.status.in_(["approved", "accepted", "submitted"]),
+                CampaignParticipation.accepted_at.is_not(None),
+                CampaignParticipation.removed_at.is_(None),
             )
         ).all()
         for part in participations:
@@ -229,11 +254,21 @@ def compute_owed_for_creator(db: Session, creator_id: uuid.UUID) -> list[dict]:
 
 # ── wallet ───────────────────────────────────────────────────────────────────
 
-def wallet_get(db: Session, admin_id: Optional[uuid.UUID] = None) -> Wallet:
+def wallet_get(db: Session, admin_id: Optional[uuid.UUID] = None, for_update: bool = False) -> Wallet:
     """System-wide wallet (admin_id IS NULL) — seeded by migration 0016.
     `admin_id` is accepted for future per-admin wallets but MVP uses the
-    single system wallet regardless of caller."""
-    wallet = db.scalar(select(Wallet).where(Wallet.admin_id.is_(None)))
+    single system wallet regardless of caller.
+
+    `for_update=True` takes a row lock (SELECT ... FOR UPDATE) — the pay paths
+    use it so concurrent Pay-All/Pay-One calls serialize on this one row. That
+    single lock is what prevents (a) the same owed amount being paid twice by
+    racing requests, and (b) lost-update on the balance decrement, because the
+    second txn blocks until the first commits and then recomputes owed against
+    the now-committed Payout rows."""
+    stmt = select(Wallet).where(Wallet.admin_id.is_(None))
+    if for_update:
+        stmt = stmt.with_for_update()
+    wallet = db.scalar(stmt)
     if wallet is None:
         # Defensive fallback in case the seed row is missing (e.g. tests).
         wallet = Wallet(admin_id=None, available_balance=_ZERO, pending_balance=_ZERO, currency="USD")
@@ -318,9 +353,12 @@ def _pay_creator_rows(db: Session, admin_id: uuid.UUID, wallet: Wallet, rows: It
         amount = _q(row["amount_owed"])
         if amount <= 0:
             continue
-        if wallet.available_balance < amount:
-            # Not enough funds — skip this creator rather than fail the whole batch.
-            continue
+        # No wallet-balance gate: there is no real payment rail (the wallet is a
+        # mock ledger and the admin-facing top-up UI was removed), so a payout is
+        # a record of money owed being settled, not a funded transfer. Gating on
+        # a fictional balance would only block legitimate payouts with no in-app
+        # way to resolve it. The balance still tracks (can go negative) for the
+        # ledger's sake.
         part: CampaignParticipation = row["_participation"]
         campaign: Campaign = row["_campaign"]
         calc = row["_calc"]
@@ -388,7 +426,10 @@ def _pay_creator_rows(db: Session, admin_id: uuid.UUID, wallet: Wallet, rows: It
 
 
 def pay_all(db: Session, admin_id: uuid.UUID, creator_ids: Optional[list[str]] = None) -> dict:
-    wallet = wallet_get(db)
+    # Lock the wallet row FIRST, then compute owed — this serializes concurrent
+    # pay calls so a racing request recomputes owed only after the prior payout
+    # has committed (net_owed then drops to 0 → no double-pay).
+    wallet = wallet_get(db, for_update=True)
     rows = compute_owed_all(db)
     if creator_ids:
         wanted = set(creator_ids)
@@ -403,13 +444,17 @@ def pay_all(db: Session, admin_id: uuid.UUID, creator_ids: Optional[list[str]] =
 
 
 def pay_one(db: Session, admin_id: uuid.UUID, creator_id: uuid.UUID) -> Payout:
-    wallet = wallet_get(db)
+    # Lock the wallet row before computing owed (see pay_all) so two concurrent
+    # Pay-One clicks on the same creator can't both create a payout.
+    wallet = wallet_get(db, for_update=True)
     rows = compute_owed_for_creator(db, creator_id)
     if not rows:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "No payable owed amount for this creator")
     created = _pay_creator_rows(db, admin_id, wallet, rows)
     if not created:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Insufficient wallet balance to pay this creator")
+        # Reachable only if the owed rows netted to <= 0 between compute and pay
+        # (e.g. a racing request just paid them) — no funds gate exists anymore.
+        raise HTTPException(status.HTTP_409_CONFLICT, "This creator's owed amount was already paid")
     db.commit()
     for p in created:
         db.refresh(p)

@@ -510,6 +510,7 @@ export type CreatorRichDetail = {
   creator_type: string | null;
   total_views: number;
   total_earned: number | string;
+  total_paid: number | string;
   total_posts: number;
   total_likes: number;
   engagement_rate: number;

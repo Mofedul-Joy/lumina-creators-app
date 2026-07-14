@@ -16,6 +16,7 @@ from app.models import (
     Creator,
     CreatorExperience,
     CreatorProfile,
+    Payout,
     PortfolioItem,
     SocialAccount,
     StorageObject,
@@ -290,6 +291,14 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
     total_views = int(agg_row[0]) if agg_row else 0
     total_earned = Decimal(agg_row[1]) if agg_row else Decimal("0")
     total_posts = int(agg_row[2]) if agg_row else 0
+    # Money actually paid out — sums Payout rows (all payment types), NOT
+    # estimated_amount which only covers CPM. Without this a creator paid on a
+    # fixed/per-post campaign sees $0 on their own dashboard (admin↔creator desync).
+    total_paid = Decimal(db.scalar(
+        select(func.coalesce(func.sum(Payout.amount), 0)).where(
+            Payout.creator_id == c.id, Payout.status == "paid"
+        )
+    ) or 0)
     total_likes = int(agg_row[3]) if agg_row else 0
     interactions = total_likes + int(agg_row[4] or 0) + int(agg_row[5] or 0) if agg_row else 0
     engagement_rate = round(interactions / total_views * 100, 1) if total_views else 0.0
@@ -349,6 +358,7 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
         "creator_type": prof.creator_type if prof else None,
         "total_views": total_views,
         "total_earned": total_earned,
+        "total_paid": total_paid,
         "total_posts": total_posts,
         "total_likes": total_likes,
         "engagement_rate": engagement_rate,

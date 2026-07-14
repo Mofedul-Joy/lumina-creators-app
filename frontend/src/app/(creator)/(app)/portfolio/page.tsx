@@ -148,8 +148,9 @@ export default function PortfolioPage() {
 
       {/* Performance */}
       <h2 className="mb-4 mt-10 text-lg font-semibold text-[var(--color-text)]">Performance</h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Earned" value={fmtMoney(c.total_earned)} icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>} />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <StatCard label="Paid" value={fmtMoney(c.total_paid)} icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>} />
+        <StatCard label="Earned (est.)" value={fmtMoney(c.total_earned)} icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>} />
         <StatCard label="Views" value={fmtInt(c.total_views)} icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" strokeWidth="1.8" /><circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.8" /></svg>} />
         <StatCard label="Engagement" value={`${c.engagement_rate}%`} icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M23 6l-9.5 9.5-5-5L1 18M17 6h6v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>} />
         <StatCard label="Likes" value={fmtInt(c.total_likes)} icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 10v11M2 13v6a2 2 0 002 2h13a2 2 0 002-1.7l1.2-7A2 2 0 0019.2 10H14l1-4a2 2 0 00-2-2.5L7 10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>} />

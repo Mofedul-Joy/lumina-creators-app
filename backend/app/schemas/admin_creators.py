@@ -146,6 +146,7 @@ class CreatorRichDetail(BaseModel):
     # Aggregated stats.
     total_views: int = 0
     total_earned: Decimal = Decimal("0")
+    total_paid: Decimal = Decimal("0")  # actual Payout sum (all payment types)
     total_posts: int = 0
     total_likes: int = 0
     engagement_rate: float = 0.0
