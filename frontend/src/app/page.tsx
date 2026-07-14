@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { getAuthToken } from "@/lib/auth";
 import { publicApi, type PublicCampaign } from "@/lib/api";
 import { campaignImage } from "@/lib/campaignTheme";
 import { fmtMoney } from "@/lib/format";
@@ -67,9 +69,8 @@ function CardInner({ c, completed }: { c: PublicCampaign; completed?: boolean })
   );
 }
 
-function CampaignCard({ c, completed }: { c: PublicCampaign; completed?: boolean }) {
-  // Completed campaigns are read-only — no submit flow, so render a plain card
-  // instead of a link into /c/[slug] (which only resolves for active ones).
+function CampaignCard({ c, completed, onEnter }: { c: PublicCampaign; completed?: boolean; onEnter: (c: PublicCampaign) => void }) {
+  // Completed campaigns are read-only — no submit flow, so render a plain card.
   if (completed) {
     return (
       <div className="card-lumina flex flex-col overflow-hidden rounded-[var(--radius-card)]">
@@ -77,18 +78,29 @@ function CampaignCard({ c, completed }: { c: PublicCampaign; completed?: boolean
       </div>
     );
   }
+  // Entering a campaign requires an account — a logged-out visitor gets the
+  // sign-in/up prompt; a signed-in creator goes straight to the campaign.
   return (
-    <Link
-      href={`/c/${c.slug}`}
-      className="card-lumina card-interactive group flex flex-col overflow-hidden rounded-[var(--radius-card)]"
+    <button
+      type="button"
+      onClick={() => onEnter(c)}
+      className="card-lumina card-interactive group flex flex-col overflow-hidden rounded-[var(--radius-card)] text-left"
     >
       <CardInner c={c} />
-    </Link>
+    </button>
   );
 }
 
 export default function Home() {
+  const router = useRouter();
   const [view, setView] = useState<"live" | "completed">("live");
+  const [authPrompt, setAuthPrompt] = useState(false);
+
+  const enterCampaign = (c: PublicCampaign) => {
+    // Signed-in creators go straight in; everyone else is asked to sign in / up.
+    if (getAuthToken()) router.push(`/campaigns/${c.slug}`);
+    else setAuthPrompt(true);
+  };
   const q = useQuery({
     queryKey: ["public-campaigns", view],
     queryFn: () => publicApi.campaigns(view === "completed" ? "completed" : "active"),
@@ -209,12 +221,48 @@ export default function Home() {
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {campaigns.map((c) => (
-                <CampaignCard key={c.id} c={c} completed={view === "completed"} />
+                <CampaignCard key={c.id} c={c} completed={view === "completed"} onEnter={enterCampaign} />
               ))}
             </div>
           )}
         </div>
       </main>
+
+      {authPrompt ? (
+        <div className="fixed inset-0 z-50 grid place-items-center p-4" role="dialog" aria-modal="true" aria-labelledby="auth-prompt-title">
+          <button aria-label="Close" onClick={() => setAuthPrompt(false)} className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
+          <div className="card-lumina relative w-full max-w-sm rounded-[var(--radius-card)] p-6 text-center">
+            <button
+              onClick={() => setAuthPrompt(false)}
+              aria-label="Close"
+              className="absolute right-3 top-3 grid h-8 w-8 cursor-pointer place-items-center rounded-full text-[var(--color-text-muted)] transition hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text)]"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            </button>
+            <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[var(--color-brand)]/12 text-[var(--color-brand)]">
+              <LuminaMark size={26} />
+            </span>
+            <h2 id="auth-prompt-title" className="mt-4 text-lg font-semibold text-[var(--color-text)]">Sign up or sign in to enter the campaign</h2>
+            <p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">
+              Create a free Lumina account (or sign in) to enter this campaign and start earning on your posts.
+            </p>
+            <div className="mt-5 flex flex-col gap-2">
+              <Link
+                href="/signup"
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[var(--color-brand)] text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
+              >
+                Sign up
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[var(--color-border)] text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-brand)]"
+              >
+                Sign in
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
