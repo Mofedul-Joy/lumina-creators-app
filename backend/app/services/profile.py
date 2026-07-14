@@ -112,7 +112,10 @@ def add_social(db: Session, creator_id: uuid.UUID, data: dict) -> SocialAccount:
     platform = data["platform"]
     if platform not in _PLATFORMS:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid platform")
-    handle = (data.get("handle") or "").lstrip("@").strip()
+    # Lowercase: IG/TikTok/etc handles are case-insensitive, so "@Nova" and "@nova"
+    # are the SAME account — normalizing prevents duplicate case-variant rows and
+    # keeps the stored profile_url consistent.
+    handle = (data.get("handle") or "").lstrip("@").strip().lower()
     if not handle:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Handle is required")
     if data.get("follower_count", 0) < 0:
@@ -205,7 +208,10 @@ def add_portfolio(db: Session, creator_id: uuid.UUID, data: dict) -> PortfolioIt
     except Exception:  # noqa: BLE001
         thumb = None
     item = PortfolioItem(
-        creator_id=creator_id, video_url=canonical,
+        # Store the RAW url, not the canonical one — canonicalize_url strips the
+        # query string, which for YouTube throws away the ?v=<id> and leaves a
+        # dead "youtube.com/watch" link. The raw url stays clickable/embeddable.
+        creator_id=creator_id, video_url=video_url,
         thumbnail_url=thumb, brand_name=data.get("brand_name"),
         caption=data.get("caption"), platform=platform,
     )
@@ -440,7 +446,11 @@ def recompute_completion(db: Session, creator_id: uuid.UUID) -> tuple[bool, list
 # Instagram AND TikTok, which blocked everyone). Verification remains an
 # optional trust badge; this also keeps this gate consistent with the lenient
 # `recompute_completion` that feeds GET /profile's `completed` flag.
-SECTION_ORDER = ["about", "socials", "videos"]
+# Bill's no-friction model: joining requires only About (creator_type) + Socials
+# (≥1 account). A portfolio VIDEO is NOT required — a brand-new creator with no
+# sample yet must still be able to join. "videos" stays in the completeness
+# breakdown (for display) but is not part of the join gate.
+SECTION_ORDER = ["about", "socials"]
 
 
 def _verified(db: Session, creator_id: uuid.UUID, platform: str) -> bool:

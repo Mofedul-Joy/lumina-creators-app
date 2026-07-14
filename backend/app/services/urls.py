@@ -45,7 +45,14 @@ def bare_host(raw: str) -> str:
 
 
 def url_hash(raw: str) -> str:
-    return hashlib.sha256(canonicalize_url(raw).encode("utf-8")).hexdigest()
+    # Dedup on the platform-native post key (match_key), NOT the bare canonical
+    # URL. canonicalize_url strips the query string, so every youtube.com/watch?v=X
+    # collapsed to the same hash — the first YouTube submission blocked all others
+    # (false 409). match_key keeps the video/post ID, so distinct videos hash
+    # differently while URL aliases of the SAME post still collapse.
+    plat = detect_platform(raw)
+    key = match_key(plat, raw) if plat else canonicalize_url(raw)
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()
 
 
 def detect_platform(raw: str) -> str | None:

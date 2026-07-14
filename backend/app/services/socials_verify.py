@@ -42,7 +42,7 @@ def _gen_code() -> str:
 
 
 def _clean_handle(handle: str) -> str:
-    h = (handle or "").strip().lstrip("@").strip()
+    h = (handle or "").strip().lstrip("@").strip().lower()
     if not h:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Handle is required")
     return h
