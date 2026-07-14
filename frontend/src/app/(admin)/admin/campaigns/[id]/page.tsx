@@ -18,7 +18,7 @@ import {
   type CampaignOverviewCreator,
 } from "@/lib/admin";
 import { getAdminToken } from "@/lib/auth";
-import { isAuthError } from "@/lib/api";
+import { isAuthError, retryNonAuth} from "@/lib/api";
 import { campaignImage } from "@/lib/campaignTheme";
 import { kindLabel, scheduleLabel } from "@/lib/campaignFlow";
 import { fmtInt, fmtMoney } from "@/lib/format";
@@ -100,13 +100,13 @@ export default function CampaignDetailPage() {
     queryKey: ["campaign", id],
     queryFn: () => getAdminCampaign(id),
     enabled: ready && !!token && !!id,
-    retry: false,
+    retry: retryNonAuth,
   });
   const ovQ = useQuery({
     queryKey: ["campaign-overview", id],
     queryFn: () => getCampaignOverview(id),
     enabled: ready && !!token && !!id,
-    retry: false,
+    retry: retryNonAuth,
   });
   useEffect(() => {
     if (campQ.isError && isAuthError(campQ.error)) router.replace("/admin/login");

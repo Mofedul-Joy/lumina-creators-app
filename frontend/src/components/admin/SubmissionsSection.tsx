@@ -1,5 +1,6 @@
 "use client";
 
+import { retryNonAuth } from "@/lib/api";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -46,7 +47,7 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
       platform: platformFilter || undefined,
       suspicious: showFlagged || undefined,
     }),
-    retry: false,
+    retry: retryNonAuth,
   });
 
   const all = q.data ?? [];

@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { clearClientToken, getClientToken, setClientToken } from "@/lib/auth";
 import { listClientCampaigns, listClientSubmissions, type ClientCampaign } from "@/lib/client";
-import { downloadCsv, isAuthError } from "@/lib/api";
+import { downloadCsv, isAuthError, retryNonAuth} from "@/lib/api";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { Select } from "@/components/ui/Select";
 import { SkeletonCardGrid, SkeletonStats } from "@/components/ui/Skeleton";
@@ -164,7 +164,7 @@ function DashboardInner() {
     queryKey: ["client-campaigns"],
     queryFn: listClientCampaigns,
     enabled: ready && hasToken,
-    retry: false,
+    retry: retryNonAuth,
   });
 
   const campaigns = q.data ?? [];

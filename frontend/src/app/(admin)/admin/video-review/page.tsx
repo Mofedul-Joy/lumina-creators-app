@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { SubmissionDetailModal } from "@/components/admin/SubmissionDetailModal";
 import { getAdminToken } from "@/lib/auth";
-import { isAuthError } from "@/lib/api";
+import { isAuthError, retryNonAuth} from "@/lib/api";
 import { getSubmissionCounts, listSubmissions, type AdminSubmission } from "@/lib/admin";
 import { fmtInt } from "@/lib/format";
 
@@ -111,12 +111,12 @@ function VideoReviewInner() {
   }, [ready, hasToken, router]);
 
   const enabled = ready && hasToken;
-  const countsQ = useQuery({ queryKey: ["sub-counts"], queryFn: getSubmissionCounts, enabled, retry: false });
+  const countsQ = useQuery({ queryKey: ["sub-counts"], queryFn: getSubmissionCounts, enabled, retry: retryNonAuth });
   const listQ = useQuery({
     queryKey: ["video-review", filter],
     queryFn: () => listSubmissions({ status: filter || undefined }),
     enabled,
-    retry: false,
+    retry: retryNonAuth,
   });
   useEffect(() => {
     if (listQ.isError && isAuthError(listQ.error)) router.replace("/admin/login");

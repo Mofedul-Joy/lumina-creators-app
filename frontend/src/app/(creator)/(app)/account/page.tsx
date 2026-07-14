@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { getAuthToken } from "@/lib/auth";
-import { deleteExperience, getProfile, isAuthError, listExperiences, type ExperienceOut } from "@/lib/api";
+import { deleteExperience, getProfile, isAuthError, listExperiences, type ExperienceOut, retryNonAuth} from "@/lib/api";
 import { AddExperienceModal } from "@/components/creator/AddExperienceModal";
 import { PayoutDetailsCard } from "@/components/creator/PayoutDetailsCard";
 import { OnboardingWizard } from "@/components/creator/onboarding/OnboardingWizard";
@@ -130,10 +130,10 @@ export default function AccountPage() {
 
   const enabled = ready && !!token;
   const bearer = token ?? "";
-  const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfile(bearer), enabled, retry: false });
-  const gamificationQ = useQuery({ queryKey: ["my-gamification"], queryFn: getMyGamification, enabled, retry: false });
-  const subsQ = useQuery({ queryKey: ["submissions"], queryFn: listSubmissions, enabled, retry: false });
-  const expQ = useQuery({ queryKey: ["experiences"], queryFn: () => listExperiences(bearer), enabled, retry: false });
+  const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfile(bearer), enabled, retry: retryNonAuth });
+  const gamificationQ = useQuery({ queryKey: ["my-gamification"], queryFn: getMyGamification, enabled, retry: retryNonAuth });
+  const subsQ = useQuery({ queryKey: ["submissions"], queryFn: listSubmissions, enabled, retry: retryNonAuth });
+  const expQ = useQuery({ queryKey: ["experiences"], queryFn: () => listExperiences(bearer), enabled, retry: retryNonAuth });
 
   async function removeExperience(id: string) {
     if (!token) return;

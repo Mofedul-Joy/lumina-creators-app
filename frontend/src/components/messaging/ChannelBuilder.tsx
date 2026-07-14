@@ -1,5 +1,6 @@
 "use client";
 
+import { retryNonAuth } from "@/lib/api";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { listCreators } from "@/lib/admin";
@@ -14,7 +15,7 @@ export function ChannelBuilder({ onClose, onCreated }: { onClose: () => void; on
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState<Record<string, string>>({}); // id → name
 
-  const creatorsQ = useQuery({ queryKey: ["admin-creators-lite"], queryFn: () => listCreators({}), retry: false });
+  const creatorsQ = useQuery({ queryKey: ["admin-creators-lite"], queryFn: () => listCreators({}), retry: retryNonAuth });
   const creators = useMemo(() => {
     const list = creatorsQ.data ?? [];
     const q = search.trim().toLowerCase();

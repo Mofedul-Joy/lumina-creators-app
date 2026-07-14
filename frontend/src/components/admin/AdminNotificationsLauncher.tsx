@@ -1,5 +1,6 @@
 "use client";
 
+import { retryNonAuth } from "@/lib/api";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -50,7 +51,7 @@ export function AdminNotificationsLauncher() {
     queryKey: ["admin-notifications"],
     queryFn: adminListNotifications,
     enabled: !!token,
-    retry: false,
+    retry: retryNonAuth,
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
   }).data ?? [];

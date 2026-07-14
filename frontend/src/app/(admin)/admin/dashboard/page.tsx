@@ -9,7 +9,7 @@ import { AdminTabs } from "@/components/admin/AdminTabs";
 import { SubmissionsSection } from "@/components/admin/SubmissionsSection";
 import { getAdminToken } from "@/lib/auth";
 import { getAdminStats } from "@/lib/admin";
-import { isAuthError } from "@/lib/api";
+import { isAuthError, retryNonAuth} from "@/lib/api";
 import { fmtInt } from "@/lib/format";
 
 function StatCard({
@@ -54,7 +54,7 @@ export default function AdminDashboardPage() {
     queryKey: ["admin-stats"],
     queryFn: getAdminStats,
     enabled: ready && hasToken,
-    retry: false,
+    retry: retryNonAuth,
   });
   useEffect(() => {
     if (q.isError && isAuthError(q.error)) router.replace("/admin/login");

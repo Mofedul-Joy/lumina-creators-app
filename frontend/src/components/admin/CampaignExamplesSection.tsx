@@ -1,5 +1,6 @@
 "use client";
 
+import { retryNonAuth } from "@/lib/api";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addCampaignExample, deleteCampaignExample, listCampaignExamples } from "@/lib/admin";
@@ -16,7 +17,7 @@ export function CampaignExamplesSection({ campaignId }: { campaignId: string }) 
   const q = useQuery({
     queryKey: ["campaign-examples", campaignId],
     queryFn: () => listCampaignExamples(campaignId),
-    retry: false,
+    retry: retryNonAuth,
   });
   const items = q.data ?? [];
 

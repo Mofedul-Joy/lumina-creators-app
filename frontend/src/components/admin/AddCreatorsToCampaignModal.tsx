@@ -1,5 +1,6 @@
 "use client";
 
+import { retryNonAuth } from "@/lib/api";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -66,7 +67,7 @@ export function AddCreatorsToCampaignModal({
     queryKey: ["invite-creators", q],
     queryFn: () => listCreators(q ? { q } : {}),
     enabled: open && tab === "existing",
-    retry: false,
+    retry: retryNonAuth,
   });
   const creators: CreatorRow[] = creatorsQ.data ?? [];
 

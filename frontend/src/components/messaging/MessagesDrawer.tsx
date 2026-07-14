@@ -1,5 +1,6 @@
 "use client";
 
+import { retryNonAuth } from "@/lib/api";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -44,7 +45,7 @@ function CampaignApprovalBar({ creatorId }: { creatorId: string }) {
   const q = useQuery({
     queryKey: ["pending-campaigns", creatorId],
     queryFn: () => listCreatorPendingCampaigns(creatorId),
-    retry: false,
+    retry: retryNonAuth,
   });
   const m = useMutation({
     mutationFn: ({ id, status }: { id: string; status: "accepted" | "declined" }) => updateApplicant(id, { status }),
@@ -136,7 +137,7 @@ function SubmissionReviewBar({ creatorId }: { creatorId: string }) {
   const q = useQuery({
     queryKey: ["pending-reviews", creatorId],
     queryFn: () => listCreatorPendingReviews(creatorId),
-    retry: false,
+    retry: retryNonAuth,
   });
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["pending-reviews", creatorId] });
@@ -226,7 +227,7 @@ export function MessagesDrawer({
     queryKey: ["conversations", realm],
     queryFn: () => listConversations(realm),
     enabled: open,
-    retry: false,
+    retry: retryNonAuth,
     refetchInterval: open ? 8000 : false,
   });
   const conversations = useMemo(() => convsQ.data ?? [], [convsQ.data]);
@@ -249,7 +250,7 @@ export function MessagesDrawer({
     queryKey: ["messages", realm, activeId],
     queryFn: () => listMessages(realm, activeId!),
     enabled: open && !!activeId,
-    retry: false,
+    retry: retryNonAuth,
     refetchInterval: open && activeId ? 5000 : false,
   });
   const messages = msgsQ.data ?? [];

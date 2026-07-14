@@ -14,8 +14,7 @@ import {
   CREATOR_TYPES, EDUCATION_LEVELS, GENDERS, PAYOUT_METHODS,
   type CreatorType, type EducationLevel, type Gender, type PayoutMethod, type Platform, type ProfileIn,
   addPortfolio, addSocial, confirmSocialVerify, deletePortfolio, deleteSocial, getProfile, listPortfolio, listSocials,
-  startSocialVerify, updateProfile, uploadFile, uploadPortfolioVideo,
-} from "@/lib/api";
+  startSocialVerify, updateProfile, uploadFile, uploadPortfolioVideo, retryNonAuth} from "@/lib/api";
 import { isValidVideoUrl, platformFromUrl } from "@/lib/videoLink";
 import { COUNTRIES } from "@/lib/countries";
 
@@ -107,9 +106,9 @@ export function OnboardingWizard() {
   const bearer = token ?? "";
   const enabled = ready && !!token;
 
-  const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfile(bearer), enabled, retry: false, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnMount: false });
-  const socialsQ = useQuery({ queryKey: ["socials"], queryFn: () => listSocials(bearer), enabled, retry: false });
-  const portfolioQ = useQuery({ queryKey: ["portfolio"], queryFn: () => listPortfolio(bearer), enabled, retry: false });
+  const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfile(bearer), enabled, retry: retryNonAuth, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnMount: false });
+  const socialsQ = useQuery({ queryKey: ["socials"], queryFn: () => listSocials(bearer), enabled, retry: retryNonAuth });
+  const portfolioQ = useQuery({ queryKey: ["portfolio"], queryFn: () => listPortfolio(bearer), enabled, retry: retryNonAuth });
   useEffect(() => { if (profileQ.isError) router.replace("/login"); }, [profileQ.isError, router]);
 
   const [creatorType, setCreatorType] = useState<CreatorType | "">("");

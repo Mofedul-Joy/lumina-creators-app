@@ -2,6 +2,7 @@
 // Used on the creator dashboard hero and the creator account gamification card.
 "use client";
 
+import { retryNonAuth } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { getMyGamification } from "@/lib/gamification";
 import { RankBadge } from "@/components/gamification/RankBadge";
@@ -11,7 +12,7 @@ import { AwardRow } from "@/components/gamification/AwardBadge";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 export function GamificationHero({ enabled }: { enabled: boolean }) {
-  const q = useQuery({ queryKey: ["my-gamification"], queryFn: getMyGamification, enabled, retry: false });
+  const q = useQuery({ queryKey: ["my-gamification"], queryFn: getMyGamification, enabled, retry: retryNonAuth });
 
   if (q.isLoading || !q.data) {
     return (

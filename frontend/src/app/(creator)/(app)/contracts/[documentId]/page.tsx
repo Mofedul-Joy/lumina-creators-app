@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAuthToken } from "@/lib/auth";
-import { acceptContract, getContract, isAuthError } from "@/lib/api";
+import { acceptContract, getContract, isAuthError, retryNonAuth} from "@/lib/api";
 import { ContractDocument } from "@/components/contracts/ContractDocument";
 import { Skeleton } from "@/components/ui/Skeleton";
 
@@ -31,7 +31,7 @@ export default function ContractPage() {
     queryKey: ["contract", documentId],
     queryFn: () => getContract(token ?? "", documentId),
     enabled: ready && !!token && !!documentId,
-    retry: false,
+    retry: retryNonAuth,
   });
   useEffect(() => {
     if (q.isError && isAuthError(q.error)) router.replace("/login");

@@ -22,7 +22,7 @@ import {
   type OwedRowV2,
   type SpendingSummary,
 } from "@/lib/admin";
-import { getCreatorDetail, isAuthError, type CreatorDetail } from "@/lib/api";
+import { getCreatorDetail, isAuthError, type CreatorDetail, retryNonAuth} from "@/lib/api";
 import { PayCreatorModal } from "@/components/admin/PayCreatorModal";
 import { fmtInt, fmtMoney } from "@/lib/format";
 
@@ -203,25 +203,25 @@ export default function AdminPaymentsPage() {
 
   const enabled = ready && hasToken;
 
-  const owedQ = useQuery({ queryKey: ["payouts-owed-v2"], queryFn: listOwedV2, enabled, retry: false });
-  const walletQ = useQuery({ queryKey: ["payouts-wallet"], queryFn: getWallet, enabled, retry: false });
+  const owedQ = useQuery({ queryKey: ["payouts-owed-v2"], queryFn: listOwedV2, enabled, retry: retryNonAuth });
+  const walletQ = useQuery({ queryKey: ["payouts-wallet"], queryFn: getWallet, enabled, retry: retryNonAuth });
   const ledgerQ = useQuery({
     queryKey: ["payouts-ledger"],
     queryFn: () => getLedger(100),
     enabled: enabled && tab === "ledger",
-    retry: false,
+    retry: retryNonAuth,
   });
   const forecastQ = useQuery({
     queryKey: ["payouts-forecast"],
     queryFn: getForecast,
     enabled: enabled && tab === "forecast",
-    retry: false,
+    retry: retryNonAuth,
   });
   const creatorsQ = useQuery({
     queryKey: ["payments-creators-tab"],
     queryFn: () => listCreators({}),
     enabled: enabled && tab === "creators",
-    retry: false,
+    retry: retryNonAuth,
   });
 
   useEffect(() => {

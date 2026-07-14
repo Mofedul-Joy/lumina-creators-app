@@ -3,6 +3,7 @@
 // Public, no-login client report (Feature 6, BUILD_SPEC.md §3.7). Gated by a
 // high-entropy share_token in the URL — never requires auth, never shows
 // creator PII (only display_name + avatar_url), never paywalled.
+import { retryNonAuth } from "@/lib/api";
 import { use } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
@@ -33,7 +34,7 @@ export default function PublicReportPage({ params }: { params: Promise<{ token: 
   const q = useQuery({
     queryKey: ["public-report", token],
     queryFn: () => getPublicReport(token),
-    retry: false,
+    retry: retryNonAuth,
   });
 
   const r = q.data;

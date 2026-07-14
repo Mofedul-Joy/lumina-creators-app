@@ -8,7 +8,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getCampaignContract, updateCampaignContract, type ContractTemplate } from "@/lib/admin";
 import { getAdminToken } from "@/lib/auth";
-import { isAuthError } from "@/lib/api";
+import { isAuthError, retryNonAuth} from "@/lib/api";
 import { ContractDocument } from "@/components/contracts/ContractDocument";
 
 export default function ContractEditorPage() {
@@ -34,7 +34,7 @@ export default function ContractEditorPage() {
     queryKey: ["contract-template", id],
     queryFn: () => getCampaignContract(id),
     enabled: ready && !!token && !!id,
-    retry: false,
+    retry: retryNonAuth,
   });
   useEffect(() => {
     if (q.isError && isAuthError(q.error)) router.replace("/admin/login");

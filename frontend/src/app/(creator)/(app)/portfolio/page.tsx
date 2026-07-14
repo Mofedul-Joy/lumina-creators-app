@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { getAuthToken } from "@/lib/auth";
-import { deleteTopVideo, getMyPortfolio, isAuthError, type CreatorRichDetail } from "@/lib/api";
+import { deleteTopVideo, getMyPortfolio, isAuthError, type CreatorRichDetail, retryNonAuth} from "@/lib/api";
 import { fmtInt, fmtMoney } from "@/lib/format";
 import { ThumbImage } from "@/components/ui/ThumbImage";
 import { RankBadge } from "@/components/gamification/RankBadge";
@@ -90,7 +90,7 @@ export default function PortfolioPage() {
     queryKey: ["my-portfolio"],
     queryFn: () => getMyPortfolio(token ?? ""),
     enabled: ready && !!token,
-    retry: false,
+    retry: retryNonAuth,
   });
   // Remove a Top Content clip straight from the portfolio (no trip to Profile).
   const [deletingId, setDeletingId] = useState<string | null>(null);

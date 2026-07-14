@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { getAdminToken } from "@/lib/auth";
 import { getCreatorActivity } from "@/lib/admin";
 import { fmtInt, fmtMoney } from "@/lib/format";
-import { flagCreatorSuspicious, getCreatorDetail, isAuthError, unflagCreatorSuspicious } from "@/lib/api";
+import { flagCreatorSuspicious, getCreatorDetail, isAuthError, unflagCreatorSuspicious, retryNonAuth} from "@/lib/api";
 
 const cardCls =
   "card-grad rounded-[var(--radius-card)] p-5 space-y-4";
@@ -54,14 +54,14 @@ export default function AdminCreatorDetailPage() {
     queryKey: ["admin-creator", id],
     queryFn: () => getCreatorDetail(token ?? "", id),
     enabled: ready && !!token && !!id,
-    retry: false,
+    retry: retryNonAuth,
   });
 
   const activityQ = useQuery({
     queryKey: ["admin-creator-activity", id],
     queryFn: () => getCreatorActivity(id),
     enabled: ready && !!token && !!id,
-    retry: false,
+    retry: retryNonAuth,
   });
 
   useEffect(() => {

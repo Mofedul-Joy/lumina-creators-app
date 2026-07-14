@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAuthToken } from "@/lib/auth";
-import { listNotifications, markNotificationsRead, type NotificationOut } from "@/lib/api";
+import { listNotifications, markNotificationsRead, type NotificationOut, retryNonAuth} from "@/lib/api";
 
 /**
  * Right-side notification panel — mirrors the left sidebar but on the right.
@@ -30,7 +30,7 @@ export function NotificationDrawer({ open, onClose }: { open: boolean; onClose: 
     queryKey: ["notifications"],
     queryFn: () => listNotifications(token),
     enabled: !!token && open,
-    retry: false,
+    retry: retryNonAuth,
   });
   const notifications: NotificationOut[] = q.data ?? [];
 

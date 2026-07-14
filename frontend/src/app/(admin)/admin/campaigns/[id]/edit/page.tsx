@@ -19,7 +19,7 @@ import {
   updateCampaign,
 } from "@/lib/admin";
 import { getAdminToken } from "@/lib/auth";
-import { downloadCsv, isAuthError } from "@/lib/api";
+import { downloadCsv, isAuthError, retryNonAuth} from "@/lib/api";
 import { fmtMoney } from "@/lib/format";
 
 const ALL_PLATFORMS = ["instagram", "tiktok", "youtube", "twitter", "facebook"];
@@ -66,7 +66,7 @@ export default function AdminCampaignDetailPage() {
   useEffect(() => { setHasToken(!!getAdminToken()); setReady(true); }, []);
   useEffect(() => { if (ready && !hasToken) router.replace("/admin/login"); }, [ready, hasToken, router]);
 
-  const q = useQuery({ queryKey: ["campaign", id], queryFn: () => getAdminCampaign(id), enabled: ready && hasToken, retry: false });
+  const q = useQuery({ queryKey: ["campaign", id], queryFn: () => getAdminCampaign(id), enabled: ready && hasToken, retry: retryNonAuth });
   useEffect(() => { if (q.isError && isAuthError(q.error)) router.replace("/admin/login"); }, [q.isError, q.error, router]);
 
   const c = q.data;

@@ -1,5 +1,6 @@
 "use client";
 
+import { retryNonAuth } from "@/lib/api";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -69,7 +70,7 @@ function ProfilePanel({ realm, conversation, onEmail }: { realm: Realm; conversa
     queryKey: ["conv-profile", conversation.creator_id],
     queryFn: () => getCreatorRichDetail(conversation.creator_id as string),
     enabled: realm === "admin" && !!conversation.creator_id,
-    retry: false,
+    retry: retryNonAuth,
   });
   const r = richQ.data;
 
@@ -154,7 +155,7 @@ function MembersPanel({ realm, conversation }: { realm: Realm; conversation: Con
   const membersQ = useQuery({
     queryKey: ["channel-members", conversation.id],
     queryFn: () => channelMembers(realm, conversation.id),
-    retry: false,
+    retry: retryNonAuth,
   });
   const members = membersQ.data ?? [];
   const memberIds = new Set(members.map((m) => m.creator_id));
@@ -166,7 +167,7 @@ function MembersPanel({ realm, conversation }: { realm: Realm; conversation: Con
   const addM = useMutation({ mutationFn: (id: string) => addChannelMembers(conversation.id, [id]), onSuccess: invalidate });
   const removeM = useMutation({ mutationFn: (id: string) => removeChannelMember(conversation.id, id), onSuccess: invalidate });
 
-  const creatorsQ = useQuery({ queryKey: ["admin-creators-lite"], queryFn: () => listCreators({}), enabled: adding && realm === "admin", retry: false });
+  const creatorsQ = useQuery({ queryKey: ["admin-creators-lite"], queryFn: () => listCreators({}), enabled: adding && realm === "admin", retry: retryNonAuth });
   const candidates = useMemo(() => {
     const list = (creatorsQ.data ?? []).filter((c) => !memberIds.has(c.id));
     const q = search.trim().toLowerCase();
@@ -231,7 +232,7 @@ function InfoPanel({ realm, conversation }: { realm: Realm; conversation: Conver
   const infoQ = useQuery({
     queryKey: ["conv-info", realm, conversation.id],
     queryFn: () => conversationInfo(realm, conversation.id),
-    retry: false,
+    retry: retryNonAuth,
   });
   const i = infoQ.data;
   const rows = [
@@ -260,7 +261,7 @@ function ContractsPanel({ realm, conversation }: { realm: Realm; conversation: C
   const cQ = useQuery({
     queryKey: ["conv-contracts", realm, conversation.id],
     queryFn: () => contractHistory(realm, conversation.id),
-    retry: false,
+    retry: retryNonAuth,
   });
   const contracts = cQ.data ?? [];
   return (

@@ -9,8 +9,7 @@ import {
   listTopVideos,
   refreshTopVideo,
   type TopVideoOut,
-  type TopVideoPlatform,
-} from "@/lib/api";
+  type TopVideoPlatform, retryNonAuth} from "@/lib/api";
 import { fmtInt } from "@/lib/format";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -65,7 +64,7 @@ export function TopVideosTab() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const q = useQuery({ queryKey: ["top-videos"], queryFn: () => listTopVideos(token), enabled: !!token, retry: false });
+  const q = useQuery({ queryKey: ["top-videos"], queryFn: () => listTopVideos(token), enabled: !!token, retry: retryNonAuth });
   const videos = q.data ?? [];
   const atMax = videos.length >= MAX;
 

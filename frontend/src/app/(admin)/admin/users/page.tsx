@@ -9,7 +9,7 @@ import { AdminTabs } from "@/components/admin/AdminTabs";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getAdminToken } from "@/lib/auth";
 import { createUser, editClient, getUsers, listAdminCampaigns, reactivateClient, suspendClient } from "@/lib/admin";
-import { isAuthError } from "@/lib/api";
+import { isAuthError, retryNonAuth} from "@/lib/api";
 import { fmtInt } from "@/lib/format";
 
 function StatTile({ label, value, hint, href }: { label: string; value: string; hint?: string; href?: string }) {
@@ -36,8 +36,8 @@ export default function AdminUsersPage() {
     if (ready && !hasToken) router.replace("/admin/login");
   }, [ready, hasToken, router]);
 
-  const q = useQuery({ queryKey: ["users"], queryFn: getUsers, enabled: ready && hasToken, retry: false });
-  const campaignsQ = useQuery({ queryKey: ["admin-campaigns"], queryFn: () => listAdminCampaigns(), enabled: ready && hasToken, retry: false });
+  const q = useQuery({ queryKey: ["users"], queryFn: getUsers, enabled: ready && hasToken, retry: retryNonAuth });
+  const campaignsQ = useQuery({ queryKey: ["admin-campaigns"], queryFn: () => listAdminCampaigns(), enabled: ready && hasToken, retry: retryNonAuth });
   useEffect(() => {
     if (q.isError && isAuthError(q.error)) router.replace("/admin/login");
   }, [q.isError, q.error, router]);

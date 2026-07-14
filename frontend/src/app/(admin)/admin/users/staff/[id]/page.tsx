@@ -9,7 +9,7 @@ import { AdminTabs } from "@/components/admin/AdminTabs";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getAdminToken } from "@/lib/auth";
 import { getStaffDetail } from "@/lib/admin";
-import { isAuthError } from "@/lib/api";
+import { isAuthError, retryNonAuth} from "@/lib/api";
 
 export default function AdminStaffDetailPage() {
   const router = useRouter();
@@ -20,7 +20,7 @@ export default function AdminStaffDetailPage() {
   useEffect(() => { setHasToken(!!getAdminToken()); setReady(true); }, []);
   useEffect(() => { if (ready && !hasToken) router.replace("/admin/login"); }, [ready, hasToken, router]);
 
-  const q = useQuery({ queryKey: ["staff", id], queryFn: () => getStaffDetail(id), enabled: ready && hasToken, retry: false });
+  const q = useQuery({ queryKey: ["staff", id], queryFn: () => getStaffDetail(id), enabled: ready && hasToken, retry: retryNonAuth });
   useEffect(() => { if (q.isError && isAuthError(q.error)) router.replace("/admin/login"); }, [q.isError, q.error, router]);
 
   if (!ready || !hasToken)

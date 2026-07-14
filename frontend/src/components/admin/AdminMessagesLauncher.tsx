@@ -1,5 +1,6 @@
 "use client";
 
+import { retryNonAuth } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getAdminToken } from "@/lib/auth";
@@ -36,7 +37,7 @@ export function AdminMessagesLauncher() {
     queryKey: ["conv-unread", "admin"],
     queryFn: () => getMsgUnread("admin"),
     enabled: !!token,
-    retry: false,
+    retry: retryNonAuth,
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
   }).data?.unread ?? 0;

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAuthToken } from "@/lib/auth";
 import { browseCampaigns, claimSubmission, listSubmissions, resubmitClip, submitClip, uploadProofVideo, type Submission } from "@/lib/campaigns";
-import { ApiError, listMyCampaigns } from "@/lib/api";
+import { ApiError, listMyCampaigns, retryNonAuth} from "@/lib/api";
 import { fmtInt, fmtMoney } from "@/lib/format";
 import { SkeletonCardGrid } from "@/components/ui/Skeleton";
 
@@ -57,9 +57,9 @@ export default function MyCampaignsPage() {
   }, []);
   const enabled = ready && hasToken;
 
-  const subsQ = useQuery({ queryKey: ["submissions"], queryFn: listSubmissions, enabled, retry: false });
-  const campaignsQ = useQuery({ queryKey: ["campaigns"], queryFn: browseCampaigns, enabled, retry: false });
-  const appsQ = useQuery({ queryKey: ["my-applications"], queryFn: () => listMyCampaigns(getAuthToken() ?? ""), enabled, retry: false });
+  const subsQ = useQuery({ queryKey: ["submissions"], queryFn: listSubmissions, enabled, retry: retryNonAuth });
+  const campaignsQ = useQuery({ queryKey: ["campaigns"], queryFn: browseCampaigns, enabled, retry: retryNonAuth });
+  const appsQ = useQuery({ queryKey: ["my-applications"], queryFn: () => listMyCampaigns(getAuthToken() ?? ""), enabled, retry: retryNonAuth });
 
   const cById = new Map((campaignsQ.data ?? []).map((c) => [c.id, c]));
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { getAuthToken } from "@/lib/auth";
-import { getProfile, isAuthError } from "@/lib/api";
+import { getProfile, isAuthError, retryNonAuth} from "@/lib/api";
 import { listSubmissions } from "@/lib/campaigns";
 import { getMyGamification } from "@/lib/gamification";
 import { fmtMoney } from "@/lib/format";
@@ -28,9 +28,9 @@ export default function DashboardPage() {
 
   const enabled = ready && !!token;
   const bearer = token ?? "";
-  const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfile(bearer), enabled, retry: false });
-  const subsQ = useQuery({ queryKey: ["submissions"], queryFn: listSubmissions, enabled, retry: false });
-  const gamQ = useQuery({ queryKey: ["my-gamification"], queryFn: getMyGamification, enabled, retry: false });
+  const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfile(bearer), enabled, retry: retryNonAuth });
+  const subsQ = useQuery({ queryKey: ["submissions"], queryFn: listSubmissions, enabled, retry: retryNonAuth });
+  const gamQ = useQuery({ queryKey: ["my-gamification"], queryFn: getMyGamification, enabled, retry: retryNonAuth });
   useEffect(() => {
     if (profileQ.isError && isAuthError(profileQ.error)) router.replace("/login");
   }, [profileQ.isError, profileQ.error, router]);

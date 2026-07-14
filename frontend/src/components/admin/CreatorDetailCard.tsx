@@ -5,6 +5,7 @@
 //   - /admin/creators/[id]            (full-page hero)
 //   - /admin/creators list cards      (compact variant, see CreatorCardCompact)
 //   - /admin/applicants slide-over    (creatorId + participationId)
+import { retryNonAuth } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/admin/Avatar";
@@ -124,7 +125,7 @@ export function CreatorDetailCard({
     queryKey: ["admin-creator-rich", creatorId],
     queryFn: () => getCreatorRichDetail(token ?? "", creatorId),
     enabled: !!token && !!creatorId,
-    retry: false,
+    retry: retryNonAuth,
   });
 
   const [busy, setBusy] = useState<"bookmark" | "decline" | null>(null);

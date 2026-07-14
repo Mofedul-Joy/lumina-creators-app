@@ -52,6 +52,16 @@ export function isAuthError(err: unknown): boolean {
   return err instanceof ApiError && (err.status === 401 || err.status === 403);
 }
 
+// React Query retry policy: never retry an auth failure (let the page redirect
+// to login fast), but DO retry transient network blips / 5xx a couple of times
+// so a single "Failed to fetch" (e.g. a Render cold-start) doesn't leave the
+// page stuck on an error the user has to manually reload past.
+export function retryNonAuth(failureCount: number, error: unknown): boolean {
+  if (isAuthError(error)) return false;
+  if (error instanceof ApiError && error.status >= 400 && error.status < 500) return false;
+  return failureCount < 2;
+}
+
 // One in-flight refresh per realm — concurrent 401s share it so the rotating
 // refresh token isn't spent twice (which would trip reuse-detection and log out).
 const refreshing: Partial<Record<Realm, Promise<string | null>>> = {};

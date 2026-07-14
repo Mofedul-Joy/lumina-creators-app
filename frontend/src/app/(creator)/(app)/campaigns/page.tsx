@@ -7,7 +7,7 @@ import { CampaignCard } from "@/components/campaign/CampaignCard";
 import { CampaignModal } from "@/components/campaign/CampaignModal";
 import { CampaignSearchModal } from "@/components/creator/CampaignSearchModal";
 import { getAuthToken } from "@/lib/auth";
-import { getProfile, listSocials } from "@/lib/api";
+import { getProfile, listSocials, retryNonAuth} from "@/lib/api";
 import { browseCampaigns, type Campaign } from "@/lib/campaigns";
 import { NICHES, campaignText, matchesNiche, nicheLabel } from "@/lib/niches";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
@@ -36,7 +36,7 @@ export default function CampaignsPage() {
     queryKey: ["campaigns"],
     queryFn: browseCampaigns,
     enabled: hasToken,
-    retry: false,
+    retry: retryNonAuth,
   });
 
   const campaigns = useMemo(() => {
@@ -56,8 +56,8 @@ export default function CampaignsPage() {
   }, [data, tab, platform, niche, search, sort]);
 
   // "For You": campaigns that best match the creator's profile + socials.
-  const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfile(token ?? ""), enabled: hasToken, retry: false });
-  const socialsQ = useQuery({ queryKey: ["socials"], queryFn: () => listSocials(token ?? ""), enabled: hasToken, retry: false });
+  const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfile(token ?? ""), enabled: hasToken, retry: retryNonAuth });
+  const socialsQ = useQuery({ queryKey: ["socials"], queryFn: () => listSocials(token ?? ""), enabled: hasToken, retry: retryNonAuth });
 
   const forYou = useMemo(() => {
     const myPlatforms = new Set((socialsQ.data ?? []).map((s) => s.platform as string));

@@ -9,7 +9,7 @@ import { Avatar } from "@/components/admin/Avatar";
 import { CreatorDetailCard } from "@/components/admin/CreatorDetailCard";
 import { Select } from "@/components/ui/Select";
 import { getAdminToken } from "@/lib/auth";
-import { isAuthError } from "@/lib/api";
+import { isAuthError, retryNonAuth} from "@/lib/api";
 import {
   listApplicants,
   getApplicantCounts,
@@ -81,14 +81,14 @@ export default function AdminApplicantsPage() {
       return apiFetch<{ id: string; name: string }[]>("/api/admin/campaigns", { token: token ?? undefined });
     },
     enabled: ready && !!token,
-    retry: false,
+    retry: retryNonAuth,
   });
 
   const countsQ = useQuery({
     queryKey: ["admin-applicant-counts", campaignId],
     queryFn: () => getApplicantCounts(campaignId || undefined),
     enabled: ready && !!token,
-    retry: false,
+    retry: retryNonAuth,
     refetchInterval: 30_000,
   });
 
@@ -102,7 +102,7 @@ export default function AdminApplicantsPage() {
         limit: 200,
       }),
     enabled: ready && !!token,
-    retry: false,
+    retry: retryNonAuth,
   });
 
   useEffect(() => {
@@ -115,7 +115,7 @@ export default function AdminApplicantsPage() {
     queryKey: ["admin-applicant-detail", openId],
     queryFn: () => getApplicantDetail(openId as string),
     enabled: ready && !!token && !!openId,
-    retry: false,
+    retry: retryNonAuth,
   });
 
   useEffect(() => {

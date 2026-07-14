@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { getAuthToken } from "@/lib/auth";
-import { listMyContracts, isAuthError, type ContractStatus } from "@/lib/api";
+import { listMyContracts, isAuthError, type ContractStatus, retryNonAuth} from "@/lib/api";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 const STATUS_STYLE: Record<ContractStatus, string> = {
@@ -37,7 +37,7 @@ export default function ContractsListPage() {
     queryKey: ["my-contracts"],
     queryFn: () => listMyContracts(token ?? ""),
     enabled: ready && !!token,
-    retry: false,
+    retry: retryNonAuth,
   });
   useEffect(() => {
     if (q.isError && isAuthError(q.error)) router.replace("/login");

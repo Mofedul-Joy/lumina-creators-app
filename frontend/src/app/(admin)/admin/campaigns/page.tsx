@@ -1,5 +1,6 @@
 "use client";
 
+import { retryNonAuth } from "@/lib/api";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -57,7 +58,7 @@ export default function AdminCampaignsPage() {
     queryKey: ["admin-campaigns"],
     queryFn: () => listAdminCampaigns(),
     enabled: hasToken,
-    retry: false,
+    retry: retryNonAuth,
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-campaigns"] });

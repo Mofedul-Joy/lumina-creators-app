@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { getMyGamification } from "@/lib/gamification";
-import { getUnreadCount } from "@/lib/api";
+import { getUnreadCount, retryNonAuth} from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
 import { unreadCount as getMsgUnread } from "@/lib/messaging";
 import { RankBadge } from "@/components/gamification/RankBadge";
@@ -22,13 +22,13 @@ export function CreatorTopbar({
   onMessages: () => void;
   msgOpen: boolean;
 }) {
-  const g = useQuery({ queryKey: ["my-gamification"], queryFn: getMyGamification, retry: false }).data;
+  const g = useQuery({ queryKey: ["my-gamification"], queryFn: getMyGamification, retry: retryNonAuth }).data;
   const token = getAuthToken() ?? "";
   const unread = useQuery({
     queryKey: ["notif-unread"],
     queryFn: () => getUnreadCount(token),
     enabled: !!token,
-    retry: false,
+    retry: retryNonAuth,
     refetchInterval: 60_000,       // pick up new invites without a reload
     refetchOnWindowFocus: true,
   }).data?.unread ?? 0;
@@ -36,7 +36,7 @@ export function CreatorTopbar({
     queryKey: ["conv-unread", "creator"],
     queryFn: () => getMsgUnread("creator"),
     enabled: !!token,
-    retry: false,
+    retry: retryNonAuth,
     refetchInterval: 30_000,       // surface new team replies without a reload
     refetchOnWindowFocus: true,
   }).data?.unread ?? 0;

@@ -1,5 +1,6 @@
 "use client";
 
+import { retryNonAuth } from "@/lib/api";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -27,7 +28,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
   const [bulkMsg, setBulkMsg] = useState("");
   const [gateOpen, setGateOpen] = useState(false);
 
-  const q = useQuery({ queryKey: ["campaign", slug], queryFn: () => getCampaign(slug), enabled: hasToken, retry: false });
+  const q = useQuery({ queryKey: ["campaign", slug], queryFn: () => getCampaign(slug), enabled: hasToken, retry: retryNonAuth });
 
   const join = useMutation({
     mutationFn: () => joinCampaign(slug),

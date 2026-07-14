@@ -7,7 +7,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { getAdminToken } from "@/lib/auth";
 import { getAdminAnalytics } from "@/lib/admin";
-import { isAuthError } from "@/lib/api";
+import { isAuthError, retryNonAuth} from "@/lib/api";
 import { fmtCompact, fmtInt, fmtMoney } from "@/lib/format";
 
 const PLATFORM_LABEL: Record<string, string> = {
@@ -71,7 +71,7 @@ export default function AdminAnalyticsPage() {
     queryKey: ["admin-analytics"],
     queryFn: getAdminAnalytics,
     enabled: ready && hasToken,
-    retry: false,
+    retry: retryNonAuth,
   });
   useEffect(() => {
     if (q.isError && isAuthError(q.error)) router.replace("/admin/login");

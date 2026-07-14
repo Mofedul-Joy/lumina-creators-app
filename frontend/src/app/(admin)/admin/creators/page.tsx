@@ -13,7 +13,7 @@ import { InviteCreatorModal } from "@/components/admin/InviteCreatorModal";
 import { Pager } from "@/components/admin/Pager";
 import { Select } from "@/components/ui/Select";
 import { getAdminToken } from "@/lib/auth";
-import { GENDERS, PLATFORMS, isAuthError, listCreators, type CreatorFilters, type Gender, type Platform } from "@/lib/api";
+import { GENDERS, PLATFORMS, isAuthError, listCreators, type CreatorFilters, type Gender, type Platform, retryNonAuth} from "@/lib/api";
 
 const PAGE_SIZE = 12;
 const control =
@@ -125,7 +125,7 @@ export default function AdminCreatorsPage() {
     queryKey: ["admin-creators", filters],
     queryFn: () => listCreators(token ?? "", filters),
     enabled: ready && !!token,
-    retry: false,
+    retry: retryNonAuth,
   });
   useEffect(() => { if (q.isError && isAuthError(q.error)) router.replace("/admin/login"); }, [q.isError, q.error, router]);
 
