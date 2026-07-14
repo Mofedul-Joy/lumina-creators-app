@@ -44,20 +44,22 @@ def add_example(db: Session, campaign_id: uuid.UUID, raw_url: str,
                 source: str = "admin", thumbnail_url: Optional[str] = None) -> CampaignExampleVideo:
     """Add one example video (a social link, or an already-hosted URL). Detects
     the platform and caches the thumbnail. Ignores an exact duplicate URL."""
+    # Keep the RAW url — canonicalize_url strips query params (e.g. YouTube's
+    # ?v=<id>), which would both break the click-through link AND stop the
+    # thumbnail resolver from finding the video id.
     url = (raw_url or "").strip()
     if not url:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Add a video link")
     platform = urls.detect_platform(url)
-    canonical = urls.canonicalize_url(url) if platform else url
     existing = db.scalar(select(CampaignExampleVideo).where(
-        CampaignExampleVideo.campaign_id == campaign_id, CampaignExampleVideo.url == canonical))
+        CampaignExampleVideo.campaign_id == campaign_id, CampaignExampleVideo.url == url))
     if existing is not None:
         return existing
-    thumb = thumbnail_url or _resolve_thumbnail(platform, canonical, campaign_id)
+    thumb = thumbnail_url or _resolve_thumbnail(platform, url, campaign_id)
     n = db.scalar(select(func.count(CampaignExampleVideo.id)).where(
         CampaignExampleVideo.campaign_id == campaign_id)) or 0
     item = CampaignExampleVideo(
-        campaign_id=campaign_id, url=canonical, platform=platform,
+        campaign_id=campaign_id, url=url, platform=platform,
         thumbnail_url=thumb, source=source, sort_order=n,
     )
     db.add(item)
@@ -66,7 +68,7 @@ def add_example(db: Session, campaign_id: uuid.UUID, raw_url: str,
     except IntegrityError:
         db.rollback()
         return db.scalar(select(CampaignExampleVideo).where(
-            CampaignExampleVideo.campaign_id == campaign_id, CampaignExampleVideo.url == canonical))
+            CampaignExampleVideo.campaign_id == campaign_id, CampaignExampleVideo.url == url))
     db.refresh(item)
     return item
 

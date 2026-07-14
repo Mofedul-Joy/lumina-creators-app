@@ -116,7 +116,7 @@ def creator_signup(db: Session, email: str, password: str | None = None, invite:
     if not verify_on:
         # Email verification disabled (no email provider configured) — issue a token.
         access, refresh = _issue(db, creator.id, "creator")
-        return {"status": "ok", "access_token": access, "refresh_token": refresh}
+        return {"status": "ok", "email": email, "access_token": access, "refresh_token": refresh}
     code = _issue_email_code(db, creator)
     return {"status": "verification_sent", "email": email, "dev_code": _dev_code(code)}
 
@@ -184,7 +184,7 @@ def creator_login(db: Session, email: str, password: str):
                 pass  # verify page has a resend button
         return {"status": "email_not_verified", "email": email}
     access, refresh = _issue(db, creator.id, "creator")
-    return {"status": "ok", "access_token": access, "refresh_token": refresh}
+    return {"status": "ok", "email": email, "access_token": access, "refresh_token": refresh}
 
 
 def creator_set_password(db: Session, email: str, password: str) -> tuple[str, str]:
