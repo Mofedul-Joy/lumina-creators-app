@@ -25,6 +25,7 @@ from app.models import (
     CampaignParticipation,
     CreatorProfile,
     Payout,
+    PayoutItem,
     StorageObject,
     Submission,
     Wallet,
@@ -340,6 +341,32 @@ def _pay_creator_rows(db: Session, admin_id: uuid.UUID, wallet: Wallet, rows: It
         )
         db.add(payout)
         db.flush()
+
+        try:
+            with db.begin_nested():
+                item_rows = db.execute(
+                    select(Submission.id, func.coalesce(Submission.estimated_amount, 0)).where(
+                        Submission.creator_id == part.creator_id,
+                        Submission.campaign_id == campaign.id,
+                        Submission.participation_id == part.id,
+                        Submission.verification_status == "verified",
+                        Submission.is_suspicious.is_(False),
+                        Submission.id.not_in(
+                            select(PayoutItem.submission_id).where(PayoutItem.voided_at.is_(None))
+                        ),
+                    )
+                ).all()
+                for submission_id, estimated_amount in item_rows:
+                    item_amount = _q(estimated_amount)
+                    if item_amount > 0:
+                        db.add(PayoutItem(
+                            payout_id=payout.id,
+                            submission_id=submission_id,
+                            amount=item_amount,
+                        ))
+                db.flush()
+        except Exception:
+            pass
 
         # Mark milestones as awarded on the participation so a re-run of
         # Pay All never double-pays the same bonus.
