@@ -3,7 +3,7 @@
 import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { recordPayout, type PayoutMethod } from "@/lib/admin";
+import { payOne, type PayoutMethod } from "@/lib/admin";
 import { fmtMoney } from "@/lib/format";
 import type { CreatorDetail } from "@/lib/api";
 
@@ -48,10 +48,15 @@ export function PayCreatorModal({
   const canPay = owed > 0;
 
   const payM = useMutation({
-    mutationFn: () => recordPayout(creator.id, method, reference.trim() || undefined),
+    // Use the v2 pay-one engine (payment_type-aware owed calc + wallet ledger row
+    // so it shows in the Paid tab) rather than the legacy CPM-only recordPayout,
+    // which paid $0 on fixed/per-post campaigns and never appeared in Paid.
+    mutationFn: () => payOne(creator.id, reference.trim() || undefined),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-creator-activity", creator.id] });
       qc.invalidateQueries({ queryKey: ["admin-creator", creator.id] });
+      qc.invalidateQueries({ queryKey: ["owed-v2"] });
+      qc.invalidateQueries({ queryKey: ["payout-ledger"] });
       onClose();
     },
     onError: (e) => setError((e as Error).message),

@@ -9,6 +9,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_admin
@@ -114,9 +115,14 @@ def pay_all(body: PayAllIn, admin: Admin = Depends(get_current_admin), db: Sessi
     )
 
 
+class PayOneIn(BaseModel):
+    reference: Optional[str] = None
+
+
 @router.post("/pay-one/{creator_id}", response_model=PayoutRow)
-def pay_one(creator_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    p = svc2.pay_one(db, admin.id, creator_id)
+def pay_one(creator_id: uuid.UUID, body: PayOneIn | None = None,
+            admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    p = svc2.pay_one(db, admin.id, creator_id, reference=(body.reference if body else None))
     return _payout_row(p, None)
 
 

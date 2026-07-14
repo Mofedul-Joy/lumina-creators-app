@@ -499,8 +499,10 @@ export const getLedger = (limit = 100) =>
 export const payAll = (creator_ids?: string[]) =>
   apiFetch<PayAllOut>("/api/admin/payouts/pay-all", { method: "POST", body: JSON.stringify({ creator_ids }), ...auth() });
 
-export const payOne = (creatorId: string) =>
-  apiFetch<PayoutRow>(`/api/admin/payouts/pay-one/${creatorId}`, { method: "POST", ...auth() });
+export const payOne = (creatorId: string, reference?: string) =>
+  apiFetch<PayoutRow>(`/api/admin/payouts/pay-one/${creatorId}`, {
+    method: "POST", body: JSON.stringify({ reference: reference || null }), ...auth(),
+  });
 
 export const getForecast = () => apiFetch<ForecastRow[]>("/api/admin/payouts/forecast", auth());
 

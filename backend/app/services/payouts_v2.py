@@ -343,7 +343,8 @@ def _resolve_method(method: Optional[str]) -> str:
     return "whop"
 
 
-def _pay_creator_rows(db: Session, admin_id: uuid.UUID, wallet: Wallet, rows: Iterable[dict]) -> list[Payout]:
+def _pay_creator_rows(db: Session, admin_id: uuid.UUID, wallet: Wallet, rows: Iterable[dict],
+                      reference: Optional[str] = None) -> list[Payout]:
     """Create one Payout per row (each row = one creator+campaign owed
     amount), deduct from the wallet, mark bonus milestones as awarded, and
     log a `payout` wallet_transaction per payout. Rows with net_owed <= 0 are
@@ -371,7 +372,9 @@ def _pay_creator_rows(db: Session, admin_id: uuid.UUID, wallet: Wallet, rows: It
             status="paid",
             processed_by=admin_id,
             paid_at=_now(),
-            external_ref=address or None,
+            # A caller-supplied receipt/txn reference wins over the payout address;
+            # it's the external record of the manual payment the admin just made.
+            external_ref=(reference or "").strip() or address or None,
             due_date=campaign.ends_at.date() if campaign.ends_at else None,
             program_name=campaign.name,
             campaign_id=campaign.id,
@@ -443,14 +446,15 @@ def pay_all(db: Session, admin_id: uuid.UUID, creator_ids: Optional[list[str]] =
     return {"paid_count": len(created), "total_amount": total, "payouts": created}
 
 
-def pay_one(db: Session, admin_id: uuid.UUID, creator_id: uuid.UUID) -> Payout:
+def pay_one(db: Session, admin_id: uuid.UUID, creator_id: uuid.UUID,
+            reference: Optional[str] = None) -> Payout:
     # Lock the wallet row before computing owed (see pay_all) so two concurrent
     # Pay-One clicks on the same creator can't both create a payout.
     wallet = wallet_get(db, for_update=True)
     rows = compute_owed_for_creator(db, creator_id)
     if not rows:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "No payable owed amount for this creator")
-    created = _pay_creator_rows(db, admin_id, wallet, rows)
+    created = _pay_creator_rows(db, admin_id, wallet, rows, reference=reference)
     if not created:
         # Reachable only if the owed rows netted to <= 0 between compute and pay
         # (e.g. a racing request just paid them) — no funds gate exists anymore.
