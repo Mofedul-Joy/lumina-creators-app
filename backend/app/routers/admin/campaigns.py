@@ -17,8 +17,12 @@ from app.core.deps import get_current_admin
 from app.core.security import create_impersonation_token
 from app.db.session import get_db
 from app.models import Admin, Campaign, CampaignBonusMilestone, CreatorProfile, Submission
-from app.schemas.campaign import BonusMilestoneOut, CampaignCreateIn, CampaignOut, CampaignUpdateIn, ShareTokenOut
+from app.schemas.campaign import (
+    BonusMilestoneOut, CampaignCreateIn, CampaignOut, CampaignUpdateIn,
+    ExampleVideoAdminOut, ShareTokenOut,
+)
 from app.services import audit, campaign as svc
+from app.services import campaign_examples as examples_svc
 from app.services import campaign_invites as invites_svc
 from app.services import campaign_overview as overview_svc
 from app.services import contracts as contracts_svc
@@ -355,3 +359,34 @@ def update_contract_template(campaign_id: uuid.UUID, body: ContractTemplateIn,
 @router.get("/{campaign_id}/contracts", response_model=List[ContractRow])
 def list_campaign_contracts(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     return [ContractRow(**r) for r in contracts_svc.list_for_campaign(db, campaign_id)]
+
+
+# ── Example videos (shown on the creator Explore overview) ──────────────────
+class ExampleVideoIn(BaseModel):
+    url: str
+
+
+def _example_admin_out(e) -> ExampleVideoAdminOut:
+    return ExampleVideoAdminOut(
+        id=str(e.id), url=e.url, platform=e.platform,
+        thumbnail_url=e.thumbnail_url, source=e.source,
+    )
+
+
+@router.get("/{campaign_id}/examples", response_model=list[ExampleVideoAdminOut])
+def list_examples(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
+                  db: Session = Depends(get_db)):
+    examples_svc.ensure_auto_examples(db, campaign_id)
+    return [_example_admin_out(e) for e in examples_svc.list_examples(db, campaign_id)]
+
+
+@router.post("/{campaign_id}/examples", response_model=ExampleVideoAdminOut)
+def add_example(campaign_id: uuid.UUID, body: ExampleVideoIn,
+                admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    return _example_admin_out(examples_svc.add_example(db, campaign_id, body.url, source="admin"))
+
+
+@router.delete("/{campaign_id}/examples/{example_id}", status_code=204)
+def delete_example(campaign_id: uuid.UUID, example_id: uuid.UUID,
+                   admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    examples_svc.delete_example(db, campaign_id, example_id)

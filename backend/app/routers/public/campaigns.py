@@ -18,7 +18,10 @@ router = APIRouter(prefix="/public/campaigns", tags=["public-campaigns"])
 
 
 def _out(c, db: Session | None = None) -> CampaignPublicOut:
+    from app.schemas.campaign import ExampleVideoOut
+    from app.services import campaign_examples
     milestones: list[BonusMilestoneOut] = []
+    examples: list[ExampleVideoOut] = []
     if db is not None:
         milestones = [
             BonusMilestoneOut(
@@ -27,6 +30,7 @@ def _out(c, db: Session | None = None) -> CampaignPublicOut:
             )
             for m in campaign_svc.get_bonus_milestones(db, c.id)
         ]
+        examples = [ExampleVideoOut(**e) for e in campaign_examples.examples_public(db, c.id)]
     return CampaignPublicOut(
         id=str(c.id), slug=c.slug, name=c.name, description=c.description, mode=c.mode,
         cpm_rate=c.cpm_rate, budget=c.budget, platforms=list(c.platforms or []),
@@ -38,7 +42,7 @@ def _out(c, db: Session | None = None) -> CampaignPublicOut:
         payment_type=c.payment_type, fixed_amount=c.fixed_amount,
         weekly_hours_needed=c.weekly_hours_needed, hourly_rate=c.hourly_rate,
         required_hours=c.required_hours, per_post_amount=c.per_post_amount,
-        example_videos=list(c.example_videos or []), age_requirement=c.age_requirement,
+        example_videos=list(c.example_videos or []), examples=examples, age_requirement=c.age_requirement,
         platform_focus=list(c.platform_focus or []), content_type=c.content_type,
         posting_frequency=c.posting_frequency, video_length=c.video_length,
         account_type=c.account_type, is_app=c.is_app, physical_product=c.physical_product,

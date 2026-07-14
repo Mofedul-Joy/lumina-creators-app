@@ -103,6 +103,14 @@ def create_campaign(db: Session, admin_id: uuid.UUID, data: dict) -> Campaign:
     # No uploaded banner → fetch a topic-relevant stock photo so the card is
     # never a bare wordmark. Best-effort; leaves banner_url empty on any failure.
     ensure_campaign_banner(db, campaign)
+    # Turn any pasted example-video links into example rows (with cached
+    # thumbnails). Best-effort — a thumbnail hiccup never fails campaign creation.
+    for url in (campaign.example_videos or []):
+        try:
+            from app.services import campaign_examples
+            campaign_examples.add_example(db, campaign.id, url, source="admin")
+        except Exception:  # noqa: BLE001
+            db.rollback()
     return campaign
 
 

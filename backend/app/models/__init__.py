@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.models.campaign import Campaign, CampaignBonusMilestone, CampaignInvite, CampaignParticipation
+from app.models.campaign import Campaign, CampaignBonusMilestone, CampaignExampleVideo, CampaignInvite, CampaignParticipation
 from app.models.contract import CampaignContract, CreatorContract
 from app.models.identity import Admin, Client, Creator, CreatorInvite
 from app.models.messaging import Conversation, ConversationMember, Message
@@ -15,6 +15,7 @@ __all__ = [
     "Campaign",
     "CampaignBonusMilestone",
     "CampaignContract",
+    "CampaignExampleVideo",
     "CampaignInvite",
     "CampaignParticipation",
     "Client",

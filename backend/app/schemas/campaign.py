@@ -202,6 +202,20 @@ class ShareTokenOut(BaseModel):
     share_url: str
 
 
+class ExampleVideoOut(BaseModel):
+    url: str
+    platform: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+
+
+class ExampleVideoAdminOut(BaseModel):
+    id: str
+    url: str
+    platform: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    source: str = "admin"
+
+
 class CampaignPublicOut(BaseModel):
     """Creator-facing browse/detail view — no spent_amount/client/created_by."""
     id: str
@@ -234,6 +248,7 @@ class CampaignPublicOut(BaseModel):
     required_hours: Optional[int] = None
     per_post_amount: Optional[Decimal] = None
     example_videos: List[str] = []
+    examples: List[ExampleVideoOut] = []   # structured: url + platform + cached thumbnail
     age_requirement: Optional[str] = None
     platform_focus: List[str] = []
     content_type: Optional[str] = None

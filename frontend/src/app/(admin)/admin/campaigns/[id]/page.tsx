@@ -8,6 +8,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { AddCreatorsToCampaignModal } from "@/components/admin/AddCreatorsToCampaignModal";
+import { CampaignExamplesSection } from "@/components/admin/CampaignExamplesSection";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
   convertCampaignToAdvanced,
@@ -275,6 +276,9 @@ export default function CampaignDetailPage() {
               </div>
             ) : null}
           </section>
+
+          {/* example videos */}
+          <CampaignExamplesSection campaignId={id} />
 
           {/* active creators */}
           <section className="card-grad rounded-[var(--radius-card)] p-5">

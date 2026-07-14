@@ -270,3 +270,31 @@ class CampaignInvite(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class CampaignExampleVideo(Base):
+    """An example video shown on a campaign's Explore overview. Either added by
+    an admin (a social link or an uploaded file) or auto-selected from the
+    campaign's top-performing submissions. The thumbnail is fetched once and
+    re-hosted on our own storage so it loads fast and never hotlink-breaks."""
+
+    __tablename__ = "campaign_example_videos"
+    __table_args__ = (
+        UniqueConstraint("campaign_id", "url", name="uq_example_campaign_url"),
+        Index("idx_example_campaign", "campaign_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    campaign_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False
+    )
+    url: Mapped[str] = mapped_column(Text, nullable=False)          # social post URL or hosted video URL
+    platform: Mapped[Optional[str]] = mapped_column(Text)
+    thumbnail_url: Mapped[Optional[str]] = mapped_column(Text)      # cached on our storage
+    source: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'admin'"))  # admin | auto
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
