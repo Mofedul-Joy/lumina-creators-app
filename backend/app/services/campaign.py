@@ -74,6 +74,34 @@ def _drop_unset_defaults(data: dict) -> dict:
     return {k: v for k, v in data.items() if not (k in _DEFAULTED_COLUMNS and v is None)}
 
 
+_VALID_PLATFORMS = {"instagram", "tiktok", "youtube", "twitter", "facebook"}
+
+
+def _validate_ranges(data: dict) -> None:
+    """App-level guards mirroring the DB CHECK constraints for range/enum fields.
+    Without these, an out-of-range value reaches the DB and surfaces as a raw 500
+    instead of a clean 400. Only validates keys actually present, so it's safe for
+    partial PATCH updates. (min_payout_amount has no DB CHECK — guarded here too.)"""
+    def _num(v):
+        try:
+            return Decimal(str(v))
+        except (TypeError, ValueError):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid numeric value")
+    if data.get("eligible_view_pct") is not None:
+        if not (0 <= _num(data["eligible_view_pct"]) <= 100):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "eligible_view_pct must be between 0 and 100")
+    if data.get("platforms"):
+        bad = [p for p in data["platforms"] if p not in _VALID_PLATFORMS]
+        if bad:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Invalid platform(s): {', '.join(map(str, bad))}")
+    if data.get("max_payout_per_creator") is not None and _num(data["max_payout_per_creator"]) <= 0:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "max_payout_per_creator must be positive")
+    if data.get("min_payout_amount") is not None and _num(data["min_payout_amount"]) < 0:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "min_payout_amount cannot be negative")
+    if data.get("min_retention_days") is not None and int(data["min_retention_days"]) < 0:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "min_retention_days cannot be negative")
+
+
 def _validate_payment_amount(payment_type, fixed_amount, per_post_amount, hourly_rate) -> None:
     """Each non-CPM payment_type needs its own positive rate, otherwise a
     published campaign silently pays creators $0 (compute_owed treats None as 0).
@@ -107,6 +135,7 @@ def create_campaign(db: Session, admin_id: uuid.UUID, data: dict) -> Campaign:
         data.get("payment_type"), data.get("fixed_amount"),
         data.get("per_post_amount"), data.get("hourly_rate"),
     )
+    _validate_ranges(data)
     # create_new keeps content_drive_url NULL (DB constraint requires it)
     if data["mode"] == "create_new":
         data["content_drive_url"] = None
@@ -260,6 +289,7 @@ def update_campaign(db: Session, campaign_id: uuid.UUID, data: dict) -> Campaign
         data.get("per_post_amount", c.per_post_amount),
         data.get("hourly_rate", c.hourly_rate),
     )
+    _validate_ranges(data)
     if data.get("budget") is not None and data["budget"] <= 0:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "budget must be positive")
     # The router passes model_dump(exclude_unset=True), so a field being present
