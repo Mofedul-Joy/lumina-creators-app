@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { getAuthToken } from "@/lib/auth";
+import Link from "next/link";
 import { getProfile, isAuthError, retryNonAuth} from "@/lib/api";
-import { listSubmissions } from "@/lib/campaigns";
+import { listSubmissions, browseCampaigns } from "@/lib/campaigns";
 import { getMyGamification } from "@/lib/gamification";
-import { fmtMoney } from "@/lib/format";
+import { fmtMoney, fmtInt } from "@/lib/format";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -31,6 +32,7 @@ export default function DashboardPage() {
   const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfile(bearer), enabled, retry: retryNonAuth });
   const subsQ = useQuery({ queryKey: ["submissions"], queryFn: listSubmissions, enabled, retry: retryNonAuth });
   const gamQ = useQuery({ queryKey: ["my-gamification"], queryFn: getMyGamification, enabled, retry: retryNonAuth });
+  const campaignsQ = useQuery({ queryKey: ["browse-campaigns"], queryFn: browseCampaigns, enabled, retry: retryNonAuth });
   useEffect(() => {
     if (profileQ.isError && isAuthError(profileQ.error)) router.replace("/login");
   }, [profileQ.isError, profileQ.error, router]);
@@ -53,6 +55,10 @@ export default function DashboardPage() {
 
   const streak = gamQ.data?.streak_days ?? 0;
   const firstName = (profileQ.data?.display_name ?? "").trim().split(" ")[0] || "creator";
+
+  const enrolledCount = (campaignsQ.data ?? []).filter((c) => c.joined).length;
+  const totalPosts = subs.length;
+  const totalViews = subs.reduce((acc, s) => acc + Number(s.views ?? 0), 0);
 
   const today = new Date().getDay(); // 0 Sun … 6 Sat
   // Light the last `streak` days (capped to a week), wrapping across Sunday so a
@@ -107,6 +113,41 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
+        </section>
+      </div>
+
+      <div className="mt-5 grid gap-5 md:grid-cols-2">
+        {/* Campaigns enrolled */}
+        <Link
+          href="/submissions"
+          className="card-lumina group rounded-[var(--radius-card)] p-6 transition hover:border-[var(--color-brand)]"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-[var(--color-text)]">Campaigns enrolled</h2>
+            <span aria-hidden className="text-[var(--color-text-muted)] transition group-hover:text-[var(--color-brand)]">→</span>
+          </div>
+          <p className="tabular mt-3 text-4xl font-semibold text-[var(--color-text)]">{enrolledCount}</p>
+          <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+            {enrolledCount > 0
+              ? "Open My Campaigns to track views, payouts and submissions."
+              : "Head to Explore and enter a campaign to start earning."}
+          </p>
+        </Link>
+
+        {/* Your content */}
+        <section className="card-lumina rounded-[var(--radius-card)] p-6">
+          <h2 className="text-lg font-semibold text-[var(--color-text)]">Your content</h2>
+          <div className="mt-4 flex items-end gap-10">
+            <div>
+              <p className="tabular text-4xl font-semibold text-[var(--color-brand-soft)]">{fmtInt(totalViews)}</p>
+              <p className="mt-1 text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Total views</p>
+            </div>
+            <div>
+              <p className="tabular text-4xl font-semibold text-[var(--color-text)]">{fmtInt(totalPosts)}</p>
+              <p className="mt-1 text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Posts</p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-[var(--color-text-muted)]">Across every campaign you&apos;ve posted to.</p>
         </section>
       </div>
     </main>

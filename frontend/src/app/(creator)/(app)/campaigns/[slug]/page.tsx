@@ -220,8 +220,8 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 8v4l2.5 2.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </span>
                   <div>
-                    <p className="font-medium text-[var(--color-text)]">Request sent — pending admin approval</p>
-                    <p className="mt-1 text-sm text-[var(--color-text-secondary)]">You&apos;ll be able to submit posts to this campaign once an admin approves you. We&apos;ll notify you.</p>
+                    <p className="font-medium text-[var(--color-text)]">You don&apos;t have access to this campaign</p>
+                    <p className="mt-1 text-sm text-[var(--color-text-secondary)]">An admin may have removed you from it. Reach out to the Lumina team if you think this is a mistake.</p>
                   </div>
                 </div>
               ) : (

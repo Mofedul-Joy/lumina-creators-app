@@ -13,7 +13,10 @@ const NAV = [
   { href: "/admin/dashboard", label: "Dashboard", icon: "M3 12l2-2 4 4 6-6 4 4M3 20h18" },
   { href: "/admin/campaigns", label: "Campaigns", icon: "M3 11l18-5v12L3 15zM11.6 16.8a3 3 0 11-5.8-1.6" },
   { href: "/admin/creators", label: "Creators", icon: "M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8M21 21v-2a4 4 0 00-3-3.9" },
-  { href: "/admin/applicants", label: "Applicants", icon: "M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8M19 8v6M22 11h-6" },
+  // Applicants hidden (Rev2): creators now enter campaigns without an approval
+  // request, so there's nothing to review here. Route + page kept intact — just
+  // removed from the nav. Restore this line to bring it back.
+  // { href: "/admin/applicants", label: "Applicants", icon: "M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8M19 8v6M22 11h-6" },
   { href: "/admin/video-review", label: "Video Review", icon: "M3 6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2zM10 9l5 3-5 3z" },
   { href: "/admin/payments", label: "Payments", icon: "M2 7h20v10H2zM2 11h20M6 15h4" },
   { href: "/admin/users", label: "Users", icon: "M3 5h18v14H3zM3 9h18M8 13h5" },

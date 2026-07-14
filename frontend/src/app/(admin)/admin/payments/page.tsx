@@ -26,14 +26,14 @@ import { getCreatorDetail, isAuthError, type CreatorDetail, retryNonAuth} from "
 import { PayCreatorModal } from "@/components/admin/PayCreatorModal";
 import { fmtInt, fmtMoney } from "@/lib/format";
 
+// Rev2 #7: only two visible sections — Awaiting Payments and Paid — plus a
+// campaign filter. The Ledger/Creators/Forecast/Agency views are kept in the
+// code (unreachable) so nothing is lost; restore them here to bring them back.
 const PAGE_TABS = [
-  { key: "payouts", label: "Payouts" },
-  { key: "ledger", label: "Ledger" },
-  { key: "creators", label: "Creators" },
-  { key: "forecast", label: "Forecast" },
-  { key: "agency", label: "Agency" },
+  { key: "awaiting", label: "Awaiting Payments" },
+  { key: "paid", label: "Paid" },
 ] as const;
-type PageTab = (typeof PAGE_TABS)[number]["key"];
+type PageTab = "awaiting" | "paid" | "ledger" | "creators" | "forecast" | "agency";
 
 const LEDGER_BADGE: Record<string, string> = {
   deposit: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
@@ -167,7 +167,8 @@ export default function AdminPaymentsPage() {
   const qc = useQueryClient();
   const [ready, setReady] = useState(false);
   const [hasToken, setHasToken] = useState(false);
-  const [tab, setTab] = useState<PageTab>("payouts");
+  const [tab, setTab] = useState<PageTab>("awaiting");
+  const [campaignFilter, setCampaignFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [hoverRow, setHoverRow] = useState<string | null>(null);
 
@@ -208,7 +209,7 @@ export default function AdminPaymentsPage() {
   const ledgerQ = useQuery({
     queryKey: ["payouts-ledger"],
     queryFn: () => getLedger(100),
-    enabled: enabled && tab === "ledger",
+    enabled: enabled && tab === "paid",
     retry: retryNonAuth,
   });
   const forecastQ = useQuery({
@@ -271,6 +272,14 @@ export default function AdminPaymentsPage() {
   const forecast = forecastQ.data ?? [];
   const creators = creatorsQ.data ?? [];
 
+  // Campaign filter (Rev2 #7): options built from the owed rows themselves.
+  const campaignOptions = Array.from(
+    new Map(
+      owed.filter((r) => r.campaign_id).map((r) => [r.campaign_id as string, r.program_name ?? "Campaign"] as const),
+    ).entries(),
+  ).map(([id, name]) => ({ id, name }));
+  const owedView = campaignFilter === "all" ? owed : owed.filter((r) => r.campaign_id === campaignFilter);
+
   const totalOwed = owed.reduce((s, r) => s + Number(r.amount_owed), 0);
   const availableBalance = wallet ? Number(wallet.available_balance) : 0;
   const pendingBalance = wallet ? Number(wallet.pending_balance) : 0;
@@ -284,10 +293,10 @@ export default function AdminPaymentsPage() {
     });
   };
   const toggleAll = () => {
-    setSelected((prev) => (prev.size === owed.length ? new Set() : new Set(owed.map((r) => r.creator_id))));
+    setSelected((prev) => (prev.size === owedView.length ? new Set() : new Set(owedView.map((r) => r.creator_id))));
   };
 
-  const selectedOwedTotal = owed.filter((r) => selected.has(r.creator_id)).reduce((s, r) => s + Number(r.amount_owed), 0);
+  const selectedOwedTotal = owedView.filter((r) => selected.has(r.creator_id)).reduce((s, r) => s + Number(r.amount_owed), 0);
 
   return (
     <div className="min-h-[100dvh]">
@@ -433,8 +442,24 @@ export default function AdminPaymentsPage() {
           ))}
         </div>
 
-        {tab === "payouts" ? (
+        {tab === "awaiting" ? (
           <div className="mt-4">
+            {campaignOptions.length > 0 ? (
+              <div className="mb-3 flex items-center gap-2">
+                <label htmlFor="pay-campaign" className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Campaign</label>
+                <select
+                  id="pay-campaign"
+                  value={campaignFilter}
+                  onChange={(e) => { setCampaignFilter(e.target.value); setSelected(new Set()); }}
+                  className="cursor-pointer rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
+                >
+                  <option value="all">All campaigns</option>
+                  {campaignOptions.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
             {selected.size > 0 ? (
               <div className="mb-3 flex items-center justify-between rounded-[var(--radius-btn)] border border-[var(--color-brand)]/30 bg-[var(--color-brand)]/10 px-4 py-2.5">
                 <span className="text-sm text-[var(--color-brand-soft)]">
@@ -451,15 +476,15 @@ export default function AdminPaymentsPage() {
             <div className="card-lumina overflow-hidden rounded-[var(--radius-card)]">
               {owedQ.isLoading ? (
                 <p className="p-6 text-sm text-[var(--color-text-secondary)]">Loading…</p>
-              ) : owed.length === 0 ? (
-                <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">Everyone is paid up.</p>
+              ) : owedView.length === 0 ? (
+                <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">{campaignFilter === "all" ? "Everyone is paid up." : "No one is owed on this campaign."}</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[920px] text-sm">
                     <thead>
                       <tr className="text-left text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
                         <th className="px-4 py-3 font-medium">
-                          <input type="checkbox" checked={selected.size === owed.length && owed.length > 0} onChange={toggleAll} className="cursor-pointer" />
+                          <input type="checkbox" checked={selected.size === owedView.length && owedView.length > 0} onChange={toggleAll} className="cursor-pointer" />
                         </th>
                         <th className="px-4 py-3 font-medium">Name</th>
                         <th className="px-4 py-3 text-right font-medium">Amount</th>
@@ -472,7 +497,7 @@ export default function AdminPaymentsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {owed.map((r: OwedRowV2) => (
+                      {owedView.map((r: OwedRowV2) => (
                         <tr key={`${r.creator_id}-${r.campaign_id}`} className="border-t border-[var(--color-border)]/40">
                           <td className="px-4 py-4">
                             <input type="checkbox" checked={selected.has(r.creator_id)} onChange={() => toggleRow(r.creator_id)} className="cursor-pointer" />
@@ -528,6 +553,39 @@ export default function AdminPaymentsPage() {
                 </div>
               )}
             </div>
+          </div>
+        ) : tab === "paid" ? (
+          <div className="card-lumina mt-4 overflow-hidden rounded-[var(--radius-card)]">
+            {ledgerQ.isLoading ? (
+              <p className="p-6 text-sm text-[var(--color-text-secondary)]">Loading…</p>
+            ) : ledger.filter((t) => t.kind === "payout").length === 0 ? (
+              <p className="p-10 text-center text-sm text-[var(--color-text-secondary)]">No payments made yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
+                      <th className="px-6 py-3 font-medium">Date</th>
+                      <th className="px-6 py-3 text-right font-medium">Amount</th>
+                      <th className="px-6 py-3 font-medium">Reference</th>
+                      <th className="px-6 py-3 font-medium">Note</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ledger.filter((t) => t.kind === "payout").map((t: LedgerRow) => (
+                      <tr key={t.id} className="border-t border-[var(--color-border)]/40">
+                        <td className="px-6 py-4 text-[var(--color-text-muted)]">
+                          {new Date(t.created_at).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
+                        </td>
+                        <td className="tabular px-6 py-4 text-right font-medium text-[var(--color-text)]">{fmtMoney(t.amount)}</td>
+                        <td className="px-6 py-4 text-[var(--color-text-secondary)]">{t.reference ?? "—"}</td>
+                        <td className="max-w-[280px] px-6 py-4 text-[var(--color-text-secondary)]">{t.note ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         ) : tab === "ledger" ? (
           <div className="card-lumina mt-4 overflow-hidden rounded-[var(--radius-card)]">
