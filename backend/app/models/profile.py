@@ -18,7 +18,7 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin
@@ -108,6 +108,12 @@ class CreatorProfile(TimestampMixin, Base):
     )
     niches: Mapped[List[str]] = mapped_column(
         ARRAY(Text), nullable=False, server_default=text("'{}'::text[]")
+    )
+    # SideShift-style onboarding personalization answers that don't warrant their
+    # own columns: ugc_experience, experience_level, content_types, posts_per_day,
+    # hours_per_week, how_heard, referral_code. Flexible bag so the flow can grow.
+    onboarding: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
     )
 
 

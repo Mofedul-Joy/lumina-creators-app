@@ -1,6 +1,6 @@
 """Creator profile schemas. Optional/List (not `X | None`) so Pydantic evals on 3.9."""
 from datetime import date, datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -33,6 +33,8 @@ class ProfileIn(BaseModel):
     payout_paypal: Optional[str] = None
     payout_solana: Optional[str] = None
     payout_whop: Optional[str] = None
+    niches: Optional[List[str]] = None
+    onboarding: Optional[Dict[str, Any]] = None
 
 
 class ProfileOut(BaseModel):
@@ -55,6 +57,8 @@ class ProfileOut(BaseModel):
     payout_paypal: Optional[str] = None
     payout_solana: Optional[str] = None
     payout_whop: Optional[str] = None
+    niches: List[str] = []
+    onboarding: Dict[str, Any] = {}
     completed: bool = False
     missing: List[str] = []
 

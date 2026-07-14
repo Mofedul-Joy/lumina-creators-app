@@ -85,6 +85,12 @@ def update_profile(db: Session, creator_id: uuid.UUID, data: dict) -> CreatorPro
             setattr(prof, field, data[field])
     if "languages" in data:
         prof.languages = data["languages"]
+    if "niches" in data and data["niches"] is not None:
+        prof.niches = data["niches"]
+    # Merge onboarding answers (save-as-you-go per step) rather than replace, so
+    # one step's write doesn't wipe earlier answers.
+    if "onboarding" in data and data["onboarding"] is not None:
+        prof.onboarding = {**(prof.onboarding or {}), **data["onboarding"]}
     # Keep payout_address as the resolved address for the selected method so
     # the admin payout prefill + claim gate (which read payout_address) stay
     # correct regardless of which per-method field the creator just edited.
