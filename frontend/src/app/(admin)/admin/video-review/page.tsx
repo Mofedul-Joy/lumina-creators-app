@@ -99,6 +99,7 @@ function VideoReviewInner() {
   const [ready, setReady] = useState(false);
   const [hasToken, setHasToken] = useState(false);
   const [filter, setFilter] = useState<string>(urlStatus ?? "");
+  const [campaignFilter, setCampaignFilter] = useState<string>("all");
   useEffect(() => { if (urlStatus !== null) setFilter(urlStatus); }, [urlStatus]);
   const [detail, setDetail] = useState<AdminSubmission | null>(null);
 
@@ -131,14 +132,17 @@ function VideoReviewInner() {
   // Group rows by campaign, preserving the (newest-first) order they arrive in.
   const groups = useMemo(() => {
     const rows = listQ.data ?? [];
-    const map = new Map<string, { name: string; mode: string; rows: AdminSubmission[] }>();
+    const map = new Map<string, { id: string; name: string; mode: string; rows: AdminSubmission[] }>();
     for (const s of rows) {
-      const g = map.get(s.campaign_id) ?? { name: s.campaign_name, mode: s.campaign_mode, rows: [] };
+      const g = map.get(s.campaign_id) ?? { id: s.campaign_id, name: s.campaign_name, mode: s.campaign_mode, rows: [] };
       g.rows.push(s);
       map.set(s.campaign_id, g);
     }
     return [...map.values()];
   }, [listQ.data]);
+  // Rev2 #6: a campaign dropdown to jump straight to one campaign's videos
+  // instead of scrolling the whole list.
+  const visibleGroups = campaignFilter === "all" ? groups : groups.filter((g) => g.id === campaignFilter);
 
   if (!ready || !hasToken)
     return (
@@ -161,13 +165,13 @@ function VideoReviewInner() {
     <div className="min-h-[100dvh]">
       <AdminShell />
       <main className="mx-auto max-w-6xl px-6 py-10">
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Video Review</h1>
+        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Submissions</h1>
         <p className="mt-2 max-w-xl text-[var(--color-text-secondary)]">
-          Watch the videos creators submitted, grouped by campaign — approve, reject, or send back for changes without leaving Lumina.
+          Every video creators submitted, grouped by campaign — watch, approve, reject, or send back for changes without leaving Lumina.
         </p>
 
-        {/* status tabs */}
-        <div className="mt-6 flex flex-wrap gap-2">
+        {/* status tabs + campaign jump */}
+        <div className="mt-6 flex flex-wrap items-center gap-2">
           {TABS.map((t) => {
             const active = filter === t.key;
             const n = countFor(t.key);
@@ -186,18 +190,31 @@ function VideoReviewInner() {
               </button>
             );
           })}
+          {groups.length > 0 ? (
+            <select
+              value={campaignFilter}
+              onChange={(e) => setCampaignFilter(e.target.value)}
+              aria-label="Jump to campaign"
+              className="ml-auto cursor-pointer rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-1.5 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
+            >
+              <option value="all">All campaigns</option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          ) : null}
         </div>
 
         {/* campaigns → videos */}
         {listQ.isLoading ? (
           <p className="mt-10 text-sm text-[var(--color-text-secondary)]">Loading videos…</p>
-        ) : groups.length === 0 ? (
+        ) : visibleGroups.length === 0 ? (
           <div className="card-lumina mt-6 rounded-[var(--radius-card)] p-12 text-center">
             <p className="text-sm text-[var(--color-text-secondary)]">No videos in this view.</p>
           </div>
         ) : (
           <div className="mt-8 space-y-10">
-            {groups.map((g, i) => (
+            {visibleGroups.map((g, i) => (
               <section key={i}>
                 <div className="mb-4 flex items-center gap-3">
                   <h2 className="text-lg font-semibold text-[var(--color-text)]">{g.name}</h2>
