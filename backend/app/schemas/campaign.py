@@ -3,7 +3,12 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
+
+# Money columns are NUMERIC(12,x); anything at/over ~1e10 overflows the DB write
+# with an unhandled 500. Cap well under that at input time so bad values 422.
+_MONEY_MAX = Decimal("100000000")   # $100M — generous for any real campaign
+_CPM_MAX = Decimal("100000")        # $100k / 1k views is already absurd
 
 
 class BonusMilestoneIn(BaseModel):
@@ -23,11 +28,18 @@ class BonusMilestoneOut(BaseModel):
 
 
 class CampaignCreateIn(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1, max_length=200)
     mode: str  # create_new | copy_paste
-    cpm_rate: Decimal
-    budget: Decimal
+    cpm_rate: Decimal = Field(..., ge=0, le=_CPM_MAX)
+    budget: Decimal = Field(..., ge=0, le=_MONEY_MAX)
     description: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _dates_ordered(self):
+        # ends_at before starts_at fell through to an unhandled 500. Reject it.
+        if self.starts_at and self.ends_at and self.ends_at <= self.starts_at:
+            raise ValueError("Campaign end date must be after its start date.")
+        return self
     max_payout_per_creator: Optional[Decimal] = None
     min_payout_amount: Optional[Decimal] = None
     eligible_view_pct: Decimal = Decimal("100")

@@ -2,15 +2,24 @@
 from datetime import date, datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 
 class ProfileIn(BaseModel):
-    display_name: Optional[str] = None
-    phone: Optional[str] = None
+    display_name: Optional[str] = Field(None, max_length=120)
+    phone: Optional[str] = Field(None, max_length=40)
     creator_type: Optional[str] = None   # ugc | influencer | both
-    bio: Optional[str] = None
+    bio: Optional[str] = Field(None, max_length=2000)
     date_of_birth: Optional[date] = None
+
+    @field_validator("date_of_birth")
+    @classmethod
+    def _dob_in_past(cls, v: Optional[date]) -> Optional[date]:
+        # A DOB in the future (or absurdly old) is nonsense — reject with a 422
+        # instead of storing it. 13+ isn't enforced here (no ToS age gate yet).
+        if v is not None and (v >= date.today() or v.year < 1900):
+            raise ValueError("Enter a valid date of birth in the past.")
+        return v
     gender: Optional[str] = None
     ethnicity: Optional[str] = None
     education: Optional[str] = None
@@ -52,9 +61,11 @@ class ProfileOut(BaseModel):
 
 class SocialIn(BaseModel):
     platform: str
-    handle: str
-    profile_url: Optional[str] = None
-    follower_count: int = 0
+    handle: str = Field(..., max_length=120)
+    profile_url: Optional[str] = Field(None, max_length=500)
+    # Bounded to 32-bit INT (the DB column) so a huge value returns a clean 422
+    # instead of an unhandled 500 on the insert.
+    follower_count: int = Field(0, ge=0, le=2_147_483_647)
 
 
 class SocialOut(BaseModel):
