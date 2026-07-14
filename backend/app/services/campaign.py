@@ -74,6 +74,23 @@ def _drop_unset_defaults(data: dict) -> dict:
     return {k: v for k, v in data.items() if not (k in _DEFAULTED_COLUMNS and v is None)}
 
 
+def _validate_payment_amount(payment_type, fixed_amount, per_post_amount, hourly_rate) -> None:
+    """Each non-CPM payment_type needs its own positive rate, otherwise a
+    published campaign silently pays creators $0 (compute_owed treats None as 0).
+    'mixed' needs fixed_amount too (cpm_rate is checked separately)."""
+    def _pos(v) -> bool:
+        try:
+            return v is not None and Decimal(v) > 0
+        except (TypeError, ValueError):
+            return False
+    if payment_type in ("fixed", "mixed") and not _pos(fixed_amount):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "fixed_amount must be positive for this payment type")
+    if payment_type == "per_post" and not _pos(per_post_amount):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "per_post_amount must be positive for per-post campaigns")
+    if payment_type == "per_hour" and not _pos(hourly_rate):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "hourly_rate must be positive for per-hour campaigns")
+
+
 def create_campaign(db: Session, admin_id: uuid.UUID, data: dict) -> Campaign:
     data = _drop_unset_defaults(dict(data))
     _validate_flow_fields(data)
@@ -86,6 +103,10 @@ def create_campaign(db: Session, admin_id: uuid.UUID, data: dict) -> Campaign:
     _cpm_required = data.get("payment_type") in (None, "cpm", "mixed")
     if _cpm_required and data["cpm_rate"] <= 0:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "cpm_rate must be positive")
+    _validate_payment_amount(
+        data.get("payment_type"), data.get("fixed_amount"),
+        data.get("per_post_amount"), data.get("hourly_rate"),
+    )
     # create_new keeps content_drive_url NULL (DB constraint requires it)
     if data["mode"] == "create_new":
         data["content_drive_url"] = None
@@ -231,6 +252,14 @@ def update_campaign(db: Session, campaign_id: uuid.UUID, data: dict) -> Campaign
     _eff_ptype = data.get("payment_type", c.payment_type)
     if data.get("cpm_rate") is not None and data["cpm_rate"] <= 0 and _eff_ptype in (None, "cpm", "mixed"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "cpm_rate must be positive")
+    # Validate the effective (post-merge) payment amount so an edit can't leave a
+    # fixed/per_post/per_hour campaign with a null/zero rate that pays $0.
+    _validate_payment_amount(
+        _eff_ptype,
+        data.get("fixed_amount", c.fixed_amount),
+        data.get("per_post_amount", c.per_post_amount),
+        data.get("hourly_rate", c.hourly_rate),
+    )
     if data.get("budget") is not None and data["budget"] <= 0:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "budget must be positive")
     # The router passes model_dump(exclude_unset=True), so a field being present

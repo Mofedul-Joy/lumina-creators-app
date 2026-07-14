@@ -46,8 +46,11 @@ def _notify_creator(db: Session, admin_id: uuid.UUID, sub: Submission,
     if note:
         line += f"\n\nFeedback from the team: {note}"
     try:
+        # Bell body carries the campaign-aware sentence (+ feedback) so the
+        # notification alone tells the creator which campaign it's about — the
+        # title stays short/generic.
         notifications.push(db, sub.creator_id, kind="video_review",
-                           title=title, body=note or None, link="/submissions")
+                           title=title, body=line, link="/submissions")
     except Exception:
         db.rollback()
     try:

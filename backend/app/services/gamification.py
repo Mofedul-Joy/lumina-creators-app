@@ -23,7 +23,7 @@ from typing import List, Optional
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import Creator, CreatorProfile, Submission
+from app.models import Creator, CreatorProfile, Payout, Submission
 
 # Gemstone rank thresholds (BUILD_SPEC.md §3.9) — ordered lowest to highest.
 RANK_THRESHOLDS = (
@@ -103,8 +103,18 @@ def _aggregate_stats(db: Session, creator_id: uuid.UUID) -> tuple[int, Decimal, 
         ).where(Submission.creator_id == creator_id)
     ).first()
     total_views = int(row[0]) if row else 0
-    total_earned = Decimal(row[1]) if row else Decimal("0")
+    cpm_earned = Decimal(row[1]) if row else Decimal("0")
     total_posts = int(row[2]) if row else 0
+    # estimated_amount is CPM-only (0 for fixed/per-post/per-hour campaigns), so a
+    # creator paid entirely through those would show $0 earned and never unlock
+    # earnings_mastery. Fall back to actual money paid out (all payment types) so
+    # both the displayed figure and the award reflect real earnings.
+    total_paid = Decimal(db.scalar(
+        select(func.coalesce(func.sum(Payout.amount), 0)).where(
+            Payout.creator_id == creator_id, Payout.status == "paid"
+        )
+    ) or 0)
+    total_earned = max(cpm_earned, total_paid)
     return total_views, total_earned, total_posts
 
 

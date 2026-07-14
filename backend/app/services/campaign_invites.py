@@ -122,6 +122,26 @@ def invite(db: Session, admin_id: uuid.UUID, campaign_id: uuid.UUID,
             continue
         # Direct admin invite = auto-accepted into the campaign (no application).
         _auto_accept(db, campaign_id, cid)
+        # Record a CampaignInvite row so the admin Invites list reflects existing-
+        # creator invites too (the module docstring promises `creator_id` set gets
+        # a row). Marked accepted immediately since the creator was auto-accepted,
+        # so it shows as "accepted" in the list and never inflates pending_count.
+        open_inv = db.scalar(
+            select(CampaignInvite).where(
+                CampaignInvite.campaign_id == campaign_id,
+                CampaignInvite.creator_id == cid,
+                CampaignInvite.accepted_at.is_(None),
+                CampaignInvite.declined_at.is_(None),
+                CampaignInvite.revoked_at.is_(None),
+            )
+        )
+        if open_inv is not None:
+            open_inv.accepted_at = _now()
+        else:
+            db.add(CampaignInvite(
+                campaign_id=campaign_id, creator_id=cid, created_by_admin_id=admin_id,
+                accepted_at=_now(), expires_at=_now() + timedelta(days=INVITE_TTL_DAYS),
+            ))
         # In-app notification — click-through straight to the campaign.
         try:
             notifications.push(
@@ -270,7 +290,14 @@ def _direct_join(db: Session, campaign_id: uuid.UUID, creator_id: uuid.UUID) -> 
     )
     if existing is not None:  # removed row — don't silently re-add
         return
-    db.add(CampaignParticipation(campaign_id=campaign_id, creator_id=creator_id))
+    # The invite IS the acceptance — set status/accepted_at so the creator can
+    # submit immediately (matches _auto_accept + Rev2 no-approval join). Without
+    # this the participation defaulted to status='joined'/accepted_at=NULL, landing
+    # them in the "New" tab with approved:false, contradicting the invite copy.
+    db.add(CampaignParticipation(
+        campaign_id=campaign_id, creator_id=creator_id,
+        status="accepted", accepted_at=_now(),
+    ))
     db.flush()
     # Send their agreement too (best-effort — the join is what matters).
     try:

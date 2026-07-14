@@ -47,7 +47,7 @@ def list_conversations(unread: bool = False, archived: bool = False, kind: Optio
 @router.post("/channels", response_model=ConversationOut)
 def create_channel(body: CreateChannelIn, admin: Admin = Depends(get_current_admin),
                    db: Session = Depends(get_db)):
-    conv = svc.create_channel(db, body.title, [uuid.UUID(c) for c in body.creator_ids])
+    conv = svc.create_channel(db, body.title, list(body.creator_ids))
     # Seed the thread so it appears in members' lists right away.
     svc.send_message(db, conv.id, "admin", f"Welcome to #{conv.title} 👋", sender_admin_id=admin.id)
     return ConversationOut(**svc._admin_row(db, conv))
@@ -62,7 +62,7 @@ def channel_members(conversation_id: uuid.UUID, admin: Admin = Depends(get_curre
 @router.post("/{conversation_id}/members", status_code=204)
 def add_members(conversation_id: uuid.UUID, body: ChannelMembersIn,
                 admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    svc.add_channel_members(db, conversation_id, [uuid.UUID(c) for c in body.creator_ids])
+    svc.add_channel_members(db, conversation_id, list(body.creator_ids))
 
 
 @router.delete("/{conversation_id}/members/{creator_id}", status_code=204)
@@ -82,19 +82,15 @@ def start(body: StartConversationIn, admin: Admin = Depends(get_current_admin),
     """Open (or reuse) the DM thread with a creator — used by the 'message this
     creator' buttons across the admin console."""
     from fastapi import HTTPException, status
-    from sqlalchemy import select
-    from app.models import Creator, CreatorProfile
-    creator = db.get(Creator, uuid.UUID(body.creator_id))
+    from app.models import Creator
+    creator = db.get(Creator, body.creator_id)
     if creator is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Creator not found")
     conv = svc.get_or_create_for_creator(db, creator.id)
-    display_name = db.scalar(select(CreatorProfile.display_name).where(CreatorProfile.creator_id == creator.id))
-    return ConversationOut(
-        id=str(conv.id), creator_id=str(creator.id),
-        name=display_name or creator.email.split("@")[0], email=creator.email,
-        last_message=None, last_message_at=conv.last_message_at, last_sender=None,
-        unread=False,
-    )
+    # Return the real inbox row (last message / sender / unread state) via the
+    # same builder every other endpoint uses — the old hand-built response
+    # hardcoded last_message=null/unread=false and hid an existing unread reply.
+    return ConversationOut(**svc._admin_row(db, conv))
 
 
 @router.get("/{conversation_id}/messages", response_model=list[MessageOut])

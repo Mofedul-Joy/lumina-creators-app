@@ -1,6 +1,7 @@
 """Messaging schemas."""
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -36,7 +37,7 @@ class MessageIn(BaseModel):
 
 
 class StartConversationIn(BaseModel):
-    creator_id: str
+    creator_id: UUID  # pydantic validates format → 422 (not a 500) on bad input
 
 
 class UnreadCountOut(BaseModel):
@@ -71,11 +72,11 @@ class ContractHistoryItem(BaseModel):
 # ── channels ──
 class CreateChannelIn(BaseModel):
     title: str
-    creator_ids: list[str] = []
+    creator_ids: list[UUID] = []
 
 
 class ChannelMembersIn(BaseModel):
-    creator_ids: list[str] = []
+    creator_ids: list[UUID] = []
 
 
 class ChannelMemberOut(BaseModel):
