@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
+import { Select } from "@/components/ui/Select";
 import {
   deleteSubmission, logSubmissionPayout, rejectSubmission, requestSubmissionRevision, verifySubmission,
   type AdminSubmission, type PayoutMethod,
@@ -42,11 +43,6 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
   const [error, setError] = useState("");
 
   useEffect(() => setMounted(true), []);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   const done = () => { qc.invalidateQueries({ queryKey: ["dash-submissions"] }); onClose(); };
   const refetchStay = () => qc.invalidateQueries({ queryKey: ["dash-submissions"] });
@@ -73,7 +69,7 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] grid place-items-center bg-black/70 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] grid place-items-center bg-black/70 p-4">
       <div
         className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
@@ -175,10 +171,8 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
             <div className="mt-4 space-y-2 rounded-[var(--radius-btn)] bg-[var(--color-surface-2)] p-3">
               <p className="text-sm font-medium text-[var(--color-text)]">Log payout of {fmtMoney(sub.estimated_amount)}</p>
               <div className="grid grid-cols-2 gap-2">
-                <select value={method} onChange={(e) => setMethod(e.target.value as PayoutMethod)}
-                  className="min-h-9 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-sm text-[var(--color-text)]">
-                  {METHODS.map((m) => <option key={m} value={m}>{METHOD_LABEL[m]}</option>)}
-                </select>
+                <Select value={method} onChange={(v) => setMethod(v as PayoutMethod)}
+                  options={METHODS.map((m) => ({ value: m, label: METHOD_LABEL[m] }))} />
                 <input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Reference (optional)"
                   className="min-h-9 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-sm text-[var(--color-text)]" />
               </div>

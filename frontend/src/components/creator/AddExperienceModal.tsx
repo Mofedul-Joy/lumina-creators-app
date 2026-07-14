@@ -7,6 +7,7 @@ import {
   EXPERIENCE_PLATFORMS, EXPERIENCE_DELIVERABLES, EXPERIENCE_NICHES,
   type ExperienceKind, type ExperienceOut,
 } from "@/lib/api";
+import { Select } from "@/components/ui/Select";
 
 /**
  * "Add experience" popup (Bill's feedback: the old flow captured only a title +
@@ -68,12 +69,9 @@ export function AddExperienceModal({
     setKind(null);
     setForm(EMPTY);
     setError(null);
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
     const token = getAuthToken();
     if (token) listRoleTitles(token).then(setRoleTitles).catch(() => {});
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open]);
 
   const kindLabel = useMemo(() => KINDS.find((k) => k.key === kind)?.label ?? "", [kind]);
   const isRole = kind === "professional_role";
@@ -118,7 +116,7 @@ export function AddExperienceModal({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center p-4" role="dialog" aria-modal="true" aria-labelledby="add-exp-title">
-      <button aria-label="Close" onClick={onClose} className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
+      <div aria-hidden className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
       <div className="card-lumina relative flex max-h-[90vh] w-full max-w-lg flex-col rounded-[var(--radius-card)]">
         {/* header */}
         <div className="flex items-start justify-between gap-4 px-7 pt-7">
@@ -181,14 +179,13 @@ export function AddExperienceModal({
                   <label htmlFor="exp-role" className={labelCls}>
                     Job title <span className="text-[var(--color-brand)]">*</span>
                   </label>
-                  <select
+                  <Select
                     id="exp-role" value={form.roleTitle}
-                    onChange={(e) => set({ roleTitle: e.target.value })}
-                    className={`${inputCls} cursor-pointer`}
-                  >
-                    <option value="">Select a title…</option>
-                    {roleTitles.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
+                    onChange={(v) => set({ roleTitle: v })}
+                    placeholder="Select a title…"
+                    className="mt-1.5"
+                    options={roleTitles.map((t) => ({ value: t, label: t }))}
+                  />
                 </div>
               ) : null}
 
@@ -230,25 +227,23 @@ export function AddExperienceModal({
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="exp-deliverable" className={labelCls}>Deliverable</label>
-                  <select
+                  <Select
                     id="exp-deliverable" value={form.deliverable}
-                    onChange={(e) => set({ deliverable: e.target.value })}
-                    className={`${inputCls} cursor-pointer`}
-                  >
-                    <option value="">Select…</option>
-                    {EXPERIENCE_DELIVERABLES.map((d) => <option key={d} value={d}>{d}</option>)}
-                  </select>
+                    onChange={(v) => set({ deliverable: v })}
+                    placeholder="Select…"
+                    className="mt-1.5"
+                    options={EXPERIENCE_DELIVERABLES.map((d) => ({ value: d, label: d }))}
+                  />
                 </div>
                 <div>
                   <label htmlFor="exp-niche" className={labelCls}>Niche</label>
-                  <select
+                  <Select
                     id="exp-niche" value={form.niche}
-                    onChange={(e) => set({ niche: e.target.value })}
-                    className={`${inputCls} cursor-pointer`}
-                  >
-                    <option value="">Select…</option>
-                    {EXPERIENCE_NICHES.map((n) => <option key={n} value={n}>{n}</option>)}
-                  </select>
+                    onChange={(v) => set({ niche: v })}
+                    placeholder="Select…"
+                    className="mt-1.5"
+                    options={EXPERIENCE_NICHES.map((n) => ({ value: n, label: n }))}
+                  />
                 </div>
               </div>
 

@@ -227,7 +227,7 @@ export default function AdminUsersPage() {
 
         {/* add-user modal */}
         {showAdd ? (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowAdd(false)}>
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
             <div className="max-h-[88vh] w-full max-w-md overflow-y-auto rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-semibold text-[var(--color-text)]">Add user</h3>
@@ -297,7 +297,7 @@ export default function AdminUsersPage() {
 
         {/* edit-client modal */}
         {editing ? (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setEditing(null)}>
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
             <div className="w-full max-w-md rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-semibold text-[var(--color-text)]">Edit user</h3>

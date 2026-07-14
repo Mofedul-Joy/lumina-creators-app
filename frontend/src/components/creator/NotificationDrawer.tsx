@@ -26,13 +26,6 @@ export function NotificationDrawer({ open, onClose }: { open: boolean; onClose: 
   const qc = useQueryClient();
   const token = getAuthToken() ?? "";
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
   const q = useQuery({
     queryKey: ["notifications"],
     queryFn: () => listNotifications(token),
@@ -61,10 +54,9 @@ export function NotificationDrawer({ open, onClose }: { open: boolean; onClose: 
 
   return (
     <>
-      {/* backdrop — click to close */}
+      {/* backdrop */}
       <div
         aria-hidden
-        onClick={onClose}
         className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
       />
       {/* right panel */}

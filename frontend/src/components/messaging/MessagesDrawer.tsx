@@ -102,13 +102,6 @@ export function MessagesDrawer({
   const [panel, setPanel] = useState<null | "profile" | "info" | "contracts">(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && (activeId && !expanded ? setActiveId(null) : onClose());
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose, activeId, expanded]);
-
   const convsQ = useQuery({
     queryKey: ["conversations", realm],
     queryFn: () => listConversations(realm),
@@ -451,7 +444,6 @@ export function MessagesDrawer({
       <div
         aria-hidden={!open}
         className={`fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-sm p-4 transition-opacity duration-200 ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
-        onClick={onClose}
       >
         <div
           role="dialog" aria-label="Messages"
@@ -482,7 +474,7 @@ export function MessagesDrawer({
   return (
     <>
       <div
-        aria-hidden onClick={onClose}
+        aria-hidden
         className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
       />
       <aside

@@ -8,6 +8,7 @@ import { clearClientToken, getClientToken, setClientToken } from "@/lib/auth";
 import { listClientCampaigns, listClientSubmissions, type ClientCampaign } from "@/lib/client";
 import { downloadCsv, isAuthError } from "@/lib/api";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
+import { Select } from "@/components/ui/Select";
 import { SkeletonCardGrid, SkeletonStats } from "@/components/ui/Skeleton";
 import { SubmissionThumbnail } from "@/components/ui/SubmissionThumbnail";
 import { fmtInt } from "@/lib/format";
@@ -215,13 +216,12 @@ function DashboardInner() {
             <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Your dashboard</h1>
           </div>
           {campaigns.length > 1 ? (
-            <select
+            <Select
+              className="w-56"
               value={selectedId}
-              onChange={(e) => setSelectedId(e.target.value)}
-              className="min-h-10 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
-            >
-              {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+              onChange={(v) => setSelectedId(v)}
+              options={campaigns.map((c) => ({ value: c.id, label: c.name }))}
+            />
           ) : null}
         </div>
 

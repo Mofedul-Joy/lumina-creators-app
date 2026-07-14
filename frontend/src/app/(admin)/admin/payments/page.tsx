@@ -650,7 +650,7 @@ export default function AdminPaymentsPage() {
 
         {/* Add Funds modal */}
         {showAddFunds ? (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowAddFunds(false)}>
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
             <div className="w-full max-w-md rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-semibold text-[var(--color-text)]">Add Funds</h3>
@@ -697,7 +697,7 @@ export default function AdminPaymentsPage() {
 
         {/* Pay All confirmation modal */}
         {showPayAllConfirm ? (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowPayAllConfirm(false)}>
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
             <div className="w-full max-w-md rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-semibold text-[var(--color-text)]">
                 {payAllScope === "selected" ? "Pay selected creators?" : "Pay all creators?"}

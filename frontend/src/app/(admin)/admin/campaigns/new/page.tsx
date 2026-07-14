@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { InfoTip } from "@/components/ui/InfoTip";
+import { Select } from "@/components/ui/Select";
 import { fmtInt, fmtMoney } from "@/lib/format";
 import {
   createCampaign,
@@ -661,15 +662,11 @@ export default function NewCampaignPage() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <label className={labelCls}>Job type</label>
-                    <select className={controlCls} value={f.job_type} onChange={(e) => patch({ job_type: e.target.value })}>
-                      {JOB_TYPES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
+                    <Select value={f.job_type} onChange={(v) => patch({ job_type: v })} options={JOB_TYPES.map((o) => ({ value: o.value, label: o.label }))} />
                   </div>
                   <div className="space-y-2">
                     <label className={labelCls}>Creator type</label>
-                    <select className={controlCls} value={f.creator_type} onChange={(e) => patch({ creator_type: e.target.value })}>
-                      {CREATOR_TYPES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
+                    <Select value={f.creator_type} onChange={(v) => patch({ creator_type: v })} options={CREATOR_TYPES.map((o) => ({ value: o.value, label: o.label }))} />
                   </div>
                 </div>
               ) : null}
@@ -764,13 +761,12 @@ export default function NewCampaignPage() {
               <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
                 <p className="text-sm font-semibold text-[var(--color-text)]">Payment schedule</p>
                 <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">Set when creators will receive payments.</p>
-                <select
-                  className={controlCls + " mt-3"}
+                <Select
+                  className="mt-3"
                   value={f.payment_schedule}
-                  onChange={(e) => patch({ payment_schedule: e.target.value as PaymentSchedule })}
-                >
-                  {PAYMENT_SCHEDULES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
-                </select>
+                  onChange={(v) => patch({ payment_schedule: v as PaymentSchedule })}
+                  options={PAYMENT_SCHEDULES.map((s) => ({ value: s.key, label: s.label }))}
+                />
               </div>
             </div>
           ) : null}
@@ -950,13 +946,12 @@ export default function NewCampaignPage() {
                 {f.payment_cycle_trigger === "schedule" ? (
                   <div className="mt-1 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
                     <label className={labelCls}>Payment interval — how often creators are paid</label>
-                    <select
-                      className={`${controlCls} mt-2`}
+                    <Select
+                      className="mt-2"
                       value={f.payment_schedule}
-                      onChange={(e) => patch({ payment_schedule: e.target.value as PaymentSchedule })}
-                    >
-                      {PAYMENT_SCHEDULES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
-                    </select>
+                      onChange={(v) => patch({ payment_schedule: v as PaymentSchedule })}
+                      options={PAYMENT_SCHEDULES.map((s) => ({ value: s.key, label: s.label }))}
+                    />
                     <p className="mt-2 text-xs text-[var(--color-text-muted)]">
                       A new payment cycle runs {scheduleLabel(f.payment_schedule).toLowerCase()}.
                     </p>
@@ -990,9 +985,7 @@ export default function NewCampaignPage() {
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <label className={labelCls}>Age requirement</label>
-                      <select className={controlCls} value={f.age_requirement} onChange={(e) => patch({ age_requirement: e.target.value })}>
-                        {AGE_REQUIREMENTS.map((a) => <option key={a} value={a}>{a}</option>)}
-                      </select>
+                      <Select value={f.age_requirement} onChange={(v) => patch({ age_requirement: v })} options={AGE_REQUIREMENTS.map((a) => ({ value: a, label: a }))} />
                     </div>
                     <Field label="Account type" placeholder="Personal account…" value={f.account_type} onChange={(e) => patch({ account_type: e.target.value })} />
                     <Field label="Content type" placeholder="e.g. Talking-head UGC" value={f.content_type} onChange={(e) => patch({ content_type: e.target.value })} />

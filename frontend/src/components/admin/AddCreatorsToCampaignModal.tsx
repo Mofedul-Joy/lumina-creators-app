@@ -60,10 +60,7 @@ export function AddCreatorsToCampaignModal({
     setResult(null);
     setLink(null);
     setCopied(false);
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open]);
 
   const creatorsQ = useQuery({
     queryKey: ["invite-creators", q],
@@ -138,7 +135,7 @@ export function AddCreatorsToCampaignModal({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center p-4" role="dialog" aria-modal="true" aria-labelledby="addcr-title">
-      <button aria-label="Close" onClick={onClose} className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
+      <div aria-hidden className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
       <div className="card-lumina relative flex max-h-[86vh] w-full max-w-lg flex-col rounded-[var(--radius-card)] p-6">
         <h2 id="addcr-title" className="text-xl font-semibold text-[var(--color-text)]">Add creators</h2>
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">

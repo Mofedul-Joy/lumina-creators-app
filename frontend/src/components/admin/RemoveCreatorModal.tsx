@@ -94,10 +94,7 @@ export function RemoveCreatorModal({
     setMode("delete_all");
     setScope("campaigns_only");
     setError(null);
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -117,7 +114,7 @@ export function RemoveCreatorModal({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto p-4" role="dialog" aria-modal="true" aria-labelledby="remove-title">
-      <button aria-label="Close" onClick={onClose} className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
+      <div aria-hidden className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
       <div className="card-lumina relative my-auto w-full max-w-md rounded-[var(--radius-card)] p-7">
         <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-[var(--color-danger)]/15 text-[var(--color-danger)]">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>

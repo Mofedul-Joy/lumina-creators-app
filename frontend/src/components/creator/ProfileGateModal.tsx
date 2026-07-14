@@ -34,16 +34,13 @@ export function ProfileGateModal({ open, onClose }: { open: boolean; onClose: ()
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
     const token = getAuthToken();
     if (token) {
       getCompletion(token)
         .then((c) => { setNext(c.next_section); setSections(c.sections ?? {}); })
         .catch(() => {});
     }
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -52,7 +49,7 @@ export function ProfileGateModal({ open, onClose }: { open: boolean; onClose: ()
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center p-4" role="dialog" aria-modal="true" aria-labelledby="profile-gate-title">
-      <button aria-label="Close" onClick={onClose} className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
+      <div aria-hidden className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
       <div className="card-lumina relative w-full max-w-md rounded-[var(--radius-card)] p-7 text-center">
         <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-[var(--color-brand)]/15 text-[var(--color-brand)]">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>

@@ -46,11 +46,6 @@ export function ImageCropModal({
   const [error, setError] = useState("");
 
   useEffect(() => setMounted(true), []);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCancel();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
 
   const onComplete = useCallback((_: Area, px: Area) => setArea(px), []);
 
@@ -70,7 +65,7 @@ export function ImageCropModal({
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[80] grid place-items-center bg-black/70 p-4" onClick={onCancel}>
+    <div className="fixed inset-0 z-[80] grid place-items-center bg-black/70 p-4">
       <div
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-2xl overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl"

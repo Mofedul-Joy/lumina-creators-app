@@ -58,10 +58,7 @@ export function NewCampaignModal({ open, onClose }: { open: boolean; onClose: ()
     setStage("start");
     setTemplate(null);
     setKind(null);
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -88,7 +85,7 @@ export function NewCampaignModal({ open, onClose }: { open: boolean; onClose: ()
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto p-4" role="dialog" aria-modal="true" aria-labelledby="new-campaign-title">
-      <button aria-label="Close" onClick={onClose} className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
+      <div aria-hidden className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
       <div className="card-lumina relative my-auto w-full max-w-2xl rounded-[var(--radius-card)] p-7">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">

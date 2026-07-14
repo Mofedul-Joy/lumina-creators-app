@@ -11,6 +11,7 @@ import { Avatar } from "@/components/admin/Avatar";
 import { ExportCreatorsModal } from "@/components/admin/ExportCreatorsModal";
 import { InviteCreatorModal } from "@/components/admin/InviteCreatorModal";
 import { Pager } from "@/components/admin/Pager";
+import { Select } from "@/components/ui/Select";
 import { getAdminToken } from "@/lib/auth";
 import { GENDERS, PLATFORMS, isAuthError, listCreators, type CreatorFilters, type Gender, type Platform } from "@/lib/api";
 
@@ -239,13 +240,11 @@ export default function AdminCreatorsPage() {
         {showPrefs ? (
           <div className="card-lumina mt-3 grid grid-cols-2 gap-3 rounded-[var(--radius-card)] p-5 sm:grid-cols-3 lg:grid-cols-4">
             <label className="block"><span className="mb-1 block text-xs text-[var(--color-text-secondary)]">Gender</span>
-              <select className={control} value={prefs.gender} onChange={(e) => setPrefs({ ...prefs, gender: e.target.value })}>
-                <option value="">Any</option>{GENDERS.map((g) => <option key={g} value={g}>{g.replace(/_/g, " ")}</option>)}
-              </select></label>
+              <Select value={prefs.gender} onChange={(v) => setPrefs({ ...prefs, gender: v })}
+                options={[{ value: "", label: "Any" }, ...GENDERS.map((g) => ({ value: g, label: g.replace(/_/g, " ") }))]} /></label>
             <label className="block"><span className="mb-1 block text-xs text-[var(--color-text-secondary)]">Platform</span>
-              <select className={control} value={prefs.platform} onChange={(e) => setPrefs({ ...prefs, platform: e.target.value })}>
-                <option value="">Any</option>{PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select></label>
+              <Select value={prefs.platform} onChange={(v) => setPrefs({ ...prefs, platform: v })}
+                options={[{ value: "", label: "Any" }, ...PLATFORMS.map((p) => ({ value: p, label: p }))]} /></label>
             <label className="block"><span className="mb-1 block text-xs text-[var(--color-text-secondary)]">Ethnicity</span>
               <input className={control} value={prefs.ethnicity} onChange={(e) => setPrefs({ ...prefs, ethnicity: e.target.value })} /></label>
             <label className="block"><span className="mb-1 block text-xs text-[var(--color-text-secondary)]">Language</span>

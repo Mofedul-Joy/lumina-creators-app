@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
+import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getAuthToken } from "@/lib/auth";
 import {
@@ -369,10 +370,12 @@ export function OnboardingWizard() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label className={labelCls}>Country</label>
-                <select className={control} value={audience.country} onChange={(e) => setAudience({ ...audience, country: e.target.value })}>
-                  <option value="">Select your country</option>
-                  {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <Select
+                  value={audience.country}
+                  onChange={(v) => setAudience({ ...audience, country: v })}
+                  options={COUNTRIES.map((c) => ({ value: c, label: c }))}
+                  placeholder="Select your country"
+                />
               </div>
               <Field label="City" placeholder="e.g. Nairobi" value={audience.city} onChange={(e) => setAudience({ ...audience, city: e.target.value })} />
             </div>

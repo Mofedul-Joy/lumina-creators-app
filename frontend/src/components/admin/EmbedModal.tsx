@@ -6,18 +6,12 @@ import { useEffect, useState } from "react";
 export function EmbedModal({ embedUrl, postUrl, onClose }: { embedUrl: string; postUrl: string; onClose: () => void }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   if (!mounted) return null;
 
   return createPortal(
     <div
       className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4"
-      onClick={onClose}
       role="dialog"
       aria-modal="true"
     >

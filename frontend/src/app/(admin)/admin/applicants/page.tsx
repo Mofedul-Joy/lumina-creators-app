@@ -7,6 +7,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { Avatar } from "@/components/admin/Avatar";
 import { CreatorDetailCard } from "@/components/admin/CreatorDetailCard";
+import { Select } from "@/components/ui/Select";
 import { getAdminToken } from "@/lib/auth";
 import { isAuthError } from "@/lib/api";
 import {
@@ -181,16 +182,15 @@ export default function AdminApplicantsPage() {
 
         {/* header controls */}
         <div className="mt-6 flex flex-wrap items-center gap-3">
-          <select
-            className={control}
+          <Select
+            className="w-56"
             value={campaignId}
-            onChange={(e) => setCampaignId(e.target.value)}
-          >
-            <option value="">All campaigns</option>
-            {campaignOptions.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+            onChange={(v) => setCampaignId(v)}
+            options={[
+              { value: "", label: "All campaigns" },
+              ...campaignOptions.map((c) => ({ value: c.id, label: c.name })),
+            ]}
+          />
 
           <input
             className={`${control} min-w-[220px] flex-1`}
@@ -303,7 +303,7 @@ export default function AdminApplicantsPage() {
       {/* slide-over detail drawer */}
       {openId ? (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setOpenId(null)} />
+          <div aria-hidden className="absolute inset-0 bg-black/60" />
           <div className="relative flex h-full w-full max-w-[640px] flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-bg-deep)] p-6 shadow-2xl">
             <button onClick={() => setOpenId(null)} className="self-end rounded-lg border border-[var(--color-border)] px-3 py-1 text-sm text-[var(--color-text-secondary)] hover:border-[var(--color-brand)]">Close</button>
 

@@ -22,10 +22,7 @@ export function InviteCreatorModal({ open, onClose }: { open: boolean; onClose: 
     setError(null);
     setInvite(null);
     setCopied(false);
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -52,7 +49,7 @@ export function InviteCreatorModal({ open, onClose }: { open: boolean; onClose: 
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center p-4" role="dialog" aria-modal="true" aria-labelledby="invite-title">
-      <button aria-label="Close" onClick={onClose} className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
+      <div aria-hidden className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
       <div className="card-lumina relative w-full max-w-md rounded-[var(--radius-card)] p-7">
         <h2 id="invite-title" className="text-xl font-semibold text-[var(--color-text)]">Invite a creator</h2>
 

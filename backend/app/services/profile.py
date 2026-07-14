@@ -231,9 +231,6 @@ def list_top_videos(db: Session, creator_id: uuid.UUID):
 
 
 def add_top_video(db: Session, creator_id: uuid.UUID, platform: str, video_url: str) -> PortfolioItem:
-    from app.integrations import apify
-    from app.services import thumbnails
-
     platform = (platform or "").strip().lower()
     if platform not in TOP_VIDEO_PLATFORMS:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Pick TikTok or Instagram")
@@ -253,15 +250,14 @@ def add_top_video(db: Session, creator_id: uuid.UUID, platform: str, video_url: 
     if any(p.video_url == canonical for p in existing):
         raise HTTPException(status.HTTP_409_CONFLICT, "That video is already in your top content")
 
-    # Real thumbnail now (fast, re-hosted so it can't rot/hotlink-block); view
-    # and like counts fill in via a separate refresh so the add stays snappy.
-    try:
-        thumb = thumbnails.rehost(apify.fast_thumbnail(platform, raw), "portfolio_thumb", creator_id)
-    except Exception:  # noqa: BLE001
-        thumb = None
-
+    # Insert INSTANTLY — no thumbnail/stat fetch on this path. Fetching the
+    # thumbnail synchronously (oEmbed + re-host) could take long enough that the
+    # browser's request timed out ("Failed to fetch") even though the row was
+    # saved. The thumbnail + view/like counts fill in via the async refresh the
+    # client fires right after (refresh_top_video_stats), which also falls back
+    # to a fast thumbnail. So the add is snappy and never appears to fail.
     item = PortfolioItem(
-        creator_id=creator_id, video_url=canonical, thumbnail_url=thumb,
+        creator_id=creator_id, video_url=canonical, thumbnail_url=None,
         platform=platform, is_top_content=True,
     )
     db.add(item)
@@ -291,6 +287,15 @@ def refresh_top_video_stats(db: Session, creator_id: uuid.UUID, item_id: uuid.UU
                 item.thumbnail_url = hosted
         db.commit()
         db.refresh(item)
+    # A thumbnail is what the creator actually sees appear — if the (slow, and
+    # sometimes empty) stats scrape didn't set one, fall back to the fast
+    # oEmbed/og:image thumbnail so the card fills in reliably.
+    if not item.thumbnail_url:
+        hosted = thumbnails.rehost(apify.fast_thumbnail(item.platform, item.video_url), "portfolio_thumb", creator_id)
+        if hosted:
+            item.thumbnail_url = hosted
+            db.commit()
+            db.refresh(item)
     return item
 
 

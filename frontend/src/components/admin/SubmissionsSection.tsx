@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pager } from "@/components/admin/Pager";
 import { SubmissionDetailModal } from "@/components/admin/SubmissionDetailModal";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
+import { Select } from "@/components/ui/Select";
 import { SkeletonCardGrid } from "@/components/ui/Skeleton";
 import { SubmissionThumbnail } from "@/components/ui/SubmissionThumbnail";
 import { listAdminCampaigns, listSubmissions, type AdminSubmission } from "@/lib/admin";
@@ -60,36 +61,37 @@ export function SubmissionsSection({ campaignId }: { campaignId?: string } = {})
         <h2 className="text-lg font-semibold text-[var(--color-text)]">Submissions</h2>
         <div className="flex flex-wrap items-center gap-2">
           {!campaignId ? (
-            <select
+            <Select
+              className="w-48"
               value={campaignFilter}
-              onChange={(e) => { setCampaignFilter(e.target.value); setPage(1); }}
-              className="min-h-9 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
-            >
-              <option value="">All campaigns</option>
-              {(campaignsQ.data ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+              onChange={(v) => { setCampaignFilter(v); setPage(1); }}
+              options={[
+                { value: "", label: "All campaigns" },
+                ...(campaignsQ.data ?? []).map((c) => ({ value: c.id, label: c.name })),
+              ]}
+            />
           ) : null}
-          <select
+          <Select
+            className="w-44"
             value={platformFilter}
-            onChange={(e) => { setPlatformFilter(e.target.value); setPage(1); }}
-            className="min-h-9 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm capitalize text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
-          >
-            <option value="">All platforms</option>
-            {PLATFORMS.map((p) => <option key={p} value={p}>{platformLabel(p)}</option>)}
-          </select>
+            onChange={(v) => { setPlatformFilter(v); setPage(1); }}
+            options={[
+              { value: "", label: "All platforms" },
+              ...PLATFORMS.map((p) => ({ value: p, label: platformLabel(p) })),
+            ]}
+          />
           <button
             onClick={() => { setShowFlagged((v) => !v); setPage(1); }}
             className={`min-h-9 cursor-pointer rounded-full px-3 text-sm transition ${showFlagged ? "bg-amber-500/15 text-amber-400 ring-1 ring-inset ring-amber-500/25" : "border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"}`}
           >
             {showFlagged ? "Showing flagged" : "Show flagged"}
           </button>
-          <select
+          <Select
+            className="w-44"
             value={status}
-            onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-            className="min-h-9 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
-          >
-            {STATUSES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
-          </select>
+            onChange={(v) => { setStatus(v); setPage(1); }}
+            options={STATUSES.map((s) => ({ value: s.key, label: s.label }))}
+          />
         </div>
       </div>
 

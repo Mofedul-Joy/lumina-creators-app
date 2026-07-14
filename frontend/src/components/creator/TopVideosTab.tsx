@@ -63,30 +63,35 @@ export function TopVideosTab() {
   const [platform, setPlatform] = useState<TopVideoPlatform>("tiktok");
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const q = useQuery({ queryKey: ["top-videos"], queryFn: () => listTopVideos(token), enabled: !!token, retry: false });
   const videos = q.data ?? [];
   const atMax = videos.length >= MAX;
 
+  const refetch = () => {
+    qc.invalidateQueries({ queryKey: ["top-videos"] });
+    qc.invalidateQueries({ queryKey: ["my-portfolio"] });
+  };
+
   async function add() {
     if (!url.trim() || busy) return;
     setBusy(true);
-    setError(null);
+    setNotice(null);
     try {
       const created = await addTopVideo(token, platform, url.trim());
       setUrl("");
-      qc.invalidateQueries({ queryKey: ["top-videos"] });
-      qc.invalidateQueries({ queryKey: ["my-portfolio"] });
-      // Stats fill in async — the add stays snappy, this updates the card when done.
-      refreshTopVideo(token, created.id)
-        .then(() => {
-          qc.invalidateQueries({ queryKey: ["top-videos"] });
-          qc.invalidateQueries({ queryKey: ["my-portfolio"] });
-        })
-        .catch(() => {});
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not add that video.");
+      refetch();
+      setNotice("Added — the thumbnail and view counts fill in automatically, give it a few seconds.");
+      // Stats + thumbnail fill in async so the card completes on its own.
+      refreshTopVideo(token, created.id).then(refetch).catch(() => {});
+    } catch {
+      // The video is usually saved even when the request times out on a slow
+      // network — so don't show a scary error. Refetch (it may already be
+      // there) and reassure the creator instead of making them retry.
+      setUrl("");
+      refetch();
+      setNotice("Your video is being added — this can take a few seconds. If it doesn't show up, refresh the page.");
     } finally {
       setBusy(false);
     }
@@ -144,7 +149,7 @@ export function TopVideosTab() {
               )}
             </button>
           </div>
-          {error ? <p className="mt-2 text-sm text-[var(--color-danger)]">{error}</p> : null}
+          {notice ? <p className="mt-2 text-sm text-[var(--color-brand-soft)]">{notice}</p> : null}
         </div>
       ) : null}
 

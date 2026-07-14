@@ -273,7 +273,7 @@ export default function AdminCampaignDetailPage() {
 
         {/* requirements modal — what a creator sees before entering */}
         {showReqs && form ? (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowReqs(false)}>
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
             <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-start justify-between gap-4">
                 <div>

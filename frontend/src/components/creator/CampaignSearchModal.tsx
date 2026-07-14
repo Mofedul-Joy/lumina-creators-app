@@ -21,19 +21,13 @@ export function CampaignSearchModal({
 }) {
   const [q, setQ] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
 
-  // Reset + focus only when the overlay actually opens — depending on `onClose`
-  // (an inline arrow in the parent) would re-run this on every parent render and
-  // wipe what the user is typing.
+  // Reset + focus only when the overlay actually opens.
   useEffect(() => {
     if (!open) return;
     setQ("");
     const t = setTimeout(() => inputRef.current?.focus(), 60);
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onCloseRef.current(); };
-    window.addEventListener("keydown", onKey);
-    return () => { clearTimeout(t); window.removeEventListener("keydown", onKey); };
+    return () => { clearTimeout(t); };
   }, [open]);
 
   if (!open) return null;
@@ -43,7 +37,6 @@ export function CampaignSearchModal({
   return (
     <div
       className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-[8vh] backdrop-blur-sm"
-      onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Search campaigns"

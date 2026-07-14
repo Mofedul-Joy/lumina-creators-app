@@ -321,7 +321,7 @@ export default function MyCampaignsPage() {
 
       {/* payout-method gate: claim blocked because no method is on file */}
       {payoutGate ? (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setPayoutGate(false)}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-sm rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-[var(--color-text)]">Add a payout method first</h3>
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Set where we should send your earnings before you can claim a payment.</p>

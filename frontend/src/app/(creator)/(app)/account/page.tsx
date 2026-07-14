@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { getAuthToken } from "@/lib/auth";
 import { deleteExperience, getProfile, isAuthError, listExperiences, type ExperienceOut } from "@/lib/api";
 import { AddExperienceModal } from "@/components/creator/AddExperienceModal";
 import { PayoutDetailsCard } from "@/components/creator/PayoutDetailsCard";
+import { OnboardingWizard } from "@/components/creator/onboarding/OnboardingWizard";
 import { TopVideosTab } from "@/components/creator/TopVideosTab";
 import { listSubmissions } from "@/lib/campaigns";
 import { getMyGamification } from "@/lib/gamification";
@@ -106,6 +107,7 @@ function ExperienceCard({ e, onDelete }: { e: ExperienceOut; onDelete: (id: stri
 
 const TABS = [
   { key: "overview", label: "Overview" },
+  { key: "profile", label: "Profile" },
   { key: "experiences", label: "Experiences" },
   { key: "top-videos", label: "Top Videos" },
 ] as const;
@@ -234,6 +236,14 @@ export default function AccountPage() {
             onClose={() => setAddOpen(false)}
             onAdded={() => qc.invalidateQueries({ queryKey: ["experiences"] })}
           />
+        </section>
+      ) : null}
+
+      {tab === "profile" ? (
+        <section className="mt-6">
+          <Suspense fallback={<p className="text-sm text-[var(--color-text-secondary)]">Loading profile…</p>}>
+            <OnboardingWizard />
+          </Suspense>
         </section>
       ) : null}
 

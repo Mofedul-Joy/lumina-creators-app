@@ -43,11 +43,6 @@ export function PayCreatorModal({
   const [error, setError] = useState("");
 
   useEffect(() => setMounted(true), []);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   const address = addressFor(creator, method);
   const canPay = owed > 0;
@@ -74,7 +69,7 @@ export function PayCreatorModal({
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 p-4">
       <div
         className="w-full max-w-md overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
