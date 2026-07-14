@@ -316,6 +316,33 @@ def list_for_campaign(db: Session, campaign_id: uuid.UUID) -> list[dict]:
     return out
 
 
+def get_campaign_contract_detail(db: Session, campaign_id: uuid.UUID, document_id: str) -> dict:
+    """Admin view of ONE creator's contract for this campaign — including the
+    frozen `rendered_body` the creator actually saw/signed, so a dispute can be
+    settled against the exact snapshot (not the live, editable template)."""
+    from fastapi import HTTPException, status as http_status
+    row = db.scalar(
+        select(CreatorContract).where(
+            CreatorContract.campaign_id == campaign_id,
+            CreatorContract.document_id == document_id,
+        )
+    )
+    if row is None:
+        raise HTTPException(http_status.HTTP_404_NOT_FOUND, "Contract not found")
+    creator = db.get(Creator, row.creator_id)
+    return {
+        "document_id": row.document_id,
+        "creator_email": creator.email if creator else None,
+        "status": row.status,
+        "rendered_body": row.rendered_body,
+        "sent_at": row.sent_at,
+        "viewed_at": row.viewed_at,
+        "accepted_at": row.accepted_at,
+        "accepted_name": row.accepted_name,
+        "accepted_ip": row.accepted_ip,
+    }
+
+
 def active_count(db: Session, campaign_id: uuid.UUID) -> int:
     return db.scalar(
         select(func.count()).select_from(CreatorContract).where(

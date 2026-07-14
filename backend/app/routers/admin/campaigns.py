@@ -334,6 +334,18 @@ class ContractRow(BaseModel):
     accepted_name: Optional[str]
 
 
+class ContractDetailOut(BaseModel):
+    document_id: str
+    creator_email: Optional[str]
+    status: str
+    rendered_body: str
+    sent_at: Optional[datetime]
+    viewed_at: Optional[datetime]
+    accepted_at: Optional[datetime]
+    accepted_name: Optional[str]
+    accepted_ip: Optional[str]
+
+
 def _contract_template_out(t, preview: str) -> ContractTemplateOut:
     return ContractTemplateOut(
         title=t.title, subtitle=t.subtitle, company_name=t.company_name, body=t.body,
@@ -359,6 +371,13 @@ def update_contract_template(campaign_id: uuid.UUID, body: ContractTemplateIn,
 @router.get("/{campaign_id}/contracts", response_model=List[ContractRow])
 def list_campaign_contracts(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     return [ContractRow(**r) for r in contracts_svc.list_for_campaign(db, campaign_id)]
+
+
+@router.get("/{campaign_id}/contracts/{document_id}", response_model=ContractDetailOut)
+def get_campaign_contract(campaign_id: uuid.UUID, document_id: str,
+                          admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """The frozen text a creator actually signed — for dispute/audit."""
+    return ContractDetailOut(**contracts_svc.get_campaign_contract_detail(db, campaign_id, document_id))
 
 
 # ── Example videos (shown on the creator Explore overview) ──────────────────
