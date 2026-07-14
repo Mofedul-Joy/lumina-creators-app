@@ -19,7 +19,7 @@ from sqlalchemy import Numeric, cast, func, select
 from sqlalchemy.orm import Session
 
 from app.core.security import _now
-from app.models import PayoutItem, Submission, SubmissionViewSnapshot
+from app.models import Payout, Submission, SubmissionViewSnapshot
 
 DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 VIEWS_WINDOW_DAYS = 7
@@ -118,10 +118,15 @@ def headline(db: Session, creator_id: uuid.UUID) -> dict:
         ).where(Submission.creator_id == creator_id)
     ).one()
 
+    # Sum the creator's Payout rows directly — this is the single source of
+    # truth for "money paid out" and covers BOTH the legacy per-submission
+    # payouts (Payout + PayoutItem children) and the payouts_v2 engine (which
+    # writes campaign-tagged Payout rows with no PayoutItem children). Summing
+    # PayoutItem instead silently missed every v2 payout, so a creator paid via
+    # pay-all/pay-one still showed as fully owed — inviting a duplicate payout.
     paid = db.scalar(
-        select(func.coalesce(func.sum(PayoutItem.amount), 0))
-        .join(Submission, Submission.id == PayoutItem.submission_id)
-        .where(Submission.creator_id == creator_id)
+        select(func.coalesce(func.sum(Payout.amount), 0))
+        .where(Payout.creator_id == creator_id, Payout.status == "paid")
     ) or Decimal(0)
 
     earned = Decimal(agg.earned)
