@@ -94,13 +94,17 @@ function CampaignCard({ c, completed, onEnter }: { c: PublicCampaign; completed?
 export default function Home() {
   const router = useRouter();
   const [view, setView] = useState<"live" | "completed">("live");
-  const [authPrompt, setAuthPrompt] = useState(false);
+  // Holds the slug of the campaign a logged-out visitor is trying to enter, so
+  // signup/login can route them straight back to it afterwards (Bill's flow:
+  // click Test4 → sign up → land inside Test4). null = prompt closed.
+  const [authPrompt, setAuthPrompt] = useState<string | null>(null);
 
   const enterCampaign = (c: PublicCampaign) => {
     // Signed-in creators go straight in; everyone else is asked to sign in / up.
     if (getAuthToken()) router.push(`/campaigns/${c.slug}`);
-    else setAuthPrompt(true);
+    else setAuthPrompt(c.slug);
   };
+  const authNext = authPrompt ? `?next=${encodeURIComponent(`/campaigns/${authPrompt}`)}` : "";
   const q = useQuery({
     queryKey: ["public-campaigns", view],
     queryFn: () => publicApi.campaigns(view === "completed" ? "completed" : "active"),
@@ -230,10 +234,10 @@ export default function Home() {
 
       {authPrompt ? (
         <div className="fixed inset-0 z-50 grid place-items-center p-4" role="dialog" aria-modal="true" aria-labelledby="auth-prompt-title">
-          <button aria-label="Close" onClick={() => setAuthPrompt(false)} className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
+          <button aria-label="Close" onClick={() => setAuthPrompt(null)} className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
           <div className="card-lumina relative w-full max-w-sm rounded-[var(--radius-card)] p-6 text-center">
             <button
-              onClick={() => setAuthPrompt(false)}
+              onClick={() => setAuthPrompt(null)}
               aria-label="Close"
               className="absolute right-3 top-3 grid h-8 w-8 cursor-pointer place-items-center rounded-full text-[var(--color-text-muted)] transition hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text)]"
             >
@@ -248,13 +252,13 @@ export default function Home() {
             </p>
             <div className="mt-5 flex flex-col gap-2">
               <Link
-                href="/signup"
+                href={`/signup${authNext}`}
                 className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[var(--color-brand)] text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
               >
                 Sign up
               </Link>
               <Link
-                href="/login"
+                href={`/login${authNext}`}
                 className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[var(--color-border)] text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-brand)]"
               >
                 Sign in

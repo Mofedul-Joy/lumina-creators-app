@@ -306,7 +306,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
             </div>
           </>
         )}
-      <ProfileGateModal open={gateOpen} onClose={() => setGateOpen(false)} />
+      <ProfileGateModal open={gateOpen} onClose={() => setGateOpen(false)} returnTo={`/campaigns/${slug}`} />
       </main>
   );
 }

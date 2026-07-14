@@ -28,7 +28,7 @@ const SECTION_STEP: Record<ProfileSection, string> = {
 };
 const ORDER: ProfileSection[] = ["about", "socials", "videos", "details"];
 
-export function ProfileGateModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function ProfileGateModal({ open, onClose, returnTo }: { open: boolean; onClose: () => void; returnTo?: string }) {
   const [next, setNext] = useState<ProfileSection | null>(null);
   const [sections, setSections] = useState<Partial<Record<ProfileSection, boolean>>>({});
 
@@ -45,7 +45,10 @@ export function ProfileGateModal({ open, onClose }: { open: boolean; onClose: ()
   if (!open) return null;
 
   const step = next ? SECTION_STEP[next] : "";
-  const href = step ? `/onboarding?step=${step}` : "/onboarding";
+  // Carry the campaign the creator is trying to join so that finishing profile
+  // completion routes them straight back into it (Bill's flow).
+  const nextParam = returnTo ? `&next=${encodeURIComponent(returnTo)}` : "";
+  const href = step ? `/onboarding?step=${step}${nextParam}` : `/onboarding${returnTo ? `?next=${encodeURIComponent(returnTo)}` : ""}`;
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center p-4" role="dialog" aria-modal="true" aria-labelledby="profile-gate-title">

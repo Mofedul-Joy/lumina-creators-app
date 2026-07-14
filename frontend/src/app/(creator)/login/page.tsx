@@ -13,7 +13,6 @@ import {
   creatorSetPassword,
   setAuthToken,
 } from "@/lib/auth";
-import { getProfile } from "@/lib/api";
 
 type Step = "email" | "password" | "set-password";
 
@@ -25,16 +24,13 @@ export default function CreatorLoginPage() {
   const [error, setError] = useState("");
   const [fieldError, setFieldError] = useState("");
 
-  async function finish(token: string, refresh?: string) {
+  function finish(token: string, refresh?: string) {
     setAuthToken(token, refresh);
-    // First-timers (incomplete profile) go through the onboarding flow; returning
-    // creators with a finished profile go straight to their dashboard.
-    try {
-      const p = await getProfile(token);
-      router.push(p.completed ? "/dashboard" : "/onboarding");
-    } catch {
-      router.push("/dashboard");
-    }
+    // Route to the campaign the visitor came in on (?next=/campaigns/…) if
+    // present, else the dashboard. The post-signup onboarding wizard is bypassed
+    // — profile completion happens on-demand at join time (ProfileGate popup).
+    const next = new URLSearchParams(window.location.search).get("next");
+    router.push(next || "/dashboard");
   }
 
   const checkEmail = useMutation({

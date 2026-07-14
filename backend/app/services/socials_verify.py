@@ -49,37 +49,25 @@ def _clean_handle(handle: str) -> str:
 
 
 def _resolve_social(db: Session, creator_id: uuid.UUID, platform: str, handle: str) -> SocialAccount:
-    """Exactly ONE account per (creator, platform). Dedupes any legacy duplicates
-    (a verification bug once created one row per typed handle): keep the verified
-    row if present, else the handle match, else the first — delete the rest. Lets
-    an as-yet-unverified account change its handle to what the creator just typed."""
-    rows = list(
-        db.scalars(
-            select(SocialAccount).where(
-                SocialAccount.creator_id == creator_id,
-                SocialAccount.platform == platform,
-            )
-        ).all()
+    """One row per (creator, platform, HANDLE) — supports MULTIPLE accounts per
+    platform (Bill: more than one Instagram/TikTok/etc.). Find the exact handle
+    and reuse it, else create a new row. NEVER deletes the creator's other
+    accounts on the same platform (the old 'one per platform' collapse blocked
+    adding a second account)."""
+    social = db.scalar(
+        select(SocialAccount).where(
+            SocialAccount.creator_id == creator_id,
+            SocialAccount.platform == platform,
+            SocialAccount.handle == handle,
+        )
     )
-    if not rows:
+    if social is None:
         social = SocialAccount(
             creator_id=creator_id, platform=platform, handle=handle,
             profile_url=urls.social_profile_url(platform, handle),
         )
         db.add(social)
-        return social
-    keeper = (
-        next((r for r in rows if r.is_verified), None)
-        or next((r for r in rows if r.handle == handle), None)
-        or rows[0]
-    )
-    for r in rows:
-        if r is not keeper:
-            db.delete(r)
-    if not keeper.is_verified and keeper.handle != handle:
-        keeper.handle = handle
-        keeper.profile_url = urls.social_profile_url(platform, handle)
-    return keeper
+    return social
 
 
 def start_verification(db: Session, creator_id: uuid.UUID, platform: str, handle: str) -> dict:

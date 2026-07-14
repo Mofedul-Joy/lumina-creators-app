@@ -12,6 +12,11 @@ function SetPasswordInner() {
   const router = useRouter();
   const params = useSearchParams();
   const prefilled = params.get("email") ?? "";
+  // Route straight to the campaign the visitor came in on (Bill's flow: sign up
+  // from a campaign card → land inside that campaign). The post-signup onboarding
+  // wizard is intentionally bypassed — profile completion now happens on-demand
+  // when they try to join (ProfileGate popup). Falls back to the dashboard.
+  const next = params.get("next") || "/dashboard";
   const [email, setEmail] = useState(prefilled);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -22,7 +27,7 @@ function SetPasswordInner() {
     mutationFn: () => creatorSetPassword(email, password),
     onSuccess: (data) => {
       setAuthToken(data.access_token, data.refresh_token);
-      router.push("/onboarding");
+      router.push(next);
     },
     onError: (err) => setError((err as Error).message),
   });

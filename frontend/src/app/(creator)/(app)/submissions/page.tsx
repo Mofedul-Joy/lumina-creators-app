@@ -202,7 +202,16 @@ export default function MyCampaignsPage() {
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-[var(--color-text)]">{g.name}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">{g.posts.length} post{g.posts.length === 1 ? "" : "s"}</p>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                      <p className="text-xs text-[var(--color-text-muted)]">{g.posts.length} post{g.posts.length === 1 ? "" : "s"}</p>
+                      {/* Badge so the creator can see at a glance a proof video landed. */}
+                      {g.posts.some((p) => p.has_proof_video) ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand)]/15 px-2 py-0.5 text-[11px] font-medium text-[var(--color-brand)]">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden><path d="m5 13 4 4L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                          Proof video uploaded
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                   <span className={`shrink-0 text-sm font-semibold ${status.cls}`}>{status.label}</span>
                 </div>

@@ -38,41 +38,30 @@ const SOCIAL_PLATFORMS: Platform[] = ["instagram", "tiktok", "youtube", "twitter
 // mandatory profile bits (creator type + a video + socials gate the join), then
 // details, and reassurance/earnings before finish. `type`, `socials`, `portfolio`,
 // `birthday`, `payment` keys stay so the ProfileGate deep-links still resolve.
+// Bill's revision: the post-signup onboarding is HIDDEN. This wizard now only
+// runs as on-demand profile completion (opened from the ProfileGate popup when a
+// creator tries to join a campaign). Reduced to the essentials — socials FIRST
+// (most important + what the join gate needs), then the minimal profile fields.
+// The background/personalization/demographic screens (ugc_before, experience,
+// brands, content_types, niches, bio, posts_per_day, hours_per_week, birthday,
+// gender, education, ethnicity, language, location, how_heard, photo,
+// testimonial, earnings) are intentionally left out of STEPS — their render code
+// is kept for when we re-introduce the full flow later.
 const STEPS: { key: StepKey; optional?: boolean }[] = [
+  { key: "socials" },
   { key: "name", optional: true },
-  { key: "ugc_before", optional: true },
-  { key: "experience", optional: true },
-  { key: "brands", optional: true },
-  { key: "content_types", optional: true },
-  { key: "niches", optional: true },
   { key: "type" },
-  { key: "bio", optional: true },
   { key: "portfolio", optional: true },
-  { key: "posts_per_day", optional: true },
-  { key: "hours_per_week", optional: true },
   { key: "payment", optional: true },
-  { key: "birthday", optional: true },
-  { key: "gender", optional: true },
-  { key: "education", optional: true },
-  { key: "ethnicity", optional: true },
-  { key: "language", optional: true },
-  { key: "location", optional: true },
-  { key: "how_heard", optional: true },
-  { key: "socials", optional: true },
-  { key: "photo", optional: true },
-  { key: "testimonial", optional: true },
-  { key: "earnings", optional: true },
   { key: "done" },
 ];
 
 // coarse sections for the clickable progress header
 const SECTIONS: { label: string; first: StepKey }[] = [
-  { label: "You", first: "name" },
-  { label: "Interests", first: "content_types" },
-  { label: "Profile", first: "type" },
-  { label: "Details", first: "birthday" },
   { label: "Socials", first: "socials" },
-  { label: "Finish", first: "testimonial" },
+  { label: "Profile", first: "name" },
+  { label: "Payment", first: "payment" },
+  { label: "Finish", first: "done" },
 ];
 const SECTION_STARTS = SECTIONS.map((s) => STEPS.findIndex((x) => x.key === s.first));
 
@@ -251,11 +240,12 @@ export function OnboardingWizard() {
   // apply-gate: creator type (About), Instagram + TikTok verified (Socials), and
   // at least one video (Videos). Name, birthday, other details, and payment are
   // all optional during onboarding.
+  // Profile-completion gate: socials + creator-type are what the backend join
+  // gate needs (≥1 social + creator_type), so they're the required steps here.
+  // Portfolio is optional now (the reduced no-friction flow).
   const REQUIRED: Partial<Record<StepKey, boolean>> = {
+    socials: socials.length > 0,
     type: !!creatorType,
-    // Rev2: socials no longer hard-block onboarding (join needs just one verified
-    // social, enforced at join time) — keeps the flow low-friction.
-    portfolio: portfolio.length > 0,
   };
   const stepRequired = cur.key in REQUIRED;
   const canContinue = !stepRequired || !!REQUIRED[cur.key];
@@ -604,7 +594,7 @@ export function OnboardingWizard() {
         ) : null}
 
         {cur.key === "done" ? (
-          <DoneStep name={(profileQ.data?.display_name ?? "").trim().split(" ")[0] || "creator"} hasType={!!creatorType} socialCount={socials.length} portfolioCount={portfolio.length} hasPayout={!!payout.method} />
+          <DoneStep name={(profileQ.data?.display_name ?? "").trim().split(" ")[0] || "creator"} hasType={!!creatorType} socialCount={socials.length} portfolioCount={portfolio.length} hasPayout={!!payout.method} campaignNext={sp.get("next") || "/campaigns"} />
         ) : null}
       </div>
 
@@ -1028,7 +1018,7 @@ function PortfolioStep({ bearer, portfolio, onChanged }: { bearer: string; portf
   );
 }
 
-function DoneStep({ name, hasType, socialCount, portfolioCount, hasPayout }: { name: string; hasType: boolean; socialCount: number; portfolioCount: number; hasPayout: boolean }) {
+function DoneStep({ name, hasType, socialCount, portfolioCount, hasPayout, campaignNext }: { name: string; hasType: boolean; socialCount: number; portfolioCount: number; hasPayout: boolean; campaignNext: string }) {
   const checks = [
     { ok: hasType, label: "Creator type" },
     { ok: socialCount > 0, label: `Social accounts (${socialCount})` },
@@ -1050,8 +1040,12 @@ function DoneStep({ name, hasType, socialCount, portfolioCount, hasPayout }: { n
           </div>
         ))}
       </div>
-      <div className="mx-auto mt-8 w-56">
-        <Link href="/campaigns" className="flex min-h-11 items-center justify-center rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] shadow-[0_0_20px_-4px_rgba(34,197,94,0.7)] transition hover:bg-[var(--color-brand-hover)]">Browse campaigns →</Link>
+      <div className="mx-auto mt-8 w-64">
+        {/* Routes back to the exact campaign the creator started on (Bill's flow)
+            when we came in via ?next=/campaigns/<slug>; otherwise Explore. */}
+        <Link href={campaignNext} className="flex min-h-11 items-center justify-center rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] shadow-[0_0_20px_-4px_rgba(34,197,94,0.7)] transition hover:bg-[var(--color-brand-hover)]">
+          {campaignNext.startsWith("/campaigns/") ? "Go to your campaign →" : "Browse campaigns →"}
+        </Link>
       </div>
     </div>
   );

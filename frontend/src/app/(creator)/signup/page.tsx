@@ -21,7 +21,12 @@ export default function CreatorSignupPage() {
   // specific address, prefill it.
   const [invite, setInvite] = useState<string | null>(null);
   const [invited, setInvited] = useState(false);
+  // Campaign the visitor came in on (?next=/campaigns/…) — forwarded through the
+  // whole signup chain so they land back inside it once their password is set.
+  const [next, setNext] = useState<string>("");
   useEffect(() => {
+    const n = new URLSearchParams(window.location.search).get("next");
+    if (n) setNext(n);
     const token = new URLSearchParams(window.location.search).get("invite");
     if (!token) return;
     setInvite(token);
@@ -40,7 +45,7 @@ export default function CreatorSignupPage() {
       if (data.status === "ok") {
         // Email verification disabled — go straight to set a password.
         setAuthToken(data.access_token, data.refresh_token);
-        router.push(`/set-password?email=${e}`);
+        router.push(`/set-password?email=${e}${next ? `&next=${encodeURIComponent(next)}` : ""}`);
         return;
       }
       // Account created unverified — enter the emailed code, then set a password.
