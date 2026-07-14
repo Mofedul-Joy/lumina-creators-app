@@ -505,16 +505,25 @@ def void_payout(db: Session, admin_id: uuid.UUID, payout_id: uuid.UUID) -> Payou
         it.voided_at = now
 
     amount = _q(payout.amount)
-    wallet.available_balance = _q(wallet.available_balance + amount)
+    # Only credit the wallet back if this payout actually DEBITED it. The v2
+    # engine writes a kind='payout' WalletTransaction; legacy manual/record
+    # payouts (payouts.py) never touch the wallet, so refunding one would credit
+    # money that was never taken out and permanently inflate the balance.
+    debited = db.scalar(
+        select(WalletTransaction.id).where(
+            WalletTransaction.payout_id == payout.id, WalletTransaction.kind == "payout")
+    ) is not None
+    if debited:
+        wallet.available_balance = _q(wallet.available_balance + amount)
+        db.add(WalletTransaction(
+            wallet_id=wallet.id, kind="refund", amount=amount,
+            reference=payout.program_name, payout_id=payout.id, admin_id=admin_id,
+            note=f"Void/refund of payout to creator {payout.creator_id}",
+        ))
     if payout.campaign_id:
         campaign = db.get(Campaign, payout.campaign_id)
         if campaign is not None:
             campaign.spent_amount = _q(max(_ZERO, (campaign.spent_amount or _ZERO) - amount))
-    db.add(WalletTransaction(
-        wallet_id=wallet.id, kind="refund", amount=amount,
-        reference=payout.program_name, payout_id=payout.id, admin_id=admin_id,
-        note=f"Void/refund of payout to creator {payout.creator_id}",
-    ))
     payout.status = "failed"
     audit.log(db, actor_admin_id=admin_id, action="payout.void", entity_type="payout",
               entity_id=payout.id, creator_id=str(payout.creator_id), amount=str(amount))
@@ -566,7 +575,9 @@ def forecast_all(db: Session) -> list[dict]:
 # ── reports ──────────────────────────────────────────────────────────────────
 
 def _payouts_in_range(db: Session, date_from=None, date_to=None, limit: int = 5000):
-    stmt = select(Payout)
+    # Only real (status='paid') payouts count in reports — a voided payout is
+    # status='failed' and must not appear as spend.
+    stmt = select(Payout).where(Payout.status == "paid")
     if date_from is not None:
         stmt = stmt.where(Payout.created_at >= date_from)
     if date_to is not None:
@@ -577,7 +588,9 @@ def _payouts_in_range(db: Session, date_from=None, date_to=None, limit: int = 50
 def spending_summary(db: Session, date_from=None, date_to=None) -> dict:
     """Total spend + payout count in a date range — powers the Agency Spending
     Report preview. SQL aggregates so it's correct at any volume."""
-    stmt = select(func.coalesce(func.sum(Payout.amount), 0), func.count(Payout.id))
+    # Exclude voided/failed payouts — only real spend counts.
+    stmt = select(func.coalesce(func.sum(Payout.amount), 0), func.count(Payout.id)).where(
+        Payout.status == "paid")
     if date_from is not None:
         stmt = stmt.where(Payout.created_at >= date_from)
     if date_to is not None:

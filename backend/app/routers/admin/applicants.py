@@ -355,6 +355,14 @@ def update_applicant(
     if part is None:
         raise HTTPException(http_status.HTTP_404_NOT_FOUND, "Applicant not found")
 
+    # Validate against the participation_status enum up front — otherwise a bad
+    # value passes Pydantic (status is Optional[str]) and only fails at the DB
+    # enum, surfacing as an unhandled 500.
+    _VALID_STATUSES = {"joined", "submitted", "approved", "rejected", "reviewed",
+                       "messaged", "declined", "bookmarked", "accepted"}
+    if body.status is not None and body.status not in _VALID_STATUSES:
+        raise HTTPException(http_status.HTTP_400_BAD_REQUEST, f"Invalid status '{body.status}'")
+
     changes: dict = {}
     if body.status is not None and body.status != part.status:
         old_status = part.status
