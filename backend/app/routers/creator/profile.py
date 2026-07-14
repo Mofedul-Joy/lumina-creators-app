@@ -49,6 +49,7 @@ def _profile_out(db: Session, prof: CreatorProfile, complete: bool, missing: lis
         payout_method=prof.payout_method, payout_address=prof.payout_address,
         payout_paypal=prof.payout_paypal, payout_solana=prof.payout_solana,
         payout_whop=prof.payout_whop,
+        niches=prof.niches or [], onboarding=prof.onboarding or {},
         completed=complete, missing=missing,
     )
 
