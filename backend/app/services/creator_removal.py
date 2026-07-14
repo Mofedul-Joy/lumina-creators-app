@@ -147,3 +147,21 @@ def remove_creator(db: Session, creator_id: uuid.UUID, mode: str, scope: str) ->
         "campaigns_detached": detached, "hard_deleted": hard_deleted,
         "retained_ledger": retained_ledger,
     }
+
+
+def reactivate_creator(db: Session, creator_id: uuid.UUID) -> dict:
+    """Undo a scope=entire removal (mirrors client suspend/reactivate) — flips a
+    suspended creator back to active and re-enables tracking so they can log in,
+    join, and submit again. Does NOT restore PII scrubbed by a keep_posts/delete
+    removal (that data is gone); it just lifts the access block."""
+    creator = db.get(Creator, creator_id)
+    if creator is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Creator not found")
+    if creator.status != "suspended":
+        raise HTTPException(status.HTTP_409_CONFLICT, "This creator is not suspended")
+    creator.status = "active"
+    creator.tracking_disabled = False
+    creator.removed_at = None
+    creator.removal_mode = None
+    db.commit()
+    return {"reactivated": True, "id": str(creator_id), "email": creator.email}

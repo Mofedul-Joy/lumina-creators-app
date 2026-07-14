@@ -158,6 +158,24 @@ def remove_creator(
     return result
 
 
+class ReactivateCreatorOut(BaseModel):
+    reactivated: bool
+    id: str
+    email: str
+
+
+@router.post("/{creator_id}/reactivate", response_model=ReactivateCreatorOut)
+def reactivate_creator(creator_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
+                       db: Session = Depends(get_db)):
+    """Undo a scope=entire removal — un-suspend the creator so they can log in /
+    join / submit again (mirrors client reactivate). Does not restore scrubbed PII."""
+    result = removal_svc.reactivate_creator(db, creator_id)
+    audit.log(db, actor_admin_id=admin.id, action="creator.reactivate",
+              entity_type="creator", entity_id=creator_id, email=result["email"])
+    db.commit()
+    return result
+
+
 @router.post("/{creator_id}/flag-suspicious", response_model=CreatorDetail)
 def flag_suspicious(creator_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     svc.set_suspicious(db, creator_id, True, admin.id)
