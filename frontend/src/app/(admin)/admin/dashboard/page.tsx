@@ -123,8 +123,16 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* submissions front-and-center — Bill: "as an admin the first thing I want
-            to see is just go straight into submissions" (campaigns live in the nav) */}
+            to see is just go straight into submissions" (campaigns live in the nav).
+            Rev2 (Mofedul) wanted this de-duplicated with Video Review: the full
+            grouped review hub now lives on the Submissions page; this stays as the
+            quick dashboard view, explicitly linked so they read as one feature. */}
         <div className="mt-10">
+          <div className="mb-2 flex justify-end">
+            <Link href="/admin/video-review" className="text-sm font-medium text-[var(--color-brand)] hover:underline">
+              Open full Submissions →
+            </Link>
+          </div>
           <SubmissionsSection />
         </div>
       </main>
