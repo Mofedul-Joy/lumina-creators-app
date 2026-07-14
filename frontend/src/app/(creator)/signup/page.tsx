@@ -62,7 +62,7 @@ export default function CreatorSignupPage() {
   return (
     <AuthCard
       title="Create your creator account"
-      subtitle="Enter your email — we'll send you a 6-digit code to verify it, then you'll set a password."
+      subtitle="Enter your email to get started — you'll set your password on the next step."
     >
       {invited ? (
         <div className="mb-5 flex items-start gap-3 rounded-xl border border-[var(--color-brand)]/30 bg-[var(--color-brand)]/10 p-4">
@@ -93,7 +93,7 @@ export default function CreatorSignupPage() {
           onChange={(event) => setEmail(event.target.value)}
         />
         <Button type="submit" loading={signup.isPending}>
-          Send verification code
+          Continue
         </Button>
       </form>
 
