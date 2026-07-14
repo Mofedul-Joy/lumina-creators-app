@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
-import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getAdminToken } from "@/lib/auth";
 import { getPlatformSettings } from "@/lib/admin";
 import { isAuthError, retryNonAuth} from "@/lib/api";
@@ -72,13 +71,26 @@ export default function AdminSettingsPage() {
         ) : (
           <>
             <Section title="Platform">
-              <Row label="Environment"><StatusBadge status={s.environment === "production" ? "active" : "draft"} /></Row>
+              {/* Show the real environment name, not a draft/active badge —
+                  "staging" is a valid environment, not an unpublished draft. */}
+              <Row label="Environment">
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${
+                  s.environment === "production"
+                    ? "bg-[var(--color-brand)]/15 text-[var(--color-brand)]"
+                    : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]"
+                }`}>{s.environment}</span>
+              </Row>
               <Row label="Media storage">{s.storage === "r2" ? "Cloudflare R2" : "Local (proxy)"}</Row>
             </Section>
 
             <Section title="Authentication">
+              {/* On/Off, not draft/active — this is a boolean toggle, not a publish state. */}
               <Row label="Email verification on signup">
-                <StatusBadge status={s.email_verification_required ? "active" : "draft"} />
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  s.email_verification_required
+                    ? "bg-[var(--color-brand)]/15 text-[var(--color-brand)]"
+                    : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]"
+                }`}>{s.email_verification_required ? "On" : "Off"}</span>
               </Row>
               <Row label="Email provider">
                 {s.email_provider === "resend" ? "Resend (HTTP)" : s.email_provider === "smtp" ? "SMTP" : "Not configured"}
