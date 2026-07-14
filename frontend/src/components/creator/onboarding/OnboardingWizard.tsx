@@ -24,20 +24,19 @@ import { COUNTRIES } from "@/lib/countries";
 
 type StepKey =
   | "type" | "name" | "photo" | "bio"
-  | "soc_instagram" | "soc_tiktok" | "soc_youtube" | "soc_twitter" | "soc_facebook"
+  | "socials"
   | "portfolio" | "birthday" | "gender" | "education" | "ethnicity" | "language" | "location"
   | "payment" | "done";
+
+// Rev2 #2/#3: one Socials step with per-platform tabs (was 5 separate steps).
+const SOCIAL_PLATFORMS: Platform[] = ["instagram", "tiktok", "youtube", "twitter", "facebook"];
 
 const STEPS: { key: StepKey; optional?: boolean }[] = [
   { key: "type" },
   { key: "name", optional: true },
   { key: "photo", optional: true },
   { key: "bio", optional: true },
-  { key: "soc_instagram", optional: true },
-  { key: "soc_tiktok", optional: true },
-  { key: "soc_youtube", optional: true },
-  { key: "soc_twitter", optional: true },
-  { key: "soc_facebook", optional: true },
+  { key: "socials", optional: true },
   { key: "portfolio", optional: true },
   { key: "birthday", optional: true },
   { key: "gender", optional: true },
@@ -52,7 +51,7 @@ const STEPS: { key: StepKey; optional?: boolean }[] = [
 // coarse sections for the clickable progress header (18 pills would be unusable)
 const SECTIONS: { label: string; first: StepKey }[] = [
   { label: "About", first: "type" },
-  { label: "Socials", first: "soc_instagram" },
+  { label: "Socials", first: "socials" },
   { label: "Videos", first: "portfolio" },
   { label: "Details", first: "birthday" },
   { label: "Payment", first: "payment" },
@@ -78,7 +77,7 @@ const labelCls = "block text-sm font-medium text-[var(--color-text)]";
 
 function resolveInitialStep(raw: string | null): number {
   if (!raw) return 0;
-  const alias: Record<string, StepKey> = { personal: "name", social: "soc_instagram", socials: "soc_instagram", portfolio: "portfolio", payment: "payment", details: "birthday" };
+  const alias: Record<string, StepKey> = { personal: "name", social: "socials", socials: "socials", portfolio: "portfolio", payment: "payment", details: "birthday" };
   const key = (alias[raw] ?? raw) as StepKey;
   const i = STEPS.findIndex((s) => s.key === key);
   return i < 0 ? 0 : i;
@@ -168,16 +167,14 @@ export function OnboardingWizard() {
   const cur = STEPS[step];
 
   // Required steps can't be skipped and gate the Continue button until valid.
-  // Instagram + TikTok must be VERIFIED; YouTube/X/Facebook stay optional.
-  const isVerifiedSocial = (p: Platform) => socials.some((s) => s.platform === p && s.is_verified);
   // Mandatory to complete the profile (no skip), mirroring the backend
   // apply-gate: creator type (About), Instagram + TikTok verified (Socials), and
   // at least one video (Videos). Name, birthday, other details, and payment are
   // all optional during onboarding.
   const REQUIRED: Partial<Record<StepKey, boolean>> = {
     type: !!creatorType,
-    soc_instagram: isVerifiedSocial("instagram"),
-    soc_tiktok: isVerifiedSocial("tiktok"),
+    // Rev2: socials no longer hard-block onboarding (join needs just one verified
+    // social, enforced at join time) — keeps the flow low-friction.
     portfolio: portfolio.length > 0,
   };
   const stepRequired = cur.key in REQUIRED;
@@ -211,23 +208,11 @@ export function OnboardingWizard() {
       else if (k === "language") await saveM.mutateAsync({ primary_language: audience.primary_language || undefined });
       else if (k === "location") await saveM.mutateAsync({ country: audience.country || undefined, city: audience.city || undefined });
       else if (k === "payment") await saveM.mutateAsync({ payout_method: (payout.method || undefined) as PayoutMethod | undefined, payout_paypal: payout.paypal || undefined, payout_solana: payout.solana || undefined, payout_whop: payout.whop || undefined });
-      else if (k.startsWith("soc_")) {
-        const p = k.slice(4) as Platform;
-        const f = socialForms[p];
-        const existing = socials.find((s) => s.platform === p);
-        // Instagram/TikTok are added ONLY through the Verify flow (which creates
-        // the account) — never auto-add an unverified row here, or it would
-        // create a duplicate that bypasses verification.
-        const verifiable = p === "instagram" || p === "tiktok";
-        if (!verifiable && f?.handle?.trim() && !existing) {
-          await addSocialM.mutateAsync({ platform: p, handle: f.handle.trim(), follower_count: Number(f.followers) || 0 });
-        }
-      }
+      // "socials" saves inline per-platform (verify flow + Add-account button),
+      // so there's nothing to persist on Continue.
       next();
     } catch { /* err surfaced below */ }
   }
-
-  const socialPlatform = cur.key.startsWith("soc_") ? (cur.key.slice(4) as Platform) : null;
 
   return (
     <main className="mx-auto max-w-xl px-6 py-10">
@@ -300,14 +285,14 @@ export function OnboardingWizard() {
           </StepShell>
         ) : null}
 
-        {socialPlatform ? (
-          <StepShell eyebrow="Your reach" title={`Are you on ${platformLabel(socialPlatform)}?`} sub={stepRequired ? "Verify your handle to continue — this one's required." : "Add your handle so brands can see your reach. Skip if you're not on it."}>
-            <SocialStep
-              platform={socialPlatform}
+        {cur.key === "socials" ? (
+          <StepShell eyebrow="Your reach" title="Your social accounts" sub="Add the platforms you're on so brands can see your reach. Instagram and TikTok get a verified badge.">
+            <SocialsTabbed
               bearer={bearer}
-              existing={socials.find((s) => s.platform === socialPlatform)}
-              form={socialForms[socialPlatform] ?? { handle: "", followers: "" }}
-              onForm={(f) => setSocialForms({ ...socialForms, [socialPlatform]: f })}
+              socials={socials}
+              socialForms={socialForms}
+              setSocialForms={setSocialForms}
+              onAdd={(platform, handle, followers) => addSocialM.mutate({ platform, handle, follower_count: followers })}
               onRemove={(id) => delSocialM.mutate(id)}
               onChanged={() => qc.invalidateQueries({ queryKey: ["socials"] })}
             />
@@ -448,12 +433,62 @@ function OptionCard({ selected, onClick, title, blurb, icon, compact }: { select
 
 const VERIFIABLE_PLATFORMS: Platform[] = ["instagram", "tiktok"];
 
-function SocialStep({ platform, bearer, existing, form, onForm, onRemove, onChanged }: {
+// Rev2 #2: one Socials view with platform tabs — click a platform, see (and add)
+// that platform's account. Replaces the five Continue-per-platform steps.
+function SocialsTabbed({ bearer, socials, socialForms, setSocialForms, onAdd, onRemove, onChanged }: {
+  bearer: string;
+  socials: { id: string; platform: string; handle: string; follower_count: number; is_verified: boolean }[];
+  socialForms: Record<string, { handle: string; followers: string }>;
+  setSocialForms: (f: Record<string, { handle: string; followers: string }>) => void;
+  onAdd: (platform: Platform, handle: string, followers: number) => void;
+  onRemove: (id: string) => void;
+  onChanged: () => void;
+}) {
+  const [active, setActive] = useState<Platform>("instagram");
+  return (
+    <div className="space-y-5">
+      <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto rounded-full bg-[var(--color-surface)] p-1">
+        {SOCIAL_PLATFORMS.map((p) => {
+          const has = socials.some((s) => s.platform === p);
+          const on = active === p;
+          return (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setActive(p)}
+              className={`flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition ${
+                on ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+              }`}
+            >
+              <PlatformIcon name={p} className="h-4 w-4" />
+              <span>{platformLabel(p)}</span>
+              {has ? <span className={`h-1.5 w-1.5 rounded-full ${on ? "bg-[var(--color-on-brand)]" : "bg-[var(--color-brand)]"}`} /> : null}
+            </button>
+          );
+        })}
+      </div>
+
+      <SocialStep
+        platform={active}
+        bearer={bearer}
+        existing={socials.find((s) => s.platform === active) as { id: string; handle: string; follower_count: number; is_verified: boolean } | undefined}
+        form={socialForms[active] ?? { handle: "", followers: "" }}
+        onForm={(f) => setSocialForms({ ...socialForms, [active]: f })}
+        onAdd={onAdd}
+        onRemove={onRemove}
+        onChanged={onChanged}
+      />
+    </div>
+  );
+}
+
+function SocialStep({ platform, bearer, existing, form, onForm, onAdd, onRemove, onChanged }: {
   platform: Platform;
   bearer: string;
   existing?: { id: string; handle: string; follower_count: number; is_verified: boolean };
   form: { handle: string; followers: string };
   onForm: (f: { handle: string; followers: string }) => void;
+  onAdd?: (platform: Platform, handle: string, followers: number) => void;
   onRemove: (id: string) => void;
   onChanged: () => void;
 }) {
@@ -501,9 +536,19 @@ function SocialStep({ platform, bearer, existing, form, onForm, onRemove, onChan
             <button className="cursor-pointer text-xs text-[var(--color-danger)]" onClick={() => onRemove(existing.id)}>Remove</button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <input className={control} placeholder="handle (without @)" value={form.handle} onChange={(e) => onForm({ ...form, handle: e.target.value })} />
-            <input className={control} type="number" placeholder="follower count" value={form.followers} onChange={(e) => onForm({ ...form, followers: e.target.value })} />
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <input className={control} placeholder="handle (without @)" value={form.handle} onChange={(e) => onForm({ ...form, handle: e.target.value })} />
+              <input className={control} type="number" placeholder="follower count" value={form.followers} onChange={(e) => onForm({ ...form, followers: e.target.value })} />
+            </div>
+            <button
+              type="button"
+              disabled={!form.handle.trim() || !onAdd}
+              onClick={() => { if (onAdd && form.handle.trim()) { onAdd(platform, form.handle.trim(), Number(form.followers) || 0); onForm({ handle: "", followers: "" }); } }}
+              className="min-h-11 w-full cursor-pointer rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)] disabled:opacity-50"
+            >
+              Add account
+            </button>
           </div>
         )
       ) : (
