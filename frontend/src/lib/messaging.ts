@@ -9,6 +9,7 @@ export type Conversation = {
   creator_id: string | null;
   name: string;
   email: string | null;
+  whatsapp: string | null;
   last_message: string | null;
   last_message_at: string | null;
   last_sender: "admin" | "creator" | null;

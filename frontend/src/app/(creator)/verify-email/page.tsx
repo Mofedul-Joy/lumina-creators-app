@@ -13,6 +13,7 @@ function VerifyEmailInner() {
   const params = useSearchParams();
   const email = params.get("email") ?? "";
   const next = params.get("next");   // "set-password" for the email-first signup
+  const after = params.get("after"); // campaign to land in once onboarding is done
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -21,8 +22,14 @@ function VerifyEmailInner() {
     mutationFn: () => verifyEmailCode(email, code.trim()),
     onSuccess: (data) => {
       setAuthToken(data.access_token, data.refresh_token);
-      // Email-first signup: verified, now choose a password. Otherwise straight in.
-      router.push(next === "set-password" ? `/set-password?email=${encodeURIComponent(email)}` : "/onboarding");
+      const afterQ = after ? `&next=${encodeURIComponent(after)}` : "";
+      // Email-first signup: verified, now choose a password (campaign rides along
+      // as ?next). Otherwise straight into the mandatory onboarding flow.
+      router.push(
+        next === "set-password"
+          ? `/set-password?email=${encodeURIComponent(email)}${afterQ}`
+          : `/onboarding${after ? `?next=${encodeURIComponent(after)}` : ""}`,
+      );
     },
     onError: (err) => setError((err as Error).message),
   });

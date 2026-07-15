@@ -72,14 +72,17 @@ def _admin_row(db: Session, conv: Conversation) -> dict:
     if conv.kind == "channel":
         row["name"] = conv.title or "Untitled channel"
         row["email"] = None
+        row["whatsapp"] = None
         row["member_count"] = db.scalar(
             select(func.count(ConversationMember.id)).where(ConversationMember.conversation_id == conv.id)
         ) or 0
     else:
         creator = db.get(Creator, conv.creator_id)
-        display_name = db.scalar(select(CreatorProfile.display_name).where(CreatorProfile.creator_id == conv.creator_id))
+        prof = db.scalar(select(CreatorProfile).where(CreatorProfile.creator_id == conv.creator_id))
+        display_name = prof.display_name if prof else None
         row["name"] = display_name or (creator.email.split("@")[0] if creator else "Creator")
         row["email"] = creator.email if creator else None
+        row["whatsapp"] = prof.whatsapp if prof else None
     return row
 
 
@@ -184,6 +187,7 @@ def creator_thread_dict(db: Session, conv: Conversation, creator: Creator) -> di
         "creator_id": str(creator.id),
         "name": "Lumina Team",
         "email": admin_email,
+        "whatsapp": None,
         "last_message": last.body if last else None,
         "last_message_at": conv.last_message_at,
         "last_sender": last.sender_type if last else None,
@@ -223,6 +227,7 @@ def _creator_channel_dict(db: Session, conv: Conversation, member: ConversationM
         "creator_id": None,
         "name": conv.title or "Untitled channel",
         "email": None,
+        "whatsapp": None,
         "last_message": last.body if last else None,
         "last_message_at": conv.last_message_at,
         "last_sender": last.sender_type if last else None,
@@ -383,7 +388,7 @@ def set_channel_muted(db: Session, conversation_id: uuid.UUID, creator_id: uuid.
 
 def list_channel_members(db: Session, conversation_id: uuid.UUID) -> list[dict]:
     rows = db.execute(
-        select(Creator, CreatorProfile.display_name)
+        select(Creator, CreatorProfile.display_name, CreatorProfile.whatsapp)
         .join(ConversationMember, ConversationMember.creator_id == Creator.id)
         .outerjoin(CreatorProfile, CreatorProfile.creator_id == Creator.id)
         .where(ConversationMember.conversation_id == conversation_id)
@@ -394,8 +399,9 @@ def list_channel_members(db: Session, conversation_id: uuid.UUID) -> list[dict]:
             "creator_id": str(creator.id),
             "name": display_name or creator.email.split("@")[0],
             "email": creator.email,
+            "whatsapp": whatsapp,
         }
-        for creator, display_name in rows
+        for creator, display_name, whatsapp in rows
     ]
 
 

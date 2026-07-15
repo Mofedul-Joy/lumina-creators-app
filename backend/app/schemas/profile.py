@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 class ProfileIn(BaseModel):
     display_name: Optional[str] = Field(None, max_length=120)
     phone: Optional[str] = Field(None, max_length=40)
+    whatsapp: Optional[str] = Field(None, max_length=40)
     creator_type: Optional[str] = None   # ugc | influencer | both
     bio: Optional[str] = Field(None, max_length=2000)
     date_of_birth: Optional[date] = None
@@ -40,6 +41,7 @@ class ProfileIn(BaseModel):
 class ProfileOut(BaseModel):
     display_name: Optional[str] = None
     phone: Optional[str] = None
+    whatsapp: Optional[str] = None
     creator_type: Optional[str] = None
     bio: Optional[str] = None
     date_of_birth: Optional[date] = None

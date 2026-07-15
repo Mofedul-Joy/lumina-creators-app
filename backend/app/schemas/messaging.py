@@ -12,6 +12,7 @@ class ConversationOut(BaseModel):
     creator_id: Optional[str] = None  # null for channels
     name: str                       # counterparty display name / channel name
     email: Optional[str] = None     # counterparty email (for the email button)
+    whatsapp: Optional[str] = None  # counterparty WhatsApp (admin DM rows)
     last_message: Optional[str] = None
     last_message_at: Optional[datetime] = None
     last_sender: Optional[str] = None  # 'admin' | 'creator'
@@ -83,3 +84,4 @@ class ChannelMemberOut(BaseModel):
     creator_id: str
     name: str
     email: Optional[str] = None
+    whatsapp: Optional[str] = None

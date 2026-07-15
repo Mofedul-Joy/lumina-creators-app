@@ -77,7 +77,7 @@ def update_profile(db: Session, creator_id: uuid.UUID, data: dict) -> CreatorPro
             )
     if data.get("avatar_object_id") is not None:
         _require_owned_object(db, creator_id, data["avatar_object_id"], "avatar")
-    for field in ("display_name", "phone", "creator_type", "bio", "date_of_birth", "gender", "ethnicity", "education",
+    for field in ("display_name", "phone", "whatsapp", "creator_type", "bio", "date_of_birth", "gender", "ethnicity", "education",
                   "primary_language", "country", "city", "avatar_object_id",
                   "payout_method", "payout_address",
                   "payout_paypal", "payout_solana", "payout_whop"):

@@ -267,6 +267,7 @@ export type ProfileIn = {
   languages?: string[];
   country?: string;
   city?: string;
+  whatsapp?: string;
   avatar_object_id?: string;
   payout_method?: PayoutMethod;
   payout_address?: string;
@@ -289,6 +290,7 @@ export type ProfileOut = {
   languages: string[];
   country: string | null;
   city: string | null;
+  whatsapp: string | null;
   avatar_object_id: string | null;
   avatar_url: string | null;
   payout_method: PayoutMethod | null;
@@ -539,6 +541,10 @@ export type MyCampaign = {
 // Campaigns the creator applied to / joined, with application status.
 export const listMyCampaigns = (token: string) =>
   apiFetch<MyCampaign[]>("/api/creator/campaigns/mine", { token });
+
+// Campaigns an admin invited this creator to (not yet joined/accepted on their own).
+export const listInvitedCampaigns = (token: string) =>
+  apiFetch<MyCampaign[]>("/api/creator/campaigns/invited", { token });
 
 // ── Creator profile methods (creator bearer token) ────────────────────────────
 export const getProfile = (token: string) =>

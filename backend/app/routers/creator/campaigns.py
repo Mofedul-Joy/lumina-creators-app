@@ -19,6 +19,12 @@ def mine(current: Creator = Depends(get_current_creator), db: Session = Depends(
     return [MyCampaignOut(**m) for m in svc.list_creator_campaigns(db, current.id)]
 
 
+@router.get("/invited", response_model=list[MyCampaignOut])
+def invited(current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
+    """Campaigns the creator was invited/messaged into but has not accepted yet."""
+    return [MyCampaignOut(**m) for m in svc.list_creator_invited_campaigns(db, current.id)]
+
+
 def _public_out(c: Campaign, joined: bool, approved: bool = False, db: Session | None = None) -> CampaignPublicOut:
     from app.schemas.campaign import ExampleVideoOut
     from app.services import campaign_examples

@@ -13,14 +13,18 @@ const CampaignsIcon = () => <svg className={ic} viewBox="0 0 24 24" fill="none">
 const AccountIcon = () => <svg className={ic} viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 const PortfolioIcon = () => <svg className={ic} viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2" /><path d="m10 10 5 3-5 3v-6Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>;
 const ContractsIcon = () => <svg className={ic} viewBox="0 0 24 24" fill="none"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /><path d="M14 3v5h5M9 13h6M9 17h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>;
+const InvitedIcon = () => <svg className={ic} viewBox="0 0 24 24" fill="none"><path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /><path d="m4 7 8 6 8-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 
 type NavItem = { href: string; label: string; icon: () => React.ReactElement };
 
 // Full SideShift-style creator rail, rendered in the Lumina green/black theme.
+// "Invited Campaigns" sits right below "My Campaigns" (Rhys rev4) so a creator
+// can find the campaigns an admin invited them to.
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: HomeIcon },
   { href: "/campaigns", label: "Explore", icon: ExploreIcon },
   { href: "/submissions", label: "My Campaigns", icon: CampaignsIcon },
+  { href: "/invited", label: "Invited Campaigns", icon: InvitedIcon },
   { href: "/account", label: "Account", icon: AccountIcon },
   { href: "/portfolio", label: "Portfolio", icon: PortfolioIcon },
   { href: "/contracts", label: "Agreements", icon: ContractsIcon },

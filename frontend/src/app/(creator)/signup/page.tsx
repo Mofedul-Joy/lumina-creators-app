@@ -49,7 +49,9 @@ export default function CreatorSignupPage() {
         return;
       }
       // Account created unverified — enter the emailed code, then set a password.
-      router.push(`/verify-email?email=${e}&next=set-password`);
+      // Carry the campaign the visitor came in on (?after=…) so it survives the
+      // verify → set-password → onboarding chain and they land back in it.
+      router.push(`/verify-email?email=${e}&next=set-password${next ? `&after=${encodeURIComponent(next)}` : ""}`);
     },
     onError: (err) => setError((err as Error).message),
   });

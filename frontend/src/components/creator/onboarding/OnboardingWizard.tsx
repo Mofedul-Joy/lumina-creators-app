@@ -27,6 +27,7 @@ type StepKey =
   | "type" | "bio" | "portfolio"
   | "posts_per_day" | "hours_per_week"
   | "birthday" | "gender" | "education" | "ethnicity" | "language" | "location" | "how_heard"
+  | "whatsapp"
   | "socials" | "photo"
   | "testimonial" | "earnings"
   | "payment" | "done";
@@ -38,30 +39,40 @@ const SOCIAL_PLATFORMS: Platform[] = ["instagram", "tiktok", "youtube", "twitter
 // mandatory profile bits (creator type + a video + socials gate the join), then
 // details, and reassurance/earnings before finish. `type`, `socials`, `portfolio`,
 // `birthday`, `payment` keys stay so the ProfileGate deep-links still resolve.
-// Bill's revision: the post-signup onboarding is HIDDEN. This wizard now only
-// runs as on-demand profile completion (opened from the ProfileGate popup when a
-// creator tries to join a campaign). Reduced to the essentials — socials FIRST
-// (most important + what the join gate needs), then the minimal profile fields.
-// The background/personalization/demographic screens (ugc_before, experience,
-// brands, content_types, niches, bio, posts_per_day, hours_per_week, birthday,
-// gender, education, ethnicity, language, location, how_heard, photo,
-// testimonial, earnings) are intentionally left out of STEPS — their render code
-// is kept for when we re-introduce the full flow later.
+// Rhys's rev4: the full SideShift-style onboarding is the MANDATORY post-signup
+// flow again. A creator must complete it before reaching any tab (the sidebar is
+// locked — see the /onboarding route rendering it full-screen). Order mirrors the
+// feedback screenshots: name → background/personalization → socials → their best
+// videos (right after socials) → schedule → demographics → location → how-heard →
+// WhatsApp → photo → earnings → done. `socials` is the only hard-required step
+// (the backend join-gate needs ≥1 social); everything else is Skip-for-now.
 const STEPS: { key: StepKey; optional?: boolean }[] = [
+  { key: "name" },
+  { key: "ugc_before", optional: true },
+  { key: "brands", optional: true },
+  { key: "experience", optional: true },
+  { key: "content_types", optional: true },
+  { key: "niches", optional: true },
   { key: "socials" },
-  { key: "name", optional: true },
-  { key: "type" },
-  { key: "portfolio", optional: true },
-  { key: "payment", optional: true },
+  { key: "portfolio", optional: true },   // "Add your best videos" — right after socials
+  { key: "posts_per_day", optional: true },
+  { key: "hours_per_week", optional: true },
+  { key: "birthday", optional: true },
+  { key: "gender", optional: true },
+  { key: "location", optional: true },
+  { key: "how_heard", optional: true },
+  { key: "whatsapp", optional: true },
+  { key: "photo", optional: true },
+  { key: "earnings" },
   { key: "done" },
 ];
 
 // coarse sections for the clickable progress header
 const SECTIONS: { label: string; first: StepKey }[] = [
+  { label: "About you", first: "name" },
   { label: "Socials", first: "socials" },
-  { label: "Profile", first: "name" },
-  { label: "Payment", first: "payment" },
-  { label: "Finish", first: "done" },
+  { label: "Details", first: "posts_per_day" },
+  { label: "Finish", first: "earnings" },
 ];
 const SECTION_STARTS = SECTIONS.map((s) => STEPS.findIndex((x) => x.key === s.first));
 
@@ -92,6 +103,8 @@ const CONTENT_TYPES: { key: string; label: string; icon: string }[] = [
   { key: "ads", label: "Video Ads", icon: "🎥" },
   { key: "talking", label: "Talking Style Videos", icon: "🎙️" },
   { key: "faceless", label: "Faceless Content / Clipping", icon: "✂️" },
+  { key: "technology", label: "Technology", icon: "💻" },
+  { key: "fitness", label: "Fitness", icon: "🏋️" },
 ];
 const NICHE_OPTIONS: { key: string; label: string; icon: string }[] = [
   { key: "social", label: "Social & Communication", icon: "💬" },
@@ -170,8 +183,10 @@ export function OnboardingWizard() {
   const portfolioQ = useQuery({ queryKey: ["portfolio"], queryFn: () => listPortfolio(bearer), enabled, retry: retryNonAuth });
   useEffect(() => { if (profileQ.isError) router.replace("/login"); }, [profileQ.isError, router]);
 
-  const [creatorType, setCreatorType] = useState<CreatorType | "">("");
-  const [details, setDetails] = useState({ display_name: "", bio: "" });
+  // Lumina creators are all UGC/clippers — default the type so the backend
+  // join-gate (needs creator_type) is satisfied without a separate "type" step.
+  const [creatorType, setCreatorType] = useState<CreatorType | "">("ugc");
+  const [details, setDetails] = useState({ display_name: "", bio: "", whatsapp: "" });
   const [audience, setAudience] = useState({ date_of_birth: "", gender: "", education: "", ethnicity: "", primary_language: "", country: "", city: "" });
   const [payout, setPayout] = useState({ method: "" as PayoutMethod | "", paypal: "", solana: "", whop: "" });
   const [socialForms, setSocialForms] = useState<Record<string, { handle: string; followers: string }>>({});
@@ -182,8 +197,8 @@ export function OnboardingWizard() {
     const d = profileQ.data;
     if (!d || seeded.current) return;
     seeded.current = true;
-    setCreatorType((d.creator_type as CreatorType) ?? "");
-    setDetails({ display_name: d.display_name ?? "", bio: d.bio ?? "" });
+    setCreatorType((d.creator_type as CreatorType) || "ugc");
+    setDetails({ display_name: d.display_name ?? "", bio: d.bio ?? "", whatsapp: d.whatsapp ?? "" });
     setAudience({
       date_of_birth: d.date_of_birth ?? "", gender: d.gender ?? "", education: d.education ?? "", ethnicity: d.ethnicity ?? "",
       primary_language: d.primary_language ?? "", country: d.country ?? "", city: d.city ?? "",
@@ -269,8 +284,10 @@ export function OnboardingWizard() {
     try {
       const k = cur.key;
       if (k === "type") await saveM.mutateAsync({ creator_type: creatorType || undefined });
-      else if (k === "name") await saveM.mutateAsync({ display_name: details.display_name || undefined });
+      // Name is step 1 — persist creator_type here too (no separate type step now).
+      else if (k === "name") await saveM.mutateAsync({ display_name: details.display_name || undefined, creator_type: creatorType || "ugc" });
       else if (k === "bio") await saveM.mutateAsync({ bio: details.bio || undefined });
+      else if (k === "whatsapp") await saveM.mutateAsync({ whatsapp: details.whatsapp || undefined });
       else if (k === "birthday") await saveM.mutateAsync({ date_of_birth: audience.date_of_birth || undefined });
       else if (k === "gender") await saveM.mutateAsync({ gender: (audience.gender || undefined) as Gender | undefined });
       else if (k === "education") await saveM.mutateAsync({ education: (audience.education || undefined) as EducationLevel | undefined });
@@ -431,6 +448,12 @@ export function OnboardingWizard() {
           </StepShell>
         ) : null}
 
+        {cur.key === "whatsapp" ? (
+          <StepShell eyebrow="Stay in the loop" title="WhatsApp Number" sub="So brands and the Lumina team can reach you fast. We'll never share this with anyone.">
+            <WhatsAppInput value={details.whatsapp} onChange={(v) => setDetails({ ...details, whatsapp: v })} />
+          </StepShell>
+        ) : null}
+
         {cur.key === "testimonial" ? (
           <StepShell eyebrow="You're in good company" title="Join thousands of trusted creators">
             <div className="card-lumina rounded-[var(--radius-card)] p-6">
@@ -556,19 +579,12 @@ export function OnboardingWizard() {
         ) : null}
 
         {cur.key === "location" ? (
-          <StepShell eyebrow="A few details" title="Where are you based?" sub="Required — pick your real country and enter your real city (we verify it).">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className={labelCls}>Country</label>
-                <Select
-                  value={audience.country}
-                  onChange={(v) => setAudience({ ...audience, country: v })}
-                  options={COUNTRIES.map((c) => ({ value: c, label: c }))}
-                  placeholder="Select your country"
-                />
-              </div>
-              <Field label="City" placeholder="e.g. Nairobi" value={audience.city} onChange={(e) => setAudience({ ...audience, city: e.target.value })} />
-            </div>
+          <StepShell eyebrow="A few details" title="Where are you located?" sub="Helps us match you with local brands. Pick your city from the list.">
+            <LocationAutocomplete
+              country={audience.country}
+              city={audience.city}
+              onPick={(country, city) => setAudience({ ...audience, country, city })}
+            />
           </StepShell>
         ) : null}
 
@@ -620,6 +636,136 @@ function StepShell({ eyebrow, title, sub, children }: { eyebrow: string; title: 
       <h1 className="mt-2.5 text-4xl font-semibold tracking-tight text-[var(--color-text)]">{title}</h1>
       {sub ? <p className="mt-3 text-lg text-[var(--color-text-secondary)]">{sub}</p> : null}
       <div className="mt-7">{children}</div>
+    </div>
+  );
+}
+
+// Common WhatsApp dial codes (flag emoji + code). Enough coverage for onboarding;
+// the value stored is the full E.164-ish string ("+<code><number>") which powers
+// the admin's one-click WhatsApp button (wa.me/<digits>).
+const DIAL_CODES: { flag: string; code: string; label: string }[] = [
+  { flag: "🇺🇸", code: "+1", label: "US/CA" }, { flag: "🇬🇧", code: "+44", label: "UK" },
+  { flag: "🇦🇺", code: "+61", label: "AU" }, { flag: "🇧🇩", code: "+880", label: "BD" },
+  { flag: "🇮🇳", code: "+91", label: "IN" }, { flag: "🇵🇰", code: "+92", label: "PK" },
+  { flag: "🇳🇬", code: "+234", label: "NG" }, { flag: "🇿🇦", code: "+27", label: "ZA" },
+  { flag: "🇲🇽", code: "+52", label: "MX" }, { flag: "🇧🇷", code: "+55", label: "BR" },
+  { flag: "🇩🇪", code: "+49", label: "DE" }, { flag: "🇫🇷", code: "+33", label: "FR" },
+  { flag: "🇪🇸", code: "+34", label: "ES" }, { flag: "🇮🇹", code: "+39", label: "IT" },
+  { flag: "🇳🇱", code: "+31", label: "NL" }, { flag: "🇦🇪", code: "+971", label: "AE" },
+  { flag: "🇸🇦", code: "+966", label: "SA" }, { flag: "🇵🇭", code: "+63", label: "PH" },
+  { flag: "🇮🇩", code: "+62", label: "ID" }, { flag: "🇪🇬", code: "+20", label: "EG" },
+  { flag: "🇰🇪", code: "+254", label: "KE" }, { flag: "🇹🇷", code: "+90", label: "TR" },
+  { flag: "🇦🇷", code: "+54", label: "AR" }, { flag: "🇨🇴", code: "+57", label: "CO" },
+  { flag: "🇵🇹", code: "+351", label: "PT" }, { flag: "🇵🇱", code: "+48", label: "PL" },
+];
+
+// Worldwide location typeahead (Rhys rev4). Queries the open Photon geocoder
+// CLIENT-SIDE (the user's browser, so Render's egress IP is never involved and
+// there are no server rate limits), debounced. Picking a result fills the real
+// country + city the backend stores.
+type PlaceHit = { label: string; city: string; country: string };
+function LocationAutocomplete({
+  country, city, onPick,
+}: {
+  country: string; city: string; onPick: (country: string, city: string) => void;
+}) {
+  const [q, setQ] = useState(city && country ? `${city}, ${country}` : city || country || "");
+  const [hits, setHits] = useState<PlaceHit[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const term = q.trim();
+    if (term.length < 2) { setHits([]); return; }
+    let cancelled = false;
+    setLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(term)}&limit=6&layer=city&layer=state&layer=country`);
+        const data = await r.json();
+        if (cancelled) return;
+        const seen = new Set<string>();
+        const parsed: PlaceHit[] = (data.features ?? []).map((f: { properties?: Record<string, string> }) => {
+          const p = f.properties ?? {};
+          const city = p.name ?? p.city ?? "";
+          const countryName = p.country ?? "";
+          const region = p.state ?? "";
+          const label = [city, region && region !== city ? region : "", countryName].filter(Boolean).join(", ");
+          return { label, city, country: countryName };
+        }).filter((h: PlaceHit) => h.label && h.country && !seen.has(h.label) && seen.add(h.label));
+        setHits(parsed);
+      } catch { if (!cancelled) setHits([]); }
+      finally { if (!cancelled) setLoading(false); }
+    }, 300);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [q]);
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => { if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  return (
+    <div ref={boxRef} className="relative max-w-lg">
+      <input
+        value={q}
+        onChange={(e) => { setQ(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        placeholder="Search your city or country…"
+        className="min-h-12 w-full rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 text-[15px] text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
+        autoComplete="off"
+      />
+      {open && (q.trim().length >= 2) ? (
+        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg-deep)] shadow-2xl">
+          {loading && hits.length === 0 ? (
+            <p className="px-4 py-3 text-sm text-[var(--color-text-muted)]">Searching…</p>
+          ) : hits.length === 0 ? (
+            <p className="px-4 py-3 text-sm text-[var(--color-text-muted)]">No matches — keep typing.</p>
+          ) : (
+            hits.map((h) => (
+              <button
+                key={h.label}
+                type="button"
+                onClick={() => { onPick(h.country, h.city || h.country); setQ(h.label); setOpen(false); }}
+                className="block w-full cursor-pointer px-4 py-2.5 text-left text-sm text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]"
+              >
+                {h.label}
+              </button>
+            ))
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function WhatsAppInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  // Split an existing "+<code><number>" back into code + national number so the
+  // field re-hydrates on edit. Longest matching dial code wins.
+  const match = [...DIAL_CODES].sort((a, b) => b.code.length - a.code.length).find((d) => value.startsWith(d.code));
+  const [code, setCode] = useState(match?.code ?? "+1");
+  const [num, setNum] = useState(match ? value.slice(match.code.length).trim() : value.replace(/^\+/, ""));
+  const compose = (c: string, n: string) => onChange(n.trim() ? `${c}${n.replace(/[^\d]/g, "")}` : "");
+  return (
+    <div className="flex max-w-md items-stretch gap-2">
+      <select
+        value={code}
+        onChange={(e) => { setCode(e.target.value); compose(e.target.value, num); }}
+        className="min-h-12 shrink-0 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-[15px] text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
+        aria-label="Country code"
+      >
+        {DIAL_CODES.map((d) => <option key={d.code + d.label} value={d.code}>{d.flag} {d.code}</option>)}
+      </select>
+      <input
+        type="tel"
+        inputMode="tel"
+        value={num}
+        onChange={(e) => { setNum(e.target.value); compose(code, e.target.value); }}
+        placeholder="WhatsApp number"
+        className="min-h-12 w-full rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 text-[15px] text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
+      />
     </div>
   );
 }

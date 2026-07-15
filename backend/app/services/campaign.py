@@ -6,7 +6,7 @@ import uuid
 from decimal import Decimal
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.security import _now
@@ -519,15 +519,7 @@ def join_campaign(db: Session, creator_id: uuid.UUID, slug: str,
     return part
 
 
-def list_creator_campaigns(db: Session, creator_id: uuid.UUID) -> list[dict]:
-    """Every campaign this creator applied to / joined, newest first, with their
-    application status and how many videos they've submitted to it."""
-    rows = db.execute(
-        select(CampaignParticipation, Campaign)
-        .join(Campaign, Campaign.id == CampaignParticipation.campaign_id)
-        .where(CampaignParticipation.creator_id == creator_id)
-        .order_by(CampaignParticipation.joined_at.desc())
-    ).all()
+def _creator_campaign_rows(db: Session, creator_id: uuid.UUID, rows) -> list[dict]:
     sub_counts = dict(
         db.execute(
             select(Submission.participation_id, func.count(Submission.id))
@@ -549,3 +541,38 @@ def list_creator_campaigns(db: Session, creator_id: uuid.UUID) -> list[dict]:
         }
         for p, c in rows
     ]
+
+
+def list_creator_campaigns(db: Session, creator_id: uuid.UUID) -> list[dict]:
+    """Every campaign this creator applied to / joined, newest first, with their
+    application status and how many videos they've submitted to it."""
+    rows = db.execute(
+        select(CampaignParticipation, Campaign)
+        .join(Campaign, Campaign.id == CampaignParticipation.campaign_id)
+        .where(CampaignParticipation.creator_id == creator_id)
+        .order_by(CampaignParticipation.joined_at.desc())
+    ).all()
+    return _creator_campaign_rows(db, creator_id, rows)
+
+
+def list_creator_invited_campaigns(db: Session, creator_id: uuid.UUID) -> list[dict]:
+    """Campaigns where an admin opened the conversation/invite path but the
+    creator has not accepted/joined yet. Existing-creator CampaignInvite rows are
+    auto-accepted in this codebase, so the pending invited state is represented
+    by a messaged participation with no accepted/declined/removed timestamp."""
+    rows = db.execute(
+        select(CampaignParticipation, Campaign)
+        .join(Campaign, Campaign.id == CampaignParticipation.campaign_id)
+        .where(
+            CampaignParticipation.creator_id == creator_id,
+            CampaignParticipation.accepted_at.is_(None),
+            CampaignParticipation.declined_at.is_(None),
+            CampaignParticipation.removed_at.is_(None),
+            or_(
+                CampaignParticipation.status == "messaged",
+                CampaignParticipation.messaged_at.isnot(None),
+            ),
+        )
+        .order_by(CampaignParticipation.messaged_at.desc(), CampaignParticipation.joined_at.desc())
+    ).all()
+    return _creator_campaign_rows(db, creator_id, rows)

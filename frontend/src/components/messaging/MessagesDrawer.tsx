@@ -448,6 +448,19 @@ export function MessagesDrawer({
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="M3 7l9 6 9-6M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
         ) : null}
+        {/* Rhys rev4: one-click WhatsApp — opens wa.me with this creator's chat,
+            using the WhatsApp number they gave at onboarding. No middle screen. */}
+        {active.kind === "dm" ? (
+          <button
+            onClick={() => { if (active.whatsapp) window.open(`https://wa.me/${active.whatsapp.replace(/[^\d]/g, "")}`, "_blank", "noopener"); }}
+            disabled={!active.whatsapp}
+            title={active.whatsapp ? `WhatsApp ${active.whatsapp}` : "No WhatsApp number on file"}
+            aria-label="Open WhatsApp"
+            className="cursor-pointer rounded-lg p-1.5 text-[var(--color-text-muted)] transition hover:bg-[var(--color-surface)] hover:text-[#25D366] disabled:opacity-40"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm5.8 14.17c-.25.7-1.45 1.34-2 1.42-.53.08-1.2.11-1.94-.12-.45-.14-1.02-.33-1.76-.65-3.1-1.34-5.12-4.46-5.28-4.67-.15-.21-1.26-1.67-1.26-3.19s.8-2.27 1.08-2.58c.28-.31.61-.39.82-.39.2 0 .41 0 .58.01.19.01.44-.07.69.53.25.6.85 2.08.92 2.23.08.15.13.33.03.53-.1.21-.15.33-.3.51-.15.18-.31.4-.45.53-.15.15-.3.31-.13.6.17.3.76 1.25 1.63 2.02 1.12.99 2.06 1.3 2.36 1.45.3.15.47.13.64-.08.17-.2.74-.86.94-1.16.2-.3.4-.25.67-.15.28.1 1.75.83 2.05.98.3.15.5.22.57.35.07.12.07.72-.18 1.42Z" /></svg>
+          </button>
+        ) : null}
         <div className="relative">
           <button
             onClick={() => setMenuOpen((v) => !v)}
