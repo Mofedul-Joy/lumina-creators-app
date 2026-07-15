@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { CreatorSidebar } from "@/components/creator/CreatorSidebar";
@@ -42,6 +42,16 @@ export function CreatorLayout({ children }: { children: React.ReactNode }) {
   const needsOnboarding = !!profileQ.data && !profileQ.data.completed;
   const onOnboarding = pathname === "/onboarding";
 
+  // Once a creator enters onboarding while incomplete, keep the full-screen lock
+  // for the WHOLE /onboarding visit — even after they satisfy the required steps
+  // mid-flow — so the sidebar never pops in before they finish. Reset the moment
+  // they leave the route, so a later "edit profile" visit (when complete) is
+  // normal-chrome. Finishing the wizard navigates away, which clears it.
+  const lockRef = useRef(false);
+  if (!onOnboarding) lockRef.current = false;
+  else if (needsOnboarding) lockRef.current = true;
+  const onboardingLocked = onOnboarding && lockRef.current;
+
   // Force an incomplete creator into onboarding — keep any campaign they were
   // trying to reach as ?next so the wizard's finish step can send them there.
   useEffect(() => {
@@ -53,7 +63,7 @@ export function CreatorLayout({ children }: { children: React.ReactNode }) {
 
   // Full-screen, chrome-free onboarding lock: no sidebar, no topbar, no drawers,
   // so there's literally nothing to click away to.
-  if (onOnboarding && needsOnboarding) {
+  if (onboardingLocked) {
     return <div className="min-h-[100dvh]"><main className="min-w-0 flex-1">{children}</main></div>;
   }
 
