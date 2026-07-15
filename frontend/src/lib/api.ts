@@ -542,9 +542,6 @@ export type MyCampaign = {
 export const listMyCampaigns = (token: string) =>
   apiFetch<MyCampaign[]>("/api/creator/campaigns/mine", { token });
 
-// Campaigns an admin invited this creator to (not yet joined/accepted on their own).
-export const listInvitedCampaigns = (token: string) =>
-  apiFetch<MyCampaign[]>("/api/creator/campaigns/invited", { token });
 
 // ── Creator profile methods (creator bearer token) ────────────────────────────
 export const getProfile = (token: string) =>

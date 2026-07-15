@@ -19,10 +19,16 @@ def mine(current: Creator = Depends(get_current_creator), db: Session = Depends(
     return [MyCampaignOut(**m) for m in svc.list_creator_campaigns(db, current.id)]
 
 
-@router.get("/invited", response_model=list[MyCampaignOut])
+@router.get("/invited", response_model=list[CampaignPublicOut])
 def invited(current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
-    """Campaigns the creator was invited/messaged into but has not accepted yet."""
-    return [MyCampaignOut(**m) for m in svc.list_creator_invited_campaigns(db, current.id)]
+    """Campaigns an admin personally invited this creator to — rendered exactly
+    like the Explore grid (thumbnail, brand, 'Joined' badge). Admin invites
+    auto-accept, so joined=True here and they also appear under My Campaigns."""
+    return [
+        _public_out(c, svc.creator_has_joined(db, c.id, current.id),
+                    svc.creator_is_accepted(db, c.id, current.id), db)
+        for c in svc.list_creator_invited_campaign_models(db, current.id)
+    ]
 
 
 def _public_out(c: Campaign, joined: bool, approved: bool = False, db: Session | None = None) -> CampaignPublicOut:

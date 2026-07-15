@@ -87,6 +87,10 @@ export type Submission = {
 
 export const browseCampaigns = () => apiFetch<Campaign[]>("/api/creator/campaigns", auth());
 
+// Campaigns an admin personally invited this creator to — same shape as browse,
+// so they render with the identical Explore CampaignCard (thumbnail + Joined badge).
+export const listInvitedCampaigns = () => apiFetch<Campaign[]>("/api/creator/campaigns/invited", auth());
+
 export const listSubmissions = () =>
   apiFetch<Submission[]>("/api/creator/submissions", auth());
 
