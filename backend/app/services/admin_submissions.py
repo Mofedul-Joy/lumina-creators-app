@@ -61,7 +61,8 @@ def _notify_creator(db: Session, admin_id: uuid.UUID, sub: Submission,
 
 
 def list_submissions(db: Session, *, campaign_id=None, verification_status=None,
-                     platform=None, suspicious: bool | None = None, limit=100, offset=0):
+                     platform=None, client_id=None, health=None,
+                     suspicious: bool | None = None, limit=100, offset=0):
     stmt = (
         select(Submission, Campaign.name, Campaign.mode, CreatorProfile.display_name, Creator.is_suspicious)
         .join(Campaign, Submission.campaign_id == Campaign.id)
@@ -70,10 +71,19 @@ def list_submissions(db: Session, *, campaign_id=None, verification_status=None,
     )
     if campaign_id:
         stmt = stmt.where(Submission.campaign_id == campaign_id)
+    if client_id:
+        # Scope to one brand: every submission across that client's campaigns.
+        stmt = stmt.where(Campaign.client_id == client_id)
     if verification_status:
         stmt = stmt.where(Submission.verification_status == verification_status)
     if platform:
         stmt = stmt.where(Submission.platform == platform)
+    if health == "healthy":
+        stmt = stmt.where(Submission.post_unavailable.is_(False), Submission.embed_broken.is_(False))
+    elif health == "embed_broken":
+        stmt = stmt.where(Submission.embed_broken.is_(True))
+    elif health == "unavailable":
+        stmt = stmt.where(Submission.post_unavailable.is_(True))
     if suspicious is True:
         stmt = stmt.where(or_(Submission.is_suspicious.is_(True), Creator.is_suspicious.is_(True)))
     else:

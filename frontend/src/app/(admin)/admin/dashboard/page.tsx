@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
+import { ClientSubmissionsPanel } from "@/components/admin/ClientSubmissionsPanel";
 import { getAdminToken } from "@/lib/auth";
 import { getAdminStats, getAdminAnalytics } from "@/lib/admin";
 import { isAuthError, retryNonAuth} from "@/lib/api";
@@ -241,6 +242,10 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Per-client submissions + "View as client" — pick a brand to see its
+            submissions across all campaigns, or open the brand's own dashboard. */}
+        <ClientSubmissionsPanel />
       </main>
     </div>
   );

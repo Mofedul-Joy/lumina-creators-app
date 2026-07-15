@@ -182,6 +182,21 @@ function DashboardInner() {
   }, [campaigns, selectedId]);
   const selected = campaigns.find((c) => c.id === selectedId) ?? campaigns[0];
 
+  // Brand-wide rollup across every campaign — the headline totals a client
+  // cares about (mirrors the clippers client view's top stats).
+  const totals = useMemo(
+    () =>
+      campaigns.reduce(
+        (acc, c) => ({
+          submissions: acc.submissions + (c.submission_count ?? 0),
+          views: acc.views + (c.total_views ?? 0),
+          interactions: acc.interactions + (c.total_likes ?? 0) + (c.total_comments ?? 0),
+        }),
+        { submissions: 0, views: 0, interactions: 0 },
+      ),
+    [campaigns],
+  );
+
   if (ready && !hasToken)
     return (
       <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col justify-center gap-4 px-6 text-center">
@@ -224,6 +239,15 @@ function DashboardInner() {
             />
           ) : null}
         </div>
+
+        {/* brand-wide totals across all campaigns */}
+        {!q.isLoading && campaigns.length > 0 ? (
+          <div className="mt-6 grid grid-cols-3 gap-4">
+            <StatTile label="Total submissions" value={fmtInt(totals.submissions)} accent />
+            <StatTile label="Total views" value={fmtInt(totals.views)} />
+            <StatTile label="Total interactions" value={fmtInt(totals.interactions)} />
+          </div>
+        ) : null}
 
         {q.isLoading ? (
           <div className="mt-8 space-y-8"><SkeletonStats count={4} /><SkeletonCardGrid count={6} /></div>

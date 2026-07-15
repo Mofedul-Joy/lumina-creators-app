@@ -48,6 +48,8 @@ def list_submissions(
     campaign_id: Optional[uuid.UUID] = None,
     status: Optional[str] = None,
     platform: Optional[str] = None,
+    client_id: Optional[uuid.UUID] = None,
+    health: Optional[str] = None,  # healthy | embed_broken | unavailable
     suspicious: Optional[bool] = None,
     limit: int = 100,
     offset: int = 0,
@@ -55,7 +57,8 @@ def list_submissions(
     db: Session = Depends(get_db),
 ):
     rows = svc.list_submissions(db, campaign_id=campaign_id, verification_status=status,
-                                platform=platform, suspicious=suspicious, limit=limit, offset=offset)
+                                platform=platform, client_id=client_id, health=health,
+                                suspicious=suspicious, limit=limit, offset=offset)
     paid = svc.paid_submission_ids(db)
     return [_row(db, sub, name, mode, dn, sub.id in paid, bool(creator_susp)) for sub, name, mode, dn, creator_susp in rows]
 

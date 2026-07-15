@@ -262,9 +262,26 @@ export const listCampaignContracts = (campaignId: string) =>
 export const convertCampaignToAdvanced = (id: string) =>
   apiFetch<AdminCampaign>(`/api/admin/campaigns/${id}/convert-to-advanced`, { method: "POST", ...auth() });
 
-export type AdminClient = { id: string; email: string; name: string | null; status: string };
+export type AdminClient = {
+  id: string;
+  email: string;
+  name: string | null;
+  status: string;
+  campaign_count?: number;
+  submission_count?: number;
+  total_views?: number;
+  total_interactions?: number;
+};
 
 export const listAdminClients = () => apiFetch<AdminClient[]>("/api/admin/clients", auth());
+
+// Mint a short-lived "view as client" token (client-scoped, not per-campaign)
+// and open the brand's own dashboard.
+export const impersonateClientById = (clientId: string) =>
+  apiFetch<{ access_token: string }>(`/api/admin/clients/${clientId}/impersonate`, {
+    method: "POST",
+    ...auth(),
+  });
 
 export type AdminStats = {
   total_campaigns: number;
@@ -337,7 +354,7 @@ export type AdminSubmission = {
 
 export type SubmissionCounts = { pending: number; verified: number; rejected: number; revision_requested: number };
 
-export const listSubmissions = (f: { status?: string; campaign_id?: string; platform?: string; suspicious?: boolean } = {}) => {
+export const listSubmissions = (f: { status?: string; campaign_id?: string; platform?: string; client_id?: string; health?: "healthy" | "embed_broken" | "unavailable"; suspicious?: boolean; limit?: number } = {}) => {
   const p = new URLSearchParams();
   Object.entries(f).forEach(([k, v]) => { if (v !== undefined && v !== "") p.set(k, String(v)); });
   const qs = p.toString();
