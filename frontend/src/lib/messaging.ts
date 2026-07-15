@@ -120,14 +120,14 @@ export const removeChannelMember = (conversationId: string, creatorId: string) =
     method: "DELETE", token: getAdminToken() ?? undefined,
   });
 
-// Open the user's real Gmail inbox with the docked "New Message" composer
-// (bottom-right popup), rather than the disconnected full-screen compose page.
-// Gmail can't pre-fill the recipient through this URL — only the full-screen
-// `view=cm` form can — so we copy the address to the clipboard here; the
-// composer opens with the cursor in the To field, ready to paste.
-export function composeEmail(to: string | null, _subject = "") {
-  if (to && typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-    void navigator.clipboard.writeText(to).catch(() => {});
-  }
-  window.open("https://mail.google.com/mail/u/0/#inbox?compose=new", "_blank", "noopener,noreferrer");
+// Open Gmail's compose window with the recipient ALREADY in the To field.
+// The `view=cm` compose URL is the only Gmail URL that pre-fills the recipient
+// (the docked #inbox composer can't), so we use it — the admin gets a ready-to-
+// send email addressed to the creator, no copy/paste. Falls back to a blank
+// composer if there's no address on file.
+export function composeEmail(to: string | null, subject = "") {
+  const params = new URLSearchParams({ view: "cm", fs: "1", tf: "1" });
+  if (to) params.set("to", to);
+  if (subject) params.set("su", subject);
+  window.open(`https://mail.google.com/mail/u/0/?${params.toString()}`, "_blank", "noopener,noreferrer");
 }

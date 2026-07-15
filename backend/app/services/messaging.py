@@ -82,7 +82,10 @@ def _admin_row(db: Session, conv: Conversation) -> dict:
         display_name = prof.display_name if prof else None
         row["name"] = display_name or (creator.email.split("@")[0] if creator else "Creator")
         row["email"] = creator.email if creator else None
-        row["whatsapp"] = prof.whatsapp if prof else None
+        # Prefer the WhatsApp number from onboarding; fall back to the legacy
+        # phone field so the admin's WhatsApp button works for creators who
+        # signed up before the dedicated WhatsApp step existed.
+        row["whatsapp"] = (prof.whatsapp or prof.phone) if prof else None
     return row
 
 
@@ -388,7 +391,7 @@ def set_channel_muted(db: Session, conversation_id: uuid.UUID, creator_id: uuid.
 
 def list_channel_members(db: Session, conversation_id: uuid.UUID) -> list[dict]:
     rows = db.execute(
-        select(Creator, CreatorProfile.display_name, CreatorProfile.whatsapp)
+        select(Creator, CreatorProfile.display_name, CreatorProfile.whatsapp, CreatorProfile.phone)
         .join(ConversationMember, ConversationMember.creator_id == Creator.id)
         .outerjoin(CreatorProfile, CreatorProfile.creator_id == Creator.id)
         .where(ConversationMember.conversation_id == conversation_id)
@@ -399,9 +402,9 @@ def list_channel_members(db: Session, conversation_id: uuid.UUID) -> list[dict]:
             "creator_id": str(creator.id),
             "name": display_name or creator.email.split("@")[0],
             "email": creator.email,
-            "whatsapp": whatsapp,
+            "whatsapp": whatsapp or phone,  # WhatsApp # from onboarding, else legacy phone
         }
-        for creator, display_name, whatsapp in rows
+        for creator, display_name, whatsapp, phone in rows
     ]
 
 
