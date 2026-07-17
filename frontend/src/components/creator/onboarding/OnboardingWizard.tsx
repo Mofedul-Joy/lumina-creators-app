@@ -61,7 +61,7 @@ const STEPS: { key: StepKey; optional?: boolean }[] = [
   { key: "gender", optional: true },
   { key: "location", optional: true },
   { key: "how_heard", optional: true },
-  { key: "whatsapp", optional: true },
+  { key: "whatsapp" },
   { key: "photo", optional: true },
   { key: "earnings" },
   { key: "done" },
@@ -261,6 +261,9 @@ export function OnboardingWizard() {
   const REQUIRED: Partial<Record<StepKey, boolean>> = {
     socials: socials.length > 0,
     type: !!creatorType,
+    // Reece: WhatsApp number is mandatory — no skip, can't continue without a
+    // real number (dial code + national digits, ≥8 digits total).
+    whatsapp: details.whatsapp.replace(/\D/g, "").length >= 8,
   };
   const stepRequired = cur.key in REQUIRED;
   const canContinue = !stepRequired || !!REQUIRED[cur.key];
@@ -451,6 +454,7 @@ export function OnboardingWizard() {
         {cur.key === "whatsapp" ? (
           <StepShell eyebrow="Stay in the loop" title="WhatsApp Number" sub="So brands and the Lumina team can reach you fast. We'll never share this with anyone.">
             <WhatsAppInput value={details.whatsapp} onChange={(v) => setDetails({ ...details, whatsapp: v })} />
+            <p className="mt-3 text-sm text-[var(--color-text-muted)]">Your WhatsApp number is required to continue.</p>
           </StepShell>
         ) : null}
 
