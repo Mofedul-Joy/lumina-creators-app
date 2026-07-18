@@ -11,7 +11,10 @@ const PROD_BACKEND_URL = "https://lumina-creators-api-app.onrender.com";
 function resolveApiUrl(): string {
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
-    if (host.endsWith(".vercel.app") || host === "lumina-creators-app.vercel.app") {
+    // Production frontends: the Vercel alias AND the custom domain (apex +
+    // creators./admin./client. subdomains) all pin to this app's own backend,
+    // regardless of any stale build-time NEXT_PUBLIC_API_URL.
+    if (host.endsWith(".vercel.app") || host === "lumina-creators-app.vercel.app" || host.endsWith("ugcagency.io")) {
       return PROD_BACKEND_URL;
     }
   }
