@@ -780,13 +780,11 @@ function WhatsAppInput({ value, onChange }: { value: string; onChange: (v: strin
 // DuckDuckGo icon service, then Google's favicon service (covers a few DDG
 // misses like Adobe), then falls back to the brand's initials.
 function BrandLogo({ name, domain }: { name: string; domain: string }) {
-  // Clearbit returns a real, transparent brand logo and 404s cleanly when it has
-  // none (→ onError → next source → initials). Google's favicon is the middle
-  // fallback. The old DuckDuckGo/favicon-only path returned a valid-but-blank
-  // icon for these niche crypto domains, so nothing ever errored and the chip
-  // showed empty white — hence the onLoad naturalWidth guard below.
+  // Google's favicon service is the logo source (Clearbit's free logo API was
+  // shut down post-HubSpot and now DNS-fails, spamming the console on every
+  // brand — dropped). A valid-but-blank favicon for niche domains is caught by
+  // the onLoad naturalWidth guard below → falls through to initials.
   const sources = [
-    `https://logo.clearbit.com/${domain}`,
     `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
   ];
   const [idx, setIdx] = useState(0);

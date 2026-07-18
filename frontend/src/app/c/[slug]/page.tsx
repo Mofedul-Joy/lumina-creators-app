@@ -200,6 +200,7 @@ export default function CampaignEntryPage() {
               <input
                 type="email"
                 required
+                aria-label="Email"
                 placeholder="you@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -208,6 +209,7 @@ export default function CampaignEntryPage() {
               <input
                 type="url"
                 required
+                aria-label="Link to your post"
                 placeholder="Link to your post"
                 value={postUrl}
                 onChange={(e) => setPostUrl(e.target.value)}

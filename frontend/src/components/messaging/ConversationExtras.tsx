@@ -131,13 +131,24 @@ function ProfilePanel({ realm, conversation, onEmail }: { realm: Realm; conversa
           {r.socials?.length ? (
             <div className="space-y-1.5">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Socials</p>
-              {r.socials.map((s) => (
-                <a key={s.platform + s.handle} href={s.profile_url ?? "#"} target="_blank" rel="noopener noreferrer"
-                   className="flex items-center justify-between rounded-lg border border-[var(--color-border)]/60 bg-[var(--color-surface)]/40 px-3 py-2 text-sm transition hover:border-[var(--color-text-muted)]">
-                  <span className="capitalize text-[var(--color-text-secondary)]">{s.platform}</span>
-                  <span className="text-[var(--color-text)]">@{s.handle}</span>
-                </a>
-              ))}
+              {r.socials.map((s) => {
+                const cls = "flex items-center justify-between rounded-lg border border-[var(--color-border)]/60 bg-[var(--color-surface)]/40 px-3 py-2 text-sm transition";
+                const inner = (
+                  <>
+                    <span className="capitalize text-[var(--color-text-secondary)]">{s.platform}</span>
+                    <span className="text-[var(--color-text)]">@{s.handle}</span>
+                  </>
+                );
+                // Only a real profile_url is a link — otherwise a plain row (no dead "#" tab).
+                return s.profile_url ? (
+                  <a key={s.platform + s.handle} href={s.profile_url} target="_blank" rel="noopener noreferrer"
+                     className={`${cls} hover:border-[var(--color-text-muted)]`}>
+                    {inner}
+                  </a>
+                ) : (
+                  <div key={s.platform + s.handle} className={cls}>{inner}</div>
+                );
+              })}
             </div>
           ) : null}
         </>

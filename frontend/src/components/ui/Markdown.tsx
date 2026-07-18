@@ -46,11 +46,13 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
 
     if (token.startsWith("[")) {
       const linkMatch = token.match(/^\[([^\]]+)\]\(([^)\s]+)\)$/);
-      if (linkMatch) {
+      // Only allow http(s)/mailto — never javascript:/data: etc. (defense-in-depth).
+      const href = linkMatch && /^(https?:|mailto:)/i.test(linkMatch[2]) ? linkMatch[2] : null;
+      if (linkMatch && href) {
         nodes.push(
           <a
             key={key}
-            href={linkMatch[2]}
+            href={href}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[var(--color-brand)] underline underline-offset-2 hover:text-[var(--color-brand-hover)]"
