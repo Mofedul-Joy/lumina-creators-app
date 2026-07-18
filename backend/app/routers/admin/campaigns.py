@@ -355,6 +355,7 @@ def _contract_template_out(t, preview: str) -> ContractTemplateOut:
 
 @router.get("/{campaign_id}/contract", response_model=ContractTemplateOut)
 def get_contract_template(campaign_id: uuid.UUID, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    svc.get_campaign(db, campaign_id)
     t = contracts_svc.get_or_create_template(db, campaign_id)
     return _contract_template_out(t, contracts_svc.render_preview(db, campaign_id))
 
@@ -362,6 +363,7 @@ def get_contract_template(campaign_id: uuid.UUID, admin: Admin = Depends(get_cur
 @router.put("/{campaign_id}/contract", response_model=ContractTemplateOut)
 def update_contract_template(campaign_id: uuid.UUID, body: ContractTemplateIn,
                              admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    svc.get_campaign(db, campaign_id)
     t = contracts_svc.update_template(db, campaign_id, admin.id, body.model_dump(exclude_unset=True))
     audit.log(db, actor_admin_id=admin.id, action="campaign.contract_edit", entity_type="campaign", entity_id=campaign_id)
     db.commit()

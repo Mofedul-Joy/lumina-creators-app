@@ -29,6 +29,11 @@ def _get_or_create_creator(db: Session, email: str) -> Creator:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "A valid email is required")
     creator = db.scalar(select(Creator).where(Creator.email == email))
     if creator is not None:
+        if creator.password_hash is not None:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "An account with this email exists — please sign in to submit",
+            )
         return creator
     creator = Creator(
         email=email, password_hash=None, status="active",

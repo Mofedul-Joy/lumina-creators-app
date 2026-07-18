@@ -2,7 +2,11 @@
 objects may be attached to a profile/portfolio/submission."""
 from __future__ import annotations
 
+import hashlib
+import hmac
+import time
 import uuid
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -13,6 +17,24 @@ from app.integrations import storage
 from app.models import StorageObject
 
 _PURPOSES = {"avatar", "portfolio_video", "proof_video"}
+_UPLOAD_URL_TTL_SEC = 15 * 60
+
+
+def upload_signature(object_key: str, expires_at: str) -> str:
+    settings = get_settings()
+    msg = f"{object_key}:{expires_at}".encode()
+    return hmac.new(settings.jwt_secret.encode(), msg, hashlib.sha256).hexdigest()
+
+
+def _signed_upload_url(url: str, object_key: str) -> str:
+    if not (storage.is_local_mode() or storage.is_proxy_mode()):
+        return url
+    expires_at = str(int(time.time()) + _UPLOAD_URL_TTL_SEC)
+    parts = urlsplit(url)
+    query = dict(parse_qsl(parts.query, keep_blank_values=True))
+    query["sig"] = upload_signature(object_key, expires_at)
+    query["exp"] = expires_at
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
 
 
 def create_presigned_upload(db: Session, creator_id, purpose: str, content_type, filename, size_bytes):
@@ -26,6 +48,7 @@ def create_presigned_upload(db: Session, creator_id, purpose: str, content_type,
         url = storage.presign_put(key, content_type)
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc))
+    url = _signed_upload_url(url, key)
     obj = StorageObject(
         owner_creator_id=creator_id, purpose=purpose, bucket=settings.r2_bucket,
         object_key=key, content_type=content_type, size_bytes=size_bytes, status="pending",
@@ -47,6 +70,7 @@ def create_admin_image_upload(db: Session, content_type, filename, size_bytes):
         url = storage.presign_put(key, content_type)
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc))
+    url = _signed_upload_url(url, key)
     obj = StorageObject(
         owner_creator_id=None, purpose="avatar", bucket=settings.r2_bucket,
         object_key=key, content_type=content_type, size_bytes=size_bytes, status="pending",
