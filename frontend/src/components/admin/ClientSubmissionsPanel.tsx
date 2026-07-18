@@ -8,6 +8,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { listAdminClients, listSubmissions, impersonateClientById, type AdminClient } from "@/lib/admin";
+import { clientRealmUrl } from "@/lib/realmUrls";
 import { Select } from "@/components/ui/Select";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { SubmissionThumbnail } from "@/components/ui/SubmissionThumbnail";
@@ -55,7 +56,7 @@ export function ClientSubmissionsPanel() {
     setViewing(true);
     try {
       const { access_token } = await impersonateClientById(clientId);
-      window.open(`/client/dashboard?impersonate_token=${encodeURIComponent(access_token)}`, "_blank", "noopener");
+      window.open(clientRealmUrl(`/dashboard?impersonate_token=${encodeURIComponent(access_token)}`), "_blank", "noopener");
     } finally {
       setViewing(false);
     }

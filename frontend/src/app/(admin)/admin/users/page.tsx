@@ -8,6 +8,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getAdminToken } from "@/lib/auth";
+import { adminRealmUrl, clientRealmUrl } from "@/lib/realmUrls";
 import { createUser, editClient, getUsers, listAdminCampaigns, reactivateClient, suspendClient } from "@/lib/admin";
 import { isAuthError, retryNonAuth} from "@/lib/api";
 import { fmtInt } from "@/lib/format";
@@ -81,7 +82,8 @@ export default function AdminUsersPage() {
   // invite link: prefilled login URL for the user's realm
   const [copied, setCopied] = useState("");
   function copyInvite(realm: "admin" | "client", email: string) {
-    const link = `${window.location.origin}/${realm === "admin" ? "admin/login" : "client/login"}?email=${encodeURIComponent(email)}`;
+    const q = `/login?email=${encodeURIComponent(email)}`;
+    const link = realm === "admin" ? adminRealmUrl(q) : clientRealmUrl(q);
     navigator.clipboard.writeText(link);
     setCopied(email);
     setTimeout(() => setCopied(""), 1500);

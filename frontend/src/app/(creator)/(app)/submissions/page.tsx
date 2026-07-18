@@ -396,7 +396,7 @@ export default function MyCampaignsPage() {
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Set where we should send your earnings before you can claim a payment.</p>
             <div className="mt-5 flex justify-center gap-3">
               <button onClick={() => setPayoutGate(false)} className="cursor-pointer rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Not now</button>
-              <Link href="/onboarding?tab=payment" className="rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]">Set payout method</Link>
+              <Link href="/account" className="rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]">Set payout method</Link>
             </div>
           </div>
         </div>

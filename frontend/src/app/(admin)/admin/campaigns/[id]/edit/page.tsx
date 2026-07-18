@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { clientRealmUrl } from "@/lib/realmUrls";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { BannerInput } from "@/components/admin/BannerInput";
 import { SharePageLink } from "@/components/admin/SharePageLink";
@@ -93,7 +94,7 @@ export default function AdminCampaignDetailPage() {
   const viewAsClientM = useMutation({
     mutationFn: () => impersonateClient(id),
     onSuccess: ({ access_token }) => {
-      window.open(`/client/dashboard?impersonate_token=${encodeURIComponent(access_token)}`, "_blank");
+      window.open(clientRealmUrl(`/dashboard?impersonate_token=${encodeURIComponent(access_token)}`), "_blank");
     },
   });
 

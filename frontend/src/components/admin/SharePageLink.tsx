@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { disableShareToken, enableShareToken, rotateShareToken } from "@/lib/admin";
+import { publicRealmUrl } from "@/lib/realmUrls";
 
 export function SharePageLink({
   campaignId,
@@ -23,12 +24,9 @@ export function SharePageLink({
   const rotateM = useMutation({ mutationFn: () => rotateShareToken(campaignId), onSuccess: refresh });
   const disableM = useMutation({ mutationFn: () => disableShareToken(campaignId), onSuccess: refresh });
 
-  const shareUrl =
-    shareToken && typeof window !== "undefined"
-      ? `${window.location.origin}/report/${shareToken}`
-      : shareToken
-        ? `/report/${shareToken}`
-        : "";
+  // /report is a public root route (never under /admin) — build a host-correct
+  // absolute URL so it resolves when copied from the admin subdomain.
+  const shareUrl = shareToken ? publicRealmUrl(`/report/${shareToken}`) : "";
 
   function copy() {
     if (!shareUrl) return;
