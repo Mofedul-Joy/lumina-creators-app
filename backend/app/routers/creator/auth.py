@@ -1,9 +1,10 @@
 """Creator auth: signup, password login (+ set-password fallback), check-email, refresh, me."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
+from app.core import ratelimit
 from app.core.deps import get_current_creator
 from app.db.session import get_db
 from app.models import Creator
@@ -43,8 +44,17 @@ def resend_code(body: ResendCodeIn, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=CreatorLoginOut)
-def login(body: LoginIn, db: Session = Depends(get_db)):
-    return CreatorLoginOut(**svc.creator_login(db, body.email, body.password))
+def login(body: LoginIn, request: Request, db: Session = Depends(get_db)):
+    identifiers = [body.email, ratelimit.client_ip(request)]
+    ratelimit.require_allowed("creator", identifiers)
+    try:
+        result = svc.creator_login(db, body.email, body.password)
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+            ratelimit.record_failure("creator", identifiers)
+        raise
+    ratelimit.reset("creator", identifiers)
+    return CreatorLoginOut(**result)
 
 
 @router.post("/set-password", response_model=TokenOut)

@@ -1,9 +1,10 @@
 """Client (brand) auth: password login, refresh, me. Read-only realm; no signup."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
+from app.core import ratelimit
 from app.core.deps import get_current_client
 from app.db.session import get_db
 from app.models import Client
@@ -14,8 +15,16 @@ router = APIRouter(prefix="/auth", tags=["client-auth"])
 
 
 @router.post("/login", response_model=TokenOut)
-def login(body: LoginIn, db: Session = Depends(get_db)):
-    access, refresh = svc.client_login(db, body.email, body.password)
+def login(body: LoginIn, request: Request, db: Session = Depends(get_db)):
+    identifiers = [body.email, ratelimit.client_ip(request)]
+    ratelimit.require_allowed("client", identifiers)
+    try:
+        access, refresh = svc.client_login(db, body.email, body.password)
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+            ratelimit.record_failure("client", identifiers)
+        raise
+    ratelimit.reset("client", identifiers)
     return TokenOut(access_token=access, refresh_token=refresh)
 
 
