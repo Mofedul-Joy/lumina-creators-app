@@ -259,6 +259,8 @@ export function OnboardingWizard() {
   // gate needs (≥1 social + creator_type), so they're the required steps here.
   // Portfolio is optional now (the reduced no-friction flow).
   const REQUIRED: Partial<Record<StepKey, boolean>> = {
+    // Display name is the first thing brands see — don't let it be left blank.
+    name: details.display_name.trim().length > 0,
     socials: socials.length > 0,
     type: !!creatorType,
     // Reece: WhatsApp number is mandatory — no skip, can't continue without a

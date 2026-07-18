@@ -34,7 +34,13 @@ subdomains, everything on ugcagency.io, zero issues on a full pass.
 Format: `[SEV] [persona] area — description → status`
 SEV: P0 (blocker/security), P1 (major bug), P2 (minor bug), P3 (friction/polish)
 
-### Pass 1
+### Pass 1 — FIX STATUS (deployed)
+
+**Frontend (commit 8ca7d0a, Vercel naksiosbf):** ✅ P1 subdomain cross-realm URLs (realmUrls.ts helper — View-as-client, client invite, report share now build host-correct absolute URLs; targets verified 200, old broken /admin/client/* pattern confirmed 404) · ✅ P1 payout CTA → /account · ✅ P2 themed error.tsx + not-found.tsx · ✅ P2 Avatar onError→initials.
+**Backend (commit b27ae36, Render dep-d9dpage… deploying):** ✅ P0 upload PUT now HMAC-signed+expiring, verified; store/serve safe media content-types + nosniff (legacy extension-less keys fall back to stored type; XSS types → octet-stream; video types preserved) · ✅ P1 public-submit rejects existing-password email (409) · ✅ P2 admin contract 404 on missing campaign.
+**✅ PROD-VERIFIED (Render dep-d9dpage… live):** P0 unauth PUT→403, presign→signed url, signed PUT→200, malicious svg content-type served as image/jpeg (XSS neutralized), avatar upload E2E works · P1 public-submit existing-email→409 · P2 missing-campaign contract→404.
+
+**Still open from Pass 1 (batch 2):** P2 login rate-limit (Codex) · P2 report/[token] imgs onError · P2 invited page gate/error · P2 MessagesDrawer onError · P2 empty display-name gate · P3 Clearbit console spam · P3 misc (dead code, label-less funnel inputs, ConversationExtras href="#", Markdown scheme, admin self-mint role, impersonation token, dashboard flash).
 
 **Test accounts (prod DB, additive):** creator `qa.creator@ugctest.dev`, admin `qa.admin@ugctest.dev`, client `qa.client@ugctest.dev` — all pw `QaTest2026!`. All 3 authenticate (200 + tokens).
 

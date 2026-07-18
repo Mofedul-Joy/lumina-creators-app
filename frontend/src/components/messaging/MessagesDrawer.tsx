@@ -218,6 +218,7 @@ export function MessagesDrawer({
   const [tab, setTab] = useState<"all" | "dms" | "channels" | "unread">("all");
   const [search, setSearch] = useState("");
   const [draft, setDraft] = useState("");
+  const [sendErr, setSendErr] = useState(false);
   const [building, setBuilding] = useState(false);  // admin: channel builder open
   const [menuOpen, setMenuOpen] = useState(false);
   const [panel, setPanel] = useState<null | "profile" | "info" | "contracts">(null);
@@ -268,10 +269,13 @@ export function MessagesDrawer({
     mutationFn: (body: string) => sendMessage(realm, activeId!, body),
     onSuccess: () => {
       setDraft("");
+      setSendErr(false);
       msgsQ.refetch();
       convsQ.refetch();
       qc.invalidateQueries({ queryKey: ["conv-unread", realm] });
     },
+    // Keep the draft so the user can retry, and tell them it didn't send.
+    onError: () => setSendErr(true),
   });
 
   const muteM = useMutation({
@@ -540,8 +544,12 @@ export function MessagesDrawer({
 
       <form
         onSubmit={(e) => { e.preventDefault(); if (draft.trim()) sendM.mutate(draft.trim()); }}
-        className="flex items-end gap-2 border-t border-[var(--color-border)]/60 p-3"
+        className="border-t border-[var(--color-border)]/60 p-3"
       >
+        {sendErr ? (
+          <p className="mb-2 text-xs text-[var(--color-danger,#ef6a6a)]">Message didn&apos;t send. Check your connection and try again.</p>
+        ) : null}
+        <div className="flex items-end gap-2">
         <TemplatePicker
           realm={realm}
           counterparty={realm === "admin" ? active.name.split(" ")[0] : "team"}
@@ -562,6 +570,7 @@ export function MessagesDrawer({
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="M4 12l16-8-6 16-3-6-7-2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
+        </div>
       </form>
 
       {panel ? (

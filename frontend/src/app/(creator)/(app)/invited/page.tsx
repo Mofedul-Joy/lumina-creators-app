@@ -35,6 +35,17 @@ export default function InvitedCampaignsPage() {
       <div className="mt-8">
         {q.isLoading ? (
           <SkeletonCardGrid count={3} />
+        ) : q.isError ? (
+          <div className="card-lumina rounded-[var(--radius-card)] p-10 text-center">
+            <p className="text-lg font-medium text-[var(--color-text)]">Couldn&apos;t load your invites</p>
+            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Something went wrong. Please try again.</p>
+            <button
+              onClick={() => q.refetch()}
+              className="mt-4 rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
+            >
+              Try again
+            </button>
+          </div>
         ) : campaigns.length === 0 ? (
           <div className="card-lumina rounded-[var(--radius-card)] p-10 text-center">
             <p className="text-lg font-medium text-[var(--color-text)]">No invites yet</p>
