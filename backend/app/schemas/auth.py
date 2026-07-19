@@ -10,7 +10,7 @@ class LoginIn(BaseModel):
 
 
 class GoogleAuthIn(BaseModel):
-    credential: str
+    code: str
 
 
 class SignupIn(BaseModel):

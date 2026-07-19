@@ -89,12 +89,12 @@ export function clientLogin(email: string, password: string) {
   });
 }
 
-// Exchange a Google ID-token (credential) for a Lumina session. Creator realm
-// creates the account if new; admin/client only authenticate pre-existing,
-// authorized accounts (backend 403s otherwise).
-export function googleAuth(realm: "creator" | "admin" | "client", credential: string) {
+// Exchange a Google auth code (from the popup flow) for a Lumina session.
+// Creator realm creates the account if new; admin/client only authenticate
+// pre-existing, authorized accounts (backend 403s otherwise).
+export function googleAuth(realm: "creator" | "admin" | "client", code: string) {
   return apiFetch<TokenResult & { status?: string; email?: string }>(`/api/${realm}/auth/google`, {
     method: "POST",
-    body: JSON.stringify({ credential }),
+    body: JSON.stringify({ code }),
   });
 }

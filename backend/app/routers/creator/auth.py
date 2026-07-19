@@ -63,7 +63,7 @@ def google(body: GoogleAuthIn, request: Request, db: Session = Depends(get_db)):
     identifiers = [ratelimit.client_ip(request)]
     ratelimit.require_allowed("creator", identifiers)
     try:
-        result = svc.creator_google_login(db, body.credential)
+        result = svc.creator_google_login(db, body.code)
     except HTTPException as exc:
         if exc.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN):
             ratelimit.record_failure("creator", identifiers)

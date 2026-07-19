@@ -105,7 +105,6 @@ export default function CreatorLoginPage() {
 
       {step === "email" ? (
         <>
-        <GoogleAuthBlock realm="creator" text="signin_with" onSuccess={finish} />
         <form className="space-y-4" onSubmit={submitEmail}>
           <Field
             label="Email"
@@ -125,6 +124,7 @@ export default function CreatorLoginPage() {
             </Link>
           </p>
         </form>
+        <GoogleAuthBlock realm="creator" mode="login" onSuccess={finish} />
         </>
       ) : (
         <form className="space-y-4" onSubmit={submitPassword}>

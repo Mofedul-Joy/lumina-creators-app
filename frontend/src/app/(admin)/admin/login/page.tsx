@@ -47,11 +47,6 @@ function AdminLoginInner() {
           {error}
         </p>
       ) : null}
-      <GoogleAuthBlock
-        realm="admin"
-        text="signin_with"
-        onSuccess={(access, refresh) => { setAdminToken(access, refresh); router.push("/admin/dashboard"); }}
-      />
       <form className="space-y-4" onSubmit={onSubmit}>
         <Field
           label="Email"
@@ -73,6 +68,11 @@ function AdminLoginInner() {
           Sign in
         </Button>
       </form>
+      <GoogleAuthBlock
+        realm="admin"
+        mode="login"
+        onSuccess={(access, refresh) => { setAdminToken(access, refresh); router.push("/admin/dashboard"); }}
+      />
     </AuthCard>
   );
 }

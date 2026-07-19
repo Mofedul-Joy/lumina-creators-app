@@ -98,8 +98,6 @@ export default function CreatorSignupPage() {
         </p>
       ) : null}
 
-      <GoogleAuthBlock realm="creator" text="signup_with" onSuccess={googleFinish} />
-
       <form className="space-y-4" onSubmit={submit}>
         <Field
           label="Email"
@@ -113,6 +111,8 @@ export default function CreatorSignupPage() {
           Continue
         </Button>
       </form>
+
+      <GoogleAuthBlock realm="creator" mode="signup" onSuccess={googleFinish} />
 
       <p className="mt-6 text-sm text-[var(--color-text-secondary)]">
         Already have an account?{" "}

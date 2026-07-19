@@ -23,7 +23,7 @@ from app.core.security import (
 )
 from app.integrations import email as email_svc
 from app.models import Admin, Client, Creator, RefreshToken
-from app.services.google_auth import verify_google_id_token
+from app.services.google_auth import exchange_google_code
 
 MIN_PASSWORD = 8
 CODE_TTL_MIN = 15
@@ -204,8 +204,8 @@ def creator_login(db: Session, email: str, password: str):
     return {"status": "ok", "email": email, "access_token": access, "refresh_token": refresh}
 
 
-def creator_google_login(db: Session, credential: str) -> dict:
-    claims = verify_google_id_token(credential)
+def creator_google_login(db: Session, code: str) -> dict:
+    claims = exchange_google_code(code)
     email = _norm(claims["email"])
     creator = db.scalar(select(Creator).where(Creator.email == email))
     if creator is None:
@@ -268,8 +268,8 @@ def client_login(db: Session, email: str, password: str) -> tuple[str, str]:
     return _password_login(db, Client, "client", email, password)
 
 
-def admin_google_login(db: Session, credential: str) -> tuple[str, str]:
-    claims = verify_google_id_token(credential)
+def admin_google_login(db: Session, code: str) -> tuple[str, str]:
+    claims = exchange_google_code(code)
     email = _norm(claims["email"])
     admin = db.scalar(select(Admin).where(Admin.email == email))
     if admin is None or admin.is_active is False:
@@ -277,8 +277,8 @@ def admin_google_login(db: Session, credential: str) -> tuple[str, str]:
     return _issue(db, admin.id, "admin")
 
 
-def client_google_login(db: Session, credential: str) -> tuple[str, str]:
-    claims = verify_google_id_token(credential)
+def client_google_login(db: Session, code: str) -> tuple[str, str]:
+    claims = exchange_google_code(code)
     email = _norm(claims["email"])
     client = db.scalar(select(Client).where(Client.email == email))
     if client is None or client.status != "active":

@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     jwt_access_ttl_min: int = 60
     jwt_refresh_ttl_days: int = 60
     google_client_id: str = ""
+    google_client_secret: str = ""
 
     # --- object storage (Cloudflare R2 / S3-compatible) ---
     r2_endpoint: str = ""

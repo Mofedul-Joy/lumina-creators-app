@@ -47,11 +47,6 @@ function ClientLoginInner() {
           {error}
         </p>
       ) : null}
-      <GoogleAuthBlock
-        realm="client"
-        text="signin_with"
-        onSuccess={(access, refresh) => { setClientToken(access, refresh); router.push("/client/dashboard"); }}
-      />
       <form className="space-y-4" onSubmit={onSubmit}>
         <Field
           label="Email"
@@ -73,6 +68,11 @@ function ClientLoginInner() {
           Sign in
         </Button>
       </form>
+      <GoogleAuthBlock
+        realm="client"
+        mode="login"
+        onSuccess={(access, refresh) => { setClientToken(access, refresh); router.push("/client/dashboard"); }}
+      />
     </AuthCard>
   );
 }
