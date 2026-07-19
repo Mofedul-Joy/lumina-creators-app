@@ -430,13 +430,15 @@ def recompute_completion(db: Session, creator_id: uuid.UUID) -> tuple[bool, list
     # unverified IG/TikTok handle does not (matches the onboarding gate).
     if not _has_valid_social(db, creator_id):
         missing.append("social_account")
-    # A portfolio video is NOT required — this must stay in lockstep with the join
-    # gate (profile_completeness = creator_type + ≥1 social), otherwise a creator
-    # who can actually join still sees a stale "finish your profile" nudge.
-    complete = not missing
-    prof.completed_at = _now() if complete else None
+    # Stamp onboarding-complete ONCE and NEVER clear it. A creator who has already
+    # finished onboarding must never be booted back to the wizard — not even if a
+    # rule later tightens (e.g. social verification). New creators still need a
+    # valid social + type before the stamp is set. `completed` (used by the app's
+    # onboarding gate) therefore means "has ever finished onboarding".
+    if not missing and prof.completed_at is None:
+        prof.completed_at = _now()
     db.commit()
-    return complete, missing
+    return prof.completed_at is not None, missing
 
 
 # ---- apply-readiness (this IS a gate — join_campaign requires it) ----
