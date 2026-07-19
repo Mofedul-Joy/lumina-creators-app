@@ -4,6 +4,7 @@ import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
+import { GoogleAuthBlock } from "@/components/auth/GoogleAuthBlock";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { clientLogin, setClientToken } from "@/lib/auth";
@@ -46,6 +47,11 @@ function ClientLoginInner() {
           {error}
         </p>
       ) : null}
+      <GoogleAuthBlock
+        realm="client"
+        text="signin_with"
+        onSuccess={(access, refresh) => { setClientToken(access, refresh); router.push("/client/dashboard"); }}
+      />
       <form className="space-y-4" onSubmit={onSubmit}>
         <Field
           label="Email"

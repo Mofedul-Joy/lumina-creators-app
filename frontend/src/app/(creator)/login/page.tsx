@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
+import { GoogleAuthBlock } from "@/components/auth/GoogleAuthBlock";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import {
@@ -103,6 +104,8 @@ export default function CreatorLoginPage() {
       ) : null}
 
       {step === "email" ? (
+        <>
+        <GoogleAuthBlock realm="creator" text="signin_with" onSuccess={finish} />
         <form className="space-y-4" onSubmit={submitEmail}>
           <Field
             label="Email"
@@ -122,6 +125,7 @@ export default function CreatorLoginPage() {
             </Link>
           </p>
         </form>
+        </>
       ) : (
         <form className="space-y-4" onSubmit={submitPassword}>
           <Field label="Email" type="email" value={email} readOnly />

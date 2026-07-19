@@ -9,6 +9,10 @@ class LoginIn(BaseModel):
     password: str
 
 
+class GoogleAuthIn(BaseModel):
+    credential: str
+
+
 class SignupIn(BaseModel):
     email: str
     password: Optional[str] = None   # optional: email-first flow sets it after OTP

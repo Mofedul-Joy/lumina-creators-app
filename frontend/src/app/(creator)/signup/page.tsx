@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
+import { GoogleAuthBlock } from "@/components/auth/GoogleAuthBlock";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { peekInvite } from "@/lib/api";
@@ -56,6 +57,13 @@ export default function CreatorSignupPage() {
     onError: (err) => setError((err as Error).message),
   });
 
+  // Google creators are created active with no password → skip set-password,
+  // go straight to onboarding (or the campaign they came in on).
+  function googleFinish(access: string, refresh?: string) {
+    setAuthToken(access, refresh);
+    router.push(next || "/onboarding");
+  }
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -89,6 +97,8 @@ export default function CreatorSignupPage() {
           {error}
         </p>
       ) : null}
+
+      <GoogleAuthBlock realm="creator" text="signup_with" onSuccess={googleFinish} />
 
       <form className="space-y-4" onSubmit={submit}>
         <Field

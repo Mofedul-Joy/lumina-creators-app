@@ -11,6 +11,7 @@ from app.models import Creator
 from app.schemas.auth import (
     CheckEmailOut,
     CreatorLoginOut,
+    GoogleAuthIn,
     LoginIn,
     MeOut,
     RefreshIn,
@@ -51,6 +52,20 @@ def login(body: LoginIn, request: Request, db: Session = Depends(get_db)):
         result = svc.creator_login(db, body.email, body.password)
     except HTTPException as exc:
         if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+            ratelimit.record_failure("creator", identifiers)
+        raise
+    ratelimit.reset("creator", identifiers)
+    return CreatorLoginOut(**result)
+
+
+@router.post("/google", response_model=CreatorLoginOut)
+def google(body: GoogleAuthIn, request: Request, db: Session = Depends(get_db)):
+    identifiers = [ratelimit.client_ip(request)]
+    ratelimit.require_allowed("creator", identifiers)
+    try:
+        result = svc.creator_google_login(db, body.credential)
+    except HTTPException as exc:
+        if exc.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN):
             ratelimit.record_failure("creator", identifiers)
         raise
     ratelimit.reset("creator", identifiers)

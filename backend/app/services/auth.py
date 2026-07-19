@@ -23,6 +23,7 @@ from app.core.security import (
 )
 from app.integrations import email as email_svc
 from app.models import Admin, Client, Creator, RefreshToken
+from app.services.google_auth import verify_google_id_token
 
 MIN_PASSWORD = 8
 CODE_TTL_MIN = 15
@@ -203,6 +204,30 @@ def creator_login(db: Session, email: str, password: str):
     return {"status": "ok", "email": email, "access_token": access, "refresh_token": refresh}
 
 
+def creator_google_login(db: Session, credential: str) -> dict:
+    claims = verify_google_id_token(credential)
+    email = _norm(claims["email"])
+    creator = db.scalar(select(Creator).where(Creator.email == email))
+    if creator is None:
+        creator = Creator(
+            email=email,
+            password_hash=None,
+            status="active",
+            signup_source="self",
+            email_verified=True,
+        )
+        db.add(creator)
+        db.commit()
+        db.refresh(creator)
+    elif creator.status == "suspended":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "This account is suspended")
+    else:
+        creator.email_verified = True
+        db.commit()
+    access, refresh = _issue(db, creator.id, "creator")
+    return {"status": "ok", "email": email, "access_token": access, "refresh_token": refresh}
+
+
 def creator_set_password(db: Session, email: str, password: str) -> tuple[str, str]:
     email = _norm(email)
     _require_strong(password)
@@ -241,6 +266,24 @@ def admin_login(db: Session, email: str, password: str) -> tuple[str, str]:
 
 def client_login(db: Session, email: str, password: str) -> tuple[str, str]:
     return _password_login(db, Client, "client", email, password)
+
+
+def admin_google_login(db: Session, credential: str) -> tuple[str, str]:
+    claims = verify_google_id_token(credential)
+    email = _norm(claims["email"])
+    admin = db.scalar(select(Admin).where(Admin.email == email))
+    if admin is None or admin.is_active is False:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "No admin account for this Google email")
+    return _issue(db, admin.id, "admin")
+
+
+def client_google_login(db: Session, credential: str) -> tuple[str, str]:
+    claims = verify_google_id_token(credential)
+    email = _norm(claims["email"])
+    client = db.scalar(select(Client).where(Client.email == email))
+    if client is None or client.status != "active":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "No client account for this Google email")
+    return _issue(db, client.id, "client")
 
 
 # ---- refresh (rotation + reuse detection) ----

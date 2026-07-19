@@ -88,3 +88,13 @@ export function clientLogin(email: string, password: string) {
     body: JSON.stringify({ email, password }),
   });
 }
+
+// Exchange a Google ID-token (credential) for a Lumina session. Creator realm
+// creates the account if new; admin/client only authenticate pre-existing,
+// authorized accounts (backend 403s otherwise).
+export function googleAuth(realm: "creator" | "admin" | "client", credential: string) {
+  return apiFetch<TokenResult & { status?: string; email?: string }>(`/api/${realm}/auth/google`, {
+    method: "POST",
+    body: JSON.stringify({ credential }),
+  });
+}

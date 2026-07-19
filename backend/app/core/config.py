@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     # use, so an active user is effectively logged in indefinitely.
     jwt_access_ttl_min: int = 60
     jwt_refresh_ttl_days: int = 60
+    google_client_id: str = ""
 
     # --- object storage (Cloudflare R2 / S3-compatible) ---
     r2_endpoint: str = ""

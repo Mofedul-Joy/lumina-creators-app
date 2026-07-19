@@ -4,6 +4,7 @@ import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
+import { GoogleAuthBlock } from "@/components/auth/GoogleAuthBlock";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { adminLogin, setAdminToken } from "@/lib/auth";
@@ -46,6 +47,11 @@ function AdminLoginInner() {
           {error}
         </p>
       ) : null}
+      <GoogleAuthBlock
+        realm="admin"
+        text="signin_with"
+        onSuccess={(access, refresh) => { setAdminToken(access, refresh); router.push("/admin/dashboard"); }}
+      />
       <form className="space-y-4" onSubmit={onSubmit}>
         <Field
           label="Email"

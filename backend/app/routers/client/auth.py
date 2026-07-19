@@ -8,7 +8,7 @@ from app.core import ratelimit
 from app.core.deps import get_current_client
 from app.db.session import get_db
 from app.models import Client
-from app.schemas.auth import LoginIn, MeOut, RefreshIn, TokenOut
+from app.schemas.auth import GoogleAuthIn, LoginIn, MeOut, RefreshIn, TokenOut
 from app.services import auth as svc
 
 router = APIRouter(prefix="/auth", tags=["client-auth"])
@@ -22,6 +22,20 @@ def login(body: LoginIn, request: Request, db: Session = Depends(get_db)):
         access, refresh = svc.client_login(db, body.email, body.password)
     except HTTPException as exc:
         if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+            ratelimit.record_failure("client", identifiers)
+        raise
+    ratelimit.reset("client", identifiers)
+    return TokenOut(access_token=access, refresh_token=refresh)
+
+
+@router.post("/google", response_model=TokenOut)
+def google(body: GoogleAuthIn, request: Request, db: Session = Depends(get_db)):
+    identifiers = [ratelimit.client_ip(request)]
+    ratelimit.require_allowed("client", identifiers)
+    try:
+        access, refresh = svc.client_google_login(db, body.credential)
+    except HTTPException as exc:
+        if exc.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN):
             ratelimit.record_failure("client", identifiers)
         raise
     ratelimit.reset("client", identifiers)
