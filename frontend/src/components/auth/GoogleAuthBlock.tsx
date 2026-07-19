@@ -1,11 +1,20 @@
 "use client";
 
-// Drop-in Google auth for any realm's login/signup page — an "or log in with"
-// (or "or sign up with") divider followed by a SideShift-style Google button.
-// Place it AFTER the email form. Renders nothing until NEXT_PUBLIC_GOOGLE_CLIENT_ID
-// is set, so pages are unchanged until Google is configured.
+// Drop-in Google auth for any realm's login/signup page. Owns session-save + routing.
+// Renders nothing until NEXT_PUBLIC_GOOGLE_CLIENT_ID is set.
+//
+// Behaviour:
+// - signup + new account            → onboarding
+// - signup + account already exists → "you already have an account" → /login
+// - login  + existing account       → home (/dashboard, or realm dashboard)
+// - login  + NO account (creator)   → shows a "Sign up with Google" button under the
+//                                      red notice → signs them up → onboarding
+// - login  + NO account (admin/client) → error notice (no self-signup for those realms)
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { googleAuth } from "@/lib/auth";
+import { ApiError } from "@/lib/api";
+import { saveSession } from "@/lib/tokens";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 
 const CONFIGURED = !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -13,28 +22,56 @@ const CONFIGURED = !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 export function GoogleAuthBlock({
   realm,
   mode = "login",
-  onSuccess,
 }: {
   realm: "creator" | "admin" | "client";
   mode?: "login" | "signup";
-  onSuccess: (access: string, refresh?: string) => void;
 }) {
+  const router = useRouter();
   const [err, setErr] = useState("");
+  const [noAccount, setNoAccount] = useState(false);
 
   if (!CONFIGURED) return null;
 
   const dividerText = mode === "signup" ? "or sign up with" : "or log in with";
   const label = mode === "signup" ? "Sign up with Google" : "Log in with Google";
 
-  async function handle(code: string) {
+  function land(access: string, refresh: string | undefined, toOnboarding: boolean) {
+    saveSession(realm, access, refresh);
+    const next = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("next") : null;
+    if (realm === "admin") router.push("/admin/dashboard");
+    else if (realm === "client") router.push("/client/dashboard");
+    else router.push(next || (toOnboarding ? "/onboarding" : "/dashboard"));
+  }
+
+  // Primary button (login or signup depending on `mode`).
+  async function handlePrimary(code: string) {
+    setErr("");
+    setNoAccount(false);
+    try {
+      const r = await googleAuth(realm, code, mode === "signup");
+      land(r.access_token, r.refresh_token, mode === "signup");
+    } catch (e) {
+      if (mode === "login" && realm === "creator" && e instanceof ApiError && e.status === 404) {
+        setNoAccount(true); // offer the "Sign up with Google" path below
+        return;
+      }
+      if (mode === "signup" && e instanceof ApiError && e.status === 409) {
+        setErr("You already have a Lumina account — taking you to log in…");
+        setTimeout(() => router.push("/login"), 1300);
+        return;
+      }
+      setErr(e instanceof Error ? e.message : "Google sign-in failed.");
+    }
+  }
+
+  // Login-page fallback: the Google account has no Lumina account → sign UP → onboarding.
+  async function handleSignupFallback(code: string) {
     setErr("");
     try {
-      // Only the signup button may create a new account; the login button must
-      // reject a Google account that has no Lumina account (backend 404s).
-      const r = await googleAuth(realm, code, mode === "signup");
-      onSuccess(r.access_token, r.refresh_token);
+      const r = await googleAuth("creator", code, true);
+      land(r.access_token, r.refresh_token, true);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Google sign-in failed.");
+      setErr(e instanceof Error ? e.message : "Google sign-up failed.");
     }
   }
 
@@ -45,7 +82,17 @@ export function GoogleAuthBlock({
         <span>{dividerText}</span>
         <span className="h-px flex-1 bg-[var(--color-border)]" />
       </div>
-      <GoogleSignInButton label={label} onCode={handle} />
+      <GoogleSignInButton label={label} onCode={handlePrimary} />
+
+      {noAccount ? (
+        <div className="space-y-2 pt-1">
+          <p className="text-center text-sm text-[var(--color-danger,#ef6a6a)]">
+            No Lumina account for this Google account — create one to get started.
+          </p>
+          <GoogleSignInButton label="Sign up with Google" onCode={handleSignupFallback} />
+        </div>
+      ) : null}
+
       {err ? <p className="text-center text-sm text-[var(--color-danger,#ef6a6a)]">{err}</p> : null}
     </div>
   );

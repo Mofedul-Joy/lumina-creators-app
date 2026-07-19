@@ -117,14 +117,14 @@ export default function CreatorLoginPage() {
           <Button type="submit" loading={checkEmail.isPending}>
             Continue
           </Button>
-          <p className="text-sm text-[var(--color-text-secondary)]">
-            New to Lumina?{" "}
-            <Link href="/signup" className="font-medium text-[var(--color-brand)] hover:underline">
-              Create an account
-            </Link>
-          </p>
+          <Link
+            href="/signup"
+            className="flex min-h-11 w-full items-center justify-center rounded-full border border-[var(--color-border)] text-sm font-semibold text-[var(--color-text)] transition hover:border-[var(--color-text-muted)]"
+          >
+            Create a new account
+          </Link>
         </form>
-        <GoogleAuthBlock realm="creator" mode="login" onSuccess={finish} />
+        <GoogleAuthBlock realm="creator" mode="login" />
         </>
       ) : (
         <form className="space-y-4" onSubmit={submitPassword}>

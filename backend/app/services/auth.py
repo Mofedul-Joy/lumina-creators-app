@@ -227,9 +227,16 @@ def creator_google_login(db: Session, code: str, allow_create: bool = False) -> 
         db.add(creator)
         db.commit()
         db.refresh(creator)
-    elif creator.status == "suspended":
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "This account is suspended")
     else:
+        # Account already exists. Signing UP with it is a mistake → tell them to
+        # log in instead (don't silently sign them in from the signup page).
+        if allow_create:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "You already have a Lumina account with this Google account — please log in.",
+            )
+        if creator.status == "suspended":
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "This account is suspended")
         creator.email_verified = True
         db.commit()
     access, refresh = _issue(db, creator.id, "creator")

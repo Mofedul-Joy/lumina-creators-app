@@ -68,11 +68,7 @@ function ClientLoginInner() {
           Sign in
         </Button>
       </form>
-      <GoogleAuthBlock
-        realm="client"
-        mode="login"
-        onSuccess={(access, refresh) => { setClientToken(access, refresh); router.push("/client/dashboard"); }}
-      />
+      <GoogleAuthBlock realm="client" mode="login" />
     </AuthCard>
   );
 }

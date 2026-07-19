@@ -68,11 +68,7 @@ function AdminLoginInner() {
           Sign in
         </Button>
       </form>
-      <GoogleAuthBlock
-        realm="admin"
-        mode="login"
-        onSuccess={(access, refresh) => { setAdminToken(access, refresh); router.push("/admin/dashboard"); }}
-      />
+      <GoogleAuthBlock realm="admin" mode="login" />
     </AuthCard>
   );
 }

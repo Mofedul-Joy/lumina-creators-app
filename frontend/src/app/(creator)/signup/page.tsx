@@ -57,13 +57,6 @@ export default function CreatorSignupPage() {
     onError: (err) => setError((err as Error).message),
   });
 
-  // Google creators are created active with no password → skip set-password,
-  // go straight to onboarding (or the campaign they came in on).
-  function googleFinish(access: string, refresh?: string) {
-    setAuthToken(access, refresh);
-    router.push(next || "/onboarding");
-  }
-
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -112,7 +105,7 @@ export default function CreatorSignupPage() {
         </Button>
       </form>
 
-      <GoogleAuthBlock realm="creator" mode="signup" onSuccess={googleFinish} />
+      <GoogleAuthBlock realm="creator" mode="signup" />
 
       <p className="mt-6 text-sm text-[var(--color-text-secondary)]">
         Already have an account?{" "}
