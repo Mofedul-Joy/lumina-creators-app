@@ -619,7 +619,7 @@ export function OnboardingWizard() {
         ) : null}
 
         {cur.key === "done" ? (
-          <DoneStep name={(profileQ.data?.display_name ?? "").trim().split(" ")[0] || "creator"} hasType={!!creatorType} socialCount={socials.length} portfolioCount={portfolio.length} hasPayout={!!payout.method} campaignNext={sp.get("next") || "/campaigns"} />
+          <DoneStep name={(profileQ.data?.display_name ?? "").trim().split(" ")[0] || "creator"} hasType={!!creatorType} socialCount={socials.length} portfolioCount={portfolio.length} hasPayout={!!payout.method} campaignNext={sp.get("next") || "/dashboard"} />
         ) : null}
       </div>
 
@@ -1203,7 +1203,7 @@ function DoneStep({ name, hasType, socialCount, portfolioCount, hasPayout, campa
         {/* Routes back to the exact campaign the creator started on (Bill's flow)
             when we came in via ?next=/campaigns/<slug>; otherwise Explore. */}
         <Link href={campaignNext} className="flex min-h-11 items-center justify-center rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] shadow-[0_0_20px_-4px_rgba(34,197,94,0.7)] transition hover:bg-[var(--color-brand-hover)]">
-          {campaignNext.startsWith("/campaigns/") ? "Go to your campaign →" : "Browse campaigns →"}
+          {campaignNext.startsWith("/campaigns/") ? "Go to your campaign →" : "Go to your dashboard →"}
         </Link>
       </div>
     </div>
