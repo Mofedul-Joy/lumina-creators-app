@@ -204,11 +204,19 @@ def creator_login(db: Session, email: str, password: str):
     return {"status": "ok", "email": email, "access_token": access, "refresh_token": refresh}
 
 
-def creator_google_login(db: Session, code: str) -> dict:
+def creator_google_login(db: Session, code: str, allow_create: bool = False) -> dict:
     claims = exchange_google_code(code)
     email = _norm(claims["email"])
     creator = db.scalar(select(Creator).where(Creator.email == email))
     if creator is None:
+        # Signing IN with a Google account that has no Lumina account must NOT
+        # silently create one — tell them to sign up. Only the signup flow
+        # (allow_create) may create the account.
+        if not allow_create:
+            raise HTTPException(
+                status.HTTP_404_NOT_FOUND,
+                "No Lumina account for this Google account — please sign up first.",
+            )
         creator = Creator(
             email=email,
             password_hash=None,

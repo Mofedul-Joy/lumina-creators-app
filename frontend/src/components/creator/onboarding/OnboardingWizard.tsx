@@ -261,7 +261,10 @@ export function OnboardingWizard() {
   const REQUIRED: Partial<Record<StepKey, boolean>> = {
     // Display name is the first thing brands see — don't let it be left blank.
     name: details.display_name.trim().length > 0,
-    socials: socials.length > 0,
+    // A random unverified Instagram/TikTok handle must NOT satisfy the gate — those
+    // platforms have a bio-code verification, so they only count once verified.
+    // YouTube/X/Facebook are self-reported (no verification mechanism) and count as-is.
+    socials: socials.some((s) => s.is_verified || ["youtube", "twitter", "facebook"].includes(s.platform)),
     type: !!creatorType,
     // Reece: WhatsApp number is mandatory — no skip, can't continue without a
     // real number (dial code + national digits, ≥8 digits total).

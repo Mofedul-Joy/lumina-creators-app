@@ -29,7 +29,9 @@ export function GoogleAuthBlock({
   async function handle(code: string) {
     setErr("");
     try {
-      const r = await googleAuth(realm, code);
+      // Only the signup button may create a new account; the login button must
+      // reject a Google account that has no Lumina account (backend 404s).
+      const r = await googleAuth(realm, code, mode === "signup");
       onSuccess(r.access_token, r.refresh_token);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Google sign-in failed.");

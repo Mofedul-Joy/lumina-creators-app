@@ -11,6 +11,7 @@ class LoginIn(BaseModel):
 
 class GoogleAuthIn(BaseModel):
     code: str
+    create: bool = False
 
 
 class SignupIn(BaseModel):

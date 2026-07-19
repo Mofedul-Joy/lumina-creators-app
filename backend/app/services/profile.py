@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.security import _now
@@ -426,9 +426,9 @@ def delete_experience(db: Session, creator_id: uuid.UUID, item_id: uuid.UUID) ->
 def recompute_completion(db: Session, creator_id: uuid.UUID) -> tuple[bool, list[str]]:
     prof = get_or_create_profile(db, creator_id)
     missing: list[str] = [f for f in _REQUIRED_FIELDS if getattr(prof, f) in (None, "")]
-    n_social = db.scalar(select(func.count()).select_from(SocialAccount).where(
-        SocialAccount.creator_id == creator_id))
-    if not n_social:
+    # A verified IG/TikTok OR a self-reported YouTube/X/Facebook counts — an
+    # unverified IG/TikTok handle does not (matches the onboarding gate).
+    if not _has_valid_social(db, creator_id):
         missing.append("social_account")
     # A portfolio video is NOT required — this must stay in lockstep with the join
     # gate (profile_completeness = creator_type + ≥1 social), otherwise a creator
@@ -468,9 +468,24 @@ def _verified(db: Session, creator_id: uuid.UUID, platform: str) -> bool:
         SocialAccount.is_verified.is_(True))) is not None
 
 
-def _has_any_social(db: Session, creator_id: uuid.UUID) -> bool:
-    return db.scalar(select(SocialAccount.id).where(
-        SocialAccount.creator_id == creator_id)) is not None
+# Platforms with NO bio-code verification — accepted as self-reported.
+# Instagram/TikTok DO have verification, so an unverified IG/TikTok handle is not
+# a "valid" social (prevents a random gibberish handle from satisfying the gate).
+_SELF_REPORTED_PLATFORMS = ("youtube", "twitter", "facebook")
+
+
+def _valid_social_clause(creator_id: uuid.UUID):
+    return (
+        SocialAccount.creator_id == creator_id,
+        or_(
+            SocialAccount.is_verified.is_(True),
+            SocialAccount.platform.in_(_SELF_REPORTED_PLATFORMS),
+        ),
+    )
+
+
+def _has_valid_social(db: Session, creator_id: uuid.UUID) -> bool:
+    return db.scalar(select(SocialAccount.id).where(*_valid_social_clause(creator_id))) is not None
 
 
 def profile_completeness(db: Session, creator_id: uuid.UUID) -> dict:
@@ -479,7 +494,7 @@ def profile_completeness(db: Session, creator_id: uuid.UUID) -> dict:
         PortfolioItem.creator_id == creator_id))
     sections = {
         "about": bool((prof.creator_type or "").strip()),
-        "socials": _has_any_social(db, creator_id),
+        "socials": _has_valid_social(db, creator_id),
         "videos": bool(n_portfolio),
     }
     next_section = next((s for s in SECTION_ORDER if not sections[s]), None)
