@@ -39,6 +39,7 @@ class ProfileIn(BaseModel):
 
 
 class ProfileOut(BaseModel):
+    email: Optional[str] = None  # the account's login email (manual or Google)
     display_name: Optional[str] = None
     phone: Optional[str] = None
     whatsapp: Optional[str] = None

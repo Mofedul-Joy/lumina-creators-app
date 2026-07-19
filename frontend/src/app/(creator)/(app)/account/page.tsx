@@ -173,6 +173,11 @@ export default function AccountPage() {
           <h2 className="truncate text-xl font-semibold text-[var(--color-text)]">
             {profile?.display_name || "Unnamed creator"}
           </h2>
+          {profile?.email ? (
+            <p className="mt-0.5 truncate text-xs text-[var(--color-text-muted)]">
+              Signed in as <span className="font-semibold text-[var(--color-text-secondary)]">{profile.email}</span>
+            </p>
+          ) : null}
           <p className="mt-1 line-clamp-2 text-sm text-[var(--color-text-secondary)]">
             {profile?.bio || "No bio yet — add one from your profile."}
           </p>

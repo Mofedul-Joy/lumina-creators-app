@@ -38,8 +38,9 @@ def _avatar_url(db: Session, prof: CreatorProfile) -> str | None:
     return storage.object_public_url(obj.object_key) if obj else None
 
 
-def _profile_out(db: Session, prof: CreatorProfile, complete: bool, missing: list[str]) -> ProfileOut:
+def _profile_out(db: Session, prof: CreatorProfile, complete: bool, missing: list[str], email: str | None = None) -> ProfileOut:
     return ProfileOut(
+        email=email,
         display_name=prof.display_name, phone=prof.phone, whatsapp=prof.whatsapp,
         creator_type=prof.creator_type, bio=prof.bio, date_of_birth=prof.date_of_birth,
         gender=prof.gender, ethnicity=prof.ethnicity, education=prof.education, primary_language=prof.primary_language,
@@ -58,14 +59,14 @@ def _profile_out(db: Session, prof: CreatorProfile, complete: bool, missing: lis
 def get_profile(current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
     prof = svc.get_or_create_profile(db, current.id)
     complete, missing = svc.recompute_completion(db, current.id)
-    return _profile_out(db, prof, complete, missing)
+    return _profile_out(db, prof, complete, missing, email=current.email)
 
 
 @router.put("", response_model=ProfileOut)
 def update_profile(body: ProfileIn, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
     prof = svc.update_profile(db, current.id, body.model_dump(exclude_unset=True))
     complete, missing = svc.recompute_completion(db, current.id)
-    return _profile_out(db, prof, complete, missing)
+    return _profile_out(db, prof, complete, missing, email=current.email)
 
 
 @router.get("/completion", response_model=CompletionOut)

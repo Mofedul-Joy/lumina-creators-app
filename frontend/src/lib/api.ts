@@ -282,6 +282,7 @@ export type ProfileIn = {
 };
 
 export type ProfileOut = {
+  email: string | null;
   display_name: string | null;
   creator_type: CreatorType | null;
   bio: string | null;
