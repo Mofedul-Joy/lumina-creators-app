@@ -28,7 +28,8 @@ export function GoogleAuthBlock({
 }) {
   const router = useRouter();
   const [err, setErr] = useState("");
-  const [noAccount, setNoAccount] = useState(false);
+  const [noAccount, setNoAccount] = useState(false);       // login: google account has no Lumina account
+  const [alreadyExists, setAlreadyExists] = useState(false); // signup: google account already has one
 
   if (!CONFIGURED) return null;
 
@@ -47,6 +48,7 @@ export function GoogleAuthBlock({
   async function handlePrimary(code: string) {
     setErr("");
     setNoAccount(false);
+    setAlreadyExists(false);
     try {
       const r = await googleAuth(realm, code, mode === "signup");
       land(r.access_token, r.refresh_token, mode === "signup");
@@ -56,8 +58,7 @@ export function GoogleAuthBlock({
         return;
       }
       if (mode === "signup" && e instanceof ApiError && e.status === 409) {
-        setErr("You already have a Lumina account — taking you to log in…");
-        setTimeout(() => router.push("/login"), 1300);
+        setAlreadyExists(true); // offer the "Log in with Google" path below
         return;
       }
       setErr(e instanceof Error ? e.message : "Google sign-in failed.");
@@ -72,6 +73,17 @@ export function GoogleAuthBlock({
       land(r.access_token, r.refresh_token, true);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Google sign-up failed.");
+    }
+  }
+
+  // Signup-page fallback: the Google account already has a Lumina account → log IN → home.
+  async function handleLoginFallback(code: string) {
+    setErr("");
+    try {
+      const r = await googleAuth("creator", code, false);
+      land(r.access_token, r.refresh_token, false);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Google sign-in failed.");
     }
   }
 
@@ -90,6 +102,15 @@ export function GoogleAuthBlock({
             No Lumina account for this Google account — create one to get started.
           </p>
           <GoogleSignInButton label="Sign up with Google" onCode={handleSignupFallback} />
+        </div>
+      ) : null}
+
+      {alreadyExists ? (
+        <div className="space-y-2 pt-1">
+          <p className="text-center text-sm text-[var(--color-danger,#ef6a6a)]">
+            You already have a Lumina account with this Google account — log in instead.
+          </p>
+          <GoogleSignInButton label="Log in with Google" onCode={handleLoginFallback} />
         </div>
       ) : null}
 
