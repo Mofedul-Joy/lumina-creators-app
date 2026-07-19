@@ -9,12 +9,15 @@ Two entry points:
 """
 from __future__ import annotations
 
+import logging
+
 import httpx
 import jwt
 from fastapi import HTTPException, status
 
 from app.core.config import get_settings
 
+logger = logging.getLogger("app.google_auth")
 _jwks_client = jwt.PyJWKClient("https://www.googleapis.com/oauth2/v3/certs")
 
 
@@ -54,17 +57,26 @@ def verify_google_id_token(credential: str) -> dict:
         )
     try:
         signing_key = _jwks_client.get_signing_key_from_jwt(credential).key
+        # Verify signature + audience + expiry (with small clock leeway). Issuer is
+        # checked manually below so a str-vs-list mismatch can't reject a valid token.
         claims = jwt.decode(
             credential,
             signing_key,
             algorithms=["RS256"],
             audience=settings.google_client_id,
-            issuer=["https://accounts.google.com", "accounts.google.com"],
+            leeway=30,
+            options={"verify_iss": False},
         )
     except Exception as exc:  # noqa: BLE001 - normalize all verifier failures
+        logger.warning("google id_token decode failed: %r", exc)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid Google token") from exc
 
-    if not claims.get("email") or claims.get("email_verified") is not True:
+    iss = claims.get("iss")
+    # email_verified may arrive as a bool (True) or a string ("true").
+    email_ok = str(claims.get("email_verified")).lower() == "true"
+    if iss not in ("https://accounts.google.com", "accounts.google.com") or not claims.get("email") or not email_ok:
+        logger.warning("google id_token claim check failed: iss=%r email=%r email_verified=%r",
+                       iss, claims.get("email"), claims.get("email_verified"))
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid Google token")
 
     return {
