@@ -14,6 +14,7 @@ import { fmtInt } from "@/lib/format";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { VideoModal } from "@/components/ui/VideoModal";
+import { VideoThumb } from "@/components/ui/VideoThumb";
 
 const MAX = 3;
 const PLATFORMS: TopVideoPlatform[] = ["tiktok", "instagram"];
@@ -21,22 +22,15 @@ const PLATFORMS: TopVideoPlatform[] = ["tiktok", "instagram"];
 function VideoCard({ v, onDelete, onPlay }: { v: TopVideoOut; onDelete: (id: string) => void; onPlay: () => void }) {
   return (
     <div className="group relative aspect-[9/16] w-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)]">
-      {/* click plays the video inline (VideoModal), not a dead new tab */}
-      <button type="button" onClick={onPlay} className="absolute inset-0 z-0 h-full w-full cursor-pointer" aria-label="Play video">
-        {v.thumbnail_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={v.thumbnail_url} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <div className="grid h-full w-full place-items-center text-[var(--color-text-muted)]">
-            {v.platform ? <PlatformIcon name={v.platform} className="h-6 w-6" /> : null}
-          </div>
-        )}
-        <span className="absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100">
-          <span className="grid h-11 w-11 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm">
-            <svg viewBox="0 0 24 24" fill="currentColor" className="ml-0.5 h-5 w-5"><path d="M8 5v14l11-7z" /></svg>
-          </span>
-        </span>
-      </button>
+      {/* click plays the video inline (VideoModal), not a dead new tab. An
+          upload with no scraped still paints its own first frame. */}
+      <VideoThumb
+        videoUrl={v.video_url}
+        thumbnailUrl={v.thumbnail_url}
+        platform={v.platform}
+        className="absolute inset-0 z-0 h-full w-full"
+        onPlay={onPlay}
+      />
 
       {/* stats overlay */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/80 to-transparent p-2">

@@ -12,6 +12,7 @@ import { clientRealmUrl } from "@/lib/realmUrls";
 import { Select } from "@/components/ui/Select";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { SubmissionThumbnail } from "@/components/ui/SubmissionThumbnail";
+import { VideoModal } from "@/components/ui/VideoModal";
 import { fmtInt } from "@/lib/format";
 
 const ALL_PLATFORMS = ["tiktok", "instagram", "youtube", "twitter", "facebook"] as const;
@@ -38,6 +39,9 @@ export function ClientSubmissionsPanel() {
   const [platform, setPlatform] = useState("");
   const [health, setHealth] = useState<Health>("");
   const [viewing, setViewing] = useState(false);
+  // Rhys 2026-07-21: clips play in the app instead of throwing the admin out to
+  // the platform (or, for an upload, to a bare browser video player).
+  const [playing, setPlaying] = useState<{ url: string; platform?: string | null; thumbnail_url?: string | null } | null>(null);
 
   const clientsQ = useQuery({ queryKey: ["admin-clients"], queryFn: listAdminClients });
   // Rhys 2026-07-21: alphabetical, like every other picker in the admin.
@@ -193,12 +197,12 @@ export function ClientSubmissionsPanel() {
           ) : (
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {rows.map((s) => (
-                <a
+                <button
                   key={s.id}
-                  href={s.post_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="card-lumina card-interactive flex flex-col overflow-hidden rounded-[var(--radius-card)]"
+                  type="button"
+                  onClick={() => setPlaying({ url: s.post_url, platform: s.platform, thumbnail_url: s.thumbnail_url })}
+                  aria-label={`Play ${s.campaign_name}`}
+                  className="card-lumina card-interactive flex cursor-pointer flex-col overflow-hidden rounded-[var(--radius-card)] text-left"
                 >
                   <SubmissionThumbnail
                     thumbnailUrl={s.thumbnail_url}
@@ -239,12 +243,21 @@ export function ClientSubmissionsPanel() {
                       <p className="mt-0.5 text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">Comments</p>
                     </div>
                   </div>
-                </a>
+                </button>
               ))}
             </div>
           )}
         </>
       )}
+
+      {playing ? (
+        <VideoModal
+          url={playing.url}
+          platform={playing.platform}
+          thumbnailUrl={playing.thumbnail_url}
+          onClose={() => setPlaying(null)}
+        />
+      ) : null}
     </section>
   );
 }

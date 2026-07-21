@@ -10,6 +10,7 @@ from app.core.deps import get_current_creator
 from app.db.session import get_db
 from app.integrations import storage
 from app.models import Creator, CreatorProfile, StorageObject
+from app.services.portfolio_projection import portfolio_item_outputs
 from app.schemas.profile import (
     CompletionOut,
     ExperienceIn,
@@ -115,22 +116,12 @@ def confirm_social_verify(body: SocialVerifyIn, current: Creator = Depends(get_c
 
 # ---- portfolio ----
 def _portfolio_out(db: Session, p) -> PortfolioOut:
-    # Uploaded videos resolve their playable URL from the storage object (R2);
-    # legacy items keep their external link.
-    video_url = p.video_url
-    is_upload = p.storage_object_id is not None
-    if is_upload:
-        obj = db.get(StorageObject, p.storage_object_id)
-        video_url = storage.object_public_url(obj.object_key) if obj else None
-    return PortfolioOut(id=str(p.id), video_url=video_url, is_upload=is_upload,
-                        thumbnail_url=p.thumbnail_url, brand_name=p.brand_name,
-                        caption=p.caption, platform=p.platform,
-                        is_top_content=p.is_top_content, views=p.views, likes=p.likes)
+    return PortfolioOut(**portfolio_item_outputs(db, [p])[0])
 
 
 @router.get("/portfolio", response_model=list[PortfolioOut])
 def list_portfolio(current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
-    return [_portfolio_out(db, p) for p in svc.list_portfolio(db, current.id)]
+    return [PortfolioOut(**p) for p in portfolio_item_outputs(db, svc.list_portfolio(db, current.id))]
 
 
 @router.post("/portfolio", response_model=PortfolioOut)

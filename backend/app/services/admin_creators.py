@@ -24,6 +24,7 @@ from app.models import (
 )
 from app.services import audit
 from app.services.profile import EXPERIENCE_KINDS
+from app.services.portfolio_projection import portfolio_item_outputs
 # Gamification formulas now live in app.services.gamification (Feature 7) —
 # re-exported here under their original private names so every call site in
 # this file (and any external importer) keeps working unchanged.
@@ -211,6 +212,7 @@ def get_creator_detail(db: Session, creator_id: uuid.UUID) -> dict:
     prof = db.scalar(select(CreatorProfile).where(CreatorProfile.creator_id == c.id))
     socials = db.scalars(select(SocialAccount).where(SocialAccount.creator_id == c.id)).all()
     portfolio = db.scalars(select(PortfolioItem).where(PortfolioItem.creator_id == c.id)).all()
+    portfolio_out = portfolio_item_outputs(db, portfolio)
     return {
         "id": str(c.id), "email": c.email,
         "display_name": prof.display_name if prof else None,
@@ -234,20 +236,7 @@ def get_creator_detail(db: Session, creator_id: uuid.UUID) -> dict:
             {"platform": s.platform, "handle": s.handle, "profile_url": s.profile_url, "follower_count": s.follower_count}
             for s in socials
         ],
-        "portfolio": [
-            {
-                "id": str(p.id),
-                "brand_name": p.brand_name,
-                "caption": p.caption,
-                "platform": p.platform,
-                "video_url": p.video_url,
-                "thumbnail_url": p.thumbnail_url,
-                "is_top_content": p.is_top_content,
-                "views": p.views,
-                "likes": p.likes,
-            }
-            for p in portfolio
-        ],
+        "portfolio": portfolio_out,
     }
 
 
@@ -278,6 +267,7 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
         .where(PortfolioItem.creator_id == c.id)
         .order_by(PortfolioItem.created_at.asc())
     ).all()
+    portfolio_out = portfolio_item_outputs(db, portfolio)
     experiences = db.scalars(
         select(CreatorExperience)
         .where(CreatorExperience.creator_id == c.id)
@@ -400,18 +390,5 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
             }
             for e in experiences
         ],
-        "portfolio": [
-            {
-                "id": str(p.id),
-                "brand_name": p.brand_name,
-                "caption": p.caption,
-                "platform": p.platform,
-                "video_url": p.video_url,
-                "thumbnail_url": p.thumbnail_url,
-                "is_top_content": p.is_top_content,
-                "views": p.views,
-                "likes": p.likes,
-            }
-            for p in portfolio
-        ],
+        "portfolio": portfolio_out,
     }

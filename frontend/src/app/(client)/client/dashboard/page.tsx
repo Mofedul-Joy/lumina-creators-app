@@ -11,6 +11,7 @@ import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { Select } from "@/components/ui/Select";
 import { SkeletonCardGrid, SkeletonStats } from "@/components/ui/Skeleton";
 import { SubmissionThumbnail } from "@/components/ui/SubmissionThumbnail";
+import { VideoModal } from "@/components/ui/VideoModal";
 import { fmtInt } from "@/lib/format";
 import { LuminaMark } from "@/components/ui/LuminaMark";
 
@@ -39,6 +40,9 @@ function SubmissionsSection({ campaign }: { campaign: ClientCampaign }) {
     () => (q.data ?? []).filter((s) => !platform || s.platform === platform),
     [q.data, platform],
   );
+  // Rhys 2026-07-21: clips play in-app instead of throwing the client out to
+  // the platform.
+  const [playing, setPlaying] = useState<{ url: string; platform?: string | null; thumbnail_url?: string | null } | null>(null);
   // pool of real thumbnails in this campaign, borrowed by cards that lack one
   const thumbPool = useMemo(
     () => (q.data ?? []).map((s) => s.thumbnail_url).filter(Boolean) as string[],
@@ -92,12 +96,12 @@ function SubmissionsSection({ campaign }: { campaign: ClientCampaign }) {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((s) => (
-            <a
+            <button
               key={s.id}
-              href={s.post_url}
-              target="_blank"
-              rel="noreferrer"
-              className="card-lumina card-interactive flex flex-col overflow-hidden rounded-[var(--radius-card)]"
+              type="button"
+              onClick={() => setPlaying({ url: s.post_url, platform: s.platform, thumbnail_url: s.thumbnail_url })}
+              aria-label="Play video"
+              className="card-lumina card-interactive flex cursor-pointer flex-col overflow-hidden rounded-[var(--radius-card)] text-left"
             >
               <SubmissionThumbnail
                 thumbnailUrl={s.thumbnail_url}
@@ -134,10 +138,19 @@ function SubmissionsSection({ campaign }: { campaign: ClientCampaign }) {
                   <p className="mt-0.5 text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">Comments</p>
                 </div>
               </div>
-            </a>
+            </button>
           ))}
         </div>
       )}
+
+      {playing ? (
+        <VideoModal
+          url={playing.url}
+          platform={playing.platform}
+          thumbnailUrl={playing.thumbnail_url}
+          onClose={() => setPlaying(null)}
+        />
+      ) : null}
     </div>
   );
 }

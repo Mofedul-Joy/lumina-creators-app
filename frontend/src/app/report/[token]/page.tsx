@@ -4,10 +4,11 @@
 // high-entropy share_token in the URL — never requires auth, never shows
 // creator PII (only display_name + avatar_url), never paywalled.
 import { retryNonAuth } from "@/lib/api";
-import { use } from "react";
+import { use, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { ImgFallback } from "@/components/ui/ImgFallback";
+import { VideoModal } from "@/components/ui/VideoModal";
 import { getPublicReport } from "@/lib/public";
 import { fmtInt } from "@/lib/format";
 
@@ -30,6 +31,9 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function PublicReportPage({ params }: { params: Promise<{ token: string }> }) {
+  // Rhys 2026-07-21: a client reading the report watches the clip here rather
+  // than being bounced out to the platform.
+  const [playing, setPlaying] = useState<{ url: string; platform?: string | null; thumbnail_url?: string | null } | null>(null);
   const { token } = use(params);
 
   const q = useQuery({
@@ -97,12 +101,12 @@ export default function PublicReportPage({ params }: { params: Promise<{ token: 
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {r.submissions.map((s) => (
-                  <a
+                  <button
                     key={s.id}
-                    href={s.post_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="card-lumina block overflow-hidden rounded-[var(--radius-card)] transition hover:-translate-y-0.5"
+                    type="button"
+                    onClick={() => setPlaying({ url: s.post_url, platform: s.platform, thumbnail_url: s.thumbnail_url })}
+                    aria-label="Play video"
+                    className="card-lumina block w-full cursor-pointer overflow-hidden rounded-[var(--radius-card)] text-left transition hover:-translate-y-0.5"
                   >
                     <div className="relative aspect-video w-full bg-[var(--color-surface-2)]">
                       {(() => {
@@ -143,7 +147,7 @@ export default function PublicReportPage({ params }: { params: Promise<{ token: 
                         {new Date(s.submitted_at).toLocaleDateString()}
                       </p>
                     </div>
-                  </a>
+                  </button>
                 ))}
               </div>
             )}
@@ -158,6 +162,15 @@ export default function PublicReportPage({ params }: { params: Promise<{ token: 
           </footer>
         </>
       )}
+
+      {playing ? (
+        <VideoModal
+          url={playing.url}
+          platform={playing.platform}
+          thumbnailUrl={playing.thumbnail_url}
+          onClose={() => setPlaying(null)}
+        />
+      ) : null}
     </main>
   );
 }

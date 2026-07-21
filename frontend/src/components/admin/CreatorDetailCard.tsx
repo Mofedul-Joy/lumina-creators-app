@@ -10,6 +10,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/admin/Avatar";
 import { ThumbImage } from "@/components/ui/ThumbImage";
+import { VideoThumb } from "@/components/ui/VideoThumb";
+import { VideoModal } from "@/components/ui/VideoModal";
 import { getAdminToken } from "@/lib/auth";
 import { getCreatorRichDetail, updateApplicantStatusSafe } from "@/lib/admin-rich";
 import type { CreatorRichDetail, GemstoneRank } from "@/lib/api";
@@ -54,32 +56,41 @@ function VideoTile({
   href,
   thumbnail,
   platform,
+  isUpload,
   label,
   stats,
   highlight = false,
+  onPlay,
 }: {
   href?: string;
   thumbnail?: string | null;
   platform?: string | null;
+  isUpload?: boolean;
   label: string;
   stats?: string;
   highlight?: boolean;
+  onPlay?: (url: string) => void;
 }) {
-  const Wrap = href ? "a" : "div";
+  // Rhys 2026-07-21: these used to be target="_blank" links, which dumped an
+  // uploaded file into the browser's bare video player and left the admin
+  // outside the app. Now every tile opens the in-app player.
   return (
     <div className="w-28 shrink-0 sm:w-32">
-      <Wrap
-        {...(href ? { href, target: "_blank", rel: "noopener noreferrer", "aria-label": label } : {})}
+      <div
         className={`group relative block aspect-[9/16] overflow-hidden rounded-xl border bg-[var(--color-surface-2)] ${
           highlight ? "border-[var(--color-brand)]" : "border-[var(--color-border)]"
         }`}
       >
-        {/* Rhys 2026-07-21: a video uploaded straight from the creator's computer
-            has no platform and no scraped thumbnail, so it rendered as a blank
-            green tile and looked like a failed upload. Let the browser paint the
-            first frame instead of falling through to the gradient. */}
-        {!thumbnail && !platform && href ? (
-          <video src={href} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+        {href ? (
+          <VideoThumb
+            videoUrl={href}
+            thumbnailUrl={thumbnail}
+            platform={platform}
+            isUpload={isUpload}
+            label={label}
+            className="absolute inset-0 h-full w-full"
+            onPlay={() => onPlay?.(href)}
+          />
         ) : (
           <ThumbImage
             src={thumbnail}
@@ -87,17 +98,12 @@ function VideoTile({
             fallback={<div className="h-full w-full" style={{ background: PLATFORM_GRADIENT[platform ?? ""] ?? "linear-gradient(135deg,#22c55e33,#05261533)" }} />}
           />
         )}
-        {href ? (
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100" aria-hidden>
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-black/50 text-white">▶</span>
-          </div>
-        ) : null}
         {stats ? (
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 py-1.5 text-[10px] text-white">
             {stats}
           </div>
         ) : null}
-      </Wrap>
+      </div>
       <p
         className={`mt-1 truncate text-[11px] ${highlight ? "font-medium text-[var(--color-brand)]" : "text-[var(--color-text-secondary)]"}`}
         title={label}
@@ -137,6 +143,7 @@ export function CreatorDetailCard({
   });
 
   const [busy, setBusy] = useState<"bookmark" | "decline" | null>(null);
+  const [playing, setPlaying] = useState<{ url: string; platform?: string | null; thumbnail_url?: string | null; is_upload?: boolean } | null>(null);
   async function act(action: "bookmark" | "decline") {
     if (!participationId) return;
     setBusy(action);
@@ -232,8 +239,10 @@ export function CreatorDetailCard({
                 href={p.video_url ?? undefined}
                 thumbnail={p.thumbnail_url}
                 platform={p.platform}
+                isUpload={p.is_upload}
                 label={i === 0 ? "⭐ Best video" : p.brand_name || (p.platform ?? "Video")}
                 highlight={i === 0}
+                onPlay={(url) => setPlaying({ url, platform: p.platform, thumbnail_url: p.thumbnail_url, is_upload: p.is_upload })}
               />
             ))}
           </div>
@@ -255,6 +264,7 @@ export function CreatorDetailCard({
                 platform={v.platform}
                 label={v.campaign_name ?? "Campaign"}
                 stats={`❤ ${fmtNumber(v.likes)}  ${fmtNumber(v.views)} views`}
+                onPlay={(url) => setPlaying({ url, platform: v.platform, thumbnail_url: v.thumbnail_url })}
               />
             ))}
           </div>
@@ -328,6 +338,16 @@ export function CreatorDetailCard({
             ))}
           </div>
         </section>
+      ) : null}
+
+      {playing ? (
+        <VideoModal
+          url={playing.url}
+          platform={playing.platform}
+          thumbnailUrl={playing.thumbnail_url}
+          isUpload={playing.is_upload}
+          onClose={() => setPlaying(null)}
+        />
       ) : null}
     </div>
   );

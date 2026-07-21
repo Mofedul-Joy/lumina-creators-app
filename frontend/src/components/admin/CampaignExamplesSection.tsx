@@ -2,6 +2,8 @@
 
 import { retryNonAuth } from "@/lib/api";
 import { useState } from "react";
+import { VideoThumb } from "@/components/ui/VideoThumb";
+import { VideoModal } from "@/components/ui/VideoModal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addCampaignExample, deleteCampaignExample, listCampaignExamples } from "@/lib/admin";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
@@ -13,6 +15,7 @@ export function CampaignExamplesSection({ campaignId }: { campaignId: string }) 
   const qc = useQueryClient();
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
+  const [playing, setPlaying] = useState<{ url: string; platform?: string | null; thumbnail_url?: string | null } | null>(null);
 
   const q = useQuery({
     queryKey: ["campaign-examples", campaignId],
@@ -72,19 +75,15 @@ export function CampaignExamplesSection({ campaignId }: { campaignId: string }) 
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
             {items.map((e) => (
               <div key={e.id} className="group relative aspect-[9/16] overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)]">
-                {e.thumbnail_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={e.thumbnail_url} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="grid h-full w-full place-items-center text-[var(--color-text-muted)]">
-                    {e.platform ? <PlatformIcon name={e.platform} className="h-5 w-5" /> : <span className="text-xs">Video</span>}
-                  </div>
-                )}
-                {e.platform ? (
-                  <span className="absolute left-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/55 text-white">
-                    <PlatformIcon name={e.platform} className="h-3 w-3" />
-                  </span>
-                ) : null}
+                {/* Rhys 2026-07-21: examples were look-but-don't-touch; an
+                    admin needs to watch what creators are being shown. */}
+                <VideoThumb
+                  videoUrl={e.url}
+                  thumbnailUrl={e.thumbnail_url}
+                  platform={e.platform}
+                  className="absolute inset-0 h-full w-full"
+                  onPlay={() => setPlaying({ url: e.url, platform: e.platform, thumbnail_url: e.thumbnail_url })}
+                />
                 {e.source === "auto" ? (
                   <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-medium text-white">Auto</span>
                 ) : null}
@@ -101,6 +100,15 @@ export function CampaignExamplesSection({ campaignId }: { campaignId: string }) 
           </div>
         )}
       </div>
+
+      {playing ? (
+        <VideoModal
+          url={playing.url}
+          platform={playing.platform}
+          thumbnailUrl={playing.thumbnail_url}
+          onClose={() => setPlaying(null)}
+        />
+      ) : null}
     </section>
   );
 }

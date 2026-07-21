@@ -9,6 +9,7 @@ import { fmtInt, fmtMoney } from "@/lib/format";
 import { ThumbImage } from "@/components/ui/ThumbImage";
 import { RankBadge } from "@/components/gamification/RankBadge";
 import { VideoModal } from "@/components/ui/VideoModal";
+import { VideoThumb } from "@/components/ui/VideoThumb";
 
 /* ---- helpers ---- */
 // Normalize a possibly-bare URL ("nike.com") to an absolute one; null if invalid.
@@ -78,7 +79,7 @@ export default function PortfolioPage() {
   const [token, setToken] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [playing, setPlaying] = useState<{ url: string; platform?: string | null; thumbnail_url?: string | null } | null>(null);
+  const [playing, setPlaying] = useState<{ url: string; platform?: string | null; thumbnail_url?: string | null; is_upload?: boolean } | null>(null);
   useEffect(() => {
     setToken(getAuthToken());
     setReady(true);
@@ -175,25 +176,20 @@ export default function PortfolioPage() {
                   key={p.id}
                   className="group relative block aspect-[9/16] w-28 shrink-0 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] sm:w-32"
                 >
-                  <ThumbImage
-                    src={p.thumbnail_url}
-                    className="h-full w-full object-cover"
-                    fallback={<div className="h-full w-full" style={{ background: PLATFORM_GRADIENT[p.platform ?? ""] ?? "linear-gradient(135deg,#22c55e33,#05261533)" }} />}
+                  {/* An uploaded clip has no scraped still, so VideoThumb paints
+                      its own first frame; either way clicking opens the player. */}
+                  <VideoThumb
+                    videoUrl={p.video_url}
+                    thumbnailUrl={p.thumbnail_url}
+                    platform={p.platform}
+                    isUpload={p.is_upload}
+                    label={p.brand_name ?? undefined}
+                    className="absolute inset-0 h-full w-full"
+                    onPlay={() => p.video_url && setPlaying({
+                      url: p.video_url, platform: p.platform,
+                      thumbnail_url: p.thumbnail_url, is_upload: p.is_upload,
+                    })}
                   />
-                  {p.video_url ? (
-                    <button
-                      type="button"
-                      onClick={() => setPlaying({ url: p.video_url!, platform: p.platform, thumbnail_url: p.thumbnail_url })}
-                      aria-label={p.brand_name ?? "Play video"}
-                      className="absolute inset-0 z-0 cursor-pointer"
-                    >
-                      <span className="absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100">
-                        <span className="grid h-9 w-9 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm">
-                          <svg viewBox="0 0 24 24" fill="currentColor" className="ml-0.5 h-4 w-4"><path d="M8 5v14l11-7z" /></svg>
-                        </span>
-                      </span>
-                    </button>
-                  ) : null}
 
                   {/* delete — top-right, appears on hover/focus */}
                   <button
@@ -288,7 +284,7 @@ export default function PortfolioPage() {
       </div>
 
       {playing ? (
-        <VideoModal url={playing.url} platform={playing.platform} thumbnailUrl={playing.thumbnail_url} onClose={() => setPlaying(null)} />
+        <VideoModal url={playing.url} platform={playing.platform} thumbnailUrl={playing.thumbnail_url} isUpload={playing.is_upload} onClose={() => setPlaying(null)} />
       ) : null}
     </div>
   );

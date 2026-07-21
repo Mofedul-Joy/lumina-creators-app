@@ -414,6 +414,9 @@ export type PortfolioItemOut = {
   platform: Platform | null;
   video_url: string | null;
   thumbnail_url: string | null;
+  // The backend returns this on every portfolio projection; it was missing here,
+  // which forced callers into a `!thumbnail && !platform` guess.
+  is_upload: boolean;
   is_top_content: boolean;
   views: number;
   likes: number;

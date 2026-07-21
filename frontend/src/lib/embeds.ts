@@ -39,3 +39,14 @@ export function isPortraitEmbed(platform: string, postUrl: string): boolean {
   if (platform === "youtube" && /\/shorts\//.test(postUrl)) return true;
   return false;
 }
+
+// A video the creator uploaded from their own machine: it lives in our bucket,
+// so there is no platform, no post to embed, and no scraped thumbnail — we play
+// the file itself with a native <video> and let the browser paint frame one as
+// the poster. Detected by extension so it works regardless of which bucket host
+// the URL resolves to.
+export function isDirectVideoUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const path = url.split(/[?#]/)[0];
+  return /\.(mp4|mov|m4v|webm|ogv|ogg|qt)$/i.test(path);
+}

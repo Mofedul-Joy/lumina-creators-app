@@ -7,6 +7,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
+import { VideoModal } from "@/components/ui/VideoModal";
+import { VideoThumb } from "@/components/ui/VideoThumb";
 import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getAuthToken } from "@/lib/auth";
@@ -1069,43 +1071,9 @@ function AvatarPicker({ bearer, avatarUrl, onSaved }: { bearer: string; avatarUr
 // A linked video's thumbnail. Shows the real scraped frame; if there's no
 // thumbnail (or it fails to load — e.g. an expired IG CDN link), falls back to
 // a clean "Watch on <platform>" card instead of a broken/black box.
-function LinkThumb({ videoUrl, thumbnailUrl, platform }: { videoUrl: string | null; thumbnailUrl: string | null; platform: Platform | null }) {
-  const [failed, setFailed] = useState(false);
-  const showImg = !!thumbnailUrl && !failed;
-  return (
-    <a href={videoUrl ?? "#"} target="_blank" rel="noreferrer" className="group relative block aspect-video w-full overflow-hidden">
-      {showImg ? (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={thumbnailUrl!} alt="" onError={() => setFailed(true)} className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
-          <span className="pointer-events-none absolute inset-0 bg-black/25 transition group-hover:bg-black/10" />
-          <span className="absolute inset-0 grid place-items-center">
-            <span className="grid h-11 w-11 place-items-center rounded-full bg-black/55 text-white backdrop-blur">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M8 5v14l11-7L8 5Z" /></svg>
-            </span>
-          </span>
-          {platform ? (
-            <span className="absolute left-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/55 text-white backdrop-blur">
-              <PlatformIcon name={platform} className="h-4 w-4" />
-            </span>
-          ) : null}
-        </>
-      ) : !platform && videoUrl ? (
-        // Rhys 2026-07-21: a from-computer upload has no platform and no scraped
-        // thumbnail — show its own first frame rather than "Watch on source".
-        <video src={videoUrl} muted playsInline preload="metadata" className="h-full w-full object-cover" />
-      ) : (
-        <span className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-[var(--color-brand)]/20 to-[var(--color-bg-deep)] text-sm font-medium text-[var(--color-brand)]">
-          {platform ? <PlatformIcon name={platform} className="h-7 w-7" /> : null}
-          <span className="flex items-center gap-1">Watch on {platform ? platformLabel(platform) : "source"} <span className="transition group-hover:translate-x-0.5">↗</span></span>
-        </span>
-      )}
-    </a>
-  );
-}
-
 function PortfolioStep({ bearer, portfolio, onChanged }: { bearer: string; portfolio: { id: string; video_url: string | null; thumbnail_url: string | null; is_upload: boolean; brand_name: string | null; platform?: Platform | null }[]; onChanged: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [playing, setPlaying] = useState<{ url: string; platform?: string | null; thumbnail_url?: string | null; is_upload?: boolean } | null>(null);
   const [pct, setPct] = useState(0);
   const [error, setError] = useState("");
   // Which of the two add methods is showing: upload a file, or paste a link.
@@ -1135,11 +1103,15 @@ function PortfolioStep({ bearer, portfolio, onChanged }: { bearer: string; portf
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {portfolio.map((p) => (
             <div key={p.id} className="overflow-hidden rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)]">
-              {p.is_upload && p.video_url ? (
-                <video src={p.video_url} controls playsInline preload="metadata" poster={p.thumbnail_url ?? undefined} className="aspect-video w-full bg-black object-contain" />
-              ) : (
-                <LinkThumb videoUrl={p.video_url} thumbnailUrl={p.thumbnail_url} platform={p.platform ?? null} />
-              )}
+              <VideoThumb
+                videoUrl={p.video_url}
+                thumbnailUrl={p.thumbnail_url}
+                platform={p.platform ?? null}
+                isUpload={p.is_upload}
+                label={p.brand_name ?? undefined}
+                className="aspect-video w-full"
+                onPlay={() => p.video_url && setPlaying({ url: p.video_url, platform: p.platform ?? null, thumbnail_url: p.thumbnail_url, is_upload: p.is_upload })}
+              />
               <div className="flex items-center justify-between gap-2 px-3 py-2">
                 <span className="min-w-0 truncate text-xs text-[var(--color-text-secondary)]">{p.brand_name || (p.is_upload ? "Uploaded video" : "Linked video")}</span>
                 <button className="shrink-0 cursor-pointer text-xs text-[var(--color-danger)]" onClick={() => delM.mutate(p.id)}>Remove</button>
@@ -1148,6 +1120,16 @@ function PortfolioStep({ bearer, portfolio, onChanged }: { bearer: string; portf
           ))}
         </div>
       ) : <p className="text-sm text-[var(--color-text-muted)]">No videos uploaded yet.</p>}
+
+      {playing ? (
+        <VideoModal
+          url={playing.url}
+          platform={playing.platform}
+          thumbnailUrl={playing.thumbnail_url}
+          isUpload={playing.is_upload}
+          onClose={() => setPlaying(null)}
+        />
+      ) : null}
 
       {/* two add options: from computer, or a link to a video */}
       <div className="inline-flex rounded-full bg-[var(--color-surface)] p-1">

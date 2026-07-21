@@ -2,22 +2,31 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { getEmbedUrl, isPortraitEmbed } from "@/lib/embeds";
+import { getEmbedUrl, isDirectVideoUrl, isPortraitEmbed } from "@/lib/embeds";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 
 /**
  * Plays a showcase video INLINE on Lumina (campaign examples, portfolio, top
- * videos) instead of bouncing to a dead "Explore more on <platform>" tab. Embeds
- * the real post via each platform's public iframe (getEmbedUrl); if the platform
- * has no embeddable surface (Facebook) or the id can't be parsed, it shows the
- * thumbnail + a clear "Open on <platform>" link so the user is never stuck.
+ * videos) instead of bouncing to a dead "Explore more on <platform>" tab.
+ *
+ * Three cases, in order:
+ *  1. The creator uploaded the file to us — play it with a native <video>.
+ *     There is no post to embed and no platform to link out to.
+ *  2. A linked social post — embed the real post via the platform's public
+ *     iframe (getEmbedUrl).
+ *  3. No embeddable surface (Facebook) or an unparseable id — show the
+ *     thumbnail + a clear "Open on <platform>" link so it's never a dead end.
  */
 export function VideoModal({
-  url, platform, thumbnailUrl, onClose,
+  url, platform, thumbnailUrl, isUpload, onClose,
 }: {
   url: string;
   platform?: string | null;
   thumbnailUrl?: string | null;
+  /** Set when the caller knows this is a creator upload. The URL heuristic
+   *  covers most cases, but an object key built from a filename with no
+   *  extension has none to sniff, so prefer this when the API tells you. */
+  isUpload?: boolean;
   onClose: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
@@ -30,8 +39,12 @@ export function VideoModal({
   if (!mounted) return null;
 
   const plat = platform || "";
-  const embedUrl = getEmbedUrl(plat, url);
-  const portrait = isPortraitEmbed(plat, url);
+  const direct = isUpload || isDirectVideoUrl(url);
+  const embedUrl = direct ? null : getEmbedUrl(plat, url);
+  // Uploads are shot on phones far more often than not, so default them to the
+  // portrait frame; the video itself is object-contain so a landscape upload
+  // still shows whole, just letterboxed.
+  const portrait = direct ? true : isPortraitEmbed(plat, url);
 
   return createPortal(
     <div
@@ -55,7 +68,16 @@ export function VideoModal({
           <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
         </button>
 
-        {embedUrl ? (
+        {direct ? (
+          <video
+            src={url}
+            controls
+            autoPlay
+            playsInline
+            preload="metadata"
+            className="absolute inset-0 h-full w-full bg-black object-contain"
+          />
+        ) : embedUrl ? (
           <iframe
             src={embedUrl}
             title="Video"
@@ -87,7 +109,9 @@ export function VideoModal({
         )}
       </div>
 
-      {/* always-available open-original link under the player */}
+      {/* open-original link, for linked social posts only — an upload has no
+          external original to open. */}
+      {direct ? null : (
       <a
         href={url}
         target="_blank"
@@ -98,6 +122,7 @@ export function VideoModal({
         {plat ? <PlatformIcon name={plat} className="h-4 w-4" /> : null}
         Open original {plat ? `on ${platformLabel(plat)}` : ""} ↗
       </a>
+      )}
     </div>,
     document.body,
   );
