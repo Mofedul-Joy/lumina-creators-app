@@ -8,10 +8,13 @@ import { GoogleAuthBlock } from "@/components/auth/GoogleAuthBlock";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { adminLogin, setAdminToken } from "@/lib/auth";
+import { useRedirectIfAuthed } from "@/lib/useRedirectIfAuthed";
 
 function AdminLoginInner() {
   const router = useRouter();
   const sp = useSearchParams();
+  // Persistent login: an already-signed-in admin skips the form entirely.
+  const redirecting = useRedirectIfAuthed("admin", "/admin/dashboard");
   const [email, setEmail] = useState("");
   // invite links prefill the email (?email=…)
   useEffect(() => { const e = sp.get("email"); if (e) setEmail(e); }, [sp]);
@@ -39,6 +42,8 @@ function AdminLoginInner() {
     if (nextErrors.email || nextErrors.password) return;
     login.mutate();
   }
+
+  if (redirecting) return null;
 
   return (
     <AuthCard title="Admin sign in" subtitle="Manage Lumina creator operations." hideMarketing eyebrow="Lumina Admin">

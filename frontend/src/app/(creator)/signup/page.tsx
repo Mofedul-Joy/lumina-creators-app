@@ -6,6 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { GoogleAuthBlock } from "@/components/auth/GoogleAuthBlock";
+import { useRedirectIfAuthed } from "@/lib/useRedirectIfAuthed";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { peekInvite } from "@/lib/api";
@@ -13,6 +14,8 @@ import { creatorSignup, setAuthToken } from "@/lib/auth";
 
 export default function CreatorSignupPage() {
   const router = useRouter();
+  // Persistent login: an already-signed-in creator skips signup entirely.
+  const redirecting = useRedirectIfAuthed("creator", "/dashboard");
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{ email?: string }>({});
@@ -66,6 +69,8 @@ export default function CreatorSignupPage() {
     if (Object.keys(errs).length) return;
     signup.mutate();
   }
+
+  if (redirecting) return null;
 
   return (
     <AuthCard

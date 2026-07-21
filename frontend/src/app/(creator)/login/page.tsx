@@ -6,6 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { GoogleAuthBlock } from "@/components/auth/GoogleAuthBlock";
+import { useRedirectIfAuthed } from "@/lib/useRedirectIfAuthed";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import {
@@ -19,6 +20,8 @@ type Step = "email" | "password" | "set-password";
 
 export default function CreatorLoginPage() {
   const router = useRouter();
+  // Persistent login: an already-signed-in creator skips the form entirely.
+  const redirecting = useRedirectIfAuthed("creator", "/dashboard");
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -91,6 +94,8 @@ export default function CreatorLoginPage() {
     }
     (step === "set-password" ? setCreatorPassword : login).mutate();
   }
+
+  if (redirecting) return null;
 
   return (
     <AuthCard

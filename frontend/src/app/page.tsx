@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { getAuthToken } from "@/lib/auth";
@@ -100,6 +100,12 @@ export default function Home() {
   // signup/login can route them straight back to it afterwards (Bill's flow:
   // click Test4 → sign up → land inside Test4). null = prompt closed.
   const [authPrompt, setAuthPrompt] = useState<string | null>(null);
+  // Persistent login: if a creator session already exists in this browser, the
+  // header shows a "Go to dashboard" button instead of Sign in / Sign up, so a
+  // returning creator never has to log in again. Read after mount (localStorage
+  // is client-only) to avoid a hydration mismatch.
+  const [authed, setAuthed] = useState(false);
+  useEffect(() => { setAuthed(!!getAuthToken()); }, []);
 
   const enterCampaign = (c: PublicCampaign) => {
     // Signed-in creators go straight in; everyone else is asked to sign in / up.
@@ -133,18 +139,29 @@ export default function Home() {
             <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text)]">Lumina Creators</span>
           </Link>
           <div className="flex items-center gap-2">
-            <Link
-              href="/login"
-              className="inline-flex min-h-9 items-center rounded-full border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-brand)]"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/signup"
-              className="inline-flex min-h-9 items-center rounded-full bg-[var(--color-brand)] px-4 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
-            >
-              Sign up
-            </Link>
+            {authed ? (
+              <Link
+                href="/dashboard"
+                className="inline-flex min-h-9 items-center rounded-full bg-[var(--color-brand)] px-4 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
+              >
+                Go to dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="inline-flex min-h-9 items-center rounded-full border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-brand)]"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/signup"
+                  className="inline-flex min-h-9 items-center rounded-full bg-[var(--color-brand)] px-4 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
