@@ -1,24 +1,23 @@
-"""Admin: list client (brand) accounts + per-client submission rollups, and
-mint a short-lived "view as client" impersonation token. Powers the campaign
-builder's client picker AND the admin dashboard's per-client submissions panel.
-Creation stays manual/seeded for now."""
+"""Admin: list client (brand) accounts + per-client submission rollups. Powers
+the campaign builder's client picker and the Clients admin page. Creation stays
+manual/seeded for now.
+
+The per-client campaign roster and "view as client" impersonation endpoints that
+used to live here served the dashboard's "Client submissions" panel; both are
+parked on the `client-submission-on-admin-dashboard` branch."""
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
-from decimal import Decimal
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_admin
-from app.core.security import create_impersonation_token
 from app.db.session import get_db
-from app.models import Admin, Campaign, Client, CreatorProfile, Submission
-from app.services import audit
+from app.models import Admin, Campaign, Client, Submission
 
 router = APIRouter(prefix="/clients", tags=["admin-clients"])
 
@@ -32,33 +31,6 @@ class ClientListItem(BaseModel):
     submission_count: int = 0
     total_views: int = 0
     total_interactions: int = 0
-
-
-class ClientCampaignSubmission(BaseModel):
-    id: str
-    creator_id: str
-    creator_name: Optional[str] = None
-    platform: str
-    post_url: str
-    views: int
-    likes: int
-    comments: int
-    estimated_amount: Decimal
-    verification_status: str
-    scrape_status: str
-    thumbnail_url: Optional[str] = None
-    created_at: datetime
-
-
-class ClientCampaignItem(BaseModel):
-    id: str
-    name: str
-    slug: str
-    status: str
-    platforms: list[str] = []
-    cpm_rate: Decimal
-    budget: Decimal
-    submissions: list[ClientCampaignSubmission] = []
 
 
 def _client_rollups(db: Session) -> dict[uuid.UUID, dict]:
@@ -106,58 +78,8 @@ def list_clients(admin: Admin = Depends(get_current_admin), db: Session = Depend
     ]
 
 
-@router.get("/{client_id}/campaigns", response_model=list[ClientCampaignItem])
-def client_campaigns(client_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
-                     db: Session = Depends(get_db)):
-    """All campaigns assigned to a client, including completed/archived and
-    campaigns with no submissions. Sorted alphabetically for picker/panel use."""
-    client = db.get(Client, client_id)
-    if client is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Client not found")
-    campaigns = db.scalars(
-        select(Campaign)
-        .where(Campaign.client_id == client_id)
-        .order_by(func.lower(Campaign.name).asc(), Campaign.created_at.desc())
-    ).all()
-    if not campaigns:
-        return []
-    campaign_ids = [c.id for c in campaigns]
-    rows = db.execute(
-        select(Submission, CreatorProfile.display_name)
-        .outerjoin(CreatorProfile, CreatorProfile.creator_id == Submission.creator_id)
-        .where(Submission.campaign_id.in_(campaign_ids))
-        .order_by(Submission.created_at.desc())
-    ).all()
-    by_campaign: dict[uuid.UUID, list[ClientCampaignSubmission]] = {c.id: [] for c in campaigns}
-    for sub, display_name in rows:
-        by_campaign[sub.campaign_id].append(ClientCampaignSubmission(
-            id=str(sub.id), creator_id=str(sub.creator_id), creator_name=display_name,
-            platform=sub.platform, post_url=sub.post_url, views=sub.views,
-            likes=sub.likes, comments=sub.comments, estimated_amount=sub.estimated_amount,
-            verification_status=sub.verification_status, scrape_status=sub.scrape_status,
-            thumbnail_url=sub.thumbnail_url, created_at=sub.created_at,
-        ))
-    return [
-        ClientCampaignItem(
-            id=str(c.id), name=c.name, slug=c.slug, status=c.status,
-            platforms=list(c.platforms or []), cpm_rate=c.cpm_rate, budget=c.budget,
-            submissions=by_campaign[c.id],
-        )
-        for c in campaigns
-    ]
-
-
-@router.post("/{client_id}/impersonate")
-def impersonate(client_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
-                db: Session = Depends(get_db)):
-    """Mint a 15-minute client-scoped token so an admin can open the brand's own
-    dashboard exactly as that client sees it ("View as client"). Audit-logged
-    since it's a real (if short-lived) session as someone else's account."""
-    client = db.get(Client, client_id)
-    if client is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Client not found")
-    token = create_impersonation_token(str(client_id), str(admin.id))
-    audit.log(db, actor_admin_id=admin.id, action="client.impersonate",
-              entity_type="client", entity_id=client_id)
-    db.commit()
-    return {"access_token": token}
+# The per-client campaign roster and the "View as client" impersonation endpoint
+# both existed only to serve the admin dashboard's "Client submissions" panel.
+# That panel is parked, unmerged, on the `client-submission-on-admin-dashboard`
+# branch; the dashboard now works per-campaign instead. Restore both from that
+# branch if the per-client view is ever brought back.

@@ -67,7 +67,7 @@ def _notify_creator(db: Session, admin_id: uuid.UUID, sub: Submission,
 
 
 def list_submissions(db: Session, *, campaign_id=None, verification_status=None,
-                     platform=None, client_id=None, health=None,
+                     platform=None, health=None,
                      suspicious: bool | None = None, limit=100, offset=0):
     stmt = (
         select(Submission, Campaign.name, Campaign.mode, CreatorProfile.display_name, Creator.is_suspicious)
@@ -77,9 +77,6 @@ def list_submissions(db: Session, *, campaign_id=None, verification_status=None,
     )
     if campaign_id:
         stmt = stmt.where(Submission.campaign_id == campaign_id)
-    if client_id:
-        # Scope to one brand: every submission across that client's campaigns.
-        stmt = stmt.where(Campaign.client_id == client_id)
     if verification_status:
         stmt = stmt.where(Submission.verification_status == verification_status)
     if platform:

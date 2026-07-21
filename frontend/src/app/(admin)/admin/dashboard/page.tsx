@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
-import { ClientSubmissionsPanel } from "@/components/admin/ClientSubmissionsPanel";
+import { CampaignSubmissionsPanel } from "@/components/admin/CampaignSubmissionsPanel";
 import { getAdminToken } from "@/lib/auth";
 import { getAdminStats, getAdminAnalytics } from "@/lib/admin";
 import { isAuthError, retryNonAuth} from "@/lib/api";
@@ -243,9 +243,11 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Per-client submissions + "View as client" — pick a brand to see its
-            submissions across all campaigns, or open the brand's own dashboard. */}
-        <ClientSubmissionsPanel />
+        {/* Per-campaign submissions: pick a running campaign to see its details
+            and every video submitted to it. The earlier per-client version of
+            this panel is parked on the client-submission-on-admin-dashboard
+            branch and is deliberately not merged here. */}
+        <CampaignSubmissionsPanel />
       </main>
     </div>
   );

@@ -275,44 +275,6 @@ export type AdminClient = {
 
 export const listAdminClients = () => apiFetch<AdminClient[]>("/api/admin/clients", auth());
 
-// Mint a short-lived "view as client" token (client-scoped, not per-campaign)
-// and open the brand's own dashboard.
-export const impersonateClientById = (clientId: string) =>
-  apiFetch<{ access_token: string }>(`/api/admin/clients/${clientId}/impersonate`, {
-    method: "POST",
-    ...auth(),
-  });
-
-export type AdminClientCampaignSubmission = {
-  id: string;
-  creator_id: string;
-  creator_name: string | null;
-  platform: string;
-  post_url: string;
-  views: number;
-  likes: number;
-  comments: number;
-  estimated_amount: number | string;
-  verification_status: string;
-  scrape_status: string;
-  thumbnail_url: string | null;
-  created_at: string;
-};
-
-export type AdminClientCampaign = {
-  id: string;
-  name: string;
-  slug: string;
-  status: string;
-  platforms: string[];
-  cpm_rate: number | string;
-  budget: number | string;
-  submissions: AdminClientCampaignSubmission[];
-};
-
-export const listAdminClientCampaigns = (clientId: string) =>
-  apiFetch<AdminClientCampaign[]>(`/api/admin/clients/${clientId}/campaigns`, auth());
-
 export type AdminStats = {
   total_campaigns: number;
   active_campaigns: number;
@@ -384,7 +346,7 @@ export type AdminSubmission = {
 
 export type SubmissionCounts = { pending: number; verified: number; rejected: number; revision_requested: number };
 
-export const listSubmissions = (f: { status?: string; campaign_id?: string; platform?: string; client_id?: string; health?: "healthy" | "embed_broken" | "unavailable"; suspicious?: boolean; limit?: number } = {}) => {
+export const listSubmissions = (f: { status?: string; campaign_id?: string; platform?: string; health?: "healthy" | "embed_broken" | "unavailable"; suspicious?: boolean; limit?: number } = {}) => {
   const p = new URLSearchParams();
   Object.entries(f).forEach(([k, v]) => { if (v !== undefined && v !== "") p.set(k, String(v)); });
   const qs = p.toString();
