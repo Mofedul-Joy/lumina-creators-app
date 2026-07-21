@@ -79,6 +79,17 @@ export default function CampaignEntryPage() {
 
           {c.description ? <p className="mt-3 text-[var(--color-text-secondary)]">{c.description}</p> : null}
 
+          {!isLegacyDriveOnly && c.content_drive_url ? (
+            <a
+              href={c.content_drive_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-1 rounded-full border border-[var(--color-brand)]/50 bg-[var(--color-brand)]/10 px-3 py-1 text-xs font-medium text-[var(--color-brand)] transition hover:bg-[var(--color-brand)]/20"
+            >
+              View requirements ↗
+            </a>
+          ) : null}
+
           <div className="mt-5 flex flex-wrap items-center gap-2">
             {c.platforms.map((p) => (
               <span key={p} className="inline-flex items-center gap-1.5 rounded-md bg-[var(--color-surface-2)] px-2.5 py-1 text-xs text-[var(--color-text-secondary)]">
@@ -153,14 +164,6 @@ export default function CampaignEntryPage() {
             </div>
           ) : null}
 
-          {!isLegacyDriveOnly && c.content_drive_url ? (
-            <p className="mt-4 text-xs text-[var(--color-text-muted)]">
-              External clip folder:{" "}
-              <a href={c.content_drive_url} target="_blank" rel="noopener noreferrer" className="text-[var(--color-brand)] underline">
-                open ↗
-              </a>
-            </p>
-          ) : null}
         </section>
 
         <aside className="lg:sticky lg:top-10 lg:self-start">
@@ -183,7 +186,7 @@ export default function CampaignEntryPage() {
                 </div>
               ) : (
                 <div>
-                  <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Min. retention</p>
+                  <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Campaign length</p>
                   <p className="tabular text-lg font-semibold text-[var(--color-text)]">{c.min_retention_days}d</p>
                 </div>
               )}
