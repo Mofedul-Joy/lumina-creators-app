@@ -49,7 +49,11 @@ def stats(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_d
         select(func.count()).select_from(CreatorProfile).where(CreatorProfile.completed_at.is_not(None))
     )
     total_submissions = scalar(select(func.count()).select_from(Submission))
-    total_views = scalar(select(func.coalesce(func.sum(Submission.views), 0)))
+    total_views = scalar(
+        select(func.coalesce(func.sum(Submission.views), 0)).where(
+            Submission.verification_status == "verified"
+        )
+    )
     total_clients = scalar(select(func.count()).select_from(Client))
     total_budget = db.execute(select(func.coalesce(func.sum(Campaign.budget), 0))).scalar() or Decimal(0)
 

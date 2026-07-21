@@ -118,7 +118,8 @@ def add_social(db: Session, creator_id: uuid.UUID, data: dict) -> SocialAccount:
     handle = (data.get("handle") or "").lstrip("@").strip().lower()
     if not handle:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Handle is required")
-    if data.get("follower_count", 0) < 0:
+    follower_count = data.get("follower_count", 0)
+    if follower_count is not None and follower_count < 0:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "follower_count cannot be negative")
     # If they pasted a URL, reject it when it isn't this platform (anti-phishing).
     # Either way we STORE the canonical URL derived from the handle, so the stored
@@ -136,7 +137,7 @@ def add_social(db: Session, creator_id: uuid.UUID, data: dict) -> SocialAccount:
         raise HTTPException(status.HTTP_409_CONFLICT, "This handle is already added")
     social = SocialAccount(
         creator_id=creator_id, platform=platform, handle=handle,
-        profile_url=profile_url, follower_count=data.get("follower_count", 0),
+        profile_url=profile_url, follower_count=follower_count,
     )
     db.add(social)
     db.commit()

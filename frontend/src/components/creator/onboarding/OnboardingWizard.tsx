@@ -51,12 +51,12 @@ const STEPS: { key: StepKey; optional?: boolean }[] = [
   { key: "ugc_before", optional: true },
   { key: "brands", optional: true },
   { key: "experience", optional: true },
-  { key: "content_types", optional: true },
+  // Rhys 2026-07-21: questionnaire trimmed — one taxonomy question only (the
+  // industries one, i.e. `niches`); `content_types` and `hours_per_week` dropped.
   { key: "niches", optional: true },
   { key: "socials" },
   { key: "portfolio", optional: true },   // "Add your best videos" — right after socials
   { key: "posts_per_day", optional: true },
-  { key: "hours_per_week", optional: true },
   { key: "birthday", optional: true },
   { key: "gender", optional: true },
   { key: "location", optional: true },
@@ -106,29 +106,25 @@ const CONTENT_TYPES: { key: string; label: string; icon: string }[] = [
   { key: "technology", label: "Technology", icon: "💻" },
   { key: "fitness", label: "Fitness", icon: "🏋️" },
 ];
+// Rhys 2026-07-21: the industries a creator wants to work for. Legacy keys from
+// the old 12-option list still render (unselected) on existing profiles.
 const NICHE_OPTIONS: { key: string; label: string; icon: string }[] = [
-  { key: "social", label: "Social & Communication", icon: "💬" },
-  { key: "finance", label: "Finance & Commerce", icon: "📈" },
+  { key: "physical_products", label: "Physical Products", icon: "📦" },
+  { key: "software", label: "Software", icon: "💻" },
+  { key: "gambling", label: "Gambling", icon: "🎰" },
+  { key: "crypto_finance", label: "Crypto / Finance", icon: "📈" },
   { key: "entertainment", label: "Entertainment & Media", icon: "🎬" },
-  { key: "health", label: "Health & Fitness", icon: "💪" },
-  { key: "education", label: "Education & Learning", icon: "🎓" },
-  { key: "travel", label: "Travel & Local", icon: "✈️" },
-  { key: "lifestyle", label: "Lifestyle & Utilities", icon: "🏆" },
-  { key: "photo", label: "Photo & Video", icon: "📷" },
-  { key: "food", label: "Food & Drink", icon: "🍔" },
-  { key: "home", label: "Home & Family", icon: "🏠" },
-  { key: "fashion", label: "Fashion, Beauty & Self-Expression", icon: "💄" },
   { key: "other", label: "Other", icon: "🚀" },
 ];
 const HOW_HEARD: { key: string; label: string }[] = [
   { key: "friend", label: "Friend or colleague" },
-  { key: "referral", label: "Invite or referral" },
+  { key: "google", label: "Google" },
   { key: "tiktok", label: "TikTok" },
   { key: "linkedin", label: "LinkedIn" },
-  { key: "google", label: "Google or search" },
   { key: "instagram", label: "Instagram" },
   { key: "youtube", label: "YouTube" },
-  { key: "other", label: "Something else" },
+  { key: "x", label: "X" },
+  { key: "ai", label: "AI" },
 ];
 
 const CREATOR_TYPE_COPY: Record<CreatorType, { title: string; blurb: string; icon: string }> = {
@@ -408,7 +404,7 @@ export function OnboardingWizard() {
         ) : null}
 
         {cur.key === "niches" ? (
-          <StepShell eyebrow="Your craft" title="What do you consider your niches?" sub="Select up to 5.">
+          <StepShell eyebrow="Your craft" title="What industries do you want to work for?" sub="Select up to 5.">
             <div className="flex flex-wrap gap-2">
               {NICHE_OPTIONS.map((n) => {
                 const on = niches.includes(n.key);
@@ -830,11 +826,18 @@ function OptionCard({ selected, onClick, title, blurb, icon, compact }: { select
 
 const VERIFIABLE_PLATFORMS: Platform[] = ["instagram", "tiktok"];
 
+// A social row worth showing in the "already added" list: Instagram/TikTok only
+// once the bio code has been confirmed (before that it's a verification
+// placeholder, not an account); everything else is self-reported so it counts
+// the moment it's added.
+const settled = (s: { platform: string; is_verified: boolean }) =>
+  s.is_verified || !VERIFIABLE_PLATFORMS.includes(s.platform as Platform);
+
 // Rev2 #2: one Socials view with platform tabs — click a platform, see (and add)
 // that platform's account. Replaces the five Continue-per-platform steps.
 function SocialsTabbed({ bearer, socials, socialForms, setSocialForms, onAdd, onRemove, onChanged }: {
   bearer: string;
-  socials: { id: string; platform: string; handle: string; follower_count: number; is_verified: boolean }[];
+  socials: { id: string; platform: string; handle: string; follower_count: number | null; is_verified: boolean }[];
   socialForms: Record<string, { handle: string; followers: string }>;
   setSocialForms: (f: Record<string, { handle: string; followers: string }>) => void;
   onAdd: (platform: Platform, handle: string, followers: number) => void;
@@ -865,14 +868,18 @@ function SocialsTabbed({ bearer, socials, socialForms, setSocialForms, onAdd, on
         })}
       </div>
 
-      {/* Every account already added on this platform — remove any, add more. */}
-      {socials.filter((s) => s.platform === active).length > 0 ? (
+      {/* Every account already added on this platform — remove any, add more.
+          Rhys 2026-07-21: on Instagram/TikTok, `Get verification code` creates a
+          placeholder row server-side. Showing it made the account appear to "add
+          and then remove" (and read `0 followers`), so only settled accounts are
+          listed here — verifiable platforms once verified, the rest immediately. */}
+      {socials.filter((s) => s.platform === active && settled(s)).length > 0 ? (
         <div className="space-y-2">
-          {socials.filter((s) => s.platform === active).map((a) => (
+          {socials.filter((s) => s.platform === active && settled(s)).map((a) => (
             <div key={a.id} className="flex items-center justify-between gap-3 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3">
               <span className="flex items-center gap-2 text-sm text-[var(--color-text)]">
                 {a.is_verified ? <CheckBadge /> : null}
-                @{a.handle} · <span className="tabular text-[var(--color-text-secondary)]">{a.follower_count.toLocaleString()}</span> followers
+                @{a.handle} · <span className="tabular text-[var(--color-text-secondary)]">{a.follower_count == null ? "Unknown" : a.follower_count.toLocaleString()}</span> followers
                 {a.is_verified ? <span className="rounded-full bg-[var(--color-brand)]/15 px-2 py-0.5 text-[11px] font-medium text-[var(--color-brand)]">Verified</span> : null}
               </span>
               <button className="cursor-pointer text-xs text-[var(--color-danger)]" onClick={() => onRemove(a.id)}>Remove</button>
@@ -883,11 +890,14 @@ function SocialsTabbed({ bearer, socials, socialForms, setSocialForms, onAdd, on
 
       {/* Add / verify ANOTHER account on this platform (Bill: support >1 per platform). */}
       <div className="space-y-2">
-        {socials.some((s) => s.platform === active) ? (
+        {socials.some((s) => s.platform === active && settled(s)) ? (
           <p className="text-sm font-medium text-[var(--color-text-secondary)]">Add another {platformLabel(active)} account</p>
         ) : null}
         <SocialStep
-          key={`add-${active}-${socials.filter((s) => s.platform === active).length}`}
+          // Keyed on the platform only. Keying on the account count remounted the
+          // step the instant a verification placeholder landed, destroying the
+          // freshly-issued code panel — the "adds and then removes" flicker.
+          key={`add-${active}`}
           platform={active}
           bearer={bearer}
           existing={undefined}
@@ -905,7 +915,7 @@ function SocialsTabbed({ bearer, socials, socialForms, setSocialForms, onAdd, on
 function SocialStep({ platform, bearer, existing, form, onForm, onAdd, onRemove, onChanged }: {
   platform: Platform;
   bearer: string;
-  existing?: { id: string; handle: string; follower_count: number; is_verified: boolean };
+  existing?: { id: string; handle: string; follower_count: number | null; is_verified: boolean };
   form: { handle: string; followers: string };
   onForm: (f: { handle: string; followers: string }) => void;
   onAdd?: (platform: Platform, handle: string, followers: number) => void;
@@ -918,11 +928,13 @@ function SocialStep({ platform, bearer, existing, form, onForm, onAdd, onRemove,
 
   const startM = useMutation({
     mutationFn: () => startSocialVerify(bearer, platform, form.handle.trim()),
-    onSuccess: (r) => { setCode(r.code); onChanged(); },
+    // No onChanged() here: refetching mid-flow surfaced the server-side
+    // verification placeholder as a real account row. One click, one panel.
+    onSuccess: (r) => setCode(r.code),
   });
   const confirmM = useMutation({
     mutationFn: () => confirmSocialVerify(bearer, platform, form.handle.trim()),
-    onSuccess: () => { setCode(null); onChanged(); },
+    onSuccess: () => { setCode(null); onForm({ handle: "", followers: "" }); onChanged(); },
   });
   const err = startM.isError ? (startM.error as Error).message
     : confirmM.isError ? (confirmM.error as Error).message : "";
@@ -943,7 +955,7 @@ function SocialStep({ platform, bearer, existing, form, onForm, onAdd, onRemove,
         <div className="flex items-center justify-between gap-3 rounded-[var(--radius-btn)] border border-[var(--color-brand)]/40 bg-[var(--color-brand)]/5 px-4 py-3">
           <span className="flex items-center gap-2 text-sm text-[var(--color-text)]">
             <CheckBadge />
-            @{existing.handle} · <span className="tabular text-[var(--color-text-secondary)]">{existing.follower_count.toLocaleString()}</span> followers
+            @{existing.handle} · <span className="tabular text-[var(--color-text-secondary)]">{existing.follower_count == null ? "Unknown" : existing.follower_count.toLocaleString()}</span> followers
             <span className="rounded-full bg-[var(--color-brand)]/15 px-2 py-0.5 text-[11px] font-medium text-[var(--color-brand)]">Verified</span>
           </span>
           <button className="cursor-pointer text-xs text-[var(--color-danger)]" onClick={() => onRemove(existing.id)}>Remove</button>
@@ -952,7 +964,7 @@ function SocialStep({ platform, bearer, existing, form, onForm, onAdd, onRemove,
         // youtube / x / facebook: self-reported handle + followers (no bio verify)
         existing ? (
           <div className="flex items-center justify-between gap-3 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3">
-            <span className="text-sm text-[var(--color-text)]">@{existing.handle} · <span className="tabular text-[var(--color-text-secondary)]">{existing.follower_count.toLocaleString()}</span> followers</span>
+            <span className="text-sm text-[var(--color-text)]">@{existing.handle} · <span className="tabular text-[var(--color-text-secondary)]">{existing.follower_count == null ? "Unknown" : existing.follower_count.toLocaleString()}</span> followers</span>
             <button className="cursor-pointer text-xs text-[var(--color-danger)]" onClick={() => onRemove(existing.id)}>Remove</button>
           </div>
         ) : (
@@ -1078,6 +1090,10 @@ function LinkThumb({ videoUrl, thumbnailUrl, platform }: { videoUrl: string | nu
             </span>
           ) : null}
         </>
+      ) : !platform && videoUrl ? (
+        // Rhys 2026-07-21: a from-computer upload has no platform and no scraped
+        // thumbnail — show its own first frame rather than "Watch on source".
+        <video src={videoUrl} muted playsInline preload="metadata" className="h-full w-full object-cover" />
       ) : (
         <span className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-[var(--color-brand)]/20 to-[var(--color-bg-deep)] text-sm font-medium text-[var(--color-brand)]">
           {platform ? <PlatformIcon name={platform} className="h-7 w-7" /> : null}

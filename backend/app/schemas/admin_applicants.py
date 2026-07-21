@@ -24,7 +24,7 @@ class ApplicantSocial(BaseModel):
     platform: str
     handle: str
     profile_url: Optional[str] = None
-    follower_count: int = 0
+    follower_count: Optional[int] = None
 
 
 class ApplicantListItem(BaseModel):

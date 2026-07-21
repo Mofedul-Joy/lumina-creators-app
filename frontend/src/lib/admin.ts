@@ -283,6 +283,36 @@ export const impersonateClientById = (clientId: string) =>
     ...auth(),
   });
 
+export type AdminClientCampaignSubmission = {
+  id: string;
+  creator_id: string;
+  creator_name: string | null;
+  platform: string;
+  post_url: string;
+  views: number;
+  likes: number;
+  comments: number;
+  estimated_amount: number | string;
+  verification_status: string;
+  scrape_status: string;
+  thumbnail_url: string | null;
+  created_at: string;
+};
+
+export type AdminClientCampaign = {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  platforms: string[];
+  cpm_rate: number | string;
+  budget: number | string;
+  submissions: AdminClientCampaignSubmission[];
+};
+
+export const listAdminClientCampaigns = (clientId: string) =>
+  apiFetch<AdminClientCampaign[]>(`/api/admin/clients/${clientId}/campaigns`, auth());
+
 export type AdminStats = {
   total_campaigns: number;
   active_campaigns: number;
@@ -338,7 +368,7 @@ export type AdminSubmission = {
   comments: number;
   estimated_amount: number | string;
   verification_status: "pending" | "verified" | "rejected" | "revision_requested";
-  status: "awaiting_stats" | "proof_uploaded" | "stats_verified" | "paid" | "rejected" | "revision_requested";
+  status: "awaiting_stats" | "awaiting_review" | "proof_uploaded" | "stats_verified" | "paid" | "rejected" | "revision_requested" | "payment_claimed";
   scrape_status: string;
   verification_note: string | null;
   revision_mode: "edit" | "repost" | null;
@@ -715,20 +745,26 @@ export type CreatorFilters = {
   primary_language?: string;
   platform?: string;
   min_followers?: number;
+  niches?: string[];
   completed_only?: boolean;
 };
 
 export const listCreators = (f: CreatorFilters = {}) => {
   const p = new URLSearchParams();
   Object.entries(f).forEach(([k, v]) => {
-    if (v !== undefined && v !== "" && v !== false) p.set(k, String(v));
+    if (v === undefined || v === "" || v === false) return;
+    if (Array.isArray(v)) {
+      v.forEach((item) => p.append(k, String(item)));
+    } else {
+      p.set(k, String(v));
+    }
   });
   const qs = p.toString();
   return apiFetch<CreatorRow[]>(`/api/admin/creators${qs ? `?${qs}` : ""}`, auth());
 };
 
 /* ---- rich creator/applicant detail card (Feature 2) ---- */
-export type RichSocialItem = { platform: string; handle: string; profile_url: string | null; follower_count: number };
+export type RichSocialItem = { platform: string; handle: string; profile_url: string | null; follower_count: number | null };
 export type RecentSubmissionItem = {
   id: string;
   post_url: string;
@@ -792,7 +828,7 @@ export type ApplicantSocial = {
   platform: string;
   handle: string;
   profile_url: string | null;
-  follower_count: number;
+  follower_count: number | null;
 };
 
 export type ApplicantListItem = {

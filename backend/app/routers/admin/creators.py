@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_admin
@@ -56,6 +56,7 @@ def list_creators(
     platform: Optional[str] = None,
     min_followers: Optional[int] = None,
     social: Optional[str] = None,
+    niches: Optional[List[str]] = Query(None),
     completed_only: bool = False,
     limit: int = 50,
     offset: int = 0,
@@ -65,7 +66,9 @@ def list_creators(
     rows = svc.list_creators(
         db, q=q, gender=gender, ethnicity=ethnicity, primary_language=primary_language,
         country=country, city=city, age_min=age_min, age_max=age_max, platform=platform,
-        min_followers=min_followers, social=social, completed_only=completed_only, limit=limit, offset=offset,
+        min_followers=min_followers, social=social,
+        niches=[n.strip() for raw in (niches or []) for n in raw.split(",") if n.strip()],
+        completed_only=completed_only, limit=limit, offset=offset,
     )
     return [CreatorListItem(**r) for r in rows]
 

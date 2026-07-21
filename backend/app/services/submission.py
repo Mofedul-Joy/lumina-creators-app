@@ -89,13 +89,10 @@ def create_submission(db: Session, creator_id: uuid.UUID, campaign_slug: str, po
         post_url=post_url.strip(), canonical_url=canonical, url_hash=url_hash, platform=platform,
         cpm_rate_snapshot=campaign.cpm_rate, eligible_view_pct_snapshot=campaign.eligible_view_pct,
         thumbnail_url=thumbnail,
-        # No-review model (Bill): a submitted post is auto-approved so it starts
-        # earning + gets scraped immediately, with zero admin friction. The Video
-        # Review queue is bypassed (verified on create). The scrape worker only
-        # processes verified submissions, so without this the post would never be
-        # scraped and views would stay 0. Flip back to "pending" to restore review.
-        verification_status="verified",
-        verified_at=_now(),
+        # Review-gated payout model: new submissions collect scrape stats while
+        # pending, but only admin approval flips them into payout eligibility.
+        verification_status="pending",
+        verified_at=None,
     )
     db.add(sub)
     db.flush()  # get sub.id before creating its job

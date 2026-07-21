@@ -226,6 +226,8 @@ def lifecycle_status(sub: Submission, is_paid: bool) -> str:
         return "payment_claimed"
     if sub.verification_status == "verified":
         return "stats_verified"
+    if sub.verification_status == "pending" and sub.scrape_status == "success":
+        return "awaiting_review"
     if sub.proof_object_id is not None:
         return "proof_uploaded"
     return "awaiting_stats"

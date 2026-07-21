@@ -12,7 +12,7 @@ import { BonusMilestones } from "@/components/ui/BonusMilestones";
 import { ExampleVideos } from "@/components/ui/ExampleVideos";
 import { ProfileGateModal } from "@/components/creator/ProfileGateModal";
 import { getAuthToken } from "@/lib/auth";
-import { getCampaign, getSubmission, joinCampaign, submitClip } from "@/lib/campaigns";
+import { getCampaign, getSubmission, joinCampaign, submitClip, type Submission } from "@/lib/campaigns";
 import { fmtInt, fmtMoney } from "@/lib/format";
 import { paymentHeadline, paymentTypeLabel, targetingChips } from "@/lib/campaignDisplay";
 
@@ -25,6 +25,10 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
   const [postUrl, setPostUrl] = useState("");
   const [bulkText, setBulkText] = useState("");
   const [trackId, setTrackId] = useState<string | null>(null);
+  const [trackStarted, setTrackStarted] = useState(0);
+  // The verifying takeover must never become a permanent spinner — if the scrape
+  // worker is down or wedged, stop waiting and report what we already know.
+  const [waitedOut, setWaitedOut] = useState(false);
   const [bulkMsg, setBulkMsg] = useState("");
   const [gateOpen, setGateOpen] = useState(false);
 
@@ -37,7 +41,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
   });
   const submit = useMutation({
     mutationFn: () => submitClip(slug, postUrl.trim()),
-    onSuccess: (data) => { setPostUrl(""); setTrackId(data.id); },
+    onSuccess: (data) => { setPostUrl(""); setTrackId(data.id); setTrackStarted(Date.now()); },
   });
   // poll the freshly-submitted post until Apify finishes fetching its stats
   const track = useQuery({
@@ -45,8 +49,11 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
     queryFn: () => getSubmission(trackId!),
     enabled: !!trackId,
     refetchInterval: (query) => {
+      // No data yet (first fetch still in flight, or it errored before anything
+      // was cached) — keep retrying rather than silently stopping, otherwise the
+      // takeover below becomes a spinner with nothing driving it.
       const d = query.state.data;
-      if (!d) return false;
+      if (!d) return 4000;
       // Verified + still scraping → poll fast to surface stats. Awaiting review
       // → poll slower to catch the admin's approval. Otherwise stop.
       if (d.verification_status === "verified") return d.scrape_status === "pending" ? 4000 : false;
@@ -54,6 +61,12 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
       return 10000;
     },
   });
+  useEffect(() => {
+    if (!trackId) { setWaitedOut(false); return; }
+    const id = setTimeout(() => setWaitedOut(true), Math.max(0, 45_000 - (Date.now() - trackStarted)));
+    return () => clearTimeout(id);
+  }, [trackId, trackStarted]);
+
   const bulkSubmit = useMutation({
     mutationFn: async () => {
       const urls = bulkText.split("\n").map((u) => u.trim()).filter(Boolean);
@@ -73,6 +86,17 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
   // other campaign gets the rich native brief.
   const isLegacyDriveOnly = c?.mode === "copy_paste" && !c?.payment_type && !c?.banner_url;
 
+  // Rhys 2026-07-21: submitting used to leave the creator on the campaign page
+  // with a one-line status strip, so people wandered off mid-verify. The submit
+  // now takes the screen over until it resolves, then reports in a modal.
+  const t = track.data;
+  const rejected = t?.verification_status === "rejected";
+  const settledPost = !!t && (rejected || t.scrape_status !== "pending" || waitedOut);
+  // `waitedOut` also releases the takeover when the submission never loaded at
+  // all (repeated 5xx), so a backend blip can't trap the creator on the spinner.
+  const verifying = !!trackId && !settledPost && !waitedOut;
+  const closeTracker = () => { setTrackId(null); setWaitedOut(false); };
+
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
         <Link href="/campaigns" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
@@ -87,6 +111,8 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
           <p className="mt-6 text-[var(--color-text-muted)]">Loading…</p>
         ) : q.isError || !c ? (
           <p className="mt-6 text-[var(--color-danger)]">{(q.error as Error)?.message ?? "Campaign not found."}</p>
+        ) : verifying ? (
+          <VerifyingScreen campaign={c} platform={t?.platform} onBack={closeTracker} />
         ) : (
           <>
             {/* Banner hero */}
@@ -113,6 +139,18 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
                     {c.job_type.replace(/_/g, " ")}
                   </span>
                 ) : null}
+                {/* Rhys 2026-07-21: the brief used to be a grey footnote at the very
+                    bottom ("External clip folder: open"). Creators need it up here. */}
+                {c.content_drive_url ? (
+                  <a
+                    href={c.content_drive_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ml-auto inline-flex items-center gap-1 rounded-full border border-[var(--color-brand)]/50 bg-[var(--color-brand)]/10 px-3 py-1 text-[11px] font-medium text-[var(--color-brand)] transition hover:bg-[var(--color-brand)]/20"
+                  >
+                    View requirements ↗
+                  </a>
+                ) : null}
               </div>
               {!c.banner_url ? (
                 <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--color-text)]">{c.name}</h1>
@@ -130,20 +168,25 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
               </p>
               <div className="mt-4 grid grid-cols-2 gap-3 border-t border-[var(--color-border)] pt-4 sm:grid-cols-4">
                 <Stat label="Budget" value={fmtMoney(c.budget)} />
-                <Stat label="Min. retention" value={`${c.min_retention_days}d`} />
+                {/* Rhys 2026-07-21: "min. retention" meant nothing to creators. */}
+                <Stat label="Campaign length" value={`${c.min_retention_days}d`} />
                 {c.weekly_hours_needed ? <Stat label="Weekly hours" value={`${fmtInt(c.weekly_hours_needed)}/wk`} /> : null}
-                <Stat label="Platforms" value={String(c.platforms.length)} />
+                {/* …and "Platforms: 2" told them less than the logos did. */}
+                <Stat
+                  label="Platforms"
+                  value={
+                    <span className="flex items-center gap-2 text-[var(--color-text)]">
+                      {c.platforms.map((p) => (
+                        <PlatformIcon key={p} name={p} className="h-5 w-5" aria-label={platformLabel(p)} />
+                      ))}
+                    </span>
+                  }
+                />
               </div>
             </div>
 
-            {/* Platforms + targeting */}
+            {/* Targeting chips (platform chips now live in the stat tile above) */}
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              {c.platforms.map((p) => (
-                <span key={p} className="inline-flex items-center gap-1.5 rounded-md bg-[var(--color-surface-2)] px-2.5 py-1 text-[11px] text-[var(--color-text-secondary)]">
-                  <PlatformIcon name={p} className="h-3.5 w-3.5" />
-                  {platformLabel(p)}
-                </span>
-              ))}
               {chips.map((chip) => (
                 <span key={chip} className="inline-flex items-center rounded-md border border-[var(--color-border)] px-2.5 py-1 text-[11px] text-[var(--color-text-secondary)]">
                   {chip}
@@ -192,15 +235,8 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
               </Panel>
             ) : null}
 
-            {/* Legacy Google-Doc-shaped fallback — demoted to a small link, not a hero panel */}
-            {!isLegacyDriveOnly && c.content_drive_url ? (
-              <p className="mt-4 text-xs text-[var(--color-text-muted)]">
-                External clip folder:{" "}
-                <a href={c.content_drive_url} target="_blank" rel="noreferrer" className="text-[var(--color-brand)] underline">
-                  open ↗
-                </a>
-              </p>
-            ) : null}
+            {/* The old "External clip folder: open ↗" footnote is gone — the same
+                URL is now the "View requirements" action in the header. */}
 
             {/* join / submit */}
             <div className="mt-8 card-grad rounded-[var(--radius-card)] p-6">
@@ -257,31 +293,8 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
                         </Button>
                       </div>
                       {submit.isError ? <p className="text-sm text-[var(--color-danger)]">{(submit.error as Error).message}</p> : null}
-
-                      {/* live 'updating stats' tracker for the last submitted post */}
-                      {trackId && track.data ? (
-                        <div className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-3">
-                          {track.data.verification_status === "rejected" ? (
-                            <p className="text-sm text-[var(--color-danger)]">
-                              Not approved for this campaign. Check My Campaigns for details.
-                            </p>
-                          ) : track.data.verification_status !== "verified" ? (
-                            <p className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-                              <span className="h-4 w-4 rounded-full border-2 border-[var(--color-text-muted)]/40 border-t-[var(--color-text-muted)]" />
-                              Submitted — waiting for admin review. Stats start once it&apos;s approved.
-                            </p>
-                          ) : track.data.scrape_status === "pending" ? (
-                            <p className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-brand)]/30 border-t-[var(--color-brand)]" />
-                              Approved ✓ — fetching stats from {platformLabel(track.data.platform)}…
-                            </p>
-                          ) : (
-                            <p className="text-sm text-[var(--color-brand)]">
-                              Stats in ✓ — {fmtInt(track.data.views)} views · {fmtMoney(track.data.estimated_amount)} est.
-                            </p>
-                          )}
-                        </div>
-                      ) : null}
+                      {/* The old inline status strip lives on as the full-screen
+                          VerifyingScreen + SubmissionResultModal below. */}
                     </>
                   ) : (
                     <>
@@ -307,15 +320,19 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
           </>
         )}
       <ProfileGateModal open={gateOpen} onClose={() => setGateOpen(false)} returnTo={`/campaigns/${slug}`} />
+      {trackId && !verifying ? (
+        t ? <SubmissionResultModal sub={t} onDone={closeTracker} />
+          : <SubmissionStalledModal onDone={closeTracker} />
+      ) : null}
       </main>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="card-grad rounded-[var(--radius-btn)] px-3 py-2">
       <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">{label}</p>
-      <p className="tabular text-lg font-semibold text-[var(--color-text)]">{value}</p>
+      <div className="tabular text-lg font-semibold text-[var(--color-text)]">{value}</div>
     </div>
   );
 }
@@ -325,6 +342,138 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
     <div className="mt-6">
       <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">{title}</h2>
       <div className="card-grad rounded-[var(--radius-card)] p-5">{children}</div>
+    </div>
+  );
+}
+
+// Rhys 2026-07-21: "if they click submit post, and it maybe redirects them the
+// verification screen, it could be good … some players would just scroll around
+// and click somewhere else." This is that screen — it owns the viewport while
+// the post is being checked, with one deliberate way out.
+function VerifyingScreen({ campaign, platform, onBack }: {
+  campaign: { name: string; brand_name?: string | null; banner_url?: string | null };
+  platform?: string;
+  onBack: () => void;
+}) {
+  return (
+    <div className="mt-6 flex min-h-[60vh] flex-col items-center justify-center text-center">
+      {campaign.banner_url ? (
+        <div className="mb-6 h-24 w-40 overflow-hidden rounded-[var(--radius-card)] bg-[var(--color-surface-2)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={campaign.banner_url} alt="" className="h-full w-full object-cover opacity-70" />
+        </div>
+      ) : null}
+      <span className="h-12 w-12 animate-spin rounded-full border-4 border-[var(--color-brand)]/25 border-t-[var(--color-brand)]" />
+      <h2 className="mt-6 text-xl font-semibold text-[var(--color-text)]">Verifying your post…</h2>
+      <p className="mt-2 max-w-sm text-sm text-[var(--color-text-secondary)]">
+        We&apos;re checking your {platform ? platformLabel(platform) : "post"} and pulling its stats.
+        Hang tight — this usually takes a few seconds.
+      </p>
+      <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{campaign.brand_name ?? "Lumina campaign"} · {campaign.name}</p>
+      <button
+        onClick={onBack}
+        className="mt-8 cursor-pointer text-xs text-[var(--color-text-muted)] underline transition hover:text-[var(--color-text)]"
+      >
+        Back to campaign
+      </button>
+    </div>
+  );
+}
+
+// …"and then after it's done, they get the pop-up saying stats in, here's how
+// much you're owed to be paid. They can click done, and it just redirects them
+// back here."
+function SubmissionResultModal({ sub, onDone }: { sub: Submission; onDone: () => void }) {
+  const rejected = sub.verification_status === "rejected";
+  const awaitingReview = !rejected && sub.verification_status !== "verified";
+  // We may be here because we stopped waiting, not because the scrape finished —
+  // in that case 0 views / $0 would be a lie, so say the stats are still coming.
+  const statsPending = !rejected && sub.scrape_status === "pending";
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-6" role="dialog" aria-modal="true">
+      <div className="w-full max-w-sm rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center">
+        <span
+          className={`mx-auto grid h-12 w-12 place-items-center rounded-full text-2xl ${
+            rejected ? "bg-[var(--color-danger)]/15" : "bg-[var(--color-brand)]/15"
+          }`}
+        >
+          {rejected ? "✕" : "✓"}
+        </span>
+        <h2 className="mt-4 text-lg font-semibold text-[var(--color-text)]">
+          {rejected ? "Not approved" : statsPending ? "Submitted" : awaitingReview ? "Submitted" : "Stats in"}
+        </h2>
+
+        {rejected ? (
+          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+            {sub.verification_note || "This post wasn't approved for the campaign."}
+          </p>
+        ) : (
+          <>
+            {awaitingReview ? (
+              <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                Your post is with our team for review. You&apos;ll be notified once it&apos;s approved.
+              </p>
+            ) : null}
+            {statsPending ? (
+              <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                We&apos;re still pulling its stats — they&apos;ll appear under Campaigns Entered shortly.
+              </p>
+            ) : awaitingReview ? (
+              // Stats are in, but nothing is owed until an admin approves the
+              // post — quoting a figure here would be a promise we can't keep.
+              <div className="mt-4 grid grid-cols-1 gap-3">
+                <div className="card-grad rounded-[var(--radius-btn)] px-3 py-3">
+                  <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Views so far</p>
+                  <p className="tabular text-lg font-semibold text-[var(--color-text)]">{fmtInt(sub.views)}</p>
+                </div>
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  Earnings are confirmed once your post is approved.
+                </p>
+              </div>
+            ) : (
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="card-grad rounded-[var(--radius-btn)] px-3 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Views</p>
+                <p className="tabular text-lg font-semibold text-[var(--color-text)]">{fmtInt(sub.views)}</p>
+              </div>
+              <div className="card-grad rounded-[var(--radius-btn)] px-3 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">You&apos;re owed</p>
+                <p className="tabular text-lg font-semibold text-[var(--color-brand)]">{fmtMoney(sub.estimated_amount)}</p>
+              </div>
+            </div>
+            )}
+          </>
+        )}
+
+        <button
+          onClick={onDone}
+          className="mt-6 min-h-11 w-full cursor-pointer rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
+        >
+          {rejected ? "Try another link" : "Done"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// The submission never loaded (repeated backend errors) and we stopped waiting.
+// Say so honestly rather than implying the post failed to submit.
+function SubmissionStalledModal({ onDone }: { onDone: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-6" role="dialog" aria-modal="true">
+      <div className="w-full max-w-sm rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center">
+        <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[var(--color-surface-2)] text-2xl">⏳</span>
+        <h2 className="mt-4 text-lg font-semibold text-[var(--color-text)]">Still working on it</h2>
+        <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+          Your post was submitted, but we couldn&apos;t load its status just now. Check Campaigns Entered in a few minutes.
+        </p>
+        <button
+          onClick={onDone}
+          className="mt-6 min-h-11 w-full cursor-pointer rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]"
+        >
+          Done
+        </button>
+      </div>
     </div>
   );
 }

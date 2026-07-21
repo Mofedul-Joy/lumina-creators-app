@@ -146,6 +146,22 @@ def _nn(value) -> int:
     return n if n > 0 else 0
 
 
+def _nn_optional(value) -> Optional[int]:
+    """Non-negative int, preserving missing profile stats as unknown."""
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        return None
+    return max(n, 0)
+
+
+def _first_present(data: dict, *keys: str):
+    for key in keys:
+        if key in data and data[key] is not None:
+            return data[key]
+    return None
+
+
 def _item_url(platform: str, item: dict) -> Optional[str]:
     if platform == "tiktok":
         return item.get("webVideoUrl") or item.get("input")
@@ -340,7 +356,7 @@ PROFILE_ACTORS = {
 class ProfileInfo:
     handle: str
     bio: str
-    followers: int
+    followers: Optional[int]
     avatar_url: Optional[str] = None
     display_name: Optional[str] = None
 
@@ -360,7 +376,7 @@ def _parse_profile(platform: str, item: dict) -> ProfileInfo:
         return ProfileInfo(
             handle=str(item.get("username") or "").lstrip("@"),
             bio=str(item.get("biography") or ""),
-            followers=_nn(item.get("followersCount")),
+            followers=_nn_optional(item.get("followersCount")),
             avatar_url=item.get("profilePicUrlHD") or item.get("profilePicUrl"),
             display_name=item.get("fullName"),
         )
@@ -370,11 +386,11 @@ def _parse_profile(platform: str, item: dict) -> ProfileInfo:
         return ProfileInfo(
             handle=str(a.get("name") or a.get("uniqueId") or item.get("name") or "").lstrip("@"),
             bio=str(a.get("signature") or a.get("bio") or ""),
-            followers=_nn(a.get("fans") or a.get("followers") or a.get("followerCount")),
+            followers=_nn_optional(_first_present(a, "fans", "followers", "followerCount")),
             avatar_url=a.get("avatar") or a.get("avatarLarger"),
             display_name=a.get("nickName") or a.get("nickname"),
         )
-    return ProfileInfo(handle="", bio="", followers=0)
+    return ProfileInfo(handle="", bio="", followers=None)
 
 
 def scrape_profile(platform: str, handle: str) -> Optional[ProfileInfo]:

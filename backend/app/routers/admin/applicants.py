@@ -123,7 +123,10 @@ def _submission_agg(db: Session, participation_ids: list[uuid.UUID]) -> dict[uui
             func.coalesce(func.sum(Submission.estimated_amount), 0),
             func.count(Submission.id),
         )
-        .where(Submission.participation_id.in_(participation_ids))
+        .where(
+            Submission.participation_id.in_(participation_ids),
+            Submission.verification_status == "verified",
+        )
         .group_by(Submission.participation_id)
     ).all()
     return {pid: {"views": int(v), "earnings": Decimal(e), "posts": int(c)} for pid, v, e, c in rows}

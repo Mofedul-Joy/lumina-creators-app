@@ -121,7 +121,7 @@ class CreatorProfile(TimestampMixin, Base):
 class SocialAccount(Base):
     __tablename__ = "social_accounts"
     __table_args__ = (
-        CheckConstraint("follower_count >= 0"),
+        CheckConstraint("follower_count IS NULL OR follower_count >= 0"),
         UniqueConstraint("creator_id", "platform", "handle"),
         Index("idx_social_creator", "creator_id"),
         Index("idx_social_platform_follows", "platform", "follower_count"),
@@ -136,9 +136,7 @@ class SocialAccount(Base):
     platform: Mapped[str] = mapped_column(PLATFORM, nullable=False)
     handle: Mapped[str] = mapped_column(Text, nullable=False)
     profile_url: Mapped[Optional[str]] = mapped_column(Text)
-    follower_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default=text("0")
-    )
+    follower_count: Mapped[Optional[int]] = mapped_column(Integer)
     is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     # Bio-code verification: the code the creator must place in their platform bio,
     # and its expiry. Both cleared once is_verified flips true.

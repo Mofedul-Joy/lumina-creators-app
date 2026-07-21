@@ -323,7 +323,7 @@ export type SocialIn = {
   platform: Platform;
   handle: string;
   profile_url?: string;
-  follower_count?: number;
+  follower_count?: number | null;
 };
 
 export type SocialOut = {
@@ -331,7 +331,7 @@ export type SocialOut = {
   platform: Platform;
   handle: string;
   profile_url: string | null;
-  follower_count: number;
+  follower_count: number | null;
   is_verified: boolean;
 };
 
@@ -404,7 +404,7 @@ export type SocialItem = {
   platform: Platform;
   handle: string;
   profile_url: string | null;
-  follower_count: number;
+  follower_count: number | null;
 };
 
 export type PortfolioItemOut = {
@@ -455,6 +455,7 @@ export type CreatorFilters = {
   platform?: Platform;
   min_followers?: number;
   social?: string;
+  niches?: string[];
   completed_only?: boolean;
   limit?: number;
   offset?: number;
@@ -467,7 +468,7 @@ export type RichSocialItem = {
   platform: Platform;
   handle: string;
   profile_url: string | null;
-  follower_count: number;
+  follower_count: number | null;
 };
 
 export type RecentSubmissionItem = {
@@ -871,7 +872,11 @@ export const listCreators = (token: string, filters: CreatorFilters = {}) => {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) {
     if (value === undefined || value === null || value === "") continue;
-    params.set(key, String(value));
+    if (Array.isArray(value)) {
+      value.forEach((item) => params.append(key, String(item)));
+    } else {
+      params.set(key, String(value));
+    }
   }
   const qs = params.toString();
   return apiFetch<CreatorListItem[]>(

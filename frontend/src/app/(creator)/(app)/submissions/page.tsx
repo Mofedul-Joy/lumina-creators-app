@@ -72,7 +72,7 @@ export default function MyCampaignsPage() {
 
   // Minimum accumulated earnings before a payout can be requested (mirrors the
   // backend min_payout_amount default; backend is the authoritative gate).
-  const MIN_PAYOUT = 25;
+  const MIN_PAYOUT = 5;
   const claimM = useMutation({
     mutationFn: async (ids: string[]) => { for (const id of ids) await claimSubmission(id); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["submissions"] }),
@@ -163,7 +163,7 @@ export default function MyCampaignsPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-8">
-      <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-text)]">My campaigns</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-text)]">Campaigns Entered</h1>
       <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
         Campaigns you&apos;ve joined — the views you&apos;ve generated and how your payout looks.
       </p>

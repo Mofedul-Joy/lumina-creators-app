@@ -98,6 +98,8 @@ def record_payout_for_submission(db: Session, admin_id: uuid.UUID, submission_id
     sub = db.get(Submission, submission_id)
     if sub is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Submission not found")
+    if sub.verification_status != "verified":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Submission must be verified before payout")
     if db.scalar(select(PayoutItem.id).where(
             PayoutItem.submission_id == submission_id, PayoutItem.voided_at.is_(None))):
         raise HTTPException(status.HTTP_409_CONFLICT, "This submission has already been paid")

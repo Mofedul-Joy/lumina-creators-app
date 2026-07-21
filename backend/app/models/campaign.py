@@ -154,7 +154,7 @@ class Campaign(TimestampMixin, Base):
     no_platform_tracking: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text("false")
     )
-    payment_schedule: Mapped[Optional[str]] = mapped_column(Text)  # every_7_days|every_14_days|every_30_days
+    payment_schedule: Mapped[Optional[str]] = mapped_column(Text)  # every_1_day|every_3_days|every_7_days|every_14_days|every_30_days
     payment_cycle_trigger: Mapped[str] = mapped_column(
         Text, nullable=False, server_default=text("'post_delivery'")
     )  # post_delivery|schedule

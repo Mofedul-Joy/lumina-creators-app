@@ -32,6 +32,8 @@ class ClientCampaignOut(BaseModel):
     cpm_rate: Decimal
     budget: Decimal
     spent_amount: Decimal
+    payment_type: Optional[str] = None
+    fixed_amount: Optional[Decimal] = None
     platforms: List[str] = []
     brand_name: Optional[str] = None
     published_at: Optional[datetime] = None
@@ -67,7 +69,10 @@ def _stats(db: Session, campaign_ids: list[uuid.UUID]) -> dict[uuid.UUID, dict]:
             func.count(Submission.id),
             func.count(func.distinct(Submission.creator_id)),
         )
-        .where(Submission.campaign_id.in_(campaign_ids))
+        .where(
+            Submission.campaign_id.in_(campaign_ids),
+            Submission.verification_status == "verified",
+        )
         .group_by(Submission.campaign_id)
     ).all()
     return {
@@ -83,6 +88,7 @@ def _campaign_out(c: Campaign, stats: dict) -> ClientCampaignOut:
     return ClientCampaignOut(
         id=str(c.id), slug=c.slug, name=c.name, description=c.description, mode=c.mode,
         status=c.status, cpm_rate=c.cpm_rate, budget=c.budget, spent_amount=c.spent_amount,
+        payment_type=c.payment_type, fixed_amount=c.fixed_amount,
         platforms=list(c.platforms or []), brand_name=c.brand_name, published_at=c.published_at,
         **stats.get(c.id, {}),
     )

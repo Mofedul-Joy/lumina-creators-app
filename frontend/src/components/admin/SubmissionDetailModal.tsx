@@ -199,7 +199,9 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
                   className="cursor-pointer rounded-md bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/25 hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-40"
                   title="Approve this post after watching it above">Approve</button>
               ) : null}
-              {!isPaid ? (
+              {/* Rhys 2026-07-21: submissions now land in Pending, so payout must
+                  come AFTER approval — never straight off an unreviewed post. */}
+              {!isPaid && sub.verification_status === "verified" ? (
                 <button onClick={() => { setPaying(true); setError(""); }}
                   className="cursor-pointer rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-[var(--color-on-brand)] hover:bg-emerald-400">Log payout</button>
               ) : null}
@@ -207,7 +209,7 @@ export function SubmissionDetailModal({ sub, onClose, pool }: { sub: AdminSubmis
                 <>
                   <button onClick={() => { setNote(""); setRevising("edit"); setError(""); }}
                     title="Send back so the creator can fix and re-submit this same post"
-                    className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 hover:bg-amber-500/10">Send for review</button>
+                    className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 hover:bg-amber-500/10">Revision needed</button>
                   <button onClick={() => { setNote(""); setRevising("repost"); setError(""); }}
                     title="Send back and ask the creator to post a brand-new video"
                     className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 hover:bg-amber-500/10">Repost</button>

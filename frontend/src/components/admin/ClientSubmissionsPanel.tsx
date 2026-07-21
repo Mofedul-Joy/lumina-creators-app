@@ -7,7 +7,7 @@
 // opens the brand's own dashboard in a short-lived impersonation session.
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { listAdminClients, listSubmissions, impersonateClientById, type AdminClient } from "@/lib/admin";
+import { listAdminClients, listAdminClientCampaigns, listSubmissions, impersonateClientById, type AdminClient } from "@/lib/admin";
 import { clientRealmUrl } from "@/lib/realmUrls";
 import { Select } from "@/components/ui/Select";
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
@@ -40,8 +40,19 @@ export function ClientSubmissionsPanel() {
   const [viewing, setViewing] = useState(false);
 
   const clientsQ = useQuery({ queryKey: ["admin-clients"], queryFn: listAdminClients });
-  const clients = clientsQ.data ?? [];
+  // Rhys 2026-07-21: alphabetical, like every other picker in the admin.
+  const clients = useMemo(
+    () => [...(clientsQ.data ?? [])].sort((a, b) =>
+      (a.name?.trim() || a.email).localeCompare(b.name?.trim() || b.email, undefined, { sensitivity: "base" })),
+    [clientsQ.data],
+  );
   const selected: AdminClient | undefined = clients.find((c) => c.id === clientId);
+
+  const campaignsQ = useQuery({
+    queryKey: ["admin-client-campaigns", clientId],
+    queryFn: () => listAdminClientCampaigns(clientId),
+    enabled: !!clientId,
+  });
 
   const subsQ = useQuery({
     queryKey: ["admin-client-subs", clientId, platform, health],
@@ -104,6 +115,36 @@ export function ClientSubmissionsPanel() {
             <StatTile label="Submissions" value={fmtInt(selected?.submission_count ?? 0)} accent />
             <StatTile label="Total views" value={fmtInt(selected?.total_views ?? 0)} />
             <StatTile label="Interactions" value={fmtInt(selected?.total_interactions ?? 0)} />
+          </div>
+
+          {/* Rhys 2026-07-21: "every single campaign ever should appear here in
+              alphabetical order … all from here plus the completed section."
+              The submissions grid below is submission-driven, so a campaign with
+              no posts yet never showed up — this roster is campaign-driven. */}
+          <div className="mt-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+              Campaigns{campaignsQ.data ? ` (${campaignsQ.data.length})` : ""}
+            </p>
+            {campaignsQ.isLoading ? (
+              <p className="mt-2 text-sm text-[var(--color-text-muted)]">Loading campaigns…</p>
+            ) : !campaignsQ.data?.length ? (
+              <p className="mt-2 text-sm text-[var(--color-text-muted)]">No campaigns assigned to this client yet.</p>
+            ) : (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {campaignsQ.data.map((c) => (
+                  <span
+                    key={c.id}
+                    className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 text-xs text-[var(--color-text-secondary)]"
+                  >
+                    {c.name}
+                    <span className="rounded-full bg-[var(--color-surface-2)] px-1.5 py-0.5 text-[10px] capitalize text-[var(--color-text-muted)]">
+                      {c.status}
+                    </span>
+                    <span className="tabular text-[var(--color-text-muted)]">{c.submissions.length}</span>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* filters: platform + health */}

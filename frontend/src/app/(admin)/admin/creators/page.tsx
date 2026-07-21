@@ -301,7 +301,7 @@ export default function AdminCreatorsPage() {
                   <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
                     <dt className="text-[var(--color-text-muted)]">Country</dt><dd className="text-right text-[var(--color-text)]">{c.country ?? "-"}</dd>
                     <dt className="text-[var(--color-text-muted)]">Language</dt><dd className="text-right text-[var(--color-text)]">{c.primary_language ?? "-"}</dd>
-                    <dt className="text-[var(--color-text-muted)]">Followers</dt><dd className="tabular text-right text-[var(--color-text)]">{c.total_followers.toLocaleString()}</dd>
+                    <dt className="text-[var(--color-text-muted)]">Followers</dt><dd className="tabular text-right text-[var(--color-text)]">{(c.total_followers ?? 0).toLocaleString()}</dd>
                     <dt className="text-[var(--color-text-muted)]">Views</dt><dd className="tabular text-right text-[var(--color-text)]">{fmtNumber(c.total_views)}</dd>
                     <dt className="text-[var(--color-text-muted)]">Earned</dt><dd className="tabular text-right text-[var(--color-text)]">{fmtMoney(c.total_earned)}</dd>
                   </dl>
@@ -319,10 +319,12 @@ export default function AdminCreatorsPage() {
                     <th className="px-4 py-3 font-medium">Creator</th>
                     <th className="px-4 py-3 font-medium">Email</th>
                     <th className="px-4 py-3 font-medium">Post activity</th>
-                    <th className="px-4 py-3 text-right font-medium">Views</th>
-                    <th className="px-4 py-3 font-medium">Accounts</th>
+                    {/* Rhys 2026-07-21: views → followers, accounts → profiles,
+                        and the always-"None" Tags column becomes all-time views. */}
+                    <th className="px-4 py-3 text-right font-medium">Followers</th>
+                    <th className="px-4 py-3 font-medium">Profiles</th>
                     <th className="px-4 py-3 font-medium">Campaigns</th>
-                    <th className="px-4 py-3 font-medium">Tags</th>
+                    <th className="px-4 py-3 text-right font-medium">All-time views</th>
                     <th className="px-4 py-3 font-medium">Joined</th>
                   </tr>
                 </thead>
@@ -350,14 +352,14 @@ export default function AdminCreatorsPage() {
                         </p>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <p className="tabular text-[var(--color-text)]">{fmtNumber(c.total_views)}</p>
-                        <p className="text-[11px] text-[var(--color-text-muted)]">views</p>
+                        <p className="tabular text-[var(--color-text)]">{fmtNumber(c.total_followers)}</p>
+                        <p className="text-[11px] text-[var(--color-text-muted)]">followers</p>
                       </td>
                       <td className="px-4 py-3">
                         {c.accounts_count > 0 ? (
-                          <span className="tabular text-[var(--color-text)]">{c.accounts_count} account{c.accounts_count > 1 ? "s" : ""}</span>
+                          <span className="tabular text-[var(--color-text)]">{c.accounts_count} profile{c.accounts_count > 1 ? "s" : ""}</span>
                         ) : (
-                          <span className="text-[var(--color-text-muted)]">No accounts</span>
+                          <span className="text-[var(--color-text-muted)]">No profiles</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -368,7 +370,9 @@ export default function AdminCreatorsPage() {
                           <p className="text-[11px] text-[var(--color-text-muted)]">none active</p>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-[var(--color-text-muted)]">None</td>
+                      <td className="px-4 py-3 text-right">
+                        <p className="tabular text-[var(--color-text)]">{fmtNumber(c.total_views)}</p>
+                      </td>
                       <td className="px-4 py-3 whitespace-nowrap text-[var(--color-text-secondary)]">{fmtJoined(c.created_at)}</td>
                     </tr>
                   ))}

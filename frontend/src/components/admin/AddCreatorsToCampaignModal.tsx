@@ -10,6 +10,7 @@ import {
   type CampaignInviteSummary,
   type CreatorRow,
 } from "@/lib/admin";
+import type { Gender } from "@/lib/api";
 
 /**
  * "Add creators" on the campaign detail page. Two ways to invite:
@@ -19,6 +20,25 @@ import {
  *     copy the reusable campaign invite link to share anywhere.
  */
 type Tab = "existing" | "external";
+
+// Rhys 2026-07-21: "in the creators questionnaire, if they have filtered, for
+// example, crypto or casino, or male or female, after inputting them filters, I
+// can then invite the creators who have appeared for them filters." These mirror
+// the onboarding industry list; Select all operates on the filtered set.
+const NICHE_FILTERS: { key: string; label: string }[] = [
+  { key: "physical_products", label: "Physical Products" },
+  { key: "software", label: "Software" },
+  { key: "gambling", label: "Gambling" },
+  { key: "crypto_finance", label: "Crypto / Finance" },
+  { key: "entertainment", label: "Entertainment & Media" },
+  { key: "other", label: "Other" },
+];
+
+const GENDER_FILTERS: { key: Gender; label: string }[] = [
+  { key: "male", label: "Male" },
+  { key: "female", label: "Female" },
+  { key: "non_binary", label: "Non-binary" },
+];
 
 function summaryLine(s: CampaignInviteSummary): string {
   const bits: string[] = [];
@@ -43,6 +63,8 @@ export function AddCreatorsToCampaignModal({
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("existing");
   const [q, setQ] = useState("");
+  const [niches, setNiches] = useState<string[]>([]);
+  const [gender, setGender] = useState<Gender | "">("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [emails, setEmails] = useState("");
   const [busy, setBusy] = useState(false);
@@ -55,6 +77,8 @@ export function AddCreatorsToCampaignModal({
     if (!open) return;
     setTab("existing");
     setQ("");
+    setNiches([]);
+    setGender("");
     setSelected(new Set());
     setEmails("");
     setError(null);
@@ -64,8 +88,12 @@ export function AddCreatorsToCampaignModal({
   }, [open]);
 
   const creatorsQ = useQuery({
-    queryKey: ["invite-creators", q],
-    queryFn: () => listCreators(q ? { q } : {}),
+    queryKey: ["invite-creators", q, niches.join(","), gender],
+    queryFn: () => listCreators({
+      ...(q ? { q } : {}),
+      ...(niches.length ? { niches } : {}),
+      ...(gender ? { gender } : {}),
+    }),
     enabled: open && tab === "existing",
     retry: retryNonAuth,
   });
@@ -156,6 +184,56 @@ export function AddCreatorsToCampaignModal({
               placeholder="Search by name or email…"
               className="min-h-10 w-full rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
             />
+
+            {/* questionnaire filters — filter, then Select all, then Invite */}
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              {NICHE_FILTERS.map((n) => {
+                const on = niches.includes(n.key);
+                return (
+                  <button
+                    key={n.key}
+                    type="button"
+                    onClick={() => { setSelected(new Set()); setNiches(on ? niches.filter((x) => x !== n.key) : [...niches, n.key]); }}
+                    aria-pressed={on}
+                    className={`cursor-pointer rounded-full px-3 py-1 text-xs transition ${
+                      on
+                        ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]"
+                        : "border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+                    }`}
+                  >
+                    {n.label}
+                  </button>
+                );
+              })}
+              <span className="mx-1 h-4 w-px bg-[var(--color-border)]" aria-hidden />
+              {GENDER_FILTERS.map((g) => {
+                const on = gender === g.key;
+                return (
+                  <button
+                    key={g.key}
+                    type="button"
+                    onClick={() => { setSelected(new Set()); setGender(on ? "" : g.key); }}
+                    aria-pressed={on}
+                    className={`cursor-pointer rounded-full px-3 py-1 text-xs transition ${
+                      on
+                        ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]"
+                        : "border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+                    }`}
+                  >
+                    {g.label}
+                  </button>
+                );
+              })}
+              {niches.length || gender ? (
+                <button
+                  type="button"
+                  onClick={() => { setSelected(new Set()); setNiches([]); setGender(""); }}
+                  className="cursor-pointer px-2 py-1 text-xs text-[var(--color-text-muted)] underline hover:text-[var(--color-text)]"
+                >
+                  Clear filters
+                </button>
+              ) : null}
+            </div>
             {creators.length ? (
               <div className="mt-2 flex items-center justify-between text-xs">
                 <span className="text-[var(--color-text-muted)]">{selected.size} of {creators.length} selected</span>

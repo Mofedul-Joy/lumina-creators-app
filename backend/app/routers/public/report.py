@@ -44,7 +44,11 @@ def get_report(token: str, db: Session = Depends(get_db)):
             func.coalesce(func.sum(Submission.comments), 0),
             func.count(Submission.id),
             func.count(func.distinct(Submission.creator_id)),
-        ).where(Submission.campaign_id == campaign.id, Submission.is_suspicious.is_(False))
+        ).where(
+            Submission.campaign_id == campaign.id,
+            Submission.is_suspicious.is_(False),
+            Submission.verification_status == "verified",
+        )
     ).one()
     total_views, total_likes, total_comments, submission_count, creator_count = agg
     engagement_rate = (total_likes + total_comments) / max(total_views, 1)
@@ -53,7 +57,11 @@ def get_report(token: str, db: Session = Depends(get_db)):
     rows = db.execute(
         select(Submission, CreatorProfile.display_name, CreatorProfile.avatar_object_id)
         .outerjoin(CreatorProfile, CreatorProfile.creator_id == Submission.creator_id)
-        .where(Submission.campaign_id == campaign.id, Submission.is_suspicious.is_(False))
+        .where(
+            Submission.campaign_id == campaign.id,
+            Submission.is_suspicious.is_(False),
+            Submission.verification_status == "verified",
+        )
         .order_by(Submission.created_at.desc())
         .limit(200)
     ).all()

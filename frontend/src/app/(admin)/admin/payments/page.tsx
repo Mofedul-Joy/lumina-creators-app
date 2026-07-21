@@ -297,7 +297,10 @@ export default function AdminPaymentsPage() {
     new Map(
       owed.filter((r) => r.campaign_id).map((r) => [r.campaign_id as string, r.program_name ?? "Campaign"] as const),
     ).entries(),
-  ).map(([id, name]) => ({ id, name }));
+  )
+    .map(([id, name]) => ({ id, name }))
+    // Rhys 2026-07-21: alphabetical, same as every other campaign dropdown.
+    .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", undefined, { sensitivity: "base" }));
   const owedView = campaignFilter === "all" ? owed : owed.filter((r) => r.campaign_id === campaignFilter);
 
   const totalOwed = owed.reduce((s, r) => s + Number(r.amount_owed), 0);

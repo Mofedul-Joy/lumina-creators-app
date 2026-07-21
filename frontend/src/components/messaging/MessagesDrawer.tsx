@@ -320,7 +320,10 @@ export function MessagesDrawer({
   // ── the conversation list (header + search/tabs + rows) ──
   const listHeader = (
     <div className="flex items-center justify-between border-b border-[var(--color-border)]/60 px-5 py-4">
-      <h2 className="text-sm font-semibold text-[var(--color-text)]">Messages</h2>
+      {/* Rhys 2026-07-21: creators must see who is on the other end of this. */}
+      <h2 className="text-sm font-semibold text-[var(--color-text)]">
+        {realm === "creator" ? "Speak directly to our team" : "Messages"}
+      </h2>
       <div className="flex items-center gap-1">
         {realm === "admin" ? (
           <button onClick={() => setBuilding(true)} aria-label="New channel" title="New channel"
@@ -361,7 +364,11 @@ export function MessagesDrawer({
           <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
             <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-surface)] text-2xl">💬</span>
             <p className="text-sm font-medium text-[var(--color-text)]">No conversations{tab === "unread" ? " unread" : " yet"}</p>
-            <p className="text-xs text-[var(--color-text-muted)]">Messages with {realm === "admin" ? "creators" : "the Lumina team"} show up here.</p>
+            <p className="text-xs text-[var(--color-text-muted)]">
+              {realm === "creator"
+                ? "Speak directly to our team — ask us anything about a campaign, a payout, or your account."
+                : `Messages with ${realm === "admin" ? "creators" : "the Lumina team"} show up here.`}
+            </p>
           </div>
         ) : (
           <ul className="space-y-0.5">
