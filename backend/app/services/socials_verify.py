@@ -2,7 +2,7 @@
 
 Flow:
   1. start_verification(): creator gives a platform + handle. We upsert an
-     (unverified) SocialAccount and stamp it with a short code like "LC-F9RJK2".
+     (unverified) SocialAccount and stamp it with a short code like "LC-482".
      The creator pastes that code into their platform bio.
   2. confirm_verification(): we scrape the account's bio through Apify and, if
      the code is present, flip is_verified and pull the real follower count.
@@ -13,6 +13,7 @@ back to auto-verify so the UI flow is testable end to end.
 """
 from __future__ import annotations
 
+import re
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -30,15 +31,28 @@ from app.services import urls
 
 VERIFIABLE_PLATFORMS = {"instagram", "tiktok"}
 CODE_TTL_MINUTES = 30
-_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no ambiguous 0/O/1/I
 
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _gen_code() -> str:
-    return "LC-" + "".join(secrets.choice(_CODE_ALPHABET) for _ in range(6))
+def _gen_code(db: Session) -> str:
+    active_codes = set(db.scalars(
+        select(SocialAccount.verification_code).where(
+            SocialAccount.is_verified.is_(False),
+            SocialAccount.verification_code.is_not(None),
+            SocialAccount.verification_code_expires_at > _now(),
+        )
+    ).all())
+    for _ in range(100):
+        code = f"LC-{secrets.randbelow(1000):03d}"
+        if code not in active_codes:
+            return code
+    raise HTTPException(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        "No verification codes are available right now. Try again shortly.",
+    )
 
 
 def _clean_handle(handle: str) -> str:
@@ -88,9 +102,11 @@ def start_verification(db: Session, creator_id: uuid.UUID, platform: str, handle
         }
 
     # Reuse a still-valid code so a refresh doesn't change what they pasted in bio.
-    if not (social.verification_code and social.verification_code_expires_at
+    if not (social.verification_code
+            and re.fullmatch(r"LC-\d{3}", social.verification_code, flags=re.IGNORECASE)
+            and social.verification_code_expires_at
             and social.verification_code_expires_at > _now()):
-        social.verification_code = _gen_code()
+        social.verification_code = _gen_code(db)
         social.verification_code_expires_at = _now() + timedelta(minutes=CODE_TTL_MINUTES)
     db.commit()
     db.refresh(social)
@@ -151,21 +167,22 @@ def confirm_verification(db: Session, creator_id: uuid.UUID, platform: str, hand
             status.HTTP_404_NOT_FOUND,
             f"Couldn't find @{handle} on {platform}. Check the handle and that your profile is public.",
         )
-    if _norm(code) not in _norm(info.bio):
+    if not _code_in_bio(code, info.bio):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             f"We didn't find {code} in your {platform} bio yet. Save it in your bio and try again.",
         )
     return _mark_verified(
         db, social,
-        followers=info.followers or social.follower_count,
+        followers=info.followers if info.followers is not None else social.follower_count,
         profile_url=social.profile_url,
     )
 
 
-def _mark_verified(db: Session, social: SocialAccount, *, followers: int, profile_url: str | None) -> SocialAccount:
+def _mark_verified(db: Session, social: SocialAccount, *, followers: int | None, profile_url: str | None) -> SocialAccount:
     social.is_verified = True
-    social.follower_count = max(followers or 0, 0)
+    if followers is not None:
+        social.follower_count = max(followers, 0)
     social.profile_url = profile_url or social.profile_url
     social.last_synced_at = _now()
     social.verification_code = None
@@ -176,9 +193,11 @@ def _mark_verified(db: Session, social: SocialAccount, *, followers: int, profil
     return social
 
 
-def _norm(s: str) -> str:
-    """Case/space-insensitive compare so 'lc-f9rjk2' in a bio still matches."""
-    return "".join((s or "").split()).upper()
+def _code_in_bio(code: str, bio: str | None) -> bool:
+    """Match the issued LC-### token exactly, case-insensitively, as its own word."""
+    if not re.fullmatch(r"LC-\d{3}", code or "", flags=re.IGNORECASE):
+        return False
+    return re.search(rf"(?<!\w){re.escape(code)}(?!\w)", bio or "", flags=re.IGNORECASE) is not None
 
 
 # ── Apply-eligibility gate (used by join_campaign) ────────────────────────────

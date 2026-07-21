@@ -19,7 +19,8 @@ _MODES = {"create_new", "copy_paste"}
 # back as a 400 rather than a 500 from the database.
 _KINDS = {"high_volume_ugc", "influencer", "paid_ads", "campaign_manager", "analytics_only"}
 _LEVELS = {"essentials", "advanced"}
-_SCHEDULES = {"every_7_days", "every_14_days", "every_30_days"}
+# Rhys 2026-07-21: daily + 3-day payout cadences added.
+_SCHEDULES = {"every_1_day", "every_3_days", "every_7_days", "every_14_days", "every_30_days"}
 _TRIGGERS = {"post_delivery", "schedule"}
 
 

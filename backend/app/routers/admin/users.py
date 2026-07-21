@@ -100,6 +100,16 @@ class CreateUserIn(BaseModel):
     campaign_ids: list[str] = []  # for client: campaigns they can see
 
 
+def _campaign_ids(ids: list[str]) -> set[uuid.UUID]:
+    parsed: set[uuid.UUID] = set()
+    for cid in ids:
+        try:
+            parsed.add(uuid.UUID(cid))
+        except ValueError:
+            continue
+    return parsed
+
+
 @router.post("/create", response_model=UserRow)
 def create_user(body: CreateUserIn, admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     email = body.email.strip().lower()
@@ -117,11 +127,8 @@ def create_user(body: CreateUserIn, admin: Admin = Depends(get_current_admin), d
         c = Client(email=email, name=(body.name or None), password_hash=hash_password(body.password), status="active")
         db.add(c); db.flush()
         # grant read-only access to the chosen campaigns (client sees campaigns linked to them)
-        for cid in body.campaign_ids:
-            try:
-                camp = db.get(Campaign, uuid.UUID(cid))
-            except ValueError:
-                camp = None
+        for cid in _campaign_ids(body.campaign_ids):
+            camp = db.get(Campaign, cid)
             if camp:
                 camp.client_id = c.id
         db.commit(); db.refresh(c)
@@ -172,14 +179,14 @@ def edit_client(client_id: uuid.UUID, body: EditClientIn,
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Password must be at least 8 characters")
         c.password_hash = hash_password(body.password)
     if body.campaign_ids is not None:
-        # unlink campaigns no longer selected, link the chosen ones
-        for camp in db.scalars(select(Campaign).where(Campaign.client_id == client_id)).all():
+        # Apply only the submitted delta; no blanket nulling, so partial edits
+        # don't silently detach campaigns the UI did not mean to touch.
+        submitted = _campaign_ids(body.campaign_ids)
+        current = set(db.scalars(select(Campaign.id).where(Campaign.client_id == client_id)).all())
+        for camp in db.scalars(select(Campaign).where(Campaign.id.in_(current - submitted))).all():
             camp.client_id = None
-        for cid in body.campaign_ids:
-            try:
-                camp = db.get(Campaign, uuid.UUID(cid))
-            except ValueError:
-                camp = None
+        for cid in submitted - current:
+            camp = db.get(Campaign, cid)
             if camp:
                 camp.client_id = client_id
     db.commit()

@@ -15,7 +15,9 @@ export type CampaignKind =
 
 export type ExperienceLevel = "essentials" | "advanced";
 
-export type PaymentSchedule = "every_7_days" | "every_14_days" | "every_30_days";
+// Rhys 2026-07-21 asked for daily and 3-day payout cadences on top of the
+// weekly/fortnightly/monthly ones.
+export type PaymentSchedule = "every_1_day" | "every_3_days" | "every_7_days" | "every_14_days" | "every_30_days";
 
 export type PaymentCycleTrigger = "post_delivery" | "schedule";
 
@@ -71,6 +73,8 @@ export const EXPERIENCE_LEVELS: {
 ];
 
 export const PAYMENT_SCHEDULES: { key: PaymentSchedule; label: string }[] = [
+  { key: "every_1_day", label: "Every 1 day" },
+  { key: "every_3_days", label: "Every 3 days" },
   { key: "every_7_days", label: "Every 7 days" },
   { key: "every_14_days", label: "Every 14 days" },
   { key: "every_30_days", label: "Every 30 days" },

@@ -105,9 +105,9 @@ export default function AdminUsersPage() {
       <main className="mx-auto max-w-6xl px-6 py-10">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Users</h1>
+            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Admins</h1>
             <p className="mt-2 max-w-xl text-[var(--color-text-secondary)]">
-              Lumina staff and brand accounts. Admins have full read/write; clients are read-only.
+              Lumina team and client accounts. Team members have full read/write; clients are read-only.
             </p>
           </div>
           <button onClick={() => setShowAdd(true)} className="shrink-0 cursor-pointer rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]">
@@ -121,14 +121,15 @@ export default function AdminUsersPage() {
         ) : (
           <>
             <div className="mt-8 grid grid-cols-3 gap-4">
-              <StatTile label="Staff" value={fmtInt(u.admins.length)} hint="Admin accounts" />
-              <StatTile label="Brands" value={fmtInt(u.clients.length)} hint="Client accounts" />
+              {/* Rhys 2026-07-21: staff → team, brands → clients. */}
+              <StatTile label="Team" value={fmtInt(u.admins.length)} hint="Admin accounts" />
+              <StatTile label="Clients" value={fmtInt(u.clients.length)} hint="Client accounts" />
               <StatTile label="Creators" value={fmtInt(u.creator_count)} hint={`${u.creator_active} active · view all →`} href="/admin/creators" />
             </div>
 
             {/* admin / client toggle */}
             <div className="mt-8 flex gap-1 border-b border-[var(--color-border)]">
-              {([["staff", `Staff (${u.admins.length})`], ["clients", `Brands (${u.clients.length})`]] as const).map(([key, label]) => (
+              {([["staff", `Team (${u.admins.length})`], ["clients", `Clients (${u.clients.length})`]] as const).map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => setTab(key)}
@@ -179,7 +180,7 @@ export default function AdminUsersPage() {
                 <table className="w-full min-w-[620px] text-left text-sm">
                   <thead className="bg-[var(--color-surface)] text-xs uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
                     <tr>
-                      <th className="px-4 py-3 font-medium">Brand</th>
+                      <th className="px-4 py-3 font-medium">Client</th>
                       <th className="px-4 py-3 font-medium">Email</th>
                       <th className="px-4 py-3 font-medium">Status</th>
                       <th className="px-4 py-3 text-right font-medium">Actions</th>

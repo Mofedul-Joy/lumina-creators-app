@@ -74,11 +74,19 @@ function VideoTile({
           highlight ? "border-[var(--color-brand)]" : "border-[var(--color-border)]"
         }`}
       >
-        <ThumbImage
-          src={thumbnail}
-          className="h-full w-full object-cover"
-          fallback={<div className="h-full w-full" style={{ background: PLATFORM_GRADIENT[platform ?? ""] ?? "linear-gradient(135deg,#22c55e33,#05261533)" }} />}
-        />
+        {/* Rhys 2026-07-21: a video uploaded straight from the creator's computer
+            has no platform and no scraped thumbnail, so it rendered as a blank
+            green tile and looked like a failed upload. Let the browser paint the
+            first frame instead of falling through to the gradient. */}
+        {!thumbnail && !platform && href ? (
+          <video src={href} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+        ) : (
+          <ThumbImage
+            src={thumbnail}
+            className="h-full w-full object-cover"
+            fallback={<div className="h-full w-full" style={{ background: PLATFORM_GRADIENT[platform ?? ""] ?? "linear-gradient(135deg,#22c55e33,#05261533)" }} />}
+          />
+        )}
         {href ? (
           <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100" aria-hidden>
             <span className="grid h-9 w-9 place-items-center rounded-full bg-black/50 text-white">▶</span>
@@ -267,7 +275,7 @@ export function CreatorDetailCard({
               >
                 <span className="text-[var(--color-text)]">
                   <span className="text-[var(--color-text-muted)]">{s.platform}</span> · @{s.handle} ·{" "}
-                  <span className="tabular">{fmtNumber(s.follower_count)}</span> followers
+                  <span className="tabular">{s.follower_count == null ? "Unknown" : fmtNumber(s.follower_count)}</span> followers
                 </span>
                 {s.profile_url ? (
                   <a href={s.profile_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--color-brand)] underline">

@@ -59,7 +59,9 @@ def export_rows(db: Session) -> tuple[list[str], list[list]]:
                 func.coalesce(func.sum(Submission.views), 0).label("views"),
                 func.coalesce(func.sum(Submission.estimated_amount), 0).label("earned"),
                 func.count(Submission.id).filter(Submission.created_at >= since).label("recent"),
-            ).group_by(Submission.creator_id)
+            )
+            .where(Submission.verification_status == "verified")
+            .group_by(Submission.creator_id)
         ).all()
     }
 

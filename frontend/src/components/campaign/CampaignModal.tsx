@@ -129,9 +129,19 @@ export function CampaignModal({ campaign, onClose }: { campaign: Campaign | null
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Stat label="Budget" value={fmtMoney(c.budget)} />
-                <Stat label="Min. retention" value={`${c.min_retention_days}d`} />
+                {/* Rhys 2026-07-21: same relabel + logos as the detail page. */}
+                <Stat label="Campaign length" value={`${c.min_retention_days}d`} />
                 {c.weekly_hours_needed ? <Stat label="Weekly hours" value={`${fmtInt(c.weekly_hours_needed)}/wk`} /> : null}
-                <Stat label="Platforms" value={String(c.platforms.length)} />
+                <Stat
+                  label="Platforms"
+                  value={
+                    <span className="flex items-center gap-2">
+                      {c.platforms.map((p) => (
+                        <PlatformIcon key={p} name={p} className="h-5 w-5" aria-label={platformLabel(p)} />
+                      ))}
+                    </span>
+                  }
+                />
               </div>
               {c.bonus_milestones && c.bonus_milestones.length > 0 ? (
                 <div>
@@ -161,11 +171,11 @@ export function CampaignModal({ campaign, onClose }: { campaign: Campaign | null
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="card-grad rounded-[var(--radius-btn)] px-3 py-2">
       <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">{label}</p>
-      <p className="tabular text-lg font-semibold text-[var(--color-text)]">{value}</p>
+      <div className="tabular text-lg font-semibold text-[var(--color-text)]">{value}</div>
     </div>
   );
 }

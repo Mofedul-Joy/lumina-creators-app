@@ -91,7 +91,8 @@ class Settings(BaseSettings):
     # --- Payouts ---
     # Minimum accumulated (verified, unpaid) earnings a creator must reach before
     # they can request a payout. Admin-overridable via env.
-    min_payout_amount: Decimal = Decimal("25")
+    # Rhys 2026-07-21: platform-wide minimum payout dropped from $25 to $5.
+    min_payout_amount: Decimal = Decimal("5")
 
     # --- frontend base URL (for building absolute links, e.g. client share pages) ---
     frontend_url: str = "https://lumina-creators-app.vercel.app"

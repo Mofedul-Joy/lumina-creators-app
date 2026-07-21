@@ -72,7 +72,7 @@ class SocialIn(BaseModel):
     profile_url: Optional[str] = Field(None, max_length=500)
     # Bounded to 32-bit INT (the DB column) so a huge value returns a clean 422
     # instead of an unhandled 500 on the insert.
-    follower_count: int = Field(0, ge=0, le=2_147_483_647)
+    follower_count: Optional[int] = Field(0, ge=0, le=2_147_483_647)
 
 
 class SocialOut(BaseModel):
@@ -80,7 +80,7 @@ class SocialOut(BaseModel):
     platform: str
     handle: str
     profile_url: Optional[str] = None
-    follower_count: int
+    follower_count: Optional[int] = None
     is_verified: bool
 
 

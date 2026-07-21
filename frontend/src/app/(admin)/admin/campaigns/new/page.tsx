@@ -58,15 +58,16 @@ const CREATOR_TYPES = [
   { value: "other", label: "Other" },
 ] as const;
 
+// Rhys 2026-07-21: "let's remove per hour, and let's keep fixed, CPM and mixed."
+// Per-hour and per-post campaigns already in the database still load and edit —
+// they're just no longer offered when creating a new one.
 const PAYMENT_TYPES: { value: PaymentType; label: string; blurb: string }[] = [
   { value: "fixed", label: "Fixed", blurb: "Recurring flat payment" },
   { value: "cpm", label: "CPM", blurb: "Paid per 1,000 views" },
   { value: "mixed", label: "Mixed", blurb: "Fixed pay + CPM bonus" },
-  { value: "per_hour", label: "Per Hour", blurb: "Hourly rate" },
-  { value: "per_post", label: "Per Post", blurb: "Flat rate per post" },
 ];
 
-const PLATFORM_FOCUS_OPTIONS = ["tiktok", "instagram", "youtube", "twitter", "facebook", "snapchat"];
+const PLATFORM_FOCUS_OPTIONS = ["tiktok", "instagram", "youtube", "twitter", "facebook"];
 
 const AGE_REQUIREMENTS = ["any", "18+", "18-24", "21+", "25+"];
 
@@ -506,11 +507,15 @@ export default function NewCampaignPage() {
         job_type: f.job_type || undefined,
         creator_type: f.creator_type || undefined,
         payment_type: f.payment_type,
-        fixed_amount: f.fixed_amount ? Number(f.fixed_amount) : undefined,
+        fixed_amount: f.payment_type === "fixed" || f.payment_type === "mixed"
+          ? f.fixed_amount ? Number(f.fixed_amount) : undefined
+          : undefined,
         weekly_hours_needed: f.weekly_hours_needed ? Number(f.weekly_hours_needed) : undefined,
         hourly_rate: f.hourly_rate ? Number(f.hourly_rate) : undefined,
         required_hours: f.required_hours ? Number(f.required_hours) : undefined,
-        per_post_amount: f.per_post_amount ? Number(f.per_post_amount) : undefined,
+        per_post_amount: f.payment_type === "per_post"
+          ? f.per_post_amount ? Number(f.per_post_amount) : undefined
+          : undefined,
         example_videos: f.example_videos.filter(Boolean),
         age_requirement: f.age_requirement || undefined,
         platform_focus: f.platform_focus,
@@ -637,7 +642,7 @@ export default function NewCampaignPage() {
                 ) : null}
               </p>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {PAYMENT_TYPES.map((p) => (
                   <button
                     key={p.value}
@@ -977,13 +982,13 @@ export default function NewCampaignPage() {
               <div>
                 <Field
                   label="Minimum payout threshold ($)"
-                  hint="How much a creator must earn in this campaign before they can request a payout. Stops tiny, fee-heavy payouts. Leave blank to use the platform default ($25)."
+                  hint="How much a creator must earn in this campaign before they can request a payout. Stops tiny, fee-heavy payouts. Leave blank to use the platform default ($5)."
                   type="number"
-                  placeholder="25"
+                  placeholder="5"
                   value={f.min_payout_amount}
                   onChange={(e) => patch({ min_payout_amount: e.target.value })}
                 />
-                <p className="mt-1 text-xs text-[var(--color-text-muted)]">Defaults to $25 if left blank.</p>
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">Defaults to $5 if left blank.</p>
               </div>
 
               {advanced ? (

@@ -100,7 +100,10 @@ def _aggregate_stats(db: Session, creator_id: uuid.UUID) -> tuple[int, Decimal, 
             func.coalesce(func.sum(Submission.views), 0),
             func.coalesce(func.sum(Submission.estimated_amount), 0),
             func.count(Submission.id),
-        ).where(Submission.creator_id == creator_id)
+        ).where(
+            Submission.creator_id == creator_id,
+            Submission.verification_status == "verified",
+        )
     ).first()
     total_views = int(row[0]) if row else 0
     cpm_earned = Decimal(row[1]) if row else Decimal("0")

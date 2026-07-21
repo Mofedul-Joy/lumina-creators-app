@@ -13,6 +13,8 @@ export type ClientCampaign = {
   cpm_rate: number;
   budget: number;
   spent_amount: number;
+  payment_type: string | null;
+  fixed_amount: number | null;
   platforms: string[];
   brand_name: string | null;
   published_at: string | null;

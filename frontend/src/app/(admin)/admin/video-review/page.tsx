@@ -99,7 +99,9 @@ function VideoReviewInner() {
   const urlStatus = sp.get("status");
   const [ready, setReady] = useState(false);
   const [hasToken, setHasToken] = useState(false);
-  const [filter, setFilter] = useState<string>(urlStatus ?? "");
+  // Rhys 2026-07-21: submissions now land in Pending awaiting an admin, so that
+  // is the queue this page should open on — not the undifferentiated All grid.
+  const [filter, setFilter] = useState<string>(urlStatus ?? "pending");
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
   const [platformFilter, setPlatformFilter] = useState<string>("");  // "", instagram, tiktok, youtube
   const [page, setPage] = useState(0);
@@ -134,11 +136,14 @@ function VideoReviewInner() {
     qc.invalidateQueries({ queryKey: ["dash-submissions"] });
   };
 
-  // The distinct campaigns present (for the dropdown), in arrival order.
+  // The distinct campaigns present (for the dropdown). Rhys 2026-07-21:
+  // "just all campaigns here, alphabetical order."
   const campaigns = useMemo(() => {
     const map = new Map<string, string>();
     for (const s of listQ.data ?? []) if (!map.has(s.campaign_id)) map.set(s.campaign_id, s.campaign_name);
-    return [...map.entries()].map(([id, name]) => ({ id, name }));
+    return [...map.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", undefined, { sensitivity: "base" }));
   }, [listQ.data]);
 
   // Bill: the "All campaigns" view is a FLAT, mixed grid (no per-campaign

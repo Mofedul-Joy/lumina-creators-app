@@ -18,12 +18,12 @@ const InvitedIcon = () => <svg className={ic} viewBox="0 0 24 24" fill="none"><p
 type NavItem = { href: string; label: string; icon: () => React.ReactElement };
 
 // Full SideShift-style creator rail, rendered in the Lumina green/black theme.
-// "Invited Campaigns" sits right below "My Campaigns" (Rhys rev4) so a creator
-// can find the campaigns an admin invited them to.
+// "Invited Campaigns" sits right below "Campaigns Entered" (Rhys rev4) so a
+// creator can find the campaigns an admin invited them to.
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: HomeIcon },
   { href: "/campaigns", label: "Explore", icon: ExploreIcon },
-  { href: "/submissions", label: "My Campaigns", icon: CampaignsIcon },
+  { href: "/submissions", label: "Campaigns Entered", icon: CampaignsIcon },
   { href: "/invited", label: "Invited Campaigns", icon: InvitedIcon },
   { href: "/account", label: "Account", icon: AccountIcon },
   { href: "/portfolio", label: "Portfolio", icon: PortfolioIcon },

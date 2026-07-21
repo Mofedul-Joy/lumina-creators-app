@@ -37,7 +37,7 @@ class SocialItem(BaseModel):
     platform: str
     handle: str
     profile_url: Optional[str] = None
-    follower_count: int
+    follower_count: Optional[int] = None
 
 
 class PortfolioItemOut(BaseModel):
@@ -84,7 +84,7 @@ class RichSocialItem(BaseModel):
     platform: str
     handle: str
     profile_url: Optional[str] = None
-    follower_count: int = 0
+    follower_count: Optional[int] = None
 
 
 class RecentSubmissionItem(BaseModel):

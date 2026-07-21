@@ -81,7 +81,7 @@ class CampaignCreateIn(BaseModel):
     campaign_kind: Optional[str] = None        # high_volume_ugc|influencer|paid_ads|campaign_manager|analytics_only
     experience_level: Optional[str] = None     # essentials|advanced
     no_platform_tracking: Optional[bool] = None
-    payment_schedule: Optional[str] = None     # every_7_days|every_14_days|every_30_days
+    payment_schedule: Optional[str] = None     # every_1_day|every_3_days|every_7_days|every_14_days|every_30_days
     payment_cycle_trigger: Optional[str] = None  # post_delivery|schedule
     pro_rata: Optional[bool] = None
     min_views: Optional[int] = None
@@ -135,7 +135,7 @@ class CampaignUpdateIn(BaseModel):
     campaign_kind: Optional[str] = None        # high_volume_ugc|influencer|paid_ads|campaign_manager|analytics_only
     experience_level: Optional[str] = None     # essentials|advanced
     no_platform_tracking: Optional[bool] = None
-    payment_schedule: Optional[str] = None     # every_7_days|every_14_days|every_30_days
+    payment_schedule: Optional[str] = None     # every_1_day|every_3_days|every_7_days|every_14_days|every_30_days
     payment_cycle_trigger: Optional[str] = None  # post_delivery|schedule
     pro_rata: Optional[bool] = None
     min_views: Optional[int] = None

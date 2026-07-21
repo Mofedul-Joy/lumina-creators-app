@@ -5,17 +5,19 @@ Creation stays manual/seeded for now."""
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_admin
 from app.core.security import create_impersonation_token
 from app.db.session import get_db
-from app.models import Admin, Campaign, Client, Submission
+from app.models import Admin, Campaign, Client, CreatorProfile, Submission
 from app.services import audit
 
 router = APIRouter(prefix="/clients", tags=["admin-clients"])
@@ -32,6 +34,33 @@ class ClientListItem(BaseModel):
     total_interactions: int = 0
 
 
+class ClientCampaignSubmission(BaseModel):
+    id: str
+    creator_id: str
+    creator_name: Optional[str] = None
+    platform: str
+    post_url: str
+    views: int
+    likes: int
+    comments: int
+    estimated_amount: Decimal
+    verification_status: str
+    scrape_status: str
+    thumbnail_url: Optional[str] = None
+    created_at: datetime
+
+
+class ClientCampaignItem(BaseModel):
+    id: str
+    name: str
+    slug: str
+    status: str
+    platforms: list[str] = []
+    cpm_rate: Decimal
+    budget: Decimal
+    submissions: list[ClientCampaignSubmission] = []
+
+
 def _client_rollups(db: Session) -> dict[uuid.UUID, dict]:
     """Per-client aggregate across all of a client's campaigns' submissions."""
     rows = db.execute(
@@ -43,7 +72,13 @@ def _client_rollups(db: Session) -> dict[uuid.UUID, dict]:
             func.coalesce(func.sum(Submission.likes + Submission.comments), 0),
         )
         .select_from(Campaign)
-        .outerjoin(Submission, Submission.campaign_id == Campaign.id)
+        .outerjoin(
+            Submission,
+            and_(
+                Submission.campaign_id == Campaign.id,
+                Submission.verification_status == "verified",
+            ),
+        )
         .where(Campaign.client_id.isnot(None))
         .group_by(Campaign.client_id)
     ).all()
@@ -68,6 +103,47 @@ def list_clients(admin: Admin = Depends(get_current_admin), db: Session = Depend
             **stats.get(c.id, {}),
         )
         for c in rows
+    ]
+
+
+@router.get("/{client_id}/campaigns", response_model=list[ClientCampaignItem])
+def client_campaigns(client_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
+                     db: Session = Depends(get_db)):
+    """All campaigns assigned to a client, including completed/archived and
+    campaigns with no submissions. Sorted alphabetically for picker/panel use."""
+    client = db.get(Client, client_id)
+    if client is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Client not found")
+    campaigns = db.scalars(
+        select(Campaign)
+        .where(Campaign.client_id == client_id)
+        .order_by(func.lower(Campaign.name).asc(), Campaign.created_at.desc())
+    ).all()
+    if not campaigns:
+        return []
+    campaign_ids = [c.id for c in campaigns]
+    rows = db.execute(
+        select(Submission, CreatorProfile.display_name)
+        .outerjoin(CreatorProfile, CreatorProfile.creator_id == Submission.creator_id)
+        .where(Submission.campaign_id.in_(campaign_ids))
+        .order_by(Submission.created_at.desc())
+    ).all()
+    by_campaign: dict[uuid.UUID, list[ClientCampaignSubmission]] = {c.id: [] for c in campaigns}
+    for sub, display_name in rows:
+        by_campaign[sub.campaign_id].append(ClientCampaignSubmission(
+            id=str(sub.id), creator_id=str(sub.creator_id), creator_name=display_name,
+            platform=sub.platform, post_url=sub.post_url, views=sub.views,
+            likes=sub.likes, comments=sub.comments, estimated_amount=sub.estimated_amount,
+            verification_status=sub.verification_status, scrape_status=sub.scrape_status,
+            thumbnail_url=sub.thumbnail_url, created_at=sub.created_at,
+        ))
+    return [
+        ClientCampaignItem(
+            id=str(c.id), name=c.name, slug=c.slug, status=c.status,
+            platforms=list(c.platforms or []), cpm_rate=c.cpm_rate, budget=c.budget,
+            submissions=by_campaign[c.id],
+        )
+        for c in campaigns
     ]
 
 

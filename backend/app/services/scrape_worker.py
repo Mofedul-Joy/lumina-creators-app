@@ -52,11 +52,9 @@ def _due_jobs(db: Session, limit: int) -> list[tuple[ScrapeJob, Submission]]:
             ScrapeJob.status.in_(("queued", "failed")),
             ScrapeJob.next_run_at <= _now(),
             ScrapeJob.attempts < ScrapeJob.max_attempts,
-            # Only spend Apify credits on posts an admin has approved in the
-            # Video Reviews queue. A pending submission's job stays queued (its
-            # next_run_at is already due) and becomes eligible the moment the
-            # admin verifies it — no re-enqueue needed on approval.
-            Submission.verification_status == "verified",
+            # Scrape pending rows too so admins and creators can see stats while
+            # review is outstanding. Payout eligibility remains verified-only.
+            Submission.verification_status.in_(("pending", "verified")),
         )
         .order_by(ScrapeJob.next_run_at.asc())
         .limit(limit)

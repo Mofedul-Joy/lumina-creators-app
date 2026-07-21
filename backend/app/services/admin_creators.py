@@ -55,7 +55,8 @@ def _dob_bounds(age_min: int | None, age_max: int | None):
 
 def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_language=None,
                   country=None, city=None, age_min=None, age_max=None, platform=None,
-                  min_followers=None, social=None, completed_only=False, limit=50, offset=0):
+                  min_followers=None, social=None, niches=None,
+                  completed_only=False, limit=50, offset=0):
     stmt = select(Creator).outerjoin(CreatorProfile, CreatorProfile.creator_id == Creator.id)
     P = CreatorProfile
     if q:
@@ -72,6 +73,8 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
         stmt = stmt.where(P.city.ilike(f"%{city}%"))
     if completed_only:
         stmt = stmt.where(P.completed_at.is_not(None))
+    if niches:
+        stmt = stmt.where(P.niches.overlap(list(niches)))
     lo, hi = _dob_bounds(age_min, age_max)
     if lo is not None:
         stmt = stmt.where(P.date_of_birth >= lo)
@@ -117,7 +120,10 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
             func.coalesce(func.sum(Submission.estimated_amount), 0),
             func.count(Submission.id),
         )
-        .where(Submission.creator_id.in_(ids))
+        .where(
+            Submission.creator_id.in_(ids),
+            Submission.verification_status == "verified",
+        )
         .group_by(Submission.creator_id)
     ).all()
     agg_by_creator = {cid: {"views": int(v), "earned": Decimal(e), "posts": int(c)} for cid, v, e, c in agg_rows}
@@ -165,7 +171,7 @@ def list_creators(db: Session, *, q=None, gender=None, ethnicity=None, primary_l
             "gender": prof.gender if prof else None,
             "country": prof.country if prof else None,
             "primary_language": prof.primary_language if prof else None,
-            "total_followers": sum(s.follower_count for s in socials),
+            "total_followers": sum((s.follower_count or 0) for s in socials),
             "platforms": sorted({s.platform for s in socials}),
             "completed": bool(prof and prof.completed_at),
             "is_suspicious": c.is_suspicious,
@@ -286,7 +292,10 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
             func.coalesce(func.sum(Submission.likes), 0),
             func.coalesce(func.sum(Submission.comments), 0),
             func.coalesce(func.sum(Submission.shares), 0),
-        ).where(Submission.creator_id == c.id)
+        ).where(
+            Submission.creator_id == c.id,
+            Submission.verification_status == "verified",
+        )
     ).first()
     total_views = int(agg_row[0]) if agg_row else 0
     total_earned = Decimal(agg_row[1]) if agg_row else Decimal("0")

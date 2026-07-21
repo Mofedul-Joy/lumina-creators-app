@@ -11,7 +11,7 @@ from decimal import Decimal
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from sqlalchemy import Date, cast, func, select
+from sqlalchemy import Date, and_, cast, func, select
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_admin
@@ -80,7 +80,10 @@ def analytics(admin: Admin = Depends(get_current_admin), db: Session = Depends(g
     # Exclude fraud-flagged submissions from every headline KPI — their fake
     # view/like counts must not inflate the network numbers (mirrors the
     # is_suspicious filter public/report + claim already apply).
-    _legit = Submission.is_suspicious.is_(False)
+    _legit = and_(
+        Submission.is_suspicious.is_(False),
+        Submission.verification_status == "verified",
+    )
     total_views = i(scalar(select(func.sum(Submission.views)).where(_legit)))
     total_spend = d(scalar(select(func.sum(Submission.estimated_amount)).where(_legit)))
     total_subs = i(scalar(select(func.count()).select_from(Submission).where(_legit)))

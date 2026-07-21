@@ -137,6 +137,8 @@ def _fmt_money(v: Decimal | float | int | None) -> str:
 
 def _schedule_label(sched: str | None) -> str:
     return {
+        "every_1_day": "every day",
+        "every_3_days": "every 3 days",
         "every_7_days": "every 7 days",
         "every_14_days": "every 14 days",
         "every_30_days": "every 30 days",

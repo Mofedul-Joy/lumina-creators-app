@@ -48,7 +48,10 @@ def overview(db: Session, campaign_id: uuid.UUID) -> dict:
             func.coalesce(func.sum(Submission.views), 0).label("views"),
             func.coalesce(func.sum(Submission.estimated_amount), 0).label("earned"),
         )
-        .where(Submission.campaign_id == campaign_id)
+        .where(
+            Submission.campaign_id == campaign_id,
+            Submission.verification_status == "verified",
+        )
         .group_by(Submission.creator_id)
     ).all()
     by_creator = {r.creator_id: r for r in sub_rows}

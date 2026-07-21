@@ -21,7 +21,7 @@ class AdminSubmissionRow(BaseModel):
     estimated_amount: Decimal
     verification_status: str
     scrape_status: str
-    status: str  # computed lifecycle: awaiting_stats|proof_uploaded|stats_verified|paid|rejected|revision_requested
+    status: str  # computed lifecycle; payout states remain verified-only
     verification_note: Optional[str] = None
     revision_mode: Optional[str] = None  # edit|repost when revision_requested
     proof_url: Optional[str] = None
