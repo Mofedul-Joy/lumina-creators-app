@@ -118,10 +118,14 @@ def confirm_verification(db: Session, creator_id: uuid.UUID, platform: str, hand
             SocialAccount.handle == handle,
         )
     )
+    # Already verified → success no-op. This MUST come before the missing-code
+    # check: verifying clears verification_code, so an already-verified account
+    # has code=None and would otherwise trip the false "Start verification
+    # first" error when Verify is tapped again / the page re-submits.
+    if social is not None and social.is_verified:
+        return social
     if social is None or not social.verification_code:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Start verification first to get a code.")
-    if social.is_verified:
-        return social
     if social.verification_code_expires_at and social.verification_code_expires_at < _now():
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Your code expired. Tap 'Get a new code' and try again.")
 
