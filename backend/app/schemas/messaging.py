@@ -30,6 +30,7 @@ class MessageOut(BaseModel):
     sender_creator_id: Optional[str] = None
     sender_name: Optional[str] = None  # resolved author label (channels)
     body: str
+    link: Optional[str] = None      # in-app destination when the message is actionable
     created_at: datetime
 
 

@@ -46,6 +46,9 @@ export type Message = {
   sender_creator_id: string | null;
   sender_name: string | null;   // resolved author label (channels)
   body: string;
+  /** In-app destination when the message is actionable (e.g. a review bounce
+   *  links to the exact submission that needs re-work). Null for normal chat. */
+  link: string | null;
   created_at: string;
 };
 

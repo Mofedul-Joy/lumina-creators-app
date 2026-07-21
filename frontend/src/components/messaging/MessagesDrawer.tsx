@@ -1,6 +1,7 @@
 "use client";
 
 import { retryNonAuth } from "@/lib/api";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -213,6 +214,7 @@ export function MessagesDrawer({
   initialConversationId?: string | null;
 }) {
   const qc = useQueryClient();
+  const router = useRouter();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<"all" | "dms" | "channels" | "unread">("all");
@@ -535,11 +537,34 @@ export function MessagesDrawer({
           messages.map((m) => {
             const mine = m.sender_type === realm;
             const author = active.kind === "channel" && !mine ? m.sender_name : null;
+            // A message the creator is meant to act on (a review bounce) carries a
+            // destination. Make the whole bubble the button — being told your video
+            // needs changes is useless if you then have to hunt for which video.
+            const actionable = !mine && !!m.link;
+            const go = () => { if (m.link) { onClose(); router.push(m.link); } };
             return (
               <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm ${mine ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]" : "bg-[var(--color-surface)] text-[var(--color-text)]"}`}>
+                <div
+                  role={actionable ? "button" : undefined}
+                  tabIndex={actionable ? 0 : undefined}
+                  onClick={actionable ? go : undefined}
+                  onKeyDown={actionable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } } : undefined}
+                  className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm ${
+                    mine
+                      ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]"
+                      : actionable
+                        ? "cursor-pointer bg-[var(--color-surface)] text-[var(--color-text)] ring-1 ring-inset ring-amber-500/40 transition hover:ring-amber-500/70"
+                        : "bg-[var(--color-surface)] text-[var(--color-text)]"
+                  }`}
+                >
                   {author ? <p className="mb-0.5 text-[11px] font-semibold text-[var(--color-brand-soft)]">{author}</p> : null}
                   <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                  {actionable ? (
+                    <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-1 text-[11px] font-semibold text-amber-400">
+                      Open the video and resubmit
+                      <span aria-hidden>→</span>
+                    </p>
+                  ) : null}
                   <p className={`mt-0.5 text-[10px] ${mine ? "text-[var(--color-on-brand)]/70" : "text-[var(--color-text-muted)]"}`}>{timeAgo(m.created_at)}</p>
                 </div>
               </div>

@@ -8,6 +8,8 @@ import { browseCampaigns, claimSubmission, listSubmissions, resubmitClip, submit
 import { ApiError, listMyCampaigns, retryNonAuth} from "@/lib/api";
 import { fmtInt, fmtMoney } from "@/lib/format";
 import { SkeletonCardGrid } from "@/components/ui/Skeleton";
+import { VideoThumb } from "@/components/ui/VideoThumb";
+import { VideoModal } from "@/components/ui/VideoModal";
 
 // Map a raw participation status to a creator-facing application tag.
 function applicationTag(status: string): { label: string; cls: string } {
@@ -95,6 +97,30 @@ export default function MyCampaignsPage() {
       qc.invalidateQueries({ queryKey: ["submissions"] });
     },
     onError: (err, { id }) => setResubmitError((e) => ({ ...e, [id]: err instanceof Error ? err.message : "Could not re-submit" })),
+  });
+
+  // Deep link from the bell notification and the review DM: /submissions?s=<id>.
+  // Both are sent by admin_submissions._notify_creator when a video is bounced
+  // back, so landing here should put the creator ON that video, not on a list
+  // they have to search. Read from location rather than useSearchParams so the
+  // page needs no Suspense boundary.
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const revisionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const scrolledFor = useRef<string | null>(null);
+  const [watching, setWatching] = useState<Submission | null>(null);
+  useEffect(() => {
+    const s = new URLSearchParams(window.location.search).get("s");
+    if (s) setFocusId(s);
+  }, []);
+  // The target only exists once the submissions query has painted, so retry on
+  // every render pass until we find it, then never scroll for that id again
+  // (otherwise a background refetch would yank the creator back mid-typing).
+  useEffect(() => {
+    if (!focusId || scrolledFor.current === focusId) return;
+    const el = revisionRefs.current[focusId];
+    if (!el) return;
+    scrolledFor.current = focusId;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
   // Submit ANOTHER video to a campaign the creator is already in — every joined
@@ -227,44 +253,82 @@ export default function MyCampaignsPage() {
                   </div>
                 </div>
 
+                {/* A revision request is the one thing on this page the creator
+                    MUST act on, and until now it was a small note that never said
+                    which video it meant. Show the actual clip: thumbnail on the
+                    left, the team's feedback and the resubmit control on the
+                    right. `id` is the deep-link target for the bell + DM. */}
                 {g.revisionPosts.map((p) => (
-                  <div key={p.id} className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
-                    <p className="text-sm font-medium text-amber-400">
-                      {p.revision_mode === "repost" ? "Post a new video" : "Changes requested"}
-                    </p>
-                    {p.verification_note ? (
-                      <p className="mt-1 text-xs text-[var(--color-text-secondary)]">“{p.verification_note}”</p>
-                    ) : (
-                      <p className="mt-1 text-xs text-[var(--color-text-muted)]">The admin asked you to update this post.</p>
-                    )}
-                    {p.revision_mode === "repost" ? (
-                      <Link
-                        href={g.slug ? `/campaigns/${g.slug}` : "/campaigns"}
-                        className="mt-2 inline-flex min-h-9 items-center rounded-full bg-amber-500/15 px-4 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 transition hover:bg-amber-500/25"
-                      >
-                        Post a new video
-                      </Link>
-                    ) : (
-                      <div className="mt-2">
-                        <div className="flex flex-col gap-2 sm:flex-row">
-                          <input
-                            value={editUrls[p.id] ?? p.post_url}
-                            onChange={(e) => setEditUrls((u) => ({ ...u, [p.id]: e.target.value }))}
-                            placeholder="Updated post link…"
-                            className="min-h-9 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)]"
-                          />
-                          <button
-                            type="button"
-                            disabled={resubmitM.isPending}
-                            onClick={() => { setResubmitError((e) => { const n = { ...e }; delete n[p.id]; return n; }); resubmitM.mutate({ id: p.id, url: (editUrls[p.id] ?? p.post_url).trim() }); }}
-                            className="min-h-9 shrink-0 cursor-pointer rounded-full bg-amber-500/15 px-4 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 transition hover:bg-amber-500/25 disabled:opacity-50"
-                          >
-                            {resubmitM.isPending ? "Sending…" : "Re-submit"}
-                          </button>
-                        </div>
-                        {resubmitError[p.id] ? <p className="mt-1 text-xs text-[var(--color-danger)]">{resubmitError[p.id]}</p> : null}
+                  <div
+                    key={p.id}
+                    id={`sub-${p.id}`}
+                    ref={(el) => { revisionRefs.current[p.id] = el; }}
+                    className={`mt-4 scroll-mt-24 rounded-xl border bg-amber-500/5 p-4 transition ${
+                      focusId === p.id
+                        ? "border-amber-400 ring-2 ring-amber-400/60"
+                        : "border-amber-500/30"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-4 sm:flex-row">
+                      <div className="w-full shrink-0 sm:w-40">
+                        <VideoThumb
+                          videoUrl={p.post_url}
+                          thumbnailUrl={p.thumbnail_url}
+                          platform={p.platform}
+                          label="Needs changes"
+                          onPlay={() => setWatching(p)}
+                          className="aspect-[9/16] max-h-52 w-full rounded-lg sm:max-h-none"
+                        />
                       </div>
-                    )}
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-base font-semibold text-amber-400">
+                          {p.revision_mode === "repost" ? "Post a new video" : "This video needs changes"}
+                        </p>
+                        <p className="mt-0.5 truncate text-xs text-[var(--color-text-muted)]">{p.post_url}</p>
+
+                        <div className="mt-3 rounded-lg bg-[var(--color-surface-2)]/70 p-3">
+                          <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Feedback from the team</p>
+                          {p.verification_note ? (
+                            <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--color-text)]">{p.verification_note}</p>
+                          ) : (
+                            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                              The team asked you to update this post. Open the messages tab if you need more detail.
+                            </p>
+                          )}
+                        </div>
+
+                        {p.revision_mode === "repost" ? (
+                          <Link
+                            href={g.slug ? `/campaigns/${g.slug}` : "/campaigns"}
+                            className="mt-3 inline-flex min-h-10 items-center rounded-full bg-amber-500/15 px-5 text-sm font-semibold text-amber-400 ring-1 ring-inset ring-amber-500/25 transition hover:bg-amber-500/25"
+                          >
+                            Post a new video
+                          </Link>
+                        ) : (
+                          <div className="mt-3">
+                            <label className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Updated post link</label>
+                            <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+                              <input
+                                value={editUrls[p.id] ?? p.post_url}
+                                onChange={(e) => setEditUrls((u) => ({ ...u, [p.id]: e.target.value }))}
+                                placeholder="Paste the link to your updated post…"
+                                className="min-h-10 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)]"
+                              />
+                              <button
+                                type="button"
+                                disabled={resubmitM.isPending}
+                                onClick={() => { setResubmitError((e) => { const n = { ...e }; delete n[p.id]; return n; }); resubmitM.mutate({ id: p.id, url: (editUrls[p.id] ?? p.post_url).trim() }); }}
+                                className="min-h-10 shrink-0 cursor-pointer rounded-full bg-amber-500 px-6 text-sm font-semibold text-black transition hover:bg-amber-400 disabled:opacity-50"
+                              >
+                                {resubmitM.isPending ? "Sending…" : "Resubmit"}
+                              </button>
+                            </div>
+                            {resubmitError[p.id] ? <p className="mt-1 text-xs text-[var(--color-danger)]">{resubmitError[p.id]}</p> : null}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))}
 
@@ -400,6 +464,17 @@ export default function MyCampaignsPage() {
             </div>
           </div>
         </div>
+      ) : null}
+
+      {/* Play the clip that needs changes without leaving the page, so the
+          creator can rewatch it against the feedback before resubmitting. */}
+      {watching ? (
+        <VideoModal
+          url={watching.post_url}
+          platform={watching.platform}
+          thumbnailUrl={watching.thumbnail_url}
+          onClose={() => setWatching(null)}
+        />
       ) : null}
     </main>
   );

@@ -316,6 +316,7 @@ def list_messages_dicts(db: Session, conversation_id: uuid.UUID) -> list[dict]:
             "sender_creator_id": str(m.sender_creator_id) if m.sender_creator_id else None,
             "sender_name": sender_name,
             "body": m.body,
+            "link": m.link,
             "created_at": m.created_at,
         })
     return out
@@ -323,14 +324,15 @@ def list_messages_dicts(db: Session, conversation_id: uuid.UUID) -> list[dict]:
 
 def send_message(db: Session, conversation_id: uuid.UUID, sender_type: str,
                  body: str, sender_admin_id: uuid.UUID | None = None,
-                 sender_creator_id: uuid.UUID | None = None) -> Message:
+                 sender_creator_id: uuid.UUID | None = None,
+                 link: str | None = None) -> Message:
     body = (body or "").strip()
     if not body:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Message can't be empty")
     conv = _get(db, conversation_id)
     now = _now()
     msg = Message(
-        conversation_id=conv.id, sender_type=sender_type, body=body,
+        conversation_id=conv.id, sender_type=sender_type, body=body, link=link,
         sender_admin_id=sender_admin_id, sender_creator_id=sender_creator_id, created_at=now,
     )
     db.add(msg)

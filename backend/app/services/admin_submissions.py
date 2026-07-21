@@ -45,17 +45,23 @@ def _notify_creator(db: Session, admin_id: uuid.UUID, sub: Submission,
     line = template.format(c=campaign_name)
     if note:
         line += f"\n\nFeedback from the team: {note}"
+    # Deep-link to the one submission this decision is about. A creator with
+    # several posts in flight cannot tell from "/submissions" alone which video
+    # the admin meant, and a revision request they can't locate is a dead end.
+    # The page scrolls to and highlights this id.
+    deep_link = f"/submissions?s={sub.id}"
     try:
         # Bell body carries the campaign-aware sentence (+ feedback) so the
         # notification alone tells the creator which campaign it's about — the
         # title stays short/generic.
         notifications.push(db, sub.creator_id, kind="video_review",
-                           title=title, body=line, link="/submissions")
+                           title=title, body=line, link=deep_link)
     except Exception:
         db.rollback()
     try:
         conv = messaging.get_or_create_for_creator(db, sub.creator_id)
-        messaging.send_message(db, conv.id, sender_type="admin", body=line, sender_admin_id=admin_id)
+        messaging.send_message(db, conv.id, sender_type="admin", body=line,
+                               sender_admin_id=admin_id, link=deep_link)
     except Exception:
         db.rollback()
 

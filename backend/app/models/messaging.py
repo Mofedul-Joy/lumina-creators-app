@@ -74,6 +74,10 @@ class Message(Base):
         UUID(as_uuid=True), ForeignKey("creators.id", ondelete="SET NULL")
     )
     body: Mapped[str] = mapped_column(Text, nullable=False)
+    # Optional in-app destination for messages the creator is meant to act on
+    # (e.g. a review bounce → the exact submission that needs re-work). Null for
+    # ordinary chat, which is the overwhelming majority of rows.
+    link: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

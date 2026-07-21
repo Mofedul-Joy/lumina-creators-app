@@ -25,7 +25,7 @@ def _msg_out(m: Message) -> MessageOut:
         id=str(m.id), conversation_id=str(m.conversation_id), sender_type=m.sender_type,
         sender_admin_id=str(m.sender_admin_id) if m.sender_admin_id else None,
         sender_creator_id=str(m.sender_creator_id) if m.sender_creator_id else None,
-        body=m.body, created_at=m.created_at,
+        body=m.body, link=m.link, created_at=m.created_at,
     )
 
 
