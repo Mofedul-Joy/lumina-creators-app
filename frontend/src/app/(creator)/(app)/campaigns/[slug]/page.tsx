@@ -140,10 +140,14 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
                   </span>
                 ) : null}
                 {/* Rhys 2026-07-21: the brief used to be a grey footnote at the very
-                    bottom ("External clip folder: open"). Creators need it up here. */}
-                {c.content_drive_url ? (
+                    bottom ("External clip folder: open"). Creators need it up here.
+                    2026-07-22: point it at the campaign's requirements doc. This was
+                    wired to content_drive_url, which on seeded campaigns is a dead
+                    placeholder, so the button rendered but went nowhere. The clip
+                    folder is a fallback only. */}
+                {(c.requirements_url || c.content_drive_url) ? (
                   <a
-                    href={c.content_drive_url}
+                    href={c.requirements_url || c.content_drive_url!}
                     target="_blank"
                     rel="noreferrer"
                     className="ml-auto inline-flex items-center gap-1 rounded-full border border-[var(--color-brand)]/50 bg-[var(--color-brand)]/10 px-3 py-1 text-[11px] font-medium text-[var(--color-brand)] transition hover:bg-[var(--color-brand)]/20"

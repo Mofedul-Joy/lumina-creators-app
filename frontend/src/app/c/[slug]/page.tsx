@@ -79,7 +79,11 @@ export default function CampaignEntryPage() {
 
           {c.description ? <p className="mt-3 text-[var(--color-text-secondary)]">{c.description}</p> : null}
 
-          {!isLegacyDriveOnly && c.content_drive_url ? (
+          {/* 2026-07-22: this page also renders a requirements_url button lower
+              down, so when a campaign has a real requirements doc this clip-folder
+              pill would be a second button reading "View requirements". Fall back
+              to it only when there is no requirements doc. */}
+          {!isLegacyDriveOnly && !c.requirements_url && c.content_drive_url ? (
             <a
               href={c.content_drive_url}
               target="_blank"
