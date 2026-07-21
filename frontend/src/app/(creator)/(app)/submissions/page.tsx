@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAuthToken } from "@/lib/auth";
 import { browseCampaigns, claimSubmission, listSubmissions, resubmitClip, submitClip, uploadProofVideo, type Submission } from "@/lib/campaigns";
@@ -51,7 +52,7 @@ type Group = {
   revisionPosts: Submission[];
 };
 
-export default function MyCampaignsPage() {
+function MyCampaignsInner() {
   const qc = useQueryClient();
   const [ready, setReady] = useState(false);
   const [hasToken, setHasToken] = useState(false);
@@ -101,27 +102,52 @@ export default function MyCampaignsPage() {
 
   // Deep link from the bell notification and the review DM: /submissions?s=<id>.
   // Both are sent by admin_submissions._notify_creator when a video is bounced
-  // back, so landing here should put the creator ON that video, not on a list
-  // they have to search. Read from location rather than useSearchParams so the
-  // page needs no Suspense boundary.
-  const [focusId, setFocusId] = useState<string | null>(null);
+  // back, so landing here must put the creator ON that video, not on a list they
+  // have to search. Read it reactively: the drawers router.push() to this same
+  // route, which does NOT remount the page, so a mount-only read would ignore
+  // every click after the first.
+  const focusId = useSearchParams().get("s");
   const revisionRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const scrolledFor = useRef<string | null>(null);
+  const settledFor = useRef<string | null>(null);
   const [watching, setWatching] = useState<Submission | null>(null);
+
   useEffect(() => {
-    const s = new URLSearchParams(window.location.search).get("s");
-    if (s) setFocusId(s);
-  }, []);
-  // The target only exists once the submissions query has painted, so retry on
-  // every render pass until we find it, then never scroll for that id again
-  // (otherwise a background refetch would yank the creator back mid-typing).
-  useEffect(() => {
-    if (!focusId || scrolledFor.current === focusId) return;
-    const el = revisionRefs.current[focusId];
-    if (!el) return;
-    scrolledFor.current = focusId;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-  });
+    if (!focusId || settledFor.current === focusId) return;
+    // The target only exists once the submissions query has painted. This effect
+    // re-runs as groups fill in, so bail quietly until then.
+    if (!revisionRefs.current[focusId]) return;
+    settledFor.current = focusId;
+
+    let cancelled = false;
+    // Never fight the creator: the moment they scroll themselves, we stop.
+    const stop = () => { cancelled = true; };
+    window.addEventListener("wheel", stop, { passive: true, once: true });
+    window.addEventListener("touchmove", stop, { passive: true, once: true });
+
+    const centre = () => {
+      if (cancelled) return;
+      const node = revisionRefs.current[focusId];
+      if (!node) return;
+      const r = node.getBoundingClientRect();
+      // Only correct once it has actually drifted out of the comfortable band,
+      // so a stable page doesn't get re-scrolled for no reason.
+      if (r.top < 72 || r.bottom > window.innerHeight - 72) {
+        node.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    };
+    centre();
+    // Every campaign card above this one carries a brand logo that loads AFTER
+    // the first paint, and each one that lands pushes the target further down.
+    // A single scrollIntoView therefore lands short on a creator with several
+    // campaigns. Re-centre until the layout stops moving.
+    const timers = [120, 350, 800, 1500, 2500].map((ms) => window.setTimeout(centre, ms));
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+      window.removeEventListener("wheel", stop);
+      window.removeEventListener("touchmove", stop);
+    };
+  }, [focusId, subsQ.data?.length, subsQ.isFetching]);
 
   // Submit ANOTHER video to a campaign the creator is already in — every joined
   // campaign supports more than one post (submissions are unique per-URL, not
@@ -477,5 +503,16 @@ export default function MyCampaignsPage() {
         />
       ) : null}
     </main>
+  );
+}
+
+// useSearchParams needs a Suspense boundary for the build's static pass. The
+// page itself is auth-gated and always client-rendered, so the fallback is
+// never what a creator actually sees.
+export default function MyCampaignsPage() {
+  return (
+    <Suspense fallback={null}>
+      <MyCampaignsInner />
+    </Suspense>
   );
 }
