@@ -5,7 +5,14 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pager } from "@/components/admin/Pager";
-import { SubmissionDetailModal } from "@/components/admin/SubmissionDetailModal";
+import dynamic from "next/dynamic";
+// Only mounts when an admin opens a submission (a click) — and it drags in the
+// social-embed machinery — so keep it out of the initial bundle of every page
+// that shows a submissions grid (campaign edit, campaign detail, dashboard).
+const SubmissionDetailModal = dynamic(
+  () => import("@/components/admin/SubmissionDetailModal").then((m) => m.SubmissionDetailModal),
+  { ssr: false },
+);
 import { PlatformIcon, platformLabel } from "@/components/ui/PlatformIcon";
 import { Select } from "@/components/ui/Select";
 import { SkeletonCardGrid } from "@/components/ui/Skeleton";
