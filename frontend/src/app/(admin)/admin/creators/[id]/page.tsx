@@ -1,14 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { CreatorDetailCard } from "@/components/admin/CreatorDetailCard";
-import { PayCreatorModal } from "@/components/admin/PayCreatorModal";
-import { RemoveCreatorModal } from "@/components/admin/RemoveCreatorModal";
+// Both open on a click ("Pay now" / "Remove creator"), so keep them out of the
+// creator detail page's initial bundle.
+const PayCreatorModal = dynamic(
+  () => import("@/components/admin/PayCreatorModal").then((m) => m.PayCreatorModal),
+  { ssr: false },
+);
+const RemoveCreatorModal = dynamic(
+  () => import("@/components/admin/RemoveCreatorModal").then((m) => m.RemoveCreatorModal),
+  { ssr: false },
+);
 import { WeeklyPostChart } from "@/components/admin/charts/WeeklyPostChart";
 import { ViewsGrowthChart } from "@/components/admin/charts/ViewsGrowthChart";
 import { Skeleton } from "@/components/ui/Skeleton";
