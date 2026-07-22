@@ -119,6 +119,10 @@ class Campaign(TimestampMixin, Base):
     creator_type: Mapped[Optional[str]] = mapped_column(Text)  # ugc_ads|high_volume_ugc|influencer|creator_manager|other
     payment_type: Mapped[Optional[str]] = mapped_column(Text)  # fixed|cpm|mixed|per_hour|per_post
     fixed_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 2))
+    # For payment_type == 'fixed': the deliverable the flat amount is paid per,
+    # 'post' or 'video' (same math; a submission is one post = one video). Null
+    # for other payment types and for legacy fixed campaigns.
+    fixed_unit: Mapped[Optional[str]] = mapped_column(Text)
     weekly_hours_needed: Mapped[Optional[int]] = mapped_column(Integer)
     hourly_rate: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 2))
     required_hours: Mapped[Optional[int]] = mapped_column(Integer)

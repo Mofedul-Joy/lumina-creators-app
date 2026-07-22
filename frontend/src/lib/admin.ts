@@ -44,6 +44,7 @@ export type AdminCampaign = {
   creator_type: string | null;
   payment_type: PaymentType | null;
   fixed_amount: number | string | null;
+  fixed_unit: string | null;
   weekly_hours_needed: number | null;
   hourly_rate: number | string | null;
   required_hours: number | null;
@@ -92,6 +93,7 @@ export type CampaignUpdate = Partial<{
   creator_type: string;
   payment_type: PaymentType;
   fixed_amount: number | null;
+  fixed_unit: string | null;
   weekly_hours_needed: number | null;
   hourly_rate: number | null;
   required_hours: number | null;
@@ -134,6 +136,7 @@ export type CampaignCreate = {
   creator_type?: string;
   payment_type?: PaymentType;
   fixed_amount?: number;
+  fixed_unit?: string;
   weekly_hours_needed?: number;
   hourly_rate?: number;
   required_hours?: number;

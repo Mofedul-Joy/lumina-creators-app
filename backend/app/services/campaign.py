@@ -120,9 +120,19 @@ def _validate_payment_amount(payment_type, fixed_amount, per_post_amount, hourly
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "hourly_rate must be positive for per-hour campaigns")
 
 
+def _normalize_fixed_unit(payment_type, fixed_unit):
+    """fixed_unit ('post'|'video') only applies to Fixed campaigns; for anything
+    else it's meaningless, so clear it. On a Fixed campaign default to 'video'
+    (the common case) when the client didn't specify a valid unit."""
+    if payment_type != "fixed":
+        return None
+    return fixed_unit if fixed_unit in ("post", "video") else "video"
+
+
 def create_campaign(db: Session, admin_id: uuid.UUID, data: dict) -> Campaign:
     data = _drop_unset_defaults(dict(data))
     _validate_flow_fields(data)
+    data["fixed_unit"] = _normalize_fixed_unit(data.get("payment_type"), data.get("fixed_unit"))
     bonus_milestones = data.pop("bonus_milestones", None) or []
     _check_mode_content(data["mode"], data.get("brief_script"), data.get("content_drive_url"))
     if data["budget"] <= 0:
@@ -282,6 +292,10 @@ def update_campaign(db: Session, campaign_id: uuid.UUID, data: dict) -> Campaign
     _eff_ptype = data.get("payment_type", c.payment_type)
     if data.get("cpm_rate") is not None and data["cpm_rate"] <= 0 and _eff_ptype in (None, "cpm", "mixed"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "cpm_rate must be positive")
+    # Keep fixed_unit consistent with the effective payment type (clear it if the
+    # edit moves the campaign off Fixed; default it if the edit moves it onto Fixed).
+    if "payment_type" in data or "fixed_unit" in data:
+        data["fixed_unit"] = _normalize_fixed_unit(_eff_ptype, data.get("fixed_unit", c.fixed_unit))
     # Validate the effective (post-merge) payment amount so an edit can't leave a
     # fixed/per_post/per_hour campaign with a null/zero rate that pays $0.
     _validate_payment_amount(

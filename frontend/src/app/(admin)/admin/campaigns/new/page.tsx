@@ -207,6 +207,7 @@ type WizardState = {
 
   // step 1 — payment type
   payment_type: PaymentType;
+  fixed_unit: "" | "post" | "video";   // required sub-choice when payment_type === "fixed"
   overrideTemplate: boolean;
 
   // step 2 — campaign details
@@ -258,6 +259,7 @@ const initialState: WizardState = {
   campaign_kind: "high_volume_ugc",
   experience_level: "essentials",
   payment_type: "cpm",
+  fixed_unit: "",
   overrideTemplate: false,
   name: "",
   job_type: "content_creator",
@@ -409,6 +411,11 @@ export default function NewCampaignPage() {
 
   function validateStep(n: number): boolean {
     const e: Record<string, string> = {};
+    if (n === 1) {
+      // Fixed must specify the deliverable it pays per (post or video).
+      if (f.payment_type === "fixed" && !f.fixed_unit)
+        e.fixed_unit = "Choose whether the fixed amount is paid per post or per video.";
+    }
     if (n === 2) {
       if (!f.name.trim()) e.name = "Campaign name is required.";
       if (!f.description.trim()) e.description = "Description is required.";
@@ -486,7 +493,7 @@ export default function NewCampaignPage() {
   const payLine = (() => {
     switch (f.payment_type) {
       case "fixed":
-        return `${fmtMoney(f.fixed_amount || 0)} every ${f.posts_per_payment} post(s)`;
+        return `${fmtMoney(f.fixed_amount || 0)} per ${f.fixed_unit || "post"}`;
       case "cpm":
         return `${fmtMoney(f.cpm_rate || 0)} / 1,000 views`;
       case "mixed":
@@ -516,6 +523,7 @@ export default function NewCampaignPage() {
         fixed_amount: f.payment_type === "fixed" || f.payment_type === "mixed"
           ? f.fixed_amount ? Number(f.fixed_amount) : undefined
           : undefined,
+        fixed_unit: f.payment_type === "fixed" ? (f.fixed_unit || "video") : undefined,
         weekly_hours_needed: f.weekly_hours_needed ? Number(f.weekly_hours_needed) : undefined,
         hourly_rate: f.hourly_rate ? Number(f.hourly_rate) : undefined,
         required_hours: f.required_hours ? Number(f.required_hours) : undefined,
@@ -653,7 +661,7 @@ export default function NewCampaignPage() {
                   <button
                     key={p.value}
                     type="button"
-                    onClick={() => patch({ payment_type: p.value })}
+                    onClick={() => patch({ payment_type: p.value, fixed_unit: p.value === "fixed" ? f.fixed_unit : "" })}
                     aria-pressed={f.payment_type === p.value}
                     className={`cursor-pointer rounded-[var(--radius-card)] border p-3 text-left transition ${
                       f.payment_type === p.value
@@ -666,6 +674,37 @@ export default function NewCampaignPage() {
                   </button>
                 ))}
               </div>
+
+              {/* Fixed splits into a per-deliverable sub-choice: the flat amount
+                  is paid per approved post OR per approved video. Same payout
+                  math; the choice is the label creators and payouts see. */}
+              {f.payment_type === "fixed" ? (
+                <div className="mt-3">
+                  <p className="mb-2 text-sm font-medium text-[var(--color-text)]">Pay the fixed amount per…</p>
+                  <div className="grid grid-cols-2 gap-3 sm:max-w-md">
+                    {([
+                      { value: "post", label: "Per post", blurb: "Flat pay for each approved post" },
+                      { value: "video", label: "Per video", blurb: "Flat pay for each approved video" },
+                    ] as const).map((u) => (
+                      <button
+                        key={u.value}
+                        type="button"
+                        onClick={() => patch({ fixed_unit: u.value })}
+                        aria-pressed={f.fixed_unit === u.value}
+                        className={`cursor-pointer rounded-[var(--radius-card)] border p-3 text-left transition ${
+                          f.fixed_unit === u.value
+                            ? "border-[var(--color-brand)] bg-[var(--color-brand)]/15 ring-2 ring-[var(--color-brand)]"
+                            : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-text-muted)] hover:bg-white/5"
+                        }`}
+                      >
+                        <p className="text-sm font-semibold text-[var(--color-text)]">{u.label}</p>
+                        <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{u.blurb}</p>
+                      </button>
+                    ))}
+                  </div>
+                  {errors.fixed_unit ? <p className="mt-2 text-xs text-[var(--color-danger)]">{errors.fixed_unit}</p> : null}
+                </div>
+              ) : null}
             </div>
           ) : null}
 
@@ -798,10 +837,15 @@ export default function NewCampaignPage() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {f.payment_type === "fixed" ? (
-                  <>
-                    <Field requiredMark error={errors.fixed_amount} label="Recurring payment amount ($)" type="number" value={f.fixed_amount} onChange={(e) => patch({ fixed_amount: e.target.value })} />
-                    <Field error={errors.posts_per_payment} label="Paid every N posts" hint="How many approved posts a creator must deliver to earn one fixed payment. e.g. 5 means they're paid the amount above for every 5 posts." type="number" min="1" value={f.posts_per_payment} onChange={(e) => patch({ posts_per_payment: e.target.value })} />
-                  </>
+                  <Field
+                    requiredMark
+                    error={errors.fixed_amount}
+                    label={`Amount per ${f.fixed_unit || "post"} ($)`}
+                    hint={`The flat amount a creator earns for each approved ${f.fixed_unit || "post"}. Their total = this amount × their approved ${f.fixed_unit || "post"}s.`}
+                    type="number"
+                    value={f.fixed_amount}
+                    onChange={(e) => patch({ fixed_amount: e.target.value })}
+                  />
                 ) : null}
 
                 {f.payment_type === "cpm" ? (

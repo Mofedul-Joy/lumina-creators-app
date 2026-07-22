@@ -63,6 +63,7 @@ class CampaignCreateIn(BaseModel):
     creator_type: Optional[str] = None
     payment_type: Optional[str] = None
     fixed_amount: Optional[Decimal] = None
+    fixed_unit: Optional[str] = None  # 'post' | 'video' (fixed payment only)
     weekly_hours_needed: Optional[int] = None
     hourly_rate: Optional[Decimal] = None
     required_hours: Optional[int] = None
@@ -117,6 +118,7 @@ class CampaignUpdateIn(BaseModel):
     creator_type: Optional[str] = None
     payment_type: Optional[str] = None
     fixed_amount: Optional[Decimal] = None
+    fixed_unit: Optional[str] = None  # 'post' | 'video' (fixed payment only)
     weekly_hours_needed: Optional[int] = None
     hourly_rate: Optional[Decimal] = None
     required_hours: Optional[int] = None
@@ -178,6 +180,7 @@ class CampaignOut(BaseModel):
     creator_type: Optional[str] = None
     payment_type: Optional[str] = None
     fixed_amount: Optional[Decimal] = None
+    fixed_unit: Optional[str] = None  # 'post' | 'video' (fixed payment only)
     weekly_hours_needed: Optional[int] = None
     hourly_rate: Optional[Decimal] = None
     required_hours: Optional[int] = None
@@ -255,6 +258,7 @@ class CampaignPublicOut(BaseModel):
     # ── 6-step campaign builder wizard (Feature 3) — surfaced natively (Feature 5) ──
     payment_type: Optional[str] = None
     fixed_amount: Optional[Decimal] = None
+    fixed_unit: Optional[str] = None  # 'post' | 'video' (fixed payment only)
     weekly_hours_needed: Optional[int] = None
     hourly_rate: Optional[Decimal] = None
     required_hours: Optional[int] = None

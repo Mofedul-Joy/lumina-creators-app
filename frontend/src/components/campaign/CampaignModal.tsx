@@ -124,7 +124,7 @@ export function CampaignModal({ campaign, onClose }: { campaign: Campaign | null
           ) : (
             <div className="space-y-4">
               <div className="card-lumina rounded-[var(--radius-card)] p-4">
-                <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">{paymentTypeLabel(c.payment_type)}</p>
+                <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">{paymentTypeLabel(c.payment_type, c.fixed_unit)}</p>
                 <p className="tabular mt-1 text-2xl font-semibold text-[var(--color-brand)]">{paymentHeadline(c)}</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -157,7 +157,7 @@ export function CampaignModal({ campaign, onClose }: { campaign: Campaign | null
         <div className="flex shrink-0 items-center justify-between gap-3 border-t border-[var(--color-border)] p-4">
           <div>
             <p className="tabular text-lg font-semibold text-[var(--color-text)]">{payBadge(c)}</p>
-            <p className="text-[11px] text-[var(--color-text-muted)]">{paymentTypeLabel(c.payment_type)}</p>
+            <p className="text-[11px] text-[var(--color-text-muted)]">{paymentTypeLabel(c.payment_type, c.fixed_unit)}</p>
           </div>
           <button
             onClick={apply}

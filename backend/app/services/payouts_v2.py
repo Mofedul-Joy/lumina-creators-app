@@ -106,7 +106,7 @@ def compute_owed_for_participation(
 ) -> dict:
     """Compute the owed breakdown for one creator on one campaign per the
     auto-calc rule (BUILD_SPEC.md §3.6):
-      fixed    -> fixed_amount once
+      fixed    -> fixed_amount per approved deliverable (post/video)
       cpm      -> (views / 1000) * cpm_rate
       mixed    -> fixed_amount + (views / 1000) * cpm_rate
       per_hour -> 0 in MVP
@@ -125,7 +125,11 @@ def compute_owed_for_participation(
     per_post = _ZERO
 
     if payment_type == "fixed":
-        fixed = _q(campaign.fixed_amount)
+        # Fixed is now paid per approved deliverable (post/video), matching the
+        # per-submission estimated_amount the creator's Claim flow sums. Legacy
+        # fixed campaigns had fixed_unit == None but still pay per approved post
+        # here; that's consistent with how their submissions are now priced.
+        fixed = _q(Decimal(approved_count) * Decimal(campaign.fixed_amount or 0))
     elif payment_type == "cpm":
         cpm = _cpm_earnings_snapshot(db, campaign_id, creator_id)
     elif payment_type == "mixed":

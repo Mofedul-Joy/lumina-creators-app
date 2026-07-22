@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.integrations import apify
-from app.models import PayoutItem, ScrapeJob, Submission, SubmissionViewSnapshot
+from app.models import Campaign, PayoutItem, ScrapeJob, Submission, SubmissionViewSnapshot
 from app.services import embed_health
 from app.services import thumbnails, urls
 
@@ -75,14 +75,29 @@ def _mark_failed(db: Session, job: ScrapeJob, error: str) -> None:
     job.next_run_at = _backoff(job.attempts)
 
 
-def compute_estimated_amount(sub: Submission) -> Decimal:
-    """Earnings = CPM x views / 1000 (geo/eligible-pct does not affect payout).
-    Rounded to cents so the stored value matches what the UI shows."""
+def compute_estimated_amount(sub: Submission, campaign: "Campaign | None" = None) -> Decimal:
+    """Per-submission earning, priced by the campaign's payment type:
+      cpm / mixed  -> CPM x views / 1000  (mixed's flat part is per-creator, added
+                      once by the payout engine, not per submission)
+      fixed        -> the flat amount, once per approved deliverable (post/video)
+      per_post     -> the per-post amount, once per approved deliverable
+    View-independent types (fixed/per_post) don't move with the scrape, so the
+    creator's Claim total = amount x their verified-submission count, which is
+    exactly what the payout engine pays. Rounded to cents to match the UI."""
+    pt = campaign.payment_type if campaign is not None else None
+    if pt == "fixed":
+        return _q_cents(campaign.fixed_amount)
+    if pt == "per_post":
+        return _q_cents(campaign.per_post_amount)
     raw = (Decimal(sub.cpm_rate_snapshot) * Decimal(sub.views)) / Decimal(1000)
     return raw.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
-def _apply_stats(sub: Submission, stats: apify.ScrapedStats) -> None:
+def _q_cents(v) -> Decimal:
+    return (Decimal(v or 0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def _apply_stats(sub: Submission, stats: apify.ScrapedStats, campaign: "Campaign | None" = None) -> None:
     # Independent of the raise-only view-count logic below — a thumbnail is
     # never "wrong to update," so it's written whenever Apify gave us one,
     # even on a 0-views/post_unavailable read (the post may still be visible,
@@ -112,7 +127,7 @@ def _apply_stats(sub: Submission, stats: apify.ScrapedStats) -> None:
     sub.views = stats.views
     sub.likes = max(sub.likes, stats.likes)
     sub.comments = max(sub.comments, stats.comments)
-    sub.estimated_amount = compute_estimated_amount(sub)
+    sub.estimated_amount = compute_estimated_amount(sub, campaign)
     sub.scrape_status = "success"
     sub.embed_broken = False
     sub.post_unavailable = False
@@ -144,13 +159,18 @@ def _process_chunk(db: Session, platform: str, pairs: list[tuple[ScrapeJob, Subm
         return
 
     settings = get_settings()
+    # Batch-load campaigns so pricing knows each submission's payment type (fixed
+    # and per_post are flat-per-deliverable, not CPM). One query for the batch.
+    camp_ids = {s.campaign_id for _, s in pairs}
+    campaigns = {c.id: c for c in db.scalars(select(Campaign).where(Campaign.id.in_(camp_ids))).all()}
     for job, sub in pairs:
+        campaign = campaigns.get(sub.campaign_id)
         key = urls.match_key(platform, sub.post_url)
         stats = matched.get(key)
         if stats is None:
             _apply_zero_item_fallback(sub)
         else:
-            _apply_stats(sub, stats)
+            _apply_stats(sub, stats, campaign)
         sub.last_scraped_at = _now()
 
         # History for the Views Growth chart. sub.views is overwritten on every

@@ -34,6 +34,7 @@ class ClientCampaignOut(BaseModel):
     spent_amount: Decimal
     payment_type: Optional[str] = None
     fixed_amount: Optional[Decimal] = None
+    fixed_unit: Optional[str] = None
     platforms: List[str] = []
     brand_name: Optional[str] = None
     published_at: Optional[datetime] = None
@@ -88,7 +89,7 @@ def _campaign_out(c: Campaign, stats: dict) -> ClientCampaignOut:
     return ClientCampaignOut(
         id=str(c.id), slug=c.slug, name=c.name, description=c.description, mode=c.mode,
         status=c.status, cpm_rate=c.cpm_rate, budget=c.budget, spent_amount=c.spent_amount,
-        payment_type=c.payment_type, fixed_amount=c.fixed_amount,
+        payment_type=c.payment_type, fixed_amount=c.fixed_amount, fixed_unit=c.fixed_unit,
         platforms=list(c.platforms or []), brand_name=c.brand_name, published_at=c.published_at,
         **stats.get(c.id, {}),
     )

@@ -59,7 +59,7 @@ def campaign_out(c: Campaign, db: Session | None = None) -> CampaignOut:
         client_id=str(c.client_id) if c.client_id else None,
         starts_at=c.starts_at, ends_at=c.ends_at, published_at=c.published_at,
         job_type=c.job_type, creator_type=c.creator_type, payment_type=c.payment_type,
-        fixed_amount=c.fixed_amount, weekly_hours_needed=c.weekly_hours_needed,
+        fixed_amount=c.fixed_amount, fixed_unit=c.fixed_unit, weekly_hours_needed=c.weekly_hours_needed,
         hourly_rate=c.hourly_rate, required_hours=c.required_hours, per_post_amount=c.per_post_amount,
         example_videos=list(c.example_videos or []), age_requirement=c.age_requirement,
         platform_focus=list(c.platform_focus or []), content_type=c.content_type,

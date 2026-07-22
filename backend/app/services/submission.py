@@ -94,6 +94,14 @@ def create_submission(db: Session, creator_id: uuid.UUID, campaign_slug: str, po
         verification_status="pending",
         verified_at=None,
     )
+    # Flat-per-deliverable campaigns don't depend on views, so price the
+    # submission now (fixed_amount / per_post_amount) instead of leaving it $0
+    # until a scrape that never changes it. CPM/mixed stay $0 here and are priced
+    # by the scrape worker as views come in.
+    if campaign.payment_type == "fixed":
+        sub.estimated_amount = Decimal(campaign.fixed_amount or 0)
+    elif campaign.payment_type == "per_post":
+        sub.estimated_amount = Decimal(campaign.per_post_amount or 0)
     db.add(sub)
     db.flush()  # get sub.id before creating its job
     db.add(ScrapeJob(submission_id=sub.id))  # status 'queued', next_run_at now() by default

@@ -39,7 +39,7 @@ def _out(c, db: Session | None = None) -> CampaignPublicOut:
         required_mentions=list(c.required_mentions or []), example_captions=list(c.example_captions or []),
         requirements_url=c.requirements_url, brand_name=c.brand_name, brand_logo_url=c.brand_logo_url,
         starts_at=c.starts_at, ends_at=c.ends_at, joined=False,
-        payment_type=c.payment_type, fixed_amount=c.fixed_amount,
+        payment_type=c.payment_type, fixed_amount=c.fixed_amount, fixed_unit=c.fixed_unit,
         weekly_hours_needed=c.weekly_hours_needed, hourly_rate=c.hourly_rate,
         required_hours=c.required_hours, per_post_amount=c.per_post_amount,
         example_videos=list(c.example_videos or []), examples=examples, age_requirement=c.age_requirement,

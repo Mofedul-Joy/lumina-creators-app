@@ -19,6 +19,7 @@ export type BonusMilestone = {
 export type CampaignWizardFields = {
   payment_type: string | null;
   fixed_amount: number | null;
+  fixed_unit: string | null;
   weekly_hours_needed: number | null;
   hourly_rate: number | null;
   required_hours: number | null;

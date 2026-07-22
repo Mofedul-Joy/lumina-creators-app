@@ -173,7 +173,7 @@ export default function CampaignEntryPage() {
         <aside className="lg:sticky lg:top-10 lg:self-start">
           <div className="card-lumina rounded-[var(--radius-card)] p-6">
             <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">
-              {paymentTypeLabel(c.payment_type)}
+              {paymentTypeLabel(c.payment_type, c.fixed_unit)}
             </p>
             <p className="tabular mt-1 text-xl font-semibold text-[var(--color-brand)]">
               {paymentHeadline(c)}

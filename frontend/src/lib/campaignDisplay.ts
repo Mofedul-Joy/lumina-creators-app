@@ -6,6 +6,7 @@ import { fmtInt, fmtMoney } from "@/lib/format";
 export type PaymentFields = {
   payment_type: string | null;
   fixed_amount: number | string | null;
+  fixed_unit?: string | null;   // 'post' | 'video' for fixed campaigns
   cpm_rate: number | string;
   weekly_hours_needed: number | null;
   hourly_rate: number | string | null;
@@ -21,17 +22,19 @@ export const PAYMENT_TYPE_LABEL: Record<string, string> = {
   per_post: "Per post",
 };
 
-export function paymentTypeLabel(paymentType: string | null | undefined): string {
+export function paymentTypeLabel(paymentType: string | null | undefined, fixedUnit?: string | null): string {
   if (!paymentType) return "Pay per views (CPM)";
+  // A Fixed campaign reads by its deliverable, e.g. "Fixed · per video".
+  if (paymentType === "fixed" && fixedUnit) return `Fixed · per ${fixedUnit}`;
   return PAYMENT_TYPE_LABEL[paymentType] ?? paymentType;
 }
 
-/** Big headline amount string for the Payment & Terms card, e.g. "$500 flat" or "$5 per 1K views". */
+/** Big headline amount string for the Payment & Terms card, e.g. "$500 per video" or "$5 per 1K views". */
 export function paymentHeadline(c: PaymentFields): string {
   const type = c.payment_type ?? "cpm";
   switch (type) {
     case "fixed":
-      return c.fixed_amount != null ? `${fmtMoney(c.fixed_amount)} flat` : "Fixed payment";
+      return c.fixed_amount != null ? `${fmtMoney(c.fixed_amount)} per ${c.fixed_unit || "post"}` : "Fixed payment";
     case "mixed":
       return c.fixed_amount != null
         ? `${fmtMoney(c.fixed_amount)} flat + ${fmtMoney(c.cpm_rate)} per 1K views`
