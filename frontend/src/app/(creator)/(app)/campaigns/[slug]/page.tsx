@@ -16,6 +16,13 @@ import { getCampaign, getSubmission, joinCampaign, submitClip, type Submission }
 import { fmtInt, fmtMoney } from "@/lib/format";
 import { paymentHeadline, paymentTypeLabel, targetingChips } from "@/lib/campaignDisplay";
 
+const RequirementsIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <path d="M9 4h6a1 1 0 0 1 1 1v0a1 1 0 0 0 1 1h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1a1 1 0 0 0 1-1v0a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+    <path d="m8.5 13 2 2 4-4.5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export default function CampaignDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const qc = useQueryClient();
@@ -150,9 +157,11 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ slug:
                     href={c.requirements_url || c.content_drive_url!}
                     target="_blank"
                     rel="noreferrer"
-                    className="ml-auto inline-flex items-center gap-1 rounded-full border border-[var(--color-brand)]/50 bg-[var(--color-brand)]/10 px-3 py-1 text-[11px] font-medium text-[var(--color-brand)] transition hover:bg-[var(--color-brand)]/20"
+                    className="ml-auto inline-flex items-center gap-2 rounded-full border border-[var(--color-brand)] bg-[var(--color-brand)]/15 px-4 py-2 text-sm font-semibold text-[var(--color-brand)] shadow-sm transition hover:bg-[var(--color-brand)]/25"
                   >
-                    View requirements ↗
+                    <RequirementsIcon />
+                    View requirements
+                    <span aria-hidden>↗</span>
                   </a>
                 ) : null}
               </div>
