@@ -2,7 +2,17 @@
 
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useState } from "react";
-import Cropper, { type Area } from "react-easy-crop";
+import dynamic from "next/dynamic";
+import { type Area } from "react-easy-crop";
+import type CropperComponent from "react-easy-crop";
+
+// react-easy-crop is ~15 kB and only needed once this modal actually opens (a
+// deliberate click on "upload photo"/"upload banner"). Loading it lazily keeps
+// it out of the initial bundle of every page that merely *can* crop an image
+// (account, onboarding, the campaign builder), which are otherwise the app's
+// heaviest routes. The cast restores the component's own prop typing, which
+// next/dynamic's generic wrapper otherwise widens (dropping defaultProps).
+const Cropper = dynamic(() => import("react-easy-crop"), { ssr: false }) as unknown as typeof CropperComponent;
 
 // Crop an uploaded image to a fixed aspect ratio. The crop frame's ratio is
 // locked (it IS the thumbnail's ratio) — the admin pans and zooms to pick the
