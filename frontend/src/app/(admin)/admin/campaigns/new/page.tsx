@@ -1,13 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { BannerInput } from "@/components/admin/BannerInput";
-import { AddCreatorsToCampaignModal } from "@/components/admin/AddCreatorsToCampaignModal";
+// Only rendered after a campaign is created, and only opens on click — keep its
+// weight out of the builder's initial bundle.
+const AddCreatorsToCampaignModal = dynamic(
+  () => import("@/components/admin/AddCreatorsToCampaignModal").then((m) => m.AddCreatorsToCampaignModal),
+  { ssr: false },
+);
 import { platformLabel } from "@/components/ui/PlatformIcon";
 import { getTemplate, type CampaignTemplate } from "@/lib/campaignTemplates";
 import {
