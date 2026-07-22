@@ -8,7 +8,13 @@ import { getAuthToken } from "@/lib/auth";
 import { deleteExperience, getProfile, isAuthError, listExperiences, type ExperienceOut, retryNonAuth} from "@/lib/api";
 import { AddExperienceModal } from "@/components/creator/AddExperienceModal";
 import { PayoutDetailsCard } from "@/components/creator/PayoutDetailsCard";
-import { OnboardingWizard } from "@/components/creator/onboarding/OnboardingWizard";
+import dynamic from "next/dynamic";
+// The full 16-step wizard only renders on the "profile" tab (behind a click),
+// so keep its weight out of the account page's initial bundle.
+const OnboardingWizard = dynamic(
+  () => import("@/components/creator/onboarding/OnboardingWizard").then((m) => m.OnboardingWizard),
+  { ssr: false },
+);
 import { TopVideosTab } from "@/components/creator/TopVideosTab";
 import { listSubmissions } from "@/lib/campaigns";
 import { getMyGamification } from "@/lib/gamification";
