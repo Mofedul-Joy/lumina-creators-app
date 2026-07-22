@@ -68,7 +68,7 @@ const CREATOR_TYPES = [
 // Per-hour and per-post campaigns already in the database still load and edit —
 // they're just no longer offered when creating a new one.
 const PAYMENT_TYPES: { value: PaymentType; label: string; blurb: string }[] = [
-  { value: "fixed", label: "Fixed", blurb: "Recurring flat payment" },
+  { value: "fixed", label: "Fixed", blurb: "Flat pay per post or video" },
   { value: "cpm", label: "CPM", blurb: "Paid per 1,000 views" },
   { value: "mixed", label: "Mixed", blurb: "Fixed pay + CPM bonus" },
 ];
