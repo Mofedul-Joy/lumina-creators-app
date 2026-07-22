@@ -531,7 +531,7 @@ export function MessagesDrawer({
       <div className="flex-1 space-y-2 overflow-y-auto px-3 py-4">
         {msgsQ.isLoading ? (
           <p className="text-center text-xs text-[var(--color-text-muted)]">Loading…</p>
-        ) : messages.length === 0 ? (
+        ) : messages.length === 0 && realm !== "creator" ? (
           <p className="mt-6 text-center text-sm text-[var(--color-text-muted)]">No messages yet. Say hello 👋</p>
         ) : (
           messages.map((m) => {
@@ -571,6 +571,22 @@ export function MessagesDrawer({
             );
           })
         )}
+        {/* Persistent anchor for the creator: their thread with the Lumina team.
+            Always sits at the bottom; every message (theirs and the team's
+            replies) stacks above it, so the creator always knows this thread
+            reaches the team. */}
+        {realm === "creator" && !msgsQ.isLoading ? (
+          <div className="flex items-center gap-2 pt-3 text-center">
+            <span className="h-px flex-1 bg-[var(--color-border)]/60" />
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)]">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Speak directly to our team
+            </span>
+            <span className="h-px flex-1 bg-[var(--color-border)]/60" />
+          </div>
+        ) : null}
         <div ref={bottomRef} />
       </div>
 
