@@ -39,15 +39,22 @@ export default function AdminBrandDetailPage() {
     <div className="min-h-[100dvh]">
       <AdminShell />
       <main className="mx-auto max-w-4xl px-6 py-10">
-        <Link href="/admin/users/brands" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">← Brands</Link>
+        {/* Return to wherever the admin came from — the Admins page's Clients
+            tab OR the standalone Client accounts list — not a fixed page that
+            appears "out of nowhere" when they arrived from the other one. */}
+        <button
+          type="button"
+          onClick={() => { if (typeof window !== "undefined" && window.history.length > 1) router.back(); else router.push("/admin/users"); }}
+          className="cursor-pointer text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+        >← Clients</button>
         <AdminTabs />
         {!b ? (
-          <p className="mt-8 text-sm text-[var(--color-text-secondary)]">Loading brand…</p>
+          <p className="mt-8 text-sm text-[var(--color-text-secondary)]">Loading client…</p>
         ) : (
           <>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-text)]">{b.name ?? "Unnamed brand"}</h1>
+                <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-text)]">{b.name ?? "Unnamed client"}</h1>
                 <StatusBadge status={b.status === "active" ? "active" : "rejected"} />
               </div>
               {b.status === "active" ? (
@@ -68,7 +75,7 @@ export default function AdminBrandDetailPage() {
                 <h2 className="text-lg font-semibold text-[var(--color-text)]">Campaigns ({b.campaigns.length})</h2>
               </div>
               {b.campaigns.length === 0 ? (
-                <p className="p-8 text-center text-sm text-[var(--color-text-secondary)]">No campaigns linked to this brand yet.</p>
+                <p className="p-8 text-center text-sm text-[var(--color-text-secondary)]">No campaigns linked to this client yet.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[520px] text-sm">

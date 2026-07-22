@@ -111,7 +111,7 @@ export default function AdminUsersPage() {
             </p>
           </div>
           <button onClick={() => setShowAdd(true)} className="shrink-0 cursor-pointer rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)]">
-            + Add user
+            + Add account
           </button>
         </div>
         <AdminTabs />
@@ -233,7 +233,7 @@ export default function AdminUsersPage() {
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
             <div className="max-h-[88vh] w-full max-w-md overflow-y-auto rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-[var(--color-text)]">Add user</h3>
+                <h3 className="text-xl font-semibold text-[var(--color-text)]">Add account</h3>
                 <button onClick={() => setShowAdd(false)} className="cursor-pointer rounded-full p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]" aria-label="Close">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                 </button>
@@ -303,13 +303,13 @@ export default function AdminUsersPage() {
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
             <div className="w-full max-w-md rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-[var(--color-text)]">Edit user</h3>
+                <h3 className="text-xl font-semibold text-[var(--color-text)]">Edit client</h3>
                 <button onClick={() => setEditing(null)} className="cursor-pointer rounded-full p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]" aria-label="Close">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                 </button>
               </div>
               <div className="mt-5 space-y-4">
-                <Labeled label="Brand name">
+                <Labeled label="Client name">
                   <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className={inputCls} />
                 </Labeled>
                 <Labeled label="New password (leave blank to keep)">

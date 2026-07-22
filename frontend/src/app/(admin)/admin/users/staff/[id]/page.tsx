@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
@@ -32,7 +31,13 @@ export default function AdminStaffDetailPage() {
     <div className="min-h-[100dvh]">
       <AdminShell />
       <main className="mx-auto max-w-3xl px-6 py-10">
-        <Link href="/admin/users" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">← Users</Link>
+        {/* Return to wherever the admin actually came from (the Admins page's
+            Team tab), not a hardcoded list they may never have visited. */}
+        <button
+          type="button"
+          onClick={() => { if (typeof window !== "undefined" && window.history.length > 1) router.back(); else router.push("/admin/users"); }}
+          className="cursor-pointer text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+        >← Admins</button>
         <AdminTabs />
         {!s ? (
           <p className="mt-8 text-sm text-[var(--color-text-secondary)]">Loading…</p>

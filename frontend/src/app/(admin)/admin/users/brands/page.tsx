@@ -42,32 +42,32 @@ export default function AdminBrandsPage() {
     <div className="min-h-[100dvh]">
       <AdminShell />
       <main className="mx-auto max-w-6xl px-6 py-10">
-        <Link href="/admin/users" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">← Users</Link>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Brand accounts</h1>
-        <p className="mt-2 text-[var(--color-text-secondary)]">Search brands, review their campaigns, and approve access.</p>
+        <Link href="/admin/users" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">← Admins</Link>
+        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-[var(--color-text)]">Client accounts</h1>
+        <p className="mt-2 text-[var(--color-text-secondary)]">Search clients, review their campaigns, and approve access.</p>
         <AdminTabs />
 
         <div className="mt-6 max-w-md">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search brands by name or email…"
+            placeholder="Search clients by name or email…"
             className="min-h-10 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]"
           />
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {q.isLoading ? (
-            <p className="text-sm text-[var(--color-text-secondary)]">Loading brands…</p>
+            <p className="text-sm text-[var(--color-text-secondary)]">Loading clients…</p>
           ) : rows.length === 0 ? (
-            <p className="text-sm text-[var(--color-text-muted)]">No brands match.</p>
+            <p className="text-sm text-[var(--color-text-muted)]">No clients match.</p>
           ) : (
             rows.map((c) => (
               <div key={c.id} className="card-grad rounded-[var(--radius-card)] p-4">
                 <Link href={`/admin/users/brands/${c.id}`} className="block">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate font-semibold text-[var(--color-text)]">{c.name ?? "Unnamed brand"}</p>
+                      <p className="truncate font-semibold text-[var(--color-text)]">{c.name ?? "Unnamed client"}</p>
                       <p className="truncate text-sm text-[var(--color-text-secondary)]">{c.email}</p>
                     </div>
                     <StatusBadge status={c.status === "active" ? "active" : "rejected"} />
