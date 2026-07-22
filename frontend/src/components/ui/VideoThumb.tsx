@@ -47,11 +47,15 @@ export function VideoThumb({
   className?: string;
   onPlay: () => void;
 }) {
-  const [imgFailed, setImgFailed] = useState(false);
-  // Prefer a stored thumbnail; for a linked YouTube video with none, fall back to
-  // its free public still so the tile is instant instead of a bare gradient.
-  const poster = thumbnailUrl || derivedPosterUrl(platform, videoUrl);
-  const showImg = !!poster && !imgFailed;
+  // Poster candidates, tried in order until one loads. The stored thumbnail
+  // comes first, but it can be a hotlinked platform CDN image or an EXPIRED
+  // presigned R2 URL that now 403s — so a linked YouTube video falls through to
+  // its free public still (i.ytimg) before giving up to a gradient. Instant
+  // either way; no per-load video decode.
+  const posters = [thumbnailUrl, derivedPosterUrl(platform, videoUrl)].filter(Boolean) as string[];
+  const [posterIdx, setPosterIdx] = useState(0);
+  const poster = posters[posterIdx];
+  const showImg = !!poster;
   const ref = useRef<HTMLButtonElement>(null);
   const [near, setNear] = useState(false);
 
@@ -81,9 +85,9 @@ export function VideoThumb({
       {showImg ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={thumbnailUrl!}
+          src={poster}
           alt=""
-          onError={() => setImgFailed(true)}
+          onError={() => setPosterIdx((i) => i + 1)}
           className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
         />
       ) : showFrame && near ? (
