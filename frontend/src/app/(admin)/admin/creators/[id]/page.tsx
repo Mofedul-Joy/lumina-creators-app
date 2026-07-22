@@ -29,6 +29,12 @@ import { flagCreatorSuspicious, getCreatorDetail, isAuthError, unflagCreatorSusp
 const cardCls =
   "card-grad rounded-[var(--radius-card)] p-5 space-y-4";
 
+const FlagIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <path d="M5 21V4m0 0h11l-1.6 3.5L16 11H5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 function StatTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="card-grad rounded-[var(--radius-card)] p-4">
@@ -136,6 +142,50 @@ export default function AdminCreatorDetailPage() {
             </svg>
             Remove creator
           </button>
+
+          {/* Flag-suspicious control lives right beside Remove creator, same
+              size, but a solid (brighter) red so it reads as the stronger
+              action. Every state — flag / confirm / flagged — renders here. */}
+          {c.is_suspicious ? (
+            <>
+              <span className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full bg-[#e5484d] px-4 text-sm font-semibold text-white">
+                <FlagIcon />
+                Flagged suspicious
+              </span>
+              <button
+                disabled={unflagM.isPending}
+                onClick={() => unflagM.mutate()}
+                className="inline-flex min-h-10 shrink-0 cursor-pointer items-center rounded-full border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)] disabled:opacity-50"
+              >
+                {unflagM.isPending ? "Unflagging…" : "Unflag"}
+              </button>
+            </>
+          ) : confirmingFlag ? (
+            <>
+              <button
+                disabled={flagM.isPending}
+                onClick={() => flagM.mutate()}
+                className="inline-flex min-h-10 shrink-0 cursor-pointer items-center gap-2 rounded-full bg-[#e5484d] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#f2555a] disabled:opacity-50"
+              >
+                <FlagIcon />
+                {flagM.isPending ? "Flagging…" : "Confirm flag"}
+              </button>
+              <button
+                onClick={() => setConfirmingFlag(false)}
+                className="inline-flex min-h-10 shrink-0 cursor-pointer items-center rounded-full border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)]"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setConfirmingFlag(true)}
+              className="inline-flex min-h-10 shrink-0 cursor-pointer items-center gap-2 rounded-full bg-[#e5484d] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#f2555a]"
+            >
+              <FlagIcon />
+              Flag as suspicious
+            </button>
+          )}
         </div>
 
         {payOpen ? (
@@ -164,37 +214,9 @@ export default function AdminCreatorDetailPage() {
           >
             {c.completed ? "Complete" : "Incomplete"}
           </span>
-          {c.is_suspicious ? (
-            <div className="flex items-center gap-2">
-              <span className="rounded-[var(--radius-pill)] bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-400">Flagged suspicious</span>
-              <button
-                disabled={unflagM.isPending}
-                onClick={() => unflagM.mutate()}
-                className="cursor-pointer text-xs text-[var(--color-text-muted)] underline hover:text-[var(--color-text)] disabled:opacity-50"
-              >
-                Unflag
-              </button>
-            </div>
-          ) : confirmingFlag ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-[var(--color-text-secondary)]">Flag every current and future submission?</span>
-              <button onClick={() => setConfirmingFlag(false)} className="cursor-pointer text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]">Cancel</button>
-              <button
-                disabled={flagM.isPending}
-                onClick={() => flagM.mutate()}
-                className="cursor-pointer rounded-md bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/25 disabled:opacity-50"
-              >
-                Confirm flag
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setConfirmingFlag(true)}
-              className="cursor-pointer text-xs text-[var(--color-text-muted)] underline hover:text-[var(--color-text)]"
-            >
-              Flag as suspicious
-            </button>
-          )}
+          {confirmingFlag && !c.is_suspicious ? (
+            <span className="text-xs text-[var(--color-text-muted)]">Flags every current and future submission.</span>
+          ) : null}
         </div>
       </header>
 
