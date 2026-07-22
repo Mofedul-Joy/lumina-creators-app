@@ -22,3 +22,7 @@ class StorageObjectOut(BaseModel):
     purpose: str
     status: str
     content_type: Optional[str] = None
+    # A GET-able URL for the finalized object. For an image poster this lets the
+    # client store a stable thumbnail URL to show instantly, instead of decoding
+    # the video's first frame on every page load.
+    public_url: Optional[str] = None

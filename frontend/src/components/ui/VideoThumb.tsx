@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { isDirectVideoUrl } from "@/lib/embeds";
+import { isDirectVideoUrl, derivedPosterUrl } from "@/lib/embeds";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 
 /**
@@ -48,7 +48,10 @@ export function VideoThumb({
   onPlay: () => void;
 }) {
   const [imgFailed, setImgFailed] = useState(false);
-  const showImg = !!thumbnailUrl && !imgFailed;
+  // Prefer a stored thumbnail; for a linked YouTube video with none, fall back to
+  // its free public still so the tile is instant instead of a bare gradient.
+  const poster = thumbnailUrl || derivedPosterUrl(platform, videoUrl);
+  const showImg = !!poster && !imgFailed;
   const ref = useRef<HTMLButtonElement>(null);
   const [near, setNear] = useState(false);
 

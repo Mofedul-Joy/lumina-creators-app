@@ -30,6 +30,16 @@ export function getEmbedUrl(platform: string, postUrl: string): string | null {
   }
 }
 
+// A free, stable poster for a linked video when we have no stored thumbnail.
+// Only YouTube exposes a predictable public still by video id; TikTok/Instagram
+// have no equivalent without scraping, so they keep falling back to the tinted
+// platform gradient until the scraper stores a real thumbnail.
+export function derivedPosterUrl(platform: string | null | undefined, postUrl: string | null | undefined): string | null {
+  if (!postUrl || platform !== "youtube") return null;
+  const id = idFrom(/(?:v=|\/shorts\/|\/embed\/|youtu\.be\/)([A-Za-z0-9_-]{11})/, postUrl);
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
+}
+
 // Which embeds are vertical (9:16) so we render them in a tall portrait frame
 // instead of letterboxing them into a 16:9 box: TikTok, Instagram Reels, and
 // YouTube Shorts (detected from the /shorts/ path — a normal YouTube watch link

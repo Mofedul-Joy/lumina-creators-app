@@ -171,6 +171,9 @@ def add_portfolio(db: Session, creator_id: uuid.UUID, data: dict) -> PortfolioIt
         obj = _require_owned_object(db, creator_id, data["storage_object_id"], "portfolio_video")
         item = PortfolioItem(
             creator_id=creator_id, storage_object_id=obj.id,
+            # First-frame poster captured at upload time, so the tile shows an
+            # instant image on every load instead of decoding the video.
+            thumbnail_url=(data.get("thumbnail_url") or "").strip() or None,
             brand_name=data.get("brand_name"), caption=data.get("caption"),
         )
         db.add(item)

@@ -62,7 +62,7 @@ def detail(submission_id: uuid.UUID, current: Creator = Depends(get_current_crea
 @router.patch("/{submission_id}/proof", response_model=SubmissionOut)
 def attach_proof(submission_id: uuid.UUID, body: ProofVideoAttachIn,
                  current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
-    return _out_one(db, svc.attach_proof_video(db, current.id, submission_id, uuid.UUID(body.storage_object_id)))
+    return _out_one(db, svc.attach_proof_video(db, current.id, submission_id, uuid.UUID(body.storage_object_id), body.thumbnail_url))
 
 
 @router.post("/{submission_id}/resubmit", response_model=SubmissionOut)

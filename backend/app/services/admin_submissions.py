@@ -202,9 +202,17 @@ def set_suspicious(db: Session, submission_id: uuid.UUID, flagged: bool,
 
 
 def counts_by_status(db: Session) -> dict:
+    """Per-status tallies for the review tabs. These MUST match the default grid
+    view (list_submissions with no `suspicious` flag), which hides anything
+    flagged at the submission OR creator level — otherwise a tab reads "Pending 6"
+    over a grid that shows 1, because a flagged creator's rows are counted but not
+    listed."""
     from sqlalchemy import func
     rows = db.execute(
-        select(Submission.verification_status, func.count()).group_by(Submission.verification_status)
+        select(Submission.verification_status, func.count())
+        .outerjoin(Creator, Creator.id == Submission.creator_id)
+        .where(Submission.is_suspicious.is_(False), Creator.is_suspicious.isnot(True))
+        .group_by(Submission.verification_status)
     ).all()
     return {s: c for s, c in rows}
 

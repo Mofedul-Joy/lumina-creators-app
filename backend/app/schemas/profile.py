@@ -103,6 +103,9 @@ class PortfolioIn(BaseModel):
     # legacy external link (video_url). One of the two is required.
     storage_object_id: Optional[str] = None
     video_url: Optional[str] = None
+    # First-frame poster the client captured and uploaded at the same time, so the
+    # tile shows an instant image instead of decoding the video on every load.
+    thumbnail_url: Optional[str] = None
     brand_name: Optional[str] = None
     caption: Optional[str] = None
     platform: Optional[str] = None

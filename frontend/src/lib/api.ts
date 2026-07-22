@@ -338,6 +338,7 @@ export type SocialOut = {
 export type PortfolioIn = {
   storage_object_id?: string;
   video_url?: string;
+  thumbnail_url?: string;
   brand_name?: string;
   caption?: string;
   platform?: Platform;
@@ -372,6 +373,7 @@ export type StorageObjectOut = {
   purpose: UploadPurpose;
   status: string;
   content_type: string | null;
+  public_url?: string | null;
 };
 
 // ── Admin creators schemas ────────────────────────────────────────────────────
@@ -854,21 +856,53 @@ export async function uploadFile(
   return finalized.id;
 }
 
+// Capture the video's first frame and upload it as a public image, returning a
+// stable URL to store as the clip's instant thumbnail. Best-effort: returns
+// undefined on any failure so the caller proceeds without a poster.
+async function uploadCapturedPoster(token: string, file: File): Promise<string | undefined> {
+  try {
+    const { captureVideoPoster } = await import("@/lib/videoPoster");
+    const blob = await captureVideoPoster(file);
+    if (!blob) return undefined;
+    const poster = new File([blob], "poster.jpg", { type: "image/jpeg" });
+    // Reuse the "avatar" purpose: a public image, resolved to a stable GET URL.
+    const presigned = await presignUpload(token, {
+      purpose: "avatar",
+      content_type: "image/jpeg",
+      filename: "poster.jpg",
+      size_bytes: poster.size,
+    });
+    await putToPresignedUrl(presigned.upload_url, poster);
+    const finalized = await finalizeUpload(token, presigned.object_id);
+    return finalized.public_url || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 // Upload a portfolio video FILE (presign -> PUT -> finalize -> attach). Distinct
-// from a submission: it just showcases the creator's work, stored on R2.
+// from a submission: it just showcases the creator's work, stored on R2. We also
+// capture and store the first frame so the tile shows instantly on every load.
 export async function uploadPortfolioVideo(
   token: string,
   file: File,
   meta: { brand_name?: string; caption?: string },
   onProgress?: (pct: number) => void,
 ): Promise<PortfolioOut> {
-  const objectId = await uploadFile(token, file, "portfolio_video", onProgress);
+  const [objectId, thumbnail_url] = await Promise.all([
+    uploadFile(token, file, "portfolio_video", onProgress),
+    uploadCapturedPoster(token, file),
+  ]);
   return addPortfolio(token, {
     storage_object_id: objectId,
+    thumbnail_url,
     brand_name: meta.brand_name || undefined,
     caption: meta.caption || undefined,
   });
 }
+
+// Exposed so the submission proof-video path can reuse the same poster capture.
+export { uploadCapturedPoster };
 
 // ── Admin creators methods (admin bearer token) ───────────────────────────────
 export const listCreators = (token: string, filters: CreatorFilters = {}) => {

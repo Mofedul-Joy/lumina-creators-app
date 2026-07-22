@@ -234,7 +234,7 @@ def claim_submission(db: Session, creator_id: uuid.UUID, submission_id: uuid.UUI
 
 
 def attach_proof_video(db: Session, creator_id: uuid.UUID, submission_id: uuid.UUID,
-                       storage_object_id: uuid.UUID) -> Submission:
+                       storage_object_id: uuid.UUID, thumbnail_url: str | None = None) -> Submission:
     """Link a finalized proof-video upload to a submission (golden rule 4: create_new
     campaigns need proof-video verification before an admin can verify stats)."""
     sub = get_submission(db, creator_id, submission_id)
@@ -248,6 +248,11 @@ def attach_proof_video(db: Session, creator_id: uuid.UUID, submission_id: uuid.U
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Finish uploading the proof video first")
 
     sub.proof_object_id = obj.id
+    # Instant first-frame poster the client captured with the upload. Don't stomp
+    # a real scraped thumbnail if one is already stored.
+    poster = (thumbnail_url or "").strip()
+    if poster and not sub.thumbnail_url:
+        sub.thumbnail_url = poster
     # Replacing proof after a rejection re-opens the submission for another look.
     if sub.verification_status == "rejected":
         sub.verification_status = "pending"

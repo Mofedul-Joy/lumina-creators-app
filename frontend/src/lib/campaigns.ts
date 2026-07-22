@@ -1,4 +1,4 @@
-import { apiFetch, finalizeUpload, presignUpload, putToPresignedUrl } from "@/lib/api";
+import { apiFetch, finalizeUpload, presignUpload, putToPresignedUrl, uploadCapturedPoster } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
 
 const auth = () => ({ token: getAuthToken() ?? undefined });
@@ -137,11 +137,16 @@ export async function uploadProofVideo(
     filename: file.name || undefined,
     size_bytes: file.size,
   });
-  await putToPresignedUrl(presigned.upload_url, file, onProgress);
+  // Capture the first frame in parallel with the video upload for an instant
+  // thumbnail; best-effort, so a failure never blocks the proof submission.
+  const [, thumbnail_url] = await Promise.all([
+    putToPresignedUrl(presigned.upload_url, file, onProgress),
+    uploadCapturedPoster(token!, file),
+  ]);
   await finalizeUpload(token!, presigned.object_id);
   return apiFetch<Submission>(`/api/creator/submissions/${submissionId}/proof`, {
     method: "PATCH",
-    body: JSON.stringify({ storage_object_id: presigned.object_id }),
+    body: JSON.stringify({ storage_object_id: presigned.object_id, thumbnail_url }),
     ...auth(),
   });
 }

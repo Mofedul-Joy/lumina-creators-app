@@ -13,6 +13,8 @@ class SubmissionCreateIn(BaseModel):
 
 class ProofVideoAttachIn(BaseModel):
     storage_object_id: str
+    # First-frame poster captured at upload time (instant thumbnail everywhere).
+    thumbnail_url: Optional[str] = None
 
 
 class SubmissionOut(BaseModel):
