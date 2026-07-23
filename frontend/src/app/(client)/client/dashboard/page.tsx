@@ -34,6 +34,9 @@ function SubmissionsSection({ campaign }: { campaign: ClientCampaign }) {
   const q = useQuery({
     queryKey: ["client-subs", campaign.id],
     queryFn: () => listClientSubmissions(campaign.id),
+    retry: retryNonAuth,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   const rows = useMemo(
@@ -178,6 +181,10 @@ function DashboardInner() {
     queryFn: listClientCampaigns,
     enabled: ready && hasToken,
     retry: retryNonAuth,
+    // Keep the brand's view live: an admin approving a submission or launching a
+    // campaign should surface here without a manual reload.
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   const campaigns = q.data ?? [];

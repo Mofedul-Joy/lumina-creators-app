@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_client
 from app.db.session import get_db
-from app.models import Campaign, Client, Submission
+from app.models import Campaign, Client, Creator, Submission
 from app.services.csv_export import csv_response
 
 router = APIRouter(prefix="/campaigns", tags=["client-campaigns"])
@@ -70,9 +70,14 @@ def _stats(db: Session, campaign_ids: list[uuid.UUID]) -> dict[uuid.UUID, dict]:
             func.count(Submission.id),
             func.count(func.distinct(Submission.creator_id)),
         )
+        .outerjoin(Creator, Creator.id == Submission.creator_id)
         .where(
             Submission.campaign_id.in_(campaign_ids),
             Submission.verification_status == "verified",
+            # Hide content from flagged submissions/creators, same as the admin's
+            # default view — a brand must never see fraud-flagged work counted.
+            Submission.is_suspicious.is_(False),
+            Creator.is_suspicious.isnot(True),
         )
         .group_by(Submission.campaign_id)
     ).all()
@@ -97,8 +102,12 @@ def _campaign_out(c: Campaign, stats: dict) -> ClientCampaignOut:
 
 @router.get("", response_model=list[ClientCampaignOut])
 def list_mine(current: Client = Depends(get_current_client), db: Session = Depends(get_db)):
+    # A brand only sees campaigns Lumina has actually launched — a draft is an
+    # admin work-in-progress that must not surface on the client dashboard.
     campaigns = db.scalars(
-        select(Campaign).where(Campaign.client_id == current.id).order_by(Campaign.created_at.desc())
+        select(Campaign)
+        .where(Campaign.client_id == current.id, Campaign.status != "draft")
+        .order_by(Campaign.created_at.desc())
     ).all()
     stats = _stats(db, [c.id for c in campaigns])
     return [_campaign_out(c, stats) for c in campaigns]
@@ -111,11 +120,23 @@ def campaign_submissions(
     db: Session = Depends(get_db),
 ):
     campaign = db.get(Campaign, campaign_id)
-    if campaign is None or campaign.client_id != current.id:
+    # Ownership AND published: a draft is invisible even if the brand guesses its
+    # UUID, matching list_mine (Codex adversarial review).
+    if campaign is None or campaign.client_id != current.id or campaign.status == "draft":
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Campaign not found")
+    # Verified only: post-review-gating (A5) a submission is Pending until an
+    # admin approves it, and can be Rejected/Revision. A brand must see the
+    # content that was ACTUALLY approved for their campaign — never a rejected or
+    # still-under-review post — so the list matches the verified-only stat tiles.
     subs = db.scalars(
         select(Submission)
-        .where(Submission.campaign_id == campaign_id, Submission.is_suspicious.is_(False))
+        .outerjoin(Creator, Creator.id == Submission.creator_id)
+        .where(
+            Submission.campaign_id == campaign_id,
+            Submission.is_suspicious.is_(False),
+            Creator.is_suspicious.isnot(True),
+            Submission.verification_status == "verified",
+        )
         .order_by(Submission.created_at.desc())
         .limit(200)
     ).all()
@@ -140,11 +161,19 @@ def export_submissions_csv(
     creator identity, no internal IDs, no admin-only fields — just streamed
     without the 200-row cap the dashboard view applies."""
     campaign = db.get(Campaign, campaign_id)
-    if campaign is None or campaign.client_id != current.id:
+    # Ownership AND published: a draft is invisible even if the brand guesses its
+    # UUID, matching list_mine (Codex adversarial review).
+    if campaign is None or campaign.client_id != current.id or campaign.status == "draft":
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Campaign not found")
     subs = db.scalars(
         select(Submission)
-        .where(Submission.campaign_id == campaign_id, Submission.is_suspicious.is_(False))
+        .outerjoin(Creator, Creator.id == Submission.creator_id)
+        .where(
+            Submission.campaign_id == campaign_id,
+            Submission.is_suspicious.is_(False),
+            Creator.is_suspicious.isnot(True),
+            Submission.verification_status == "verified",
+        )
         .order_by(Submission.created_at.asc())
     ).all()
 
