@@ -3,7 +3,6 @@
 import { retryNonAuth } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   composeEmail, listConversations, listMessages,
@@ -17,7 +16,7 @@ import {
 import { ConversationExtras } from "@/components/messaging/ConversationExtras";
 import { ActionsMenu, TemplatePicker } from "@/components/messaging/ConversationActions";
 import { ChannelBuilder } from "@/components/messaging/ChannelBuilder";
-import { SocialEmbed } from "@/components/admin/SocialEmbed";
+import { SubmissionDetailModal } from "@/components/admin/SubmissionDetailModal";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 
 function timeAgo(iso: string | null): string {
@@ -85,47 +84,6 @@ function CampaignApprovalBar({ creatorId }: { creatorId: string }) {
   );
 }
 
-/**
- * Watch a submitted video in a popup that sits OVER the messages (higher z than
- * the drawer), so the admin never leaves the chat. Approve/decline from here or
- * just close and keep chatting. Closes only via its buttons (no accidental
- * backdrop dismissal).
- */
-function WatchVideoModal({
-  review, onApprove, onDecline, onClose, busy,
-}: {
-  review: PendingReview;
-  onApprove: () => void;
-  onDecline: () => void;
-  onClose: () => void;
-  busy: boolean;
-}) {
-  return createPortal(
-    <div className="fixed inset-0 z-[80] grid place-items-center bg-black/75 p-4">
-      <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-5 py-3.5">
-          <div className="flex min-w-0 items-center gap-2">
-            <PlatformIcon name={review.platform} className="h-4 w-4 shrink-0 text-[var(--color-text-secondary)]" />
-            <p className="truncate text-sm font-semibold text-[var(--color-text)]">{review.campaign_name}</p>
-          </div>
-          <button onClick={onClose} aria-label="Close" className="cursor-pointer rounded-full p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4">
-          <SocialEmbed platform={review.platform} postUrl={review.post_url} thumbnailUrl={review.thumbnail_url} embedBroken={review.embed_broken} />
-        </div>
-        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border)] px-5 py-3.5">
-          <button disabled={busy} onClick={onDecline}
-            className="cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium text-[var(--color-danger,#ef6a6a)] ring-1 ring-inset ring-[var(--color-danger,#ef6a6a)]/40 transition hover:bg-[var(--color-danger,#ef6a6a)]/10 disabled:opacity-50">Decline</button>
-          <button disabled={busy} onClick={onApprove}
-            className="cursor-pointer rounded-full bg-[var(--color-brand)] px-5 py-1.5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)] disabled:opacity-50">Approve</button>
-        </div>
-      </div>
-    </div>,
-    document.body,
-  );
-}
 
 /**
  * Watch / approve / decline the videos this creator submitted for review —
@@ -187,12 +145,13 @@ function SubmissionReviewBar({ creatorId }: { creatorId: string }) {
         ))}
       </div>
       {watching ? (
-        <WatchVideoModal
-          review={watching}
-          busy={busy}
-          onApprove={() => { approveM.mutate(watching.id); setWatching(null); }}
-          onDecline={() => { declineM.mutate(watching.id); setWatching(null); }}
-          onClose={() => setWatching(null)}
+        // Rhys 2026-07-23: the message-thread "Watch" opens the SAME full detail
+        // modal as the Submissions page — Approve / Revision needed / Repost /
+        // Reject / Suspend user / Delete — not a cut-down Approve/Decline popup.
+        <SubmissionDetailModal
+          sub={watching}
+          pool={items.map((s) => s.thumbnail_url).filter(Boolean) as string[]}
+          onClose={() => { qc.invalidateQueries({ queryKey: ["pending-reviews", creatorId] }); setWatching(null); }}
         />
       ) : null}
     </>

@@ -151,14 +151,18 @@ class PendingReviewItem(BaseModel):
     embed_broken: bool = False
 
 
-@router.get("/by-creator/{creator_id}/pending-review", response_model=list[PendingReviewItem])
+@router.get("/by-creator/{creator_id}/pending-review", response_model=list[AdminSubmissionRow])
 def creator_pending_review(creator_id: uuid.UUID, admin: Admin = Depends(get_current_admin),
                            db: Session = Depends(get_db)):
     """Videos this creator submitted that are still awaiting review — so the admin
-    can watch / approve / decline them straight from the message thread."""
+    can watch AND fully action them (approve / revision / repost / reject / suspend
+    / delete) straight from the message thread, exactly like the Submissions page.
+    Returns the full AdminSubmissionRow so the same detail modal can be reused."""
     rows = db.execute(
-        select(Submission, Campaign.name)
+        select(Submission, Campaign.name, Campaign.mode, CreatorProfile.display_name, Creator.is_suspicious)
         .join(Campaign, Campaign.id == Submission.campaign_id)
+        .outerjoin(CreatorProfile, CreatorProfile.creator_id == Submission.creator_id)
+        .outerjoin(Creator, Creator.id == Submission.creator_id)
         .where(
             Submission.creator_id == creator_id,
             Submission.verification_status == "pending",
@@ -166,10 +170,6 @@ def creator_pending_review(creator_id: uuid.UUID, admin: Admin = Depends(get_cur
         )
         .order_by(Submission.created_at.desc())
     ).all()
-    return [
-        PendingReviewItem(
-            id=str(s.id), campaign_name=name, platform=s.platform, post_url=s.post_url,
-            thumbnail_url=s.thumbnail_url, embed_broken=s.embed_broken,
-        )
-        for s, name in rows
-    ]
+    paid = svc.paid_submission_ids(db)
+    return [_row(db, s, name, mode, dn, s.id in paid, bool(creator_susp))
+            for s, name, mode, dn, creator_susp in rows]
