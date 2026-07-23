@@ -6,7 +6,7 @@ export default function TrainingPage() {
       eyebrow="Lumina Creators"
       title="Training"
       icon="🎓"
-      blurb="Short UGC courses that earn you a verified badge — a signal to brands that you're serious. We're putting the lessons together."
+      blurb="Short UGC courses that will help you earn as much as possible."
     />
   );
 }

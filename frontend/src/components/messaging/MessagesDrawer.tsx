@@ -324,7 +324,7 @@ export function MessagesDrawer({
     <div className="flex items-center justify-between border-b border-[var(--color-border)]/60 px-5 py-4">
       {/* Rhys 2026-07-21: creators must see who is on the other end of this. */}
       <h2 className="text-sm font-semibold text-[var(--color-text)]">
-        {realm === "creator" ? "Speak directly to our team" : "Messages"}
+        {realm === "creator" ? "Say hello or ask questions to the lumina team" : "Messages"}
       </h2>
       <div className="flex items-center gap-1">
         {realm === "admin" ? (
@@ -368,7 +368,7 @@ export function MessagesDrawer({
             <p className="text-sm font-medium text-[var(--color-text)]">No conversations{tab === "unread" ? " unread" : " yet"}</p>
             <p className="text-xs text-[var(--color-text-muted)]">
               {realm === "creator"
-                ? "Speak directly to our team — ask us anything about a campaign, a payout, or your account."
+                ? "Say hello or ask questions to the lumina team — about a campaign, a payout, or your account."
                 : `Messages with ${realm === "admin" ? "creators" : "the Lumina team"} show up here.`}
             </p>
           </div>
@@ -582,7 +582,7 @@ export function MessagesDrawer({
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              Speak directly to our team
+              Say hello or ask questions to the lumina team
             </span>
             <span className="h-px flex-1 bg-[var(--color-border)]/60" />
           </div>

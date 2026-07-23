@@ -215,7 +215,7 @@ function MyCampaignsInner() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-8">
-      <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-text)]">Campaigns Entered</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-text)]">Campaigns You Entered</h1>
       <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
         Campaigns you&apos;ve joined — the views you&apos;ve generated and how your payout looks.
       </p>

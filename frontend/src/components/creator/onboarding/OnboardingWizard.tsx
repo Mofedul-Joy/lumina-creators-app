@@ -59,8 +59,10 @@ const STEPS: { key: StepKey; optional?: boolean }[] = [
   { key: "socials" },
   { key: "portfolio", optional: true },   // "Add your best videos" — right after socials
   { key: "posts_per_day", optional: true },
+  // Rhys 2026-07-23: birthday + gender merged into one "Age & Gender" step
+  // (age is a dropdown now, not a date picker). Keeps the `birthday` key so
+  // ProfileGate deep-links and the date_of_birth save path still resolve.
   { key: "birthday", optional: true },
-  { key: "gender", optional: true },
   { key: "location", optional: true },
   { key: "how_heard", optional: true },
   { key: "whatsapp" },
@@ -110,23 +112,26 @@ const CONTENT_TYPES: { key: string; label: string; icon: string }[] = [
 ];
 // Rhys 2026-07-21: the industries a creator wants to work for. Legacy keys from
 // the old 12-option list still render (unselected) on existing profiles.
+// Rhys 2026-07-23: unified category taxonomy (same keys/labels as lib/niches.tsx
+// NICHES) so a creator's chosen industries line up with the Explore filters.
 const NICHE_OPTIONS: { key: string; label: string; icon: string }[] = [
-  { key: "physical_products", label: "Physical Products", icon: "📦" },
-  { key: "software", label: "Software", icon: "💻" },
-  { key: "gambling", label: "Gambling", icon: "🎰" },
-  { key: "crypto_finance", label: "Crypto / Finance", icon: "📈" },
-  { key: "entertainment", label: "Entertainment & Media", icon: "🎬" },
-  { key: "other", label: "Other", icon: "🚀" },
+  { key: "sports_entertainment", label: "Sports & Entertainment", icon: "🎬" },
+  { key: "finance_technology", label: "Finance & Technology", icon: "📈" },
+  { key: "fashion_beauty", label: "Fashion & Beauty", icon: "👗" },
+  { key: "mobile_apps", label: "Mobile Apps", icon: "📱" },
+  { key: "casino_crypto", label: "Casino & Crypto", icon: "🎰" },
+  { key: "health_wellness", label: "Health & Wellness", icon: "🧘" },
+  { key: "reaction_content", label: "Reaction Based Content", icon: "😮" },
 ];
+// Rhys 2026-07-23: removed LinkedIn; X reads as Twitter; AI → "AI Search".
 const HOW_HEARD: { key: string; label: string }[] = [
   { key: "friend", label: "Friend or colleague" },
   { key: "google", label: "Google" },
   { key: "tiktok", label: "TikTok" },
-  { key: "linkedin", label: "LinkedIn" },
   { key: "instagram", label: "Instagram" },
   { key: "youtube", label: "YouTube" },
-  { key: "x", label: "X" },
-  { key: "ai", label: "AI" },
+  { key: "x", label: "Twitter" },
+  { key: "ai", label: "AI Search" },
 ];
 
 const CREATOR_TYPE_COPY: Record<CreatorType, { title: string; blurb: string; icon: string }> = {
@@ -148,12 +153,20 @@ const labelCls = "block text-sm font-medium text-[var(--color-text)]";
 
 function resolveInitialStep(raw: string | null): number {
   if (!raw) return 0;
-  const alias: Record<string, StepKey> = { personal: "name", social: "socials", socials: "socials", portfolio: "portfolio", payment: "payment", details: "birthday" };
+  // `gender` merged into the combined Age & Gender step (key "birthday"), so a
+  // stale ?step=gender deep-link still resolves there instead of falling to step 0.
+  const alias: Record<string, StepKey> = { personal: "name", social: "socials", socials: "socials", portfolio: "portfolio", payment: "payment", details: "birthday", gender: "birthday" };
   const key = (alias[raw] ?? raw) as StepKey;
   const i = STEPS.findIndex((s) => s.key === key);
   return i < 0 ? 0 : i;
 }
 
+// Age is chosen from a dropdown now (Rhys 2026-07-23), but the profile still
+// stores date_of_birth, so map the chosen age to Jan 1 of the implied year.
+const AGE_OPTIONS = Array.from({ length: 83 }, (_, i) => i + 18); // 18–100
+function dobFromAge(age: number): string {
+  return `${new Date().getFullYear() - age}-01-01`;
+}
 function ageFrom(dob: string): number | null {
   if (!dob) return null;
   const [y, m, d] = dob.split("-").map(Number);
@@ -294,8 +307,8 @@ export function OnboardingWizard() {
       else if (k === "name") await saveM.mutateAsync({ display_name: details.display_name || undefined, creator_type: creatorType || "ugc" });
       else if (k === "bio") await saveM.mutateAsync({ bio: details.bio || undefined });
       else if (k === "whatsapp") await saveM.mutateAsync({ whatsapp: details.whatsapp || undefined });
-      else if (k === "birthday") await saveM.mutateAsync({ date_of_birth: audience.date_of_birth || undefined });
-      else if (k === "gender") await saveM.mutateAsync({ gender: (audience.gender || undefined) as Gender | undefined });
+      // Combined Age & Gender step saves both (the separate gender step is gone).
+      else if (k === "birthday") await saveM.mutateAsync({ date_of_birth: audience.date_of_birth || undefined, gender: (audience.gender || undefined) as Gender | undefined });
       else if (k === "education") await saveM.mutateAsync({ education: (audience.education || undefined) as EducationLevel | undefined });
       else if (k === "ethnicity") await saveM.mutateAsync({ ethnicity: audience.ethnicity || undefined });
       else if (k === "language") await saveM.mutateAsync({ primary_language: audience.primary_language || undefined });
@@ -406,7 +419,7 @@ export function OnboardingWizard() {
         ) : null}
 
         {cur.key === "niches" ? (
-          <StepShell eyebrow="Your craft" title="What industries do you want to work for?" sub="Select up to 5.">
+          <StepShell eyebrow="Your craft" title="What industries do you want to create for?" sub="Select up to 5.">
             <div className="flex flex-wrap gap-2">
               {NICHE_OPTIONS.map((n) => {
                 const on = niches.includes(n.key);
@@ -423,10 +436,10 @@ export function OnboardingWizard() {
         ) : null}
 
         {cur.key === "posts_per_day" ? (
-          <StepShell eyebrow="Your capacity" title="How many posts can you create per day?">
+          <StepShell eyebrow="Your capacity" title="How many videos can you create per day?">
             <div className="text-center">
               <p className="tabular text-5xl font-semibold text-[var(--color-text)]">{ob.posts_per_day}</p>
-              <p className="text-[var(--color-text-secondary)]">post{ob.posts_per_day === 1 ? "" : "s"}</p>
+              <p className="text-[var(--color-text-secondary)]">video{ob.posts_per_day === 1 ? "" : "s"}</p>
               <input type="range" min={1} max={10} value={ob.posts_per_day} onChange={(e) => setOb({ ...ob, posts_per_day: Number(e.target.value) })}
                 className="mt-6 w-full accent-[var(--color-brand)]" />
             </div>
@@ -455,7 +468,7 @@ export function OnboardingWizard() {
         ) : null}
 
         {cur.key === "whatsapp" ? (
-          <StepShell eyebrow="Stay in the loop" title="WhatsApp Number" sub="So brands and the Lumina team can reach you fast. We'll never share this with anyone.">
+          <StepShell eyebrow="Private Campaign Manager" title="WhatsApp Number" sub="So the Lumina team can reach you fast & get you more paid gigs.">
             <WhatsAppInput value={details.whatsapp} onChange={(v) => setDetails({ ...details, whatsapp: v })} />
             <p className="mt-3 text-sm text-[var(--color-text-muted)]">Your WhatsApp number is required to continue.</p>
           </StepShell>
@@ -481,7 +494,7 @@ export function OnboardingWizard() {
         {cur.key === "earnings" ? (
           <StepShell eyebrow="What's possible" title="Your earnings potential">
             <div className="rounded-[var(--radius-card)] bg-[var(--color-brand)]/10 p-6 text-center ring-1 ring-[var(--color-brand)]/30">
-              <p className="tabular text-4xl font-semibold text-[var(--color-brand-soft)]">$2,500</p>
+              <p className="tabular text-4xl font-semibold text-[var(--color-brand-soft)]">$5,500</p>
               <p className="text-sm text-[var(--color-text-secondary)]">per month</p>
             </div>
             <div className="mt-4 grid gap-2">
@@ -543,22 +556,26 @@ export function OnboardingWizard() {
         ) : null}
 
         {cur.key === "birthday" ? (
-          <StepShell eyebrow="A few details" title="When's your birthday?" sub="Brands use this to check you're old enough to work with them. Kept private.">
-            <div className="max-w-xs">
-              <Field label="Date of birth" type="date" value={audience.date_of_birth} onChange={(e) => setAudience({ ...audience, date_of_birth: e.target.value })} />
-              {ageFrom(audience.date_of_birth) !== null ? (
-                <p className="mt-2 text-sm text-[var(--color-brand-soft)]">{ageFrom(audience.date_of_birth)} years old</p>
-              ) : null}
-            </div>
-          </StepShell>
-        ) : null}
-
-        {cur.key === "gender" ? (
-          <StepShell eyebrow="A few details" title="What's your gender?" sub="Helps brands match campaigns. Optional.">
-            <div className="grid gap-2">
-              {GENDERS.map((g) => (
-                <OptionCard key={g} compact selected={audience.gender === g} onClick={() => setAudience({ ...audience, gender: g })} title={GENDER_LABEL[g]} />
-              ))}
+          <StepShell eyebrow="A few details" title="Your Age & Gender" sub="Brands use this to match you to the right campaigns. Kept private.">
+            <div className="max-w-xs space-y-4">
+              <div>
+                <label className="mb-1.5 block text-sm text-[var(--color-text-secondary)]">Age</label>
+                <Select
+                  ariaLabel="Age"
+                  placeholder="Select your age"
+                  value={ageFrom(audience.date_of_birth)?.toString() ?? ""}
+                  onChange={(v) => setAudience({ ...audience, date_of_birth: v ? dobFromAge(Number(v)) : "" })}
+                  options={AGE_OPTIONS.map((a) => ({ value: a.toString(), label: a.toString() }))}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm text-[var(--color-text-secondary)]">Gender</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["male", "female"] as Gender[]).map((g) => (
+                    <OptionCard key={g} compact selected={audience.gender === g} onClick={() => setAudience({ ...audience, gender: g })} title={GENDER_LABEL[g]} />
+                  ))}
+                </div>
+              </div>
             </div>
           </StepShell>
         ) : null}
@@ -1188,7 +1205,7 @@ function DoneStep({ name, hasType, socialCount, portfolioCount, hasPayout, campa
     <div className="text-center">
       <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[var(--color-brand)]/15 text-3xl">🎉</div>
       <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[var(--color-text)]">You&apos;re all set, {name}!</h1>
-      <p className="mt-2 text-[var(--color-text-secondary)]">Your profile is {pct}% complete. Browse campaigns now — a fuller profile gets matched to more.</p>
+      <p className="mt-2 text-[var(--color-text-secondary)]">Your profile is {pct}% complete. Browse campaigns now and get paid!</p>
       <div className="mx-auto mt-6 max-w-sm space-y-2 text-left">
         {checks.map((c) => (
           <div key={c.label} className="flex items-center gap-3 rounded-[var(--radius-btn)] bg-[var(--color-surface-2)] px-4 py-2.5 text-sm">

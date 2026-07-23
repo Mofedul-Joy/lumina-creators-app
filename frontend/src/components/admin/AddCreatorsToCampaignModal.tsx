@@ -25,13 +25,15 @@ type Tab = "existing" | "external";
 // example, crypto or casino, or male or female, after inputting them filters, I
 // can then invite the creators who have appeared for them filters." These mirror
 // the onboarding industry list; Select all operates on the filtered set.
+// Rhys 2026-07-23: same seven-category taxonomy as onboarding + Explore.
 const NICHE_FILTERS: { key: string; label: string }[] = [
-  { key: "physical_products", label: "Physical Products" },
-  { key: "software", label: "Software" },
-  { key: "gambling", label: "Gambling" },
-  { key: "crypto_finance", label: "Crypto / Finance" },
-  { key: "entertainment", label: "Entertainment & Media" },
-  { key: "other", label: "Other" },
+  { key: "sports_entertainment", label: "Sports & Entertainment" },
+  { key: "finance_technology", label: "Finance & Technology" },
+  { key: "fashion_beauty", label: "Fashion & Beauty" },
+  { key: "mobile_apps", label: "Mobile Apps" },
+  { key: "casino_crypto", label: "Casino & Crypto" },
+  { key: "health_wellness", label: "Health & Wellness" },
+  { key: "reaction_content", label: "Reaction Based Content" },
 ];
 
 const GENDER_FILTERS: { key: Gender; label: string }[] = [

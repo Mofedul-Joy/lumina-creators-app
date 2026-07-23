@@ -282,6 +282,7 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
             func.coalesce(func.sum(Submission.likes), 0),
             func.coalesce(func.sum(Submission.comments), 0),
             func.coalesce(func.sum(Submission.shares), 0),
+            func.count(func.distinct(Submission.campaign_id)),
         ).where(
             Submission.creator_id == c.id,
             Submission.verification_status == "verified",
@@ -290,6 +291,7 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
     total_views = int(agg_row[0]) if agg_row else 0
     total_earned = Decimal(agg_row[1]) if agg_row else Decimal("0")
     total_posts = int(agg_row[2]) if agg_row else 0
+    total_campaigns = int(agg_row[6]) if agg_row else 0
     # Money actually paid out — sums Payout rows (all payment types), NOT
     # estimated_amount which only covers CPM. Without this a creator paid on a
     # fixed/per-post campaign sees $0 on their own dashboard (admin↔creator desync).
@@ -359,6 +361,7 @@ def get_creator_rich_detail(db: Session, creator_id: uuid.UUID) -> dict:
         "total_earned": total_earned,
         "total_paid": total_paid,
         "total_posts": total_posts,
+        "total_campaigns": total_campaigns,
         "total_likes": total_likes,
         "engagement_rate": engagement_rate,
         "socials": [

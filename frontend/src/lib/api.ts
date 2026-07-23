@@ -525,6 +525,7 @@ export type CreatorRichDetail = {
   total_earned: number | string;
   total_paid: number | string;
   total_posts: number;
+  total_campaigns: number;
   total_likes: number;
   engagement_rate: number;
   socials: RichSocialItem[];

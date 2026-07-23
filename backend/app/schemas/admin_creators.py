@@ -149,6 +149,7 @@ class CreatorRichDetail(BaseModel):
     total_earned: Decimal = Decimal("0")
     total_paid: Decimal = Decimal("0")  # actual Payout sum (all payment types)
     total_posts: int = 0
+    total_campaigns: int = 0  # distinct campaigns the creator has verified posts in
     total_likes: int = 0
     engagement_rate: float = 0.0
 

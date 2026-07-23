@@ -46,7 +46,7 @@ function ClientLoginInner() {
   if (redirecting) return null;
 
   return (
-    <AuthCard title="Client sign in" subtitle="Access your read-only dashboard." hideMarketing eyebrow="Lumina for Brands">
+    <AuthCard title="Client sign in" subtitle="Access your campaign dashboard." hideMarketing eyebrow="Lumina for Brands">
       {error ? (
         <p role="alert" className="mb-4 text-sm text-[var(--color-danger)]">
           {error}

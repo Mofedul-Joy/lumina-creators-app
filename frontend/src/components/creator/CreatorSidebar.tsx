@@ -22,9 +22,9 @@ type NavItem = { href: string; label: string; icon: () => React.ReactElement };
 // creator can find the campaigns an admin invited them to.
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: HomeIcon },
-  { href: "/campaigns", label: "Explore", icon: ExploreIcon },
-  { href: "/submissions", label: "Campaigns Entered", icon: CampaignsIcon },
-  { href: "/invited", label: "Invited Campaigns", icon: InvitedIcon },
+  { href: "/campaigns", label: "Explore Campaigns", icon: ExploreIcon },
+  { href: "/submissions", label: "Campaigns You Entered", icon: CampaignsIcon },
+  { href: "/invited", label: "Invited Jobs", icon: InvitedIcon },
   { href: "/account", label: "Account", icon: AccountIcon },
   { href: "/portfolio", label: "Portfolio", icon: PortfolioIcon },
   { href: "/contracts", label: "Agreements", icon: ContractsIcon },

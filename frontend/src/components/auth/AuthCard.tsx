@@ -10,10 +10,11 @@ function Wordmark() {
   );
 }
 
+// Rhys 2026-07-23: value props on the sign-up/sign-in card.
 const POINTS = [
-  "Get paid per 1,000 views",
-  "Verified views only, no bots",
-  "Cash out via PayPal, Solana, or Whop",
+  "Get paid per 1000 views",
+  "Get paid per video created",
+  "Instant payouts via Paypal, Crypto & many options",
 ];
 
 export function AuthCard({
@@ -63,7 +64,7 @@ export function AuthCard({
             Get paid to <span className="serif text-[var(--color-brand)]">post</span>.
           </h2>
           <p className="mt-4 text-[var(--color-text-secondary)]">
-            Enter Lumina campaigns, post to your own socials, and earn on every verified view.
+            Post on your own socials or create content with no posting required. Earn money instantly.
           </p>
           <ul className="mt-8 space-y-3">
             {POINTS.map((p) => (
