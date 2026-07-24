@@ -87,6 +87,8 @@ class SocialOut(BaseModel):
 class SocialVerifyIn(BaseModel):
     platform: str
     handle: str
+    # "New code": force a fresh code instead of reusing the still-valid one.
+    force_new_code: bool = False
 
 
 class SocialVerifyStartOut(BaseModel):

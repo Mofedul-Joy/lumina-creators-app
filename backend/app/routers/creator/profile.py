@@ -105,7 +105,7 @@ def delete_social(social_id: uuid.UUID, current: Creator = Depends(get_current_c
 @router.post("/socials/verify/start", response_model=SocialVerifyStartOut)
 def start_social_verify(body: SocialVerifyIn, current: Creator = Depends(get_current_creator), db: Session = Depends(get_db)):
     """Issue a bio-code for the creator to paste into their platform bio."""
-    return verify_svc.start_verification(db, current.id, body.platform, body.handle)
+    return verify_svc.start_verification(db, current.id, body.platform, body.handle, force_new_code=body.force_new_code)
 
 
 @router.post("/socials/verify/confirm", response_model=SocialOut)

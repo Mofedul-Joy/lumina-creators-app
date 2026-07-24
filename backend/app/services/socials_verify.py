@@ -37,7 +37,7 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _gen_code(db: Session) -> str:
+def _gen_code(db: Session, exclude: str | None = None) -> str:
     active_codes = set(db.scalars(
         select(SocialAccount.verification_code).where(
             SocialAccount.is_verified.is_(False),
@@ -45,6 +45,9 @@ def _gen_code(db: Session) -> str:
             SocialAccount.verification_code_expires_at > _now(),
         )
     ).all())
+    # On "New code", never hand back the same code the creator just had.
+    if exclude:
+        active_codes.add(exclude)
     for _ in range(100):
         code = f"LC-{secrets.randbelow(1000):03d}"
         if code not in active_codes:
@@ -84,7 +87,8 @@ def _resolve_social(db: Session, creator_id: uuid.UUID, platform: str, handle: s
     return social
 
 
-def start_verification(db: Session, creator_id: uuid.UUID, platform: str, handle: str) -> dict:
+def start_verification(db: Session, creator_id: uuid.UUID, platform: str, handle: str,
+                       force_new_code: bool = False) -> dict:
     if platform not in VERIFIABLE_PLATFORMS:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"{platform} verification isn't supported")
     handle = _clean_handle(handle)
@@ -101,12 +105,14 @@ def start_verification(db: Session, creator_id: uuid.UUID, platform: str, handle
             "instructions": f"Your {platform} @{social.handle} is already verified.",
         }
 
-    # Reuse a still-valid code so a refresh doesn't change what they pasted in bio.
-    if not (social.verification_code
-            and re.fullmatch(r"LC-\d{3}", social.verification_code, flags=re.IGNORECASE)
-            and social.verification_code_expires_at
-            and social.verification_code_expires_at > _now()):
-        social.verification_code = _gen_code(db)
+    # "New code" (force_new_code) always mints a fresh code — otherwise reuse a
+    # still-valid one so a plain refresh doesn't change what they pasted in bio.
+    code_valid = (social.verification_code
+                  and re.fullmatch(r"LC-\d{3}", social.verification_code, flags=re.IGNORECASE)
+                  and social.verification_code_expires_at
+                  and social.verification_code_expires_at > _now())
+    if force_new_code or not code_valid:
+        social.verification_code = _gen_code(db, exclude=social.verification_code if force_new_code else None)
         social.verification_code_expires_at = _now() + timedelta(minutes=CODE_TTL_MINUTES)
     db.commit()
     db.refresh(social)
@@ -168,9 +174,14 @@ def confirm_verification(db: Session, creator_id: uuid.UUID, platform: str, hand
             f"Couldn't find @{handle} on {platform}. Check the handle and that your profile is public.",
         )
     if not _code_in_bio(code, info.bio):
+        # Surface the exact handle we scraped: the #1 cause of a "not found" is a
+        # creator entering their DISPLAY NAME instead of their username, so we
+        # end up checking a different real account's bio.
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            f"We didn't find {code} in your {platform} bio yet. Save it in your bio and try again.",
+            f"We didn't find {code} in the {platform} bio for @{info.handle or handle}. "
+            f"Make sure {code} is saved in your bio, and that @{handle} is your exact "
+            f"{platform} username from your profile URL (not your display name), then try again.",
         )
     return _mark_verified(
         db, social,

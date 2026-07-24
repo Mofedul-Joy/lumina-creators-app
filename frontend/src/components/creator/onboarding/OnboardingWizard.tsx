@@ -946,7 +946,10 @@ function SocialStep({ platform, bearer, existing, form, onForm, onAdd, onRemove,
   const [copied, setCopied] = useState(false);
 
   const startM = useMutation({
-    mutationFn: () => startSocialVerify(bearer, platform, form.handle.trim()),
+    // `force` = the "New code" button: always mint a fresh code (the plain
+    // "Get verification code" reuses a still-valid one, which made "New code"
+    // look like it did nothing).
+    mutationFn: (force?: boolean) => startSocialVerify(bearer, platform, form.handle.trim(), !!force),
     // No onChanged() here: refetching mid-flow surfaced the server-side
     // verification placeholder as a real account row. One click, one panel.
     onSuccess: (r) => setCode(r.code),
@@ -1009,16 +1012,22 @@ function SocialStep({ platform, bearer, existing, form, onForm, onAdd, onRemove,
             <span className="pl-3 pr-1 text-[var(--color-text-muted)]">@</span>
             <input
               className="min-h-11 flex-1 bg-transparent px-1 text-[var(--color-text)] outline-none placeholder:text-[var(--color-text-muted)]"
-              placeholder="your handle"
+              placeholder={platform === "tiktok" ? "your username (e.g. joyjoy860)" : "your username"}
               value={form.handle}
               onChange={(e) => { onForm({ ...form, handle: e.target.value }); if (code) setCode(null); }}
             />
           </div>
+          {/* The #1 verification failure: creators type their DISPLAY NAME. The
+              scraper needs the exact username from the profile URL. */}
+          <p className="text-xs text-[var(--color-text-muted)]">
+            Use your exact {platformLabel(platform)} username from your profile link
+            ({platform === "tiktok" ? "tiktok.com/@username" : "instagram.com/username"}) — not your display name.
+          </p>
 
           {!code ? (
             <button
               disabled={!form.handle.trim() || startM.isPending}
-              onClick={() => startM.mutate()}
+              onClick={() => startM.mutate(false)}
               className="min-h-11 w-full rounded-full bg-[var(--color-brand)] px-5 text-sm font-semibold text-[var(--color-on-brand)] transition hover:bg-[var(--color-brand-hover)] disabled:opacity-50"
             >
               {startM.isPending ? "Getting your code…" : "Get verification code"}
@@ -1040,7 +1049,7 @@ function SocialStep({ platform, bearer, existing, form, onForm, onAdd, onRemove,
                 >
                   {confirmM.isPending ? "Checking your bio…" : "Verify"}
                 </button>
-                <button onClick={() => startM.mutate()} className="min-h-11 rounded-full border border-[var(--color-border)] px-4 text-sm text-[var(--color-text-secondary)] transition hover:border-[var(--color-brand)]">New code</button>
+                <button disabled={startM.isPending} onClick={() => startM.mutate(true)} className="min-h-11 rounded-full border border-[var(--color-border)] px-4 text-sm text-[var(--color-text-secondary)] transition hover:border-[var(--color-brand)] disabled:opacity-50">{startM.isPending ? "…" : "New code"}</button>
               </div>
             </div>
           )}

@@ -595,10 +595,10 @@ export type SocialVerifyStartOut = {
   already_verified: boolean;
 };
 
-export const startSocialVerify = (token: string, platform: Platform, handle: string) =>
+export const startSocialVerify = (token: string, platform: Platform, handle: string, forceNewCode = false) =>
   apiFetch<SocialVerifyStartOut>("/api/creator/profile/socials/verify/start", {
     method: "POST",
-    body: JSON.stringify({ platform, handle }),
+    body: JSON.stringify({ platform, handle, force_new_code: forceNewCode }),
     token,
   });
 
