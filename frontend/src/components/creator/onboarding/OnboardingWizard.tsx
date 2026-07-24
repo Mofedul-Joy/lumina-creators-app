@@ -1056,7 +1056,26 @@ function SocialStep({ platform, bearer, existing, form, onForm, onAdd, onRemove,
         </div>
       )}
 
-      {err ? <p className="text-sm text-[var(--color-danger)]">{err}</p> : null}
+      {err ? (
+        <div className="space-y-2">
+          <p className="text-sm text-[var(--color-danger)]">{err}</p>
+          {/* When TikTok verification fails, show creators exactly where their
+              username is (the #1 mistake is entering the display name). */}
+          {platform === "tiktok" && confirmM.isError ? (
+            <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-3">
+              <p className="mb-2 text-xs text-[var(--color-text-secondary)]">
+                Your username is the <span className="font-medium text-[var(--color-text)]">@handle in your profile link</span> — not your display name. Here&apos;s where to find it:
+              </p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/help/tiktok-username-example.png"
+                alt="Your TikTok username is the handle in your profile URL (tiktok.com/@username), shown next to your display name — not the display name itself."
+                className="w-full rounded-lg border border-[var(--color-border)]"
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
